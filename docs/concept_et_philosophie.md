@@ -10,7 +10,8 @@ Le projet ne cherche pas a "faire de l'IA sur des PDF" pour le principe. Il cher
 2. des registres explicites ;
 3. des diligences rattachees a des preuves ;
 4. des sorties diffusables lisibles ;
-5. un noyau logiciel separable des cas reels.
+5. une couche Audit360 pour structurer constats et controles ;
+6. un noyau logiciel separable des cas reels.
 
 Autrement dit: rendre la matiere documentaire **moins subie** et **plus pilotable**.
 
@@ -33,6 +34,7 @@ Quand CoproScope fonctionne bien, une equipe doit pouvoir dire:
 - "on sait ce qu'on a" ;
 - "on sait ce qu'il manque" ;
 - "on sait a quoi rattacher une demande ou un constat" ;
+- "on peut transformer un constat en controle, preuve attendue et action" ;
 - "on peut preparer une AG sans repartir de zero" ;
 - "on peut ameliorer l'outil publiquement sans exposer notre instance privee".
 
@@ -76,7 +78,19 @@ Quand c'est pertinent, CoproScope privilegie:
 
 Un socle utile vaut mieux qu'une vision totale mais abstraite. CoproScope avance par couches utiles: DocOps, puis SyndicOps, puis AGOps.
 
-### 6. Pragmatique maintenant, plus souverain ensuite
+### 6. Audit360 est une couche transverse, pas un a-cote
+
+Quand CoproScope parle d'audit, il ne parle pas seulement de produire une note.
+
+Il parle de rendre reproductible une chaine:
+
+- relever un fait ;
+- citer sa source ;
+- expliciter le risque ou le point de controle ;
+- preciser la preuve attendue ;
+- rattacher une action ou une diligence.
+
+### 7. Pragmatique maintenant, plus souverain ensuite
 
 Aujourd'hui, CoproScope peut s'appuyer sur des agents IA grand public et peu chers pour aller vite.
 

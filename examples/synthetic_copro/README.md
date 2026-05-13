@@ -13,7 +13,7 @@ Cette instance publique, non sensible, sert de terrain de validation pour CoproS
 
 - des documents de demonstration ;
 - un `instance.yml` public ;
-- des matrices et artefacts synthetiques utiles a la validation.
+- des matrices et artefacts synthetiques utiles a la validation, y compris pour les sorties de type Audit360.
 
 ## Ce qu'elle ne doit pas contenir
 

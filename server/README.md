@@ -16,8 +16,17 @@ Paquet backend du produit CoproScope.
 - `src/coproscope/modules/` : modules fonctionnels ;
 - `src/coproscope/configs/` : configurations par defaut ;
 - `src/coproscope/schemas/` : contrats de donnees ;
-- `src/coproscope/templates/` : gabarits CSV et sorties bootstrap ;
+- `src/coproscope/templates/` : gabarits CSV et sorties bootstrap, y compris pour la couche Audit360 ;
 - `tests/` : verification du socle public.
+
+## Extraction publique Audit360
+
+Le depot public expose maintenant une premiere extraction generique de la couche `Audit360`:
+
+- gabarits `constats_normalises.csv`, `repertoire_controles.csv` et `synthese_controles.csv` ;
+- schemas associes pour decrire ces sorties sans publier de donnees reelles.
+
+L'objectif est de partager la forme reutilisable des controles et diligences, pas les contenus sensibles d'une copropriete reelle.
 
 ## Commandes utiles
 

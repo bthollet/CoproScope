@@ -7,6 +7,7 @@
 | DocOps | Reconstituer un registre documentaire fiable | bruts Drive, extranet, dossiers locaux | inventaire, hash, doublons, texte, classement, completude | en cours, deja exploitable |
 | SyndicOps | Structurer la relation documentaire avec le syndic | demandes, reponses, mails, pieces attendues | registre des demandes, relances, constats, diligences | en cours, socle present |
 | AGOps | Standardiser la preparation des AG | convocations, PV, annexes, resolutions | registre AG, rapport de preparation, points d'attention | en cours, premiere version presente |
+| Audit360 | Transformer les signaux metier en controles relisibles | pieces, demandes, AG, sujets travaux ou contrats | constats normalises, repertoire de controles, syntheses, diligences | en cours d'extraction publique |
 | ContractOps | Mieux suivre contrats et obligations | contrats, avenants, attestations | registre contrats, alertes, clauses clefs | cible ulterieure |
 | WorksOps | Suivre devis, travaux et entreprises | devis, factures, assurance, diligence publique | chronologies, comparatifs, alertes, constats | cible ulterieure |
 | CommsOps | Organiser les communications diffusables | notes, syntheses, courriels, comptes rendus | sorties partageables, suivis de diffusion | cible ulterieure |
@@ -69,6 +70,25 @@ Signes de reussite:
 - les pieces utiles a l'AG sont visibles en amont ;
 - les annexes manquantes remontent avant la reunion ;
 - le conseil syndical dispose d'une base de lecture partageable.
+
+## Audit360
+
+Audit360 sert a rendre les analyses comparables, relisibles et actionnables.
+
+Fonctions recherchees:
+
+- normaliser des constats issus de sources heterogenes ;
+- consolider ces constats dans un repertoire de controles ;
+- produire une synthese par point de controle ;
+- expliciter les preuves attendues ;
+- rattacher une action, une relance ou une diligence a chaque point utile.
+
+Signes de reussite:
+
+- les analyses ne restent pas dispersees dans des notes ;
+- les points de controle reviennent d'un dossier a l'autre avec une forme stable ;
+- un relecteur comprend vite le lien entre fait, risque, preuve et action ;
+- les sorties sont assez propres pour etre discutees ou diffusees.
 
 ## Regle de priorisation
 

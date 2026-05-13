@@ -13,6 +13,7 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 - pipeline v1: inventaire, extraction texte, classement, completude, KPI, AG, synthese de diligence publique ;
 - serveur MCP minimal ;
 - schemas, configs, prompts et templates versionnes ;
+- premiere extraction publique de la couche Audit360 sous forme de doc, schemas et gabarits ;
 - instance synthetique publique pour les tests ;
 - garde-fous de partage (`share-audit`, `share-export`) ;
 - documentation publique structuree en francais.
@@ -22,6 +23,7 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 - enrichir DocOps sur de vrais corpus ;
 - epaissir SyndicOps sur les relances et la tracabilite fine ;
 - affiner AGOps sur les annexes, majorites et suites post-AG ;
+- outiller davantage Audit360 comme couche transverse de controles et diligences ;
 - pousser plus loin la francisation la ou elle apporte une vraie clarte sans casser les interfaces techniques.
 
 ## Ce qui vient ensuite
@@ -40,6 +42,7 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 | DocOps | bon socle | deja utile, heuristiques a enrichir |
 | SyndicOps | embryon utile | base en place, workflows a epaissir |
 | AGOps | premiere version | signaux utiles, couverture encore partielle |
+| Audit360 | extraction publique amorcee | formes generiques visibles, outillage encore a epaissir |
 | Documentation produit | bon socle | suffisamment claire pour une vraie relecture |
 | Francophonie | en cours d'inscription | preference explicite, chantier encore ouvert |
 
@@ -64,4 +67,5 @@ La suite naturelle est de consolider les couches deja presentes plutot que d'ouv
 1. enrichir les regles et sorties DocOps ;
 2. densifier les chaines de preuve SyndicOps ;
 3. fiabiliser AGOps sur de vrais cas de preparation ;
-4. continuer a extraire vers le public uniquement ce qui est proprement genericisable.
+4. epaissir Audit360 sur les controles, preuves attendues et diligences ;
+5. continuer a extraire vers le public uniquement ce qui est proprement genericisable.

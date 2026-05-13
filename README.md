@@ -17,7 +17,8 @@ flowchart LR
     A["Documents bruts<br/>Drive, extranet, dossiers locaux"] --> B["DocOps<br/>inventaire, hash, extraction, classement"]
     B --> C["SyndicOps<br/>demandes, relances, preuves"]
     B --> D["AGOps<br/>convocations, resolutions, annexes"]
-    C --> E["Constats et diligences"]
+    B --> E["Audit360<br/>constats, controles, diligences"]
+    C --> E
     D --> E
     E --> F["Sorties diffusables<br/>registres, rapports, matrices"]
     E --> G["Ameliorations genericisees<br/>publiees sur GitHub"]
@@ -47,6 +48,7 @@ Le depot public contient deja:
 - un paquet `server/` avec la CLI `coprocs` ;
 - un pipeline v1 exploitable ;
 - une instance synthetique publique pour tester et demonstrer ;
+- une premiere extraction publique de la couche **Audit360** sous forme de doc, schemas et gabarits ;
 - une frontiere outillee entre **public** et **prive** via `share-audit` et `share-export` ;
 - une couche documentaire en francais, pensee pour la lecture et la relecture.
 
@@ -68,6 +70,7 @@ Plutot un systeme qui aide une equipe a:
 - **DocOps** : inventaire, hash, doublons, extraction texte, classement, completude.
 - **SyndicOps** : registre des demandes, pieces attendues, relances, chaines de preuve.
 - **AGOps** : preparation d'assemblee generale, resolutions, annexes, majorites, points d'attention.
+- **Audit360** : couche transverse de constats, points de controle, preuves attendues, actions et diligences.
 - **Ensuite** : ContractOps, WorksOps et CommsOps, une fois le socle documentaire stabilise.
 
 ## Ce que le projet privilegie
@@ -129,12 +132,14 @@ Tu ressorts avec une idee claire de la promesse produit et de sa maturite.
 
 - [Fonctions cibles](./docs/fonctions_cibles.md)
 - [Architecture et flux](./docs/architecture_et_flux.md)
+- [Audit360](./docs/audit360.md)
 
 Tu peux deja faire une relecture utile du repo.
 
 ### Si tu veux contribuer ou challenger les choix
 
 - [Plan d'implementation](./docs/implementation_plan.md)
+- [Audit360](./docs/audit360.md)
 - [Politique de partage GitHub](./docs/github_sharing.md)
 - [Index de la documentation](./docs/README.md)
 

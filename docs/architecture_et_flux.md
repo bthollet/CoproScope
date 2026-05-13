@@ -35,6 +35,7 @@ flowchart TB
 
 - le code genericisable ;
 - les schemas et configurations par defaut ;
+- les gabarits de restitution generiques, y compris pour Audit360 ;
 - les prompts, templates et tests ;
 - une documentation qui explique le produit ;
 - une instance synthetique publique pour prouver le comportement.
@@ -92,10 +93,32 @@ L'instance publique de demonstration:
 
 1. une instance declare ses racines via `instance.yml` ;
 2. `coprocs` lit les documents bruts sans les modifier ;
-3. le systeme ecrit seulement dans les espaces de preparation, registres, sorties et journaux ;
-4. `share-audit` verifie ce qui est publiable ;
-5. `share-export` construit un arbre public propre ;
-6. seules les briques genericisees peuvent remonter sur GitHub.
+3. DocOps, SyndicOps et AGOps structurent la matiere utile ;
+4. Audit360 peut transformer ces signaux en constats, controles, preuves attendues et diligences ;
+5. le systeme ecrit seulement dans les espaces de preparation, registres, sorties et journaux ;
+6. `share-audit` verifie ce qui est publiable ;
+7. `share-export` construit un arbre public propre ;
+8. seules les briques genericisees peuvent remonter sur GitHub.
+
+## Comment Audit360 se branche
+
+La couche `Audit360` sert de point de passage entre l'analyse locale et la restitution relisible.
+
+Elle peut agreger:
+
+- des pieces inventoriees par DocOps ;
+- des demandes et reponses suivies par SyndicOps ;
+- des signaux de convocation, resolution ou annexe issus d'AGOps ;
+- plus tard, des sujets contrats, travaux ou sinistres.
+
+Sa vocation publique n'est pas de publier des conclusions privees.
+
+Sa vocation publique est de publier des **formes generiques de travail**:
+
+- constats normalises ;
+- repertoires de controles ;
+- syntheses de controles ;
+- gabarits de diligences et sorties diffusables.
 
 ## Ce que cette architecture essaie de proteger
 
