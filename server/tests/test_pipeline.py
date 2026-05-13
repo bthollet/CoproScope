@@ -8,7 +8,7 @@ from pathlib import Path
 from coproscope.core.common import RunContext, load_instance, read_csv
 from coproscope.core.doctor import run_doctor
 from coproscope.core.pipeline import run_pipeline
-from coproscope.core.share import audit_repo
+from coproscope.core.share import audit_repo, export_shareable
 
 
 class CoproScopePipelineTests(unittest.TestCase):
@@ -84,8 +84,38 @@ class CoproScopePipelineTests(unittest.TestCase):
             self.assertIn("docs/github_sharing.md", shareable)
             self.assertIn(".github/pull_request_template.md", shareable)
             self.assertIn("examples/synthetic_copro/raw/demo.txt", shareable)
-            self.assertIn("server/src/coproscope.egg-info/PKG-INFO", blocked)
-            self.assertIn("examples/synthetic_copro/logs/action_log.csv", blocked)
+            self.assertIn("server/src/coproscope.egg-info/", blocked)
+            self.assertIn("examples/synthetic_copro/logs/", blocked)
+
+    def test_share_export_copies_only_shareable_files(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        config_path = repo_root / "server" / "src" / "coproscope" / "configs" / "github_sharing.default.yml"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            audit_root = Path(tmpdir) / "repo"
+            export_root = Path(tmpdir) / "export"
+            (audit_root / "server" / "src" / "coproscope").mkdir(parents=True)
+            (audit_root / "server" / "src" / "coproscope.egg-info").mkdir(parents=True)
+            (audit_root / "examples" / "synthetic_copro" / "raw").mkdir(parents=True)
+            (audit_root / "examples" / "synthetic_copro" / "logs").mkdir(parents=True)
+            (audit_root / "docs").mkdir(parents=True)
+            (audit_root / ".github").mkdir(parents=True)
+            (audit_root / "README.md").write_text("# repo\n", encoding="utf-8")
+            (audit_root / "server" / "src" / "coproscope" / "cli.py").write_text("print('ok')\n", encoding="utf-8")
+            (audit_root / "server" / "src" / "coproscope.egg-info" / "PKG-INFO").write_text("metadata\n", encoding="utf-8")
+            (audit_root / "examples" / "synthetic_copro" / "raw" / "demo.txt").write_text("demo\n", encoding="utf-8")
+            (audit_root / "examples" / "synthetic_copro" / "logs" / "action_log.csv").write_text("x\n", encoding="utf-8")
+            (audit_root / "docs" / "github_sharing.md").write_text("# doc\n", encoding="utf-8")
+            (audit_root / ".github" / "pull_request_template.md").write_text("template\n", encoding="utf-8")
+
+            result = export_shareable(audit_root, config_path, export_root, clean=True)
+
+            self.assertEqual(result["exported_count"], 5)
+            self.assertTrue((export_root / "README.md").exists())
+            self.assertTrue((export_root / "server" / "src" / "coproscope" / "cli.py").exists())
+            self.assertTrue((export_root / "examples" / "synthetic_copro" / "raw" / "demo.txt").exists())
+            self.assertFalse((export_root / "examples" / "synthetic_copro" / "logs" / "action_log.csv").exists())
+            self.assertFalse((export_root / "server" / "src" / "coproscope.egg-info" / "PKG-INFO").exists())
+            self.assertTrue((export_root / "share-manifest.json").exists())
 
 
 if __name__ == "__main__":

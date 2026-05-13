@@ -9,7 +9,7 @@ from .core.common import RunContext, load_instance
 from .core.doctor import run_doctor
 from .core.due_diligence import summarize_due_diligence
 from .core.pipeline import run_pipeline
-from .core.share import audit_repo
+from .core.share import audit_repo, export_shareable
 from .modules import agscope, docuscope
 
 
@@ -69,6 +69,15 @@ def build_parser() -> argparse.ArgumentParser:
         default="src/coproscope/configs/github_sharing.default.yml",
         help="Path to the sharing policy file.",
     )
+    share_export = subparsers.add_parser("share-export", help="Copy the GitHub-safe subset into a clean export directory.")
+    share_export.add_argument("--repo-root", default="..", help="Repository root to audit and export.")
+    share_export.add_argument(
+        "--config",
+        default="src/coproscope/configs/github_sharing.default.yml",
+        help="Path to the sharing policy file.",
+    )
+    share_export.add_argument("--output-dir", required=True, help="Destination directory for the public export tree.")
+    share_export.add_argument("--clean", action="store_true", help="Delete the export directory before copying files.")
 
     return parser
 
@@ -86,6 +95,13 @@ def _dispatch(args: argparse.Namespace) -> int:
         result = audit_repo(repo_root, config_path)
         print(json.dumps(result, indent=2, ensure_ascii=True))
         return 0 if not result["blocked"] else 1
+    if args.command == "share-export":
+        repo_root = Path(args.repo_root).resolve()
+        config_path = Path(args.config).resolve()
+        output_dir = Path(args.output_dir).resolve()
+        result = export_shareable(repo_root, config_path, output_dir, clean=args.clean)
+        print(json.dumps(result, indent=2, ensure_ascii=True))
+        return 0
 
     instance = load_instance(args.instance, args.instance_root)
     run = RunContext(instance, command=" ".join(part for part in sys.argv[1:] if part))

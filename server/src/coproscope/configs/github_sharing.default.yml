@@ -9,6 +9,9 @@
     "examples/synthetic_copro/",
     ".github/"
   ],
+  "ignore_prefixes": [
+    ".git/"
+  ],
   "never_share_prefixes": [
     "coproscope-instances/",
     "outputs/",

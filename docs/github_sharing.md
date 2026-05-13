@@ -33,6 +33,11 @@ Make it easy to upstream generic improvements from private copropriete work into
 5. Check the share manifest and the public/private boundary.
 6. Open an issue or PR on the public repository.
 
+## Local helper commands
+
+- `coprocs share-audit --repo-root .. --config src/coproscope/configs/github_sharing.default.yml`
+- `coprocs share-export --repo-root .. --config src/coproscope/configs/github_sharing.default.yml --output-dir ../public-export --clean`
+
 ## Required review questions before sharing
 
 - Is the change generic?
