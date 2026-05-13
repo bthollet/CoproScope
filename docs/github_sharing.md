@@ -1,53 +1,53 @@
-# GitHub Sharing Policy
+# Politique de partage GitHub
 
-Public product repository: [bthollet/CoproScope](https://github.com/bthollet/CoproScope)
+Depot produit public: [bthollet/CoproScope](https://github.com/bthollet/CoproScope)
 
-## Goal
+## But
 
-Make it easy to upstream generic improvements from private copropriete work into the public CoproScope codebase without leaking data, secrets, or private documents.
+Faciliter la remontee des ameliorations generiques issues du travail sur des instances privees, sans fuite de donnees, de secrets, de chemins sensibles ou de documents reels.
 
-## What can be shared
+## Ce qui peut etre partage
 
-- product code under `server/`
-- public docs under `docs/`
-- schemas, configs, prompts, templates
-- tests
-- synthetic examples under `examples/synthetic_copro/`
-- bug fixes, CLI improvements, MCP improvements, generic heuristics
+- le code produit sous `server/` ;
+- la documentation publique sous `docs/` ;
+- les schemas, configurations, prompts et templates ;
+- les tests ;
+- les exemples synthetiques sous `examples/synthetic_copro/` ;
+- les correctifs, ameliorations CLI/MCP et heuristiques vraiment generiques.
 
-## What must never be shared
+## Ce qui ne doit jamais etre partage
 
-- `coproscope-instances/`
-- real copropriete files
-- OCR/text exports from real private files
-- raw manifests that expose private paths
-- `.env.local`, tokens, API keys, secret file paths
-- nominative, banking, litigation, or impayes data
+- `coproscope-instances/` ;
+- les fichiers reels de copropriete ;
+- les exports OCR/texte issus de fichiers prives ;
+- les manifestes qui exposent des chemins prives ;
+- `.env.local`, tokens, cles API et chemins de secrets ;
+- les donnees nominatives, bancaires, contentieuses ou d'impayes.
 
-## Upstream workflow
+## Workflow de remontee
 
-1. Implement or validate the improvement locally on a private instance.
-2. Strip any private-instance-specific path, wording, identifier, or data dependency.
-3. Move the reusable part into `coproscope/server/`, `coproscope/docs/`, or `coproscope/examples/synthetic_copro/`.
-4. Add or update tests.
-5. Check the share manifest and the public/private boundary.
-6. Open an issue or PR on the public repository.
+1. implementer ou valider l'amelioration sur une instance privee ;
+2. retirer toute dependance a une instance particuliere ;
+3. deplacer la partie reusable vers `coproscope/server/`, `coproscope/docs/` ou `coproscope/examples/synthetic_copro/` ;
+4. ajouter ou mettre a jour les tests ;
+5. verifier le manifeste de partage et la frontiere public/prive ;
+6. ouvrir une issue ou une PR sur le depot public.
 
-## Local helper commands
+## Commandes locales utiles
 
 - `coprocs share-audit --repo-root .. --config src/coproscope/configs/github_sharing.default.yml`
 - `coprocs share-export --repo-root .. --config src/coproscope/configs/github_sharing.default.yml --output-dir ../public-export --clean`
 
-## Required review questions before sharing
+## Questions de revue obligatoires avant publication
 
-- Is the change generic?
-- Does it contain any real path, file name, person, lot, bank, or litigation detail?
-- Can the behavior be demonstrated using the synthetic example only?
-- Are secrets and environment expectations documented via `.env.example` only?
+- Le changement est-il vraiment generique ?
+- Contient-il un chemin reel, un nom de fichier prive, une personne, un lot, une banque ou un detail contentieux ?
+- Peut-on demontrer le comportement avec l'exemple synthetique uniquement ?
+- Les attentes d'environnement sont-elles documentees via `.env.example` plutot que par des secrets ?
 
-## Recommended PR shape
+## Forme de PR recommande
 
-- one generic behavior change at a time
-- include validation steps
-- mention whether the change came from a private pilot instance
-- describe the redaction/generalization work that was done before sharing
+- un changement generique a la fois ;
+- etapes de validation explicites ;
+- mention claire du travail de generalisation/redaction effectue ;
+- rappel de la frontiere prive/public.

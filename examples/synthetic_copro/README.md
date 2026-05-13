@@ -1,7 +1,12 @@
-# Synthetic Copro Instance
+# Instance synthetique de copropriete
 
-Public, non-sensitive validation instance for CoproScope.
+Instance publique, non sensible, utilisee pour valider CoproScope sans dependre de donnees reelles de copropriete.
 
-Use this instance to validate CLI behavior, tests, and future GitHub contributions without relying on private copropriete data.
+Elle sert a:
 
-Runtime-generated `logs/`, `outputs/`, `registers/`, and `staging/` content should stay local and should not be committed to the public repository.
+- verifier le comportement de la CLI ;
+- faire tourner les tests ;
+- demonstrer les futures contributions GitHub ;
+- exercer la frontiere public/prive.
+
+Les contenus `logs/`, `outputs/`, `registers/` et `staging/` sont generes localement a l'execution et ne doivent pas etre commits dans le depot public.

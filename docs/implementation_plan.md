@@ -1,22 +1,22 @@
-# CoproScope v1 Implementation Plan
+# Plan d'implementation CoproScope v1
 
-This file anchors the implementation plan on disk so the product keeps a durable execution contract outside chat history.
+Ce document ancre le plan d'implementation sur disque afin que le contrat d'execution du produit ne depenne pas de l'historique du chat.
 
-## Summary
+## Resume
 
-- Build CoproScope as a separate product with a local-first backend in `server/`.
-- Keep real copropriete data outside the product repository as private instances.
-- Deliver a first usable slice around DocOps, SyndicOps bootstrap, and AGOps.
+- construire CoproScope comme un produit separe, avec un backend local-first dans `server/` ;
+- conserver les donnees reelles de copropriete hors du depot produit, via des instances privees ;
+- livrer un premier ensemble utile autour de DocOps, du socle SyndicOps et d'AGOps.
 
-## Architectural Decisions
+## Decisions d'architecture
 
-- Product code, default configs, schemas, prompts, and templates live in `coproscope/server/`.
-- Private instances live outside the product repository and provide `instance.yml` mappings.
-- A private pilot instance validates the real workflow; `examples/synthetic_copro/` is the public validation instance.
-- Generic improvements are prepared for the public repository `https://github.com/bthollet/CoproScope`.
-- No destructive migration is allowed. RAW remains read-only. Writes are limited to staging, outputs, and registers.
+- le code produit, les configurations par defaut, les schemas, les prompts et les templates vivent dans `coproscope/server/` ;
+- les instances privees vivent hors du depot produit et exposent leurs chemins via `instance.yml` ;
+- une instance pilote privee valide le workflow reel ; `examples/synthetic_copro/` sert d'instance publique de validation ;
+- les ameliorations genericisables sont preparees pour le depot public `https://github.com/bthollet/CoproScope` ;
+- aucune migration destructive n'est autorisee ; les bruts restent en lecture seule ; les ecritures sont limitees au staging, aux sorties et aux registres.
 
-## v1 Command Surface
+## Surface de commande v1
 
 - `coprocs doctor`
 - `coprocs inventory`
@@ -27,24 +27,26 @@ This file anchors the implementation plan on disk so the product keeps a durable
 - `coprocs ag analyze`
 - `coprocs due-diligence summarize`
 - `coprocs pipeline run`
+- `coprocs share-audit`
+- `coprocs share-export`
 
-## v1 Product Scope
+## Perimetre v1
 
-- Generic copropriete-simple core with extension points for future multi-entity support.
-- Instance-based path mapping and configuration.
-- Stable CLI plus a minimal MCP server for safe automation.
-- Structured schemas, default configs, prompts, templates, and write logs.
+- coeur generique pour copropriete simple, avec points d'extension pour plus tard ;
+- configuration des chemins par instance ;
+- CLI stable et serveur MCP minimal pour l'automatisation sure ;
+- schemas structures, configurations par defaut, prompts, templates et journaux d'ecriture.
 
-## Explicit Non-Goals For v1
+## Non-objectifs explicites pour v1
 
-- No web application.
-- No SaaS or multi-tenant server deployment.
-- No mandatory RAG stack.
-- No native recursive multi-entity engine yet.
+- pas d'application web ;
+- pas de SaaS ni de serveur multi-tenant ;
+- pas de pile RAG obligatoire ;
+- pas encore de moteur natif multi-entites recursif.
 
-## Guardrails
+## Garde-fous
 
-- No secrets in Git.
-- No real copropriete documents in the product repo.
-- No writes in RAW roots.
-- All writes to registers and outputs are logged.
+- pas de secret dans Git ;
+- pas de document reel de copropriete dans le depot produit ;
+- pas d'ecriture dans les racines brutes ;
+- toute ecriture dans les registres et sorties doit etre journalisee.
