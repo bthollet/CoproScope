@@ -2,14 +2,14 @@
 
 ## Vue d'ensemble
 
-| Bloc | But | Sorties attendues | Statut |
-|---|---|---|---|
-| DocOps | Reconstituer un registre documentaire fiable | inventaire, hash, doublons, texte, classement, completude | en cours, deja exploitable |
-| SyndicOps | Structurer la relation documentaire avec le syndic | registre des demandes, pieces attendues, relances, constats | en cours, socle present |
-| AGOps | Standardiser la preparation des AG | registre AG, rapport de preparation, points d'attention | en cours, premiere version presente |
-| ContractOps | Mieux suivre contrats et obligations | registre des contrats, alertes, clauses clefs | cible ulterieure |
-| WorksOps | Suivre devis, travaux, entreprises, diligences | chronologies, comparatifs, alertes, constats | cible ulterieure |
-| CommsOps | Organiser les communications diffusables | notes, syntheses, suivi de diffusion | cible ulterieure |
+| Bloc | But | Entrees typiques | Sorties attendues | Statut |
+|---|---|---|---|---|
+| DocOps | Reconstituer un registre documentaire fiable | bruts Drive, extranet, dossiers locaux | inventaire, hash, doublons, texte, classement, completude | en cours, deja exploitable |
+| SyndicOps | Structurer la relation documentaire avec le syndic | demandes, reponses, mails, pieces attendues | registre des demandes, relances, constats, diligences | en cours, socle present |
+| AGOps | Standardiser la preparation des AG | convocations, PV, annexes, resolutions | registre AG, rapport de preparation, points d'attention | en cours, premiere version presente |
+| ContractOps | Mieux suivre contrats et obligations | contrats, avenants, attestations | registre contrats, alertes, clauses clefs | cible ulterieure |
+| WorksOps | Suivre devis, travaux et entreprises | devis, factures, assurance, diligence publique | chronologies, comparatifs, alertes, constats | cible ulterieure |
+| CommsOps | Organiser les communications diffusables | notes, syntheses, courriels, comptes rendus | sorties partageables, suivis de diffusion | cible ulterieure |
 
 ## DocOps
 
@@ -26,6 +26,13 @@ Fonctions recherchees:
 - rapport de completude documentaire ;
 - index probatoire.
 
+Signes de reussite:
+
+- on sait ce qu'on a ;
+- on sait ce qui manque ;
+- on peut citer une piece par identifiant ;
+- on ne travaille plus a l'aveugle.
+
 ## SyndicOps
 
 SyndicOps transforme les demandes eparses en suivi clair.
@@ -37,6 +44,13 @@ Fonctions recherchees:
 - suivi des reponses et des relances ;
 - rattachement demande -> document -> constat -> diligence ;
 - indicateurs de couverture et de reponse.
+
+Signes de reussite:
+
+- les relances ne repartent pas de zero ;
+- les demandes ont une preuve d'origine ;
+- les reponses partielles sont visibles ;
+- les trous documentaires deviennent actionnables.
 
 ## AGOps
 
@@ -50,6 +64,12 @@ Fonctions recherchees:
 - rappel des majorites detectees ;
 - rapport d'aide a la preparation AG.
 
+Signes de reussite:
+
+- les pieces utiles a l'AG sont visibles en amont ;
+- les annexes manquantes remontent avant la reunion ;
+- le conseil syndical dispose d'une base de lecture partageable.
+
 ## Regle de priorisation
 
 L'ordre de construction reste volontairement strict:
@@ -60,3 +80,11 @@ L'ordre de construction reste volontairement strict:
 4. puis seulement ContractOps, WorksOps et CommsOps
 
 Cette discipline evite d'empiler des couches "intelligentes" sur un socle documentaire encore flou.
+
+## Ce qui reste hors perimetre court terme
+
+- application web ;
+- orchestration cloud lourde ;
+- moteur multi-entites complet ;
+- experience "grand public" ;
+- promesses d'automatisation sans trace ni verification.

@@ -2,26 +2,34 @@
 
 ## Resume franc
 
-CoproScope n'est plus une simple intention. Le produit public dispose deja d'un noyau logiciel, d'une CLI, d'une instance synthetique et d'un outillage de publication vers GitHub sans fuite de donnees privees.
+CoproScope n'est plus une simple intention. Le depot public contient deja un noyau logiciel, une CLI exploitable, une instance synthetique, un outillage de publication propre vers GitHub, et une premiere couche documentaire suffisamment solide pour soutenir une vraie relecture.
 
-## Ce qui est deja en place
+L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le rendre plus net, plus contributif et plus robuste.
 
-- depot public initialise et branche sur GitHub ;
+## Ce qui est deja livre
+
+- depot public initialise et relie a GitHub ;
 - paquet `server/` avec CLI `coprocs` ;
-- pipeline v1: inventaire, extraction texte, classement, completude, KPI, AG, synthese due diligence ;
+- pipeline v1: inventaire, extraction texte, classement, completude, KPI, AG, synthese de diligence publique ;
 - serveur MCP minimal ;
 - schemas, configs, prompts et templates versionnes ;
 - instance synthetique publique pour les tests ;
-- politique et outillage de partage (`share-audit`, `share-export`) ;
-- premiere couche explicite de francophonie fonctionnelle.
+- garde-fous de partage (`share-audit`, `share-export`) ;
+- documentation publique structuree en francais.
 
-## Ce qui reste volontairement en chantier
+## Ce qui est en cours
 
-- enrichir les heuristiques de DocOps sur corpus reels ;
-- muscler SyndicOps pour les relances et la traçabilite fine ;
+- enrichir DocOps sur de vrais corpus ;
+- epaissir SyndicOps sur les relances et la tracabilite fine ;
 - affiner AGOps sur les annexes, majorites et suites post-AG ;
-- preparer les futurs modules ContractOps, WorksOps et CommsOps ;
-- poursuivre la francisation la ou elle apporte de la clarte sans casser les interfaces techniques.
+- pousser plus loin la francisation la ou elle apporte une vraie clarte sans casser les interfaces techniques.
+
+## Ce qui vient ensuite
+
+- ContractOps ;
+- WorksOps ;
+- CommsOps ;
+- consolidation des conventions de contribution publique.
 
 ## Niveau de maturite par bloc
 
@@ -32,14 +40,28 @@ CoproScope n'est plus une simple intention. Le produit public dispose deja d'un 
 | DocOps | bon socle | deja utile, heuristiques a enrichir |
 | SyndicOps | embryon utile | base en place, workflows a epaissir |
 | AGOps | premiere version | signaux utiles, couverture encore partielle |
-| Documentation produit | en progression | vision plus claire, a maintenir vivante |
-| Francophonie | en cours d'inscription | preference devenue explicite |
+| Documentation produit | bon socle | suffisamment claire pour une vraie relecture |
+| Francophonie | en cours d'inscription | preference explicite, chantier encore ouvert |
+
+## Ce qu'un relecteur doit retenir
+
+- le produit a deja une forme coherente ;
+- la separation entre depot public et instances privees est un principe central, pas un detail ;
+- le projet vise d'abord l'utilite operationnelle, ensuite l'extension fonctionnelle ;
+- les choix de structure ne sont pas encore tous figes, mais la direction est deja nette.
+
+## Ce qu'une bonne relecture peut apporter maintenant
+
+- dire si la promesse produit se comprend vite ;
+- verifier si les priorites fonctionnelles semblent justes ;
+- pointer les zones encore trop implicites ;
+- aider a rendre le depot plus accueillant pour les futures contributions.
 
 ## Prochaine phase logique
 
 La suite naturelle est de consolider les couches deja presentes plutot que d'ouvrir trop tot de nouveaux blocs:
 
-1. enrichir les regles et les sorties DocOps ;
+1. enrichir les regles et sorties DocOps ;
 2. densifier les chaines de preuve SyndicOps ;
 3. fiabiliser AGOps sur de vrais cas de preparation ;
-4. continuer a extraire vers le public ce qui est vraiment reutilisable.
+4. continuer a extraire vers le public uniquement ce qui est proprement genericisable.

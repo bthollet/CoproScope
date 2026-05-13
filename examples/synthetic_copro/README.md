@@ -1,12 +1,24 @@
 # Instance synthetique de copropriete
 
-Instance publique, non sensible, utilisee pour valider CoproScope sans dependre de donnees reelles de copropriete.
+Cette instance publique, non sensible, sert de terrain de validation pour CoproScope.
 
-Elle sert a:
+## A quoi elle sert
 
 - verifier le comportement de la CLI ;
-- faire tourner les tests ;
-- demonstrer les futures contributions GitHub ;
-- exercer la frontiere public/prive.
+- faire tourner les tests publics ;
+- demonstrer le pipeline sans utiliser de donnees reelles ;
+- exercer la frontiere entre depot public et travail prive.
 
-Les contenus `logs/`, `outputs/`, `registers/` et `staging/` sont generes localement a l'execution et ne doivent pas etre commits dans le depot public.
+## Ce qu'elle contient
+
+- des documents de demonstration ;
+- un `instance.yml` public ;
+- des matrices et artefacts synthetiques utiles a la validation.
+
+## Ce qu'elle ne doit pas contenir
+
+- aucune donnee reelle de copropriete ;
+- aucun secret ;
+- aucun journal ou export local genere a l'execution dans Git.
+
+Les contenus `logs/`, `outputs/`, `registers/` et `staging/` sont generes localement et doivent rester hors commit.

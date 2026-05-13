@@ -1,8 +1,16 @@
 # CoproScope
 
-> Cockpit documentaire et operationnel local-first pour conseils syndicaux exigeants.
+> Reprendre la main sur la matiere documentaire d'une copropriete, sans sortir les pieces d'un espace prive.
 
-CoproScope aide un conseil syndical a reprendre la main sur ses pieces, ses demandes au syndic, sa preparation d'assemblee generale et ses constats, sans envoyer son fonds documentaire prive dans un SaaS opaque.
+CoproScope est un cockpit documentaire et operationnel local-first pour conseils syndicaux. L'idee est simple et utile: transformer un fonds documentaire disperse en base de travail lisible, probatoire et actionnable.
+
+Autrement dit, CoproScope aide a passer de:
+
+- "on a plein de pieces, mais personne ne sait vraiment quoi en faire"
+
+a:
+
+- "on sait ce qu'on a, ce qu'il manque, ce qu'il faut relancer, et ce qu'on peut diffuser proprement".
 
 ```mermaid
 flowchart LR
@@ -12,55 +20,137 @@ flowchart LR
     C --> E["Constats et diligences"]
     D --> E
     E --> F["Sorties diffusables<br/>registres, rapports, matrices"]
-    E --> G["Ameliorations generiques<br/>publiables sur GitHub"]
+    E --> G["Ameliorations genericisees<br/>publiees sur GitHub"]
 ```
 
-## Le concept
+## Pourquoi ce projet existe
 
-CoproScope n'est pas un simple dossier bien range. C'est une chaine de travail qui transforme un ensemble de documents heterogenes en matiere exploitable pour piloter une copropriete:
+Dans beaucoup de coproprietes, l'information n'est pas vraiment absente. Elle est surtout:
 
-- on inventorie sans toucher aux originaux ;
-- on extrait ce qui est lisible et on signale ce qui demande un OCR ;
-- on classe, on relie, on historise ;
-- on produit des registres, des rapports et des diligences actionnables ;
-- on ne remonte vers GitHub que ce qui est vraiment genericisable.
+- eparpillee ;
+- mal reliee ;
+- difficile a verifier ;
+- rarement transformee en action propre.
 
-## La philosophie
+CoproScope ne traite pas cela comme un simple probleme de rangement. Le projet reconstruit une **chaine documentaire**:
 
-- **Local-first** : les documents reels restent au plus pres de leur espace prive.
-- **Probatoire avant decoratif** : on privilegie les traces, les preuves, les liens documentaires et les journaux d'action.
-- **Francophone par defaut** : la langue de travail, les surfaces fonctionnelles et la documentation visent le francais chaque fois que c'est pertinent.
-- **Generalisation sans fuite** : on se sert d'instances privees pour apprendre, puis on extrait seulement le reusable.
-- **Incremental** : on part d'un socle utile tout de suite, puis on elargit.
+1. identifier les pieces ;
+2. ne pas toucher aux originaux ;
+3. relier documents, demandes, AG et constats ;
+4. produire des sorties utiles ;
+5. ne publier vers GitHub que ce qui a ete vraiment generalise.
 
-## Fonctions cibles
+## Ce que le projet apporte deja
 
-- **DocOps** : inventaire, hash, doublons, extraction texte, classement, completude documentaire.
-- **SyndicOps** : registre des demandes, pieces attendues, reponses, relances, chaines de preuve.
-- **AGOps** : preparation d'AG, resolutions, annexes, majorites, points d'attention, suivi post-AG.
-- **A venir** : ContractOps, WorksOps, CommsOps, une fois le socle documentaire et les journaux stabilises.
+Le depot public contient deja:
 
-## Etat du developpement
+- un paquet `server/` avec la CLI `coprocs` ;
+- un pipeline v1 exploitable ;
+- une instance synthetique publique pour tester et demonstrer ;
+- une frontiere outillee entre **public** et **prive** via `share-audit` et `share-export` ;
+- une couche documentaire en francais, pensee pour la lecture et la relecture.
 
-- le depot public `CoproScope` est initialise ;
-- la CLI `coprocs` couvre deja le premier pipeline utile ;
-- une instance synthetique publique permet de valider les comportements sans expose de donnees privees ;
-- la frontiere public/prive est outillee avec `share-audit` et `share-export` ;
-- la francophonie devient une regle explicite de parametrage, de documentation et de surface utilisateur.
+## Ce que CoproScope cherche a construire
 
-## Documentation
+Pas seulement un outil qui classe des fichiers.
+
+Plutot un systeme qui aide une equipe a:
+
+- savoir ce qu'elle a vraiment ;
+- voir ce qui manque ;
+- mieux preparer ses demandes au syndic ;
+- mieux preparer ses AG ;
+- produire des sorties propres, relisibles et partageables ;
+- faire remonter progressivement dans le depot public ce qui devient vraiment reusable.
+
+## Les blocs fonctionnels cibles
+
+- **DocOps** : inventaire, hash, doublons, extraction texte, classement, completude.
+- **SyndicOps** : registre des demandes, pieces attendues, relances, chaines de preuve.
+- **AGOps** : preparation d'assemblee generale, resolutions, annexes, majorites, points d'attention.
+- **Ensuite** : ContractOps, WorksOps et CommsOps, une fois le socle documentaire stabilise.
+
+## Ce que le projet privilegie
+
+- **local-first** : les documents reels restent dans leur espace prive ;
+- **probatoire** : les traces et journaux priment sur les effets de manche ;
+- **francophone par defaut** : quand c'est utile, les surfaces produit et la documentation parlent francais ;
+- **incremental** : on livre des couches utiles, pas un systeme total abstrait ;
+- **generalisation sans fuite** : une instance reelle sert a apprendre, le depot public sert a partager proprement.
+
+## Positionnement IA
+
+Pour l'instant, CoproScope s'appuie de maniere pragmatique sur des agents IA grand public et peu chers quand cela aide a accelerer l'analyse et la production.
+
+Mais l'architecture accumule volontairement un maximum de briques locales:
+
+- inventaire ;
+- hash et registres ;
+- extraction texte native ;
+- regles documentaires ;
+- zones de travail separees ;
+- exports publics propres.
+
+Le cap est clair: rendre possible, a terme, un deploiement d'IA mieux maitrise, jusqu'a des usages hors ligne lorsque le contexte, le niveau de sensibilite ou les contraintes d'hebergement l'exigeront.
+
+## Demarrage rapide
+
+Depuis le dossier [`server/`](./server):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+```
+
+Puis, a la racine du depot:
+
+```powershell
+.\server\.venv\Scripts\python.exe -m coproscope.cli doctor --instance-root .\examples\synthetic_copro
+.\server\.venv\Scripts\python.exe -m coproscope.cli pipeline run --instance-root .\examples\synthetic_copro
+.\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
+```
+
+Pour fabriquer un export public propre:
+
+```powershell
+.\server\.venv\Scripts\python.exe -m coproscope.cli share-export --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml --output-dir ..\public-export --clean
+```
+
+## Parcours de lecture conseille
+
+### Si tu as 5 minutes
+
+- [Concept et philosophie](./docs/concept_et_philosophie.md)
+- [Etat du developpement](./docs/etat_du_developpement.md)
+
+Tu ressorts avec une idee claire de la promesse produit et de sa maturite.
+
+### Si tu as 15 minutes
+
+- [Fonctions cibles](./docs/fonctions_cibles.md)
+- [Architecture et flux](./docs/architecture_et_flux.md)
+
+Tu peux deja faire une relecture utile du repo.
+
+### Si tu veux contribuer ou challenger les choix
 
 - [Plan d'implementation](./docs/implementation_plan.md)
-- [Concept et philosophie](./docs/concept_et_philosophie.md)
-- [Fonctions cibles](./docs/fonctions_cibles.md)
-- [Etat du developpement](./docs/etat_du_developpement.md)
 - [Politique de partage GitHub](./docs/github_sharing.md)
 - [Index de la documentation](./docs/README.md)
+
+## Comment aider maintenant
+
+Une bonne relecture sur CoproScope peut nous aider sur quatre choses:
+
+- dire si la promesse produit se comprend vite ;
+- verifier si les priorites fonctionnelles sont bien ordonnees ;
+- pointer les zones encore trop implicites ;
+- aider a rendre le depot plus accueillant pour les futures contributions.
 
 ## Structure du depot
 
 - [`server/`](./server) : code produit, CLI, MCP minimal, schemas, configs, prompts, templates et tests.
-- [`docs/`](./docs) : vision, contrats, mode d'emploi de contribution, etat d'avancement.
+- [`docs/`](./docs) : vision produit, architecture, fonctions cibles, etat d'avancement, regles de partage.
 - [`examples/synthetic_copro/`](./examples/synthetic_copro) : instance publique non sensible pour les tests et la demonstration.
 
-Les donnees reelles de copropriete, les secrets, les exports OCR prives et les sorties generees localement n'ont pas leur place dans ce depot public.
+Les donnees reelles de copropriete, les secrets, les exports OCR prives, les journaux locaux et les sorties generees n'ont pas leur place dans ce depot public.
