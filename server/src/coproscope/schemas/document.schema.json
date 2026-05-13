@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoproScope Document",
+  "type": "object",
+  "required": ["doc_id", "instance_id", "original_path", "file_name", "status_ocr", "classification_status"],
+  "properties": {
+    "doc_id": { "type": "string" },
+    "instance_id": { "type": "string" },
+    "entity_id": { "type": "string" },
+    "scope": { "type": "string" },
+    "sha256": { "type": "string" },
+    "original_path": { "type": "string" },
+    "file_name": { "type": "string" },
+    "document_type": { "type": "string" },
+    "lot": { "type": "string" },
+    "status_ocr": { "type": "string" },
+    "classification_status": { "type": "string" },
+    "sensitivity": { "type": "string" }
+  }
+}

@@ -1,0 +1,14 @@
+desktop.ini
+Thumbs.db
+.DS_Store
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+server/.venv/
+server/src/*.egg-info/
+examples/synthetic_copro/.env.local
+examples/synthetic_copro/logs/
+examples/synthetic_copro/outputs/
+examples/synthetic_copro/registers/
+examples/synthetic_copro/staging/

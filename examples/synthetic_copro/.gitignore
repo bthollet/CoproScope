@@ -1,0 +1,6 @@
+.env.local
+logs/
+outputs/
+registers/
+staging/
+desktop.ini

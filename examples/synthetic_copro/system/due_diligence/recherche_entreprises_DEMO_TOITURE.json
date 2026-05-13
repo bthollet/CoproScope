@@ -1,0 +1,25 @@
+{
+  "query": "DEMO TOITURE",
+  "data": {
+    "total_results": 1,
+    "results": [
+      {
+        "nom_complet": "DEMO TOITURE",
+        "siren": "123456789",
+        "etat_administratif": "A",
+        "activite_principale": "43.91B",
+        "siege": {
+          "siret": "12345678900011",
+          "adresse": "10 rue de la Toiture, 13000 Marseille"
+        },
+        "dirigeants": [
+          {
+            "prenoms": "Jeanne",
+            "nom": "Martin",
+            "qualite": "gerante"
+          }
+        ]
+      }
+    ]
+  }
+}
