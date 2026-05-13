@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "doc_id_prefix": "DOC",
+  "request_id_prefix": "DEM",
+  "ag_id_prefix": "AG",
+  "finding_id_prefix": "FDG",
+  "max_safe_filename_length": 150
+}

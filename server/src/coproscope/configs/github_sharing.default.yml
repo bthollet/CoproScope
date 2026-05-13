@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "public_repo_url": "https://github.com/bthollet/CoproScope",
+  "share_allowed_paths": [
+    "README.md",
+    ".gitignore",
+    "server/",
+    "docs/",
+    "examples/synthetic_copro/",
+    ".github/"
+  ],
+  "ignore_prefixes": [
+    ".git/"
+  ],
+  "never_share_prefixes": [
+    "coproscope-instances/",
+    "outputs/",
+    "staging/",
+    "logs/"
+  ],
+  "never_share_patterns": [
+    ".env.local",
+    ".secrets",
+    ".venv/",
+    ".egg-info",
+    "__pycache__",
+    ".pytest_cache/",
+    ".mypy_cache/",
+    ".ruff_cache/",
+    "logs/",
+    "outputs/",
+    "registers/",
+    "staging/",
+    "desktop.ini",
+    "thumbs.db",
+    "OPENAI_API_KEY",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "PISTE_CLIENT_SECRET"
+  ],
+  "share_checklist": [
+    "remove private paths",
+    "remove real copropriete data",
+    "replace with synthetic example",
+    "update tests",
+    "document validation"
+  ]
+}

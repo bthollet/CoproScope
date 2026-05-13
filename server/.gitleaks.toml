@@ -1,0 +1,11 @@
+title = "CoproScope gitleaks baseline"
+
+[allowlist]
+description = "Example placeholders only"
+regexes = [
+  '''OPENAI_API_KEY=$''',
+  '''PISTE_CLIENT_ID=$''',
+  '''PISTE_CLIENT_SECRET=$''',
+  '''GEMINI_API_KEY=$''',
+  '''GOOGLE_API_KEY=$'''
+]

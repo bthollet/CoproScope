@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "instance_id": "synthetic-copro",
+  "display_name": "Residence Les Platanes",
+  "scope": "copro_simple",
+  "entity_id": "main",
+  "roots": {
+    "workspace": ".",
+    "raw": "./raw",
+    "system": "./system",
+    "outputs": "./outputs",
+    "staging": "./staging",
+    "logs": "./logs",
+    "restricted": []
+  },
+  "registers": {
+    "documents": "./registers/registre_documents.csv",
+    "duplicates": "./registers/registre_doublons.csv",
+    "manifest": "./registers/manifest_sha256.csv",
+    "requests": "./registers/registre_demandes.csv",
+    "ag": "./registers/registre_ag.csv",
+    "findings": "./registers/constats_diligences.csv",
+    "kpi": "./registers/kpi.csv"
+  },
+  "matrices": {
+    "proofs": "./system/matrices/matrice_preuves_attendues.csv",
+    "extranet": "./system/matrices/matrice_conformite_extranet.csv",
+    "due_diligence_dir": "./system/due_diligence"
+  },
+  "artifacts": {
+    "text_dir": "./staging/text",
+    "classified_dir": "./staging/classified",
+    "reports_dir": "./outputs/reports"
+  },
+  "env": {
+    "files": ["./.env.local"],
+    "required": [],
+    "optional": []
+  },
+  "settings": {
+    "never_modify_raw": true,
+    "write_outputs_only": true,
+    "public_repo_url": "https://github.com/bthollet/CoproScope"
+  }
+}

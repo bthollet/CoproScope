@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "default_sensitivity": "internal",
+  "rules": [
+    {
+      "path_keywords": ["_RESTREINT", "impayes", "contentieux", "banque", "avocats", "procedures"],
+      "sensitivity": "restricted",
+      "scope": "restricted"
+    },
+    {
+      "path_keywords": ["communication", "diffusable"],
+      "sensitivity": "diffusable",
+      "scope": "coproprietaires"
+    }
+  ]
+}

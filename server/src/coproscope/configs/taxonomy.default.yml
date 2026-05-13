@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "lot": "Syndic",
+      "document_type": "Contrat_Syndic",
+      "priority": 100,
+      "filename_patterns": ["contrat.*syndic", "mandat.*syndic"],
+      "keywords": ["contrat de syndic", "mandat de syndic", "honoraires du syndic"]
+    },
+    {
+      "lot": "AG",
+      "document_type": "Convocation_AG",
+      "priority": 90,
+      "filename_patterns": ["convocation", "ordre du jour"],
+      "keywords": ["convocation", "ordre du jour", "assemblee generale"]
+    },
+    {
+      "lot": "AG",
+      "document_type": "PV_AG",
+      "priority": 85,
+      "filename_patterns": ["pv.*ag", "proces.*verbal"],
+      "keywords": ["proces-verbal", "assemblee generale", "resolution"]
+    },
+    {
+      "lot": "Comptes",
+      "document_type": "Annexe_Comptable",
+      "priority": 80,
+      "filename_patterns": ["annexe", "budget", "etat_financier"],
+      "keywords": ["annexe", "etat financier", "budget previsionnel", "charges et produits"]
+    },
+    {
+      "lot": "Factures_Fournisseurs",
+      "document_type": "Facture",
+      "priority": 75,
+      "filename_patterns": ["facture"],
+      "keywords": ["facture", "net a payer", "total ttc"]
+    },
+    {
+      "lot": "Factures_Fournisseurs",
+      "document_type": "Devis",
+      "priority": 70,
+      "filename_patterns": ["devis"],
+      "keywords": ["devis", "bon pour accord"]
+    },
+    {
+      "lot": "Contrats",
+      "document_type": "Contrat_Assurance",
+      "priority": 65,
+      "filename_patterns": ["assurance"],
+      "keywords": ["multirisques", "contrat d'assurance", "police d'assurance"]
+    },
+    {
+      "lot": "ITE_Travaux",
+      "document_type": "Dossier_ITE_Travaux",
+      "priority": 60,
+      "filename_patterns": ["ite", "ravalement", "toiture", "ventilation"],
+      "keywords": ["ite", "isolation thermique", "ravalement", "maitrise d'oeuvre"]
+    },
+    {
+      "lot": "Communication",
+      "document_type": "Communication",
+      "priority": 40,
+      "filename_patterns": ["mail", "courriel", "relance", "note"],
+      "keywords": ["courriel", "relance", "demande", "reponse"]
+    }
+  ]
+}

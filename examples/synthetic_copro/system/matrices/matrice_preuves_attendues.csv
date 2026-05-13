@@ -1,0 +1,6 @@
+proof_id,lot,expected_label,document_type,criticality
+PRV-001,AG,PV signes et annexes,PV_AG,P1
+PRV-002,AG,Convocations AG et annexes,Convocation_AG,P1
+PRV-003,Syndic,Contrat syndic en cours,Contrat_Syndic,P0
+PRV-004,Comptes,Annexes comptables completes,Annexe_Comptable,P1
+PRV-005,Factures_Fournisseurs,Devis ou factures travaux,Dossier_ITE_Travaux,P1
