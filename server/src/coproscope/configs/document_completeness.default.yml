@@ -1,47 +1,47 @@
 {
   "version": 1,
-  "proofs": [
+  "preuves": [
     {
-      "proof_id": "PRV-001",
+      "preuve_id": "PRV-001",
       "lot": "AG",
-      "expected_label": "PV signes et annexes",
-      "document_type": "PV_AG",
-      "criticality": "P1"
+      "libelle_attendu": "PV signes et annexes",
+      "type_document": "PV_AG",
+      "criticite": "P1"
     },
     {
-      "proof_id": "PRV-002",
+      "preuve_id": "PRV-002",
       "lot": "AG",
-      "expected_label": "Convocations AG et annexes",
-      "document_type": "Convocation_AG",
-      "criticality": "P1"
+      "libelle_attendu": "Convocations AG et annexes",
+      "type_document": "Convocation_AG",
+      "criticite": "P1"
     },
     {
-      "proof_id": "PRV-003",
+      "preuve_id": "PRV-003",
       "lot": "Syndic",
-      "expected_label": "Contrat syndic en cours",
-      "document_type": "Contrat_Syndic",
-      "criticality": "P0"
+      "libelle_attendu": "Contrat syndic en cours",
+      "type_document": "Contrat_Syndic",
+      "criticite": "P0"
     },
     {
-      "proof_id": "PRV-004",
+      "preuve_id": "PRV-004",
       "lot": "Comptes",
-      "expected_label": "Annexes comptables completes",
-      "document_type": "Annexe_Comptable",
-      "criticality": "P1"
+      "libelle_attendu": "Annexes comptables completes",
+      "type_document": "Annexe_Comptable",
+      "criticite": "P1"
     },
     {
-      "proof_id": "PRV-005",
+      "preuve_id": "PRV-005",
       "lot": "Factures_Fournisseurs",
-      "expected_label": "Factures et preuves de service fait",
-      "document_type": "Facture",
-      "criticality": "P1"
+      "libelle_attendu": "Factures et preuves de service fait",
+      "type_document": "Facture",
+      "criticite": "P1"
     },
     {
-      "proof_id": "PRV-006",
+      "preuve_id": "PRV-006",
       "lot": "ITE_Travaux",
-      "expected_label": "Chronologie et devis travaux",
-      "document_type": "Dossier_ITE_Travaux",
-      "criticality": "P0"
+      "libelle_attendu": "Chronologie et devis travaux",
+      "type_document": "Dossier_ITE_Travaux",
+      "criticite": "P0"
     }
   ]
 }

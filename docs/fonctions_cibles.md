@@ -6,6 +6,7 @@
 |---|---|---|---|---|
 | DocOps | Reconstituer un registre documentaire fiable | bruts Drive, extranet, dossiers locaux | inventaire, hash, doublons, texte, classement, completude | en cours, deja exploitable |
 | SyndicOps | Structurer la relation documentaire avec le syndic | demandes, reponses, mails, pieces attendues | registre des demandes, relances, constats, diligences | en cours, socle present |
+| ComptaScope | Reconstituer et controler les flux comptables | factures, annexes, etats de depenses, contrats | factures candidates, ecritures candidates, controles, exports DuckDB/Grist/Evidence | amorce v1 |
 | AGOps | Standardiser la preparation des AG | convocations, PV, annexes, resolutions | registre AG, rapport de preparation, points d'attention | en cours, premiere version presente |
 | Audit360 | Transformer les signaux metier en controles relisibles | pieces, demandes, AG, sujets travaux ou contrats | constats normalises, repertoire de controles, syntheses, diligences | en cours d'extraction publique |
 | ContractOps | Mieux suivre contrats et obligations | contrats, avenants, attestations | registre contrats, alertes, clauses clefs | cible ulterieure |
@@ -53,6 +54,25 @@ Signes de reussite:
 - les reponses partielles sont visibles ;
 - les trous documentaires deviennent actionnables.
 
+## ComptaScope
+
+ComptaScope transforme les pieces comptables en objets auditables sans pretendre tenir la comptabilite officielle.
+
+Fonctions recherchees:
+
+- detecter les factures et avoirs ;
+- extraire fournisseur, numero, date, HT, TVA, TTC ;
+- proposer un compte et une famille de charge ;
+- produire une ecriture candidate ;
+- signaler les anomalies P0/P1 ;
+- exporter vers CSV, DuckDB, Grist et Evidence.
+
+Signes de reussite:
+
+- chaque ligne comptable candidate renvoie a une piece ;
+- les hypotheses restent marquees comme telles ;
+- les ecarts et manques deviennent visibles avant discussion avec le syndic.
+
 ## AGOps
 
 AGOps vise a rendre la preparation d'AG lisible et reproductible.
@@ -96,8 +116,9 @@ L'ordre de construction reste volontairement strict:
 
 1. DocOps
 2. SyndicOps
-3. AGOps
-4. puis seulement ContractOps, WorksOps et CommsOps
+3. ComptaScope
+4. AGOps
+5. puis seulement ContractOps, WorksOps et CommsOps
 
 Cette discipline evite d'empiler des couches "intelligentes" sur un socle documentaire encore flou.
 

@@ -4,10 +4,10 @@ from ..modules import agscope, coprolink, docuscope
 from .due_diligence import summarize_due_diligence
 
 
-def run_pipeline(instance, run, copy_classified: bool = True) -> None:
+def run_pipeline(instance, run, copy_classified: bool = True, docai_mode: str = "off") -> None:
     coprolink.bootstrap_instance_state(instance, run)
     docuscope.inventory(instance, run)
-    docuscope.extract_text(instance, run)
+    docuscope.extract_text(instance, run, docai_mode=docai_mode)
     docuscope.classify(instance, run, copy_files=copy_classified)
     docuscope.missing_docs(instance, run)
     docuscope.compute_kpis(instance, run)

@@ -1,0 +1,11 @@
+# Registre d'avancement CoproScope
+
+Ce registre public suit les actions genericisables du plan CoproScope. Il ne doit contenir aucune donnee reelle de copropriete, aucun secret, aucun chemin prive exploitable et aucun contenu issu d'une instance privee.
+
+| Date | Etape | Statut | Action | Resultat verifie | Prochaine action | Vigilance |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-05-19 | Etat initial | TERMINE | Branche et statut Git controles avant execution. | Branche `codex/bootstrap-coproscope-server`; arbre de travail deja modifie avec code DocAI/extracteurs factures et docs/configs. | Installer l'outillage open source retenu. | Ne publier que le code genericisable et les exemples synthetiques. |
+| 2026-05-19 | Outillage | EN_COURS | Versions disponibles verifiees via winget. | Python 3.14.5, GitHub CLI 2.92.0, Git 2.54.0, uv 0.11.14, DuckDB CLI 1.5.2, Node LTS 24.15.0, QPDF, Poppler, Tesseract, ImageMagick. | Installer ou mettre a jour les outils. | Documenter version, source, objet et reports. |
+| 2026-05-19 | Outillage | TERMINE | Outils systeme installes et verifies; Evidence et Grist Desktop installes; venv enrichi. | DuckDB/pandas/pdfplumber/Factur-X/RapidOCR/grist_api disponibles; Docling reporte; grist-ctl bloque par Bitdefender et non lance. | Optimiser CoproScope et documenter la strategie. | Ne pas contourner l'antivirus; utiliser Grist API/export local. |
+| 2026-05-19 | Produit | EN_COURS | Ajout de ComptaScope, GristOps, EvidenceOps, workers et commandes CLI. | Modules publics ajoutes; instance synthetique enrichie d'une facture 2025. | Ajouter tests et valider la chaine synthetique. | Ne pas utiliser de donnees reelles avant PR GitHub. |
+| 2026-05-19 | Validation | TERMINE | Tests et controles de publication lances. | `unittest discover`: 20 tests OK; `doctor`: OK; `pipeline run`: OK; `share-audit`: exit 0, aucune violation privee. | Publier la mise a jour documentee sur GitHub. | Les dossiers generes, logs, registres, caches et desktop.ini restent bloques/ignores. |

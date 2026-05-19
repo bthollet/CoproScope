@@ -12,3 +12,7 @@ examples/synthetic_copro/logs/
 examples/synthetic_copro/outputs/
 examples/synthetic_copro/registers/
 examples/synthetic_copro/staging/
+examples/synthetic_copro/models/
+**/models/
+**/.cache/huggingface/
+**/huggingface/

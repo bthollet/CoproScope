@@ -66,7 +66,7 @@ Le coeur logiciel.
 
 - `src/coproscope/cli.py` : point d'entree CLI ;
 - `src/coproscope/core/` : logique transverse ;
-- `src/coproscope/modules/` : modules DocOps, SyndicOps et AGOps ;
+- `src/coproscope/modules/` : modules DocOps, SyndicOps, ComptaScope, AGOps, GristOps et EvidenceOps ;
 - `src/coproscope/configs/` : parametres par defaut ;
 - `src/coproscope/schemas/` : contrats de donnees ;
 - `tests/` : validations automatiques.
@@ -93,12 +93,13 @@ L'instance publique de demonstration:
 
 1. une instance declare ses racines via `instance.yml` ;
 2. `coprocs` lit les documents bruts sans les modifier ;
-3. DocOps, SyndicOps et AGOps structurent la matiere utile ;
-4. Audit360 peut transformer ces signaux en constats, controles, preuves attendues et diligences ;
-5. le systeme ecrit seulement dans les espaces de preparation, registres, sorties et journaux ;
-6. `share-audit` verifie ce qui est publiable ;
-7. `share-export` construit un arbre public propre ;
-8. seules les briques genericisees peuvent remonter sur GitHub.
+3. DocOps, SyndicOps, ComptaScope et AGOps structurent la matiere utile ;
+4. GristOps et EvidenceOps produisent des vues locales ;
+5. Audit360 peut transformer ces signaux en constats, controles, preuves attendues et diligences ;
+6. le systeme ecrit seulement dans les espaces de preparation, registres, sorties et journaux ;
+7. `share-audit` verifie ce qui est publiable ;
+8. `share-export` construit un arbre public propre ;
+9. seules les briques genericisees peuvent remonter sur GitHub.
 
 ## Comment Audit360 se branche
 

@@ -17,11 +17,13 @@ flowchart LR
     A["Documents bruts<br/>Drive, extranet, dossiers locaux"] --> B["DocOps<br/>inventaire, hash, extraction, classement"]
     B --> C["SyndicOps<br/>demandes, relances, preuves"]
     B --> D["AGOps<br/>convocations, resolutions, annexes"]
-    B --> E["Audit360<br/>constats, controles, diligences"]
-    C --> E
-    D --> E
-    E --> F["Sorties diffusables<br/>registres, rapports, matrices"]
-    E --> G["Ameliorations genericisees<br/>publiees sur GitHub"]
+    B --> E["ComptaScope<br/>factures, ecritures candidates, controles"]
+    B --> H["Audit360<br/>constats, controles, diligences"]
+    C --> H
+    D --> H
+    E --> H
+    H --> F["Sorties diffusables<br/>registres, rapports, matrices"]
+    H --> G["Ameliorations genericisees<br/>publiees sur GitHub"]
 ```
 
 ## Pourquoi ce projet existe
@@ -50,6 +52,7 @@ Le depot public contient deja:
 - une instance synthetique publique pour tester et demonstrer ;
 - une premiere extraction publique de la couche **Audit360** sous forme de doc, schemas et gabarits ;
 - une frontiere outillee entre **public** et **prive** via `share-audit` et `share-export` ;
+- une premiere brique **ComptaScope** pour reconstruire des factures/ecritures candidates sur donnees synthetiques ;
 - une couche documentaire en francais, pensee pour la lecture et la relecture.
 
 ## Ce que CoproScope cherche a construire
@@ -69,6 +72,7 @@ Plutot un systeme qui aide une equipe a:
 
 - **DocOps** : inventaire, hash, doublons, extraction texte, classement, completude.
 - **SyndicOps** : registre des demandes, pieces attendues, relances, chaines de preuve.
+- **ComptaScope** : factures, fournisseurs, comptes candidats, controles, exports DuckDB/Grist/Evidence.
 - **AGOps** : preparation d'assemblee generale, resolutions, annexes, majorites, points d'attention.
 - **Audit360** : couche transverse de constats, points de controle, preuves attendues, actions et diligences.
 - **Ensuite** : ContractOps, WorksOps et CommsOps, une fois le socle documentaire stabilise.
@@ -110,6 +114,10 @@ Puis, a la racine du depot:
 ```powershell
 .\server\.venv\Scripts\python.exe -m coproscope.cli doctor --instance-root .\examples\synthetic_copro
 .\server\.venv\Scripts\python.exe -m coproscope.cli pipeline run --instance-root .\examples\synthetic_copro
+.\server\.venv\Scripts\python.exe -m coproscope.cli tools status
+.\server\.venv\Scripts\python.exe -m coproscope.cli accounting reconstruct --instance-root .\examples\synthetic_copro --year 2025
+.\server\.venv\Scripts\python.exe -m coproscope.cli grist sync --instance-root .\examples\synthetic_copro --dataset demo --year 2025
+.\server\.venv\Scripts\python.exe -m coproscope.cli evidence build --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```
 
@@ -132,6 +140,8 @@ Tu ressorts avec une idee claire de la promesse produit et de sa maturite.
 
 - [Fonctions cibles](./docs/fonctions_cibles.md)
 - [Architecture et flux](./docs/architecture_et_flux.md)
+- [ComptaScope](./docs/comptascope.md)
+- [Strategie gestion copro](./docs/strategie_coproscope_gestion_copro.md)
 - [Audit360](./docs/audit360.md)
 
 Tu peux deja faire une relecture utile du repo.

@@ -6,7 +6,7 @@ Ce document ancre le plan d'implementation sur disque afin que le contrat d'exec
 
 - construire CoproScope comme un produit separe, avec un backend local-first dans `server/` ;
 - conserver les donnees reelles de copropriete hors du depot produit, via des instances privees ;
-- livrer un premier ensemble utile autour de DocOps, du socle SyndicOps et d'AGOps.
+- livrer un premier ensemble utile autour de DocOps, du socle SyndicOps, de ComptaScope et d'AGOps.
 
 ## Decisions d'architecture
 
@@ -27,6 +27,13 @@ Ce document ancre le plan d'implementation sur disque afin que le contrat d'exec
 - `coprocs ag analyze`
 - `coprocs due-diligence summarize`
 - `coprocs pipeline run`
+- `coprocs tools status`
+- `coprocs accounting reconstruct`
+- `coprocs accounting controls`
+- `coprocs grist sync`
+- `coprocs evidence build`
+- `coprocs workers run`
+- `coprocs strategy export`
 - `coprocs share-audit`
 - `coprocs share-export`
 
@@ -39,7 +46,7 @@ Ce document ancre le plan d'implementation sur disque afin que le contrat d'exec
 
 ## Non-objectifs explicites pour v1
 
-- pas d'application web ;
+- pas encore d'application web ;
 - pas de SaaS ni de serveur multi-tenant ;
 - pas de pile RAG obligatoire ;
 - pas encore de moteur natif multi-entites recursif.

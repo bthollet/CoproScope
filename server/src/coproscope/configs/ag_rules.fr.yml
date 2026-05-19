@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "resolution_patterns": ["resolution", "question", "ordre du jour", "decision"],
-  "majority_terms": ["article 24", "article 25", "article 26", "unanimite", "double majorite"],
-  "annex_keywords": ["annexe", "devis", "contrat", "budget", "comparatif", "assurance"]
+  "motifs_resolution": ["resolution", "question", "ordre du jour", "decision"],
+  "termes_majorite": ["article 24", "article 25", "article 26", "unanimite", "double majorite"],
+  "mots_cles_annexes": ["annexe", "devis", "contrat", "budget", "comparatif", "assurance"]
 }

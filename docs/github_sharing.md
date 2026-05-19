@@ -37,6 +37,15 @@ Faciliter la remontee des ameliorations generiques issues du travail sur des ins
 
 - `coprocs share-audit --repo-root .. --config src/coproscope/configs/github_sharing.default.yml`
 - `coprocs share-export --repo-root .. --config src/coproscope/configs/github_sharing.default.yml --output-dir ../public-export --clean`
+- `coprocs tools status`
+
+Pour ComptaScope, ne publier que l'instance synthetique:
+
+- `coprocs accounting reconstruct --instance-root examples/synthetic_copro --year 2025`
+- `coprocs grist sync --instance-root examples/synthetic_copro --dataset demo --year 2025`
+- `coprocs evidence build --instance-root examples/synthetic_copro --dataset demo --year 2025`
+
+Les exports equivalents produits sur instance reelle restent hors GitHub.
 
 ## Questions de revue obligatoires avant publication
 

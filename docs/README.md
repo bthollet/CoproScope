@@ -45,6 +45,9 @@ Son role n'est pas seulement de decrire le projet. Elle doit aussi aider quelqu'
 | [Concept et philosophie](./concept_et_philosophie.md) | comprendre le probleme vise et la promesse produit |
 | [Fonctions cibles](./fonctions_cibles.md) | voir les blocs fonctionnels recherches et leur priorisation |
 | [Audit360](./audit360.md) | comprendre la couche transverse de constats, controles et diligences |
+| [ComptaScope](./comptascope.md) | comprendre la reconstruction comptable candidate |
+| [Outillage open source](./outillage_open_source.md) | connaitre les outils installes, retenus ou reportes |
+| [Strategie gestion copro](./strategie_coproscope_gestion_copro.md) | lire le passage du pur audit vers le cockpit de gestion |
 | [Etat du developpement](./etat_du_developpement.md) | distinguer ce qui est livre, en cours et plus tard |
 | [Architecture et flux](./architecture_et_flux.md) | lire rapidement la separation code / instance / sorties |
 | [Plan d'implementation](./implementation_plan.md) | garder le contrat de construction du produit |
