@@ -117,7 +117,56 @@ SUPPLIER_DUE_DILIGENCE_FIELDS = [
     "next_action",
 ]
 
+COMPTASCOPE_REVIEW_FIELDS = [
+    "review_id",
+    "exercice",
+    "priorite",
+    "fournisseur",
+    "numero_facture",
+    "doc_id",
+    "date_facture",
+    "ttc",
+    "niveau_preuve",
+    "anomalies_facture",
+    "statut_rapprochement",
+    "libelle_statut",
+    "confiance",
+    "ligne_depense_candidate",
+    "reference_depense",
+    "libelle_depense",
+    "montant_depense",
+    "candidate_count",
+    "ecriture_candidate",
+    "compte_candidate",
+    "motif",
+    "prochaine_action",
+    "question_syndic",
+    "bloc_copiable",
+]
+
+COMPTASCOPE_REVIEW_GROUP_FIELDS = [
+    "group_id",
+    "exercice",
+    "priorite",
+    "fournisseur",
+    "anomalie_facture",
+    "statut_rapprochement",
+    "libelle_statut",
+    "factures",
+    "total_ttc",
+    "questions_syndic",
+    "action_type",
+    "exemples_factures",
+]
+
 MATCH_STATUS_META: dict[str, dict[str, str]] = {
+    "SANS_ETAT_DEPENSES": {
+        "label": "Etat des depenses non exploite",
+        "priority": "P2",
+        "meaning": "Les factures sont reconstituees, mais aucune ligne d'etat des depenses n'est disponible pour rapprocher.",
+        "local_treatment": "Production du guide facture sans comparaison comptable.",
+        "human_check": "Fournir l'etat des depenses ou le grand livre avant validation.",
+    },
     "MATCH_REFERENCE": {
         "label": "Reference facture retrouvee",
         "priority": "OK",
@@ -1552,6 +1601,287 @@ def _controls_for_expense_match(row: dict[str, str], year: int) -> list[dict[str
     ]
 
 
+def _control_for_unmatched_review_row(row: dict[str, str], year: int) -> dict[str, str] | None:
+    priority = row.get("priorite", "")
+    if priority == "OK":
+        return None
+    status = row.get("statut_rapprochement", "")
+    control = "ETAT_DEPENSES_A_FOURNIR" if status == "SANS_ETAT_DEPENSES" else "RAPPROCHEMENT_COMPTES_A_COMPLETER"
+    return {
+        "control_id": f"CTRL-{year}-{row.get('doc_id', '')}-{control}",
+        "exercice": str(year),
+        "severity": priority if priority in {"P0", "P1", "P2"} else "P2",
+        "control": control,
+        "status": "A_TRAITER",
+        "doc_id": row.get("doc_id", ""),
+        "evidence": row.get("motif", ""),
+        "action": row.get("prochaine_action", ""),
+    }
+
+
+def _invoice_anomalies_by_doc(invoice_anomalies: list[dict[str, str]]) -> dict[str, str]:
+    grouped: dict[str, list[str]] = {}
+    for row in invoice_anomalies:
+        doc_id = row.get("doc_id", "")
+        if not doc_id:
+            continue
+        severity = row.get("severity", "")
+        anomaly = row.get("anomaly", "")
+        if not anomaly:
+            continue
+        grouped.setdefault(doc_id, []).append(f"{severity}:{anomaly}" if severity else anomaly)
+    return {doc_id: " | ".join(dict.fromkeys(values)) for doc_id, values in grouped.items()}
+
+
+def _default_review_match(invoice: dict[str, str]) -> dict[str, str]:
+    status = "SANS_ETAT_DEPENSES"
+    meta = _status_meta(status)
+    return {
+        "doc_id": invoice.get("doc_id", ""),
+        "numero_facture": invoice.get("numero_facture", ""),
+        "fournisseur": invoice.get("fournisseur", ""),
+        "ttc": invoice.get("ttc", ""),
+        "match_status": status,
+        "match_confidence": "A_CONTROLER",
+        "match_priority": meta.get("priority", "P2"),
+        "status_label": meta.get("label", status),
+        "statement_line_id": "",
+        "statement_reference": "",
+        "statement_label": "",
+        "statement_amount": "",
+        "candidate_count": "0",
+        "match_method": "missing_expense_statement",
+        "match_reason": meta.get("meaning", ""),
+        "next_action": meta.get("human_check", ""),
+    }
+
+
+def _syndic_question_for_review(row: dict[str, str], year: int) -> str:
+    if row.get("priorite") == "OK":
+        return ""
+    invoice_ref = row.get("numero_facture") or row.get("doc_id") or "sans reference"
+    supplier = row.get("fournisseur") or "fournisseur a identifier"
+    amount = row.get("ttc") or "montant non renseigne"
+    status = row.get("statut_rapprochement", "")
+    statement = row.get("libelle_depense") or row.get("ligne_depense_candidate")
+    if status == "SANS_ETAT_DEPENSES":
+        return (
+            f"Pouvez-vous transmettre l'etat des depenses ou la ligne de grand livre {year} "
+            f"permettant de rapprocher la facture {invoice_ref} de {supplier} ({amount} EUR) ?"
+        )
+    if row.get("priorite") == "P1":
+        return (
+            f"Pouvez-vous nous indiquer la ligne de grand livre, d'etat des depenses ou la piece "
+            f"qui permet de rapprocher la facture {invoice_ref} de {supplier} ({amount} EUR) ? "
+            f"Constat local: {row.get('motif', '')}"
+        )
+    if statement:
+        return (
+            f"Pouvez-vous confirmer que la facture {invoice_ref} de {supplier} ({amount} EUR) "
+            f"correspond bien a la ligne candidate `{statement}` ? "
+            f"Constat local: {row.get('motif', '')}"
+        )
+    return (
+        f"Pouvez-vous confirmer le traitement comptable attendu pour la facture {invoice_ref} "
+        f"de {supplier} ({amount} EUR) ? Constat local: {row.get('motif', '')}"
+    )
+
+
+def _copyable_question_block(row: dict[str, str], year: int) -> str:
+    question = row.get("question_syndic", "")
+    if not question:
+        return ""
+    invoice_ref = row.get("numero_facture") or row.get("doc_id") or "sans reference"
+    supplier = row.get("fournisseur") or "fournisseur a identifier"
+    return "\n".join(
+        [
+            f"Objet: Controle comptes {year} - {supplier} - {invoice_ref}",
+            "",
+            "Bonjour,",
+            "",
+            question,
+            "",
+            f"Priorite CoproScope: {row.get('priorite', '')}. Action attendue: {row.get('prochaine_action', '')}",
+            "",
+            "Cordialement,",
+        ]
+    )
+
+
+def _build_comptascope_review_rows(
+    *,
+    year: int,
+    invoices: list[dict[str, str]],
+    entries: list[dict[str, str]],
+    invoice_anomalies: list[dict[str, str]],
+    matches: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    entries_by_doc = {row.get("piece_doc_id", ""): row for row in entries}
+    matches_by_doc = {row.get("doc_id", ""): row for row in matches}
+    anomalies_by_doc = _invoice_anomalies_by_doc(invoice_anomalies)
+    rows: list[dict[str, str]] = []
+    for index, invoice in enumerate(invoices, start=1):
+        doc_id = invoice.get("doc_id", "")
+        match = matches_by_doc.get(doc_id) or _default_review_match(invoice)
+        status = match.get("match_status", "")
+        meta = _status_meta(status)
+        priority = match.get("match_priority") or meta.get("priority", "P2")
+        entry = entries_by_doc.get(doc_id, {})
+        row = {
+            "review_id": f"REV-{year}-{index:04d}",
+            "exercice": str(year),
+            "priorite": priority,
+            "fournisseur": invoice.get("fournisseur", ""),
+            "numero_facture": invoice.get("numero_facture", ""),
+            "doc_id": doc_id,
+            "date_facture": invoice.get("date_facture", ""),
+            "ttc": invoice.get("ttc", ""),
+            "niveau_preuve": invoice.get("evidence_level", ""),
+            "anomalies_facture": anomalies_by_doc.get(doc_id, invoice.get("anomalies", "")),
+            "statut_rapprochement": status,
+            "libelle_statut": match.get("status_label", meta.get("label", status)),
+            "confiance": match.get("match_confidence", ""),
+            "ligne_depense_candidate": match.get("statement_line_id", ""),
+            "reference_depense": match.get("statement_reference", ""),
+            "libelle_depense": match.get("statement_label", ""),
+            "montant_depense": match.get("statement_amount", ""),
+            "candidate_count": match.get("candidate_count", ""),
+            "ecriture_candidate": entry.get("entry_id", ""),
+            "compte_candidate": entry.get("compte_debit", ""),
+            "motif": match.get("match_reason", ""),
+            "prochaine_action": match.get("next_action", ""),
+            "question_syndic": "",
+            "bloc_copiable": "",
+        }
+        row["question_syndic"] = _syndic_question_for_review(row, year)
+        row["bloc_copiable"] = _copyable_question_block(row, year)
+        rows.append(row)
+    rows.sort(
+        key=lambda row: (
+            _priority_rank(row.get("priorite", "")),
+            row.get("fournisseur", ""),
+            -(_decimal(row.get("ttc")) or Decimal("0")),
+            row.get("numero_facture", ""),
+        )
+    )
+    return rows
+
+
+def _review_anomaly_groups(row: dict[str, str]) -> list[str]:
+    raw = row.get("anomalies_facture", "")
+    values: list[str] = []
+    for item in raw.split("|"):
+        item = item.strip()
+        if not item:
+            continue
+        values.append(item.split(":", 1)[-1].strip() or item)
+    return list(dict.fromkeys(values)) or ["SANS_ANOMALIE_FACTURE"]
+
+
+def _build_comptascope_review_group_rows(
+    *,
+    year: int,
+    review_rows: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    groups: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for row in review_rows:
+        priority = row.get("priorite", "") or "P2"
+        supplier = row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER"
+        status = row.get("statut_rapprochement", "") or "STATUT_NON_RENSEIGNE"
+        for anomaly in _review_anomaly_groups(row):
+            key = (priority, supplier, anomaly, status)
+            group = groups.setdefault(
+                key,
+                {
+                    "total": Decimal("0"),
+                    "factures": 0,
+                    "questions": 0,
+                    "actions": Counter(),
+                    "examples": [],
+                    "status_label": row.get("libelle_statut", ""),
+                },
+            )
+            group["factures"] += 1
+            group["total"] += _decimal(row.get("ttc")) or Decimal("0")
+            if row.get("question_syndic"):
+                group["questions"] += 1
+            action = row.get("prochaine_action", "")
+            if action:
+                group["actions"][action] += 1
+            example = row.get("numero_facture") or row.get("doc_id", "")
+            if example and example not in group["examples"]:
+                group["examples"].append(example)
+            if row.get("libelle_statut"):
+                group["status_label"] = row.get("libelle_statut", "")
+
+    rows: list[dict[str, str]] = []
+    sorted_groups = sorted(
+        groups.items(),
+        key=lambda item: (
+            _priority_rank(item[0][0]),
+            item[0][1],
+            -(item[1]["total"]),
+            item[0][2],
+            item[0][3],
+        ),
+    )
+    for index, ((priority, supplier, anomaly, status), group) in enumerate(sorted_groups, start=1):
+        actions = group["actions"].most_common(1)
+        rows.append(
+            {
+                "group_id": f"GRP-{year}-{index:04d}",
+                "exercice": str(year),
+                "priorite": priority,
+                "fournisseur": supplier,
+                "anomalie_facture": anomaly,
+                "statut_rapprochement": status,
+                "libelle_statut": group["status_label"],
+                "factures": str(group["factures"]),
+                "total_ttc": _money(group["total"]),
+                "questions_syndic": str(group["questions"]),
+                "action_type": actions[0][0] if actions else "",
+                "exemples_factures": "; ".join(group["examples"][:3]),
+            }
+        )
+    return rows
+
+
+def _write_syndic_questions(path: Path, *, year: int, review_rows: list[dict[str, str]]) -> None:
+    open_rows = [row for row in review_rows if row.get("question_syndic")]
+    lines = [
+        f"# Questions syndic ComptaScope {year}",
+        "",
+        "Questions generiques issues du controle guide ComptaScope. Elles doivent etre relues avant envoi et ne valent pas validation comptable.",
+        "",
+    ]
+    if not open_rows:
+        lines.extend(["Aucune question syndic prioritaire: les factures analysees sont rapprochees localement.", ""])
+        write_text(path, "\n".join(lines))
+        return
+
+    current_priority = ""
+    for row in open_rows:
+        priority = row.get("priorite", "")
+        if priority != current_priority:
+            current_priority = priority
+            lines.extend([f"## Priorite {priority}", ""])
+        lines.extend(
+            [
+                f"### {row.get('fournisseur') or 'Fournisseur a identifier'} - {row.get('numero_facture') or row.get('doc_id')}",
+                "",
+                f"- Montant TTC: {row.get('ttc') or '-'} EUR",
+                f"- Statut local: {row.get('statut_rapprochement')} - {row.get('libelle_statut')}",
+                f"- Motif: {row.get('motif') or '-'}",
+                "",
+                "```text",
+                row.get("bloc_copiable", ""),
+                "```",
+                "",
+            ]
+        )
+    write_text(path, "\n".join(lines))
+
+
 def _md_cell(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").replace("|", "/").strip()
 
@@ -1568,15 +1898,37 @@ def _write_accounting_report(
     matches: list[dict[str, str]],
     alias_suggestions: list[dict[str, str]] | None = None,
     supplier_due_diligence: list[dict[str, str]] | None = None,
+    review_rows: list[dict[str, str]] | None = None,
+    review_group_rows: list[dict[str, str]] | None = None,
 ) -> None:
     alias_suggestions = alias_suggestions or []
     supplier_due_diligence = supplier_due_diligence or []
+    review_rows = review_rows or []
+    review_group_rows = review_group_rows or []
+    matched_doc_ids = {row.get("doc_id", "") for row in matches}
+    report_match_rows = list(matches)
+    for row in review_rows:
+        if row.get("doc_id", "") in matched_doc_ids:
+            continue
+        report_match_rows.append(
+            {
+                "doc_id": row.get("doc_id", ""),
+                "numero_facture": row.get("numero_facture", ""),
+                "fournisseur": row.get("fournisseur", ""),
+                "ttc": row.get("ttc", ""),
+                "match_status": row.get("statut_rapprochement", ""),
+                "match_priority": row.get("priorite", ""),
+                "status_label": row.get("libelle_statut", ""),
+                "match_reason": row.get("motif", ""),
+                "next_action": row.get("prochaine_action", ""),
+            }
+        )
     total_ttc = sum((_decimal(row.get("ttc")) or Decimal("0")) for row in invoices)
-    match_statuses = Counter(row.get("match_status", "") or "SANS_ETAT_DEPENSES" for row in matches)
-    priority_counts = Counter(row.get("match_priority", _status_priority(row.get("match_status", ""))) for row in matches)
-    supplier_open_counts = Counter(row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER" for row in matches if row.get("match_priority") != "OK")
+    match_statuses = Counter(row.get("match_status", "") or "SANS_ETAT_DEPENSES" for row in report_match_rows)
+    priority_counts = Counter(row.get("match_priority", _status_priority(row.get("match_status", ""))) for row in report_match_rows)
+    supplier_open_counts = Counter(row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER" for row in report_match_rows if row.get("match_priority") != "OK")
     supplier_open_totals: Counter[str] = Counter()
-    for row in matches:
+    for row in report_match_rows:
         if row.get("match_priority") != "OK":
             supplier_open_totals[row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER"] += _decimal(row.get("ttc")) or Decimal("0")
     control_severities = Counter(row.get("severity", "") for row in controls)
@@ -1586,7 +1938,7 @@ def _write_accounting_report(
     alias_statuses = Counter(row.get("suggestion_status", "") for row in alias_suggestions)
     supplier_due_statuses = Counter(row.get("coverage_status", "") for row in supplier_due_diligence)
     priority_items = [
-        row for row in matches if row.get("match_status", "") and row.get("match_priority") != "OK"
+        row for row in report_match_rows if row.get("match_status", "") and row.get("match_priority") != "OK"
     ]
     priority_items.sort(
         key=lambda row: (
@@ -1597,6 +1949,7 @@ def _write_accounting_report(
     matched_count = priority_counts.get("OK", 0)
     p1_count = priority_counts.get("P1", 0)
     p2_count = priority_counts.get("P2", 0)
+    review_question_count = sum(1 for row in review_rows if row.get("question_syndic"))
 
     lines = [
         f"# Rapport ComptaScope {year}",
@@ -1620,6 +1973,9 @@ def _write_accounting_report(
         f"- Diligences fournisseur rattachees: {len(supplier_due_diligence)}",
         f"- Alias fournisseurs proposes: {len(alias_suggestions)}",
         f"- Alias auto-appliques: {alias_statuses.get('AUTO_APPLICABLE', 0)}",
+        f"- Lignes du controle comptes guide: {len(review_rows)}",
+        f"- Regroupements priorite/fournisseur/anomalie: {len(review_group_rows)}",
+        f"- Questions syndic pretes a relire: {review_question_count}",
         "",
         "## Lecture rapide",
         "",
@@ -1781,17 +2137,101 @@ def _write_accounting_report(
         supplier_rows = sorted(
             supplier_open_counts.items(),
             key=lambda item: (
-                0 if any(row.get("fournisseur") == item[0] and row.get("match_priority") == "P1" for row in matches) else 1,
+                0 if any(row.get("fournisseur") == item[0] and row.get("match_priority") == "P1" for row in report_match_rows) else 1,
                 -(supplier_open_totals.get(item[0], Decimal("0"))),
                 item[0],
             ),
         )
         for supplier, count in supplier_rows[:15]:
             total = supplier_open_totals.get(supplier, Decimal("0"))
-            priority = "P1 d'abord" if any(row.get("fournisseur") == supplier and row.get("match_priority") == "P1" for row in matches) else "P2 a confirmer"
+            priority = "P1 d'abord" if any(row.get("fournisseur") == supplier and row.get("match_priority") == "P1" for row in report_match_rows) else "P2 a confirmer"
             lines.append(f"| {_md_cell(supplier)} | {count} | {_money(total)} | {priority} |")
     else:
         lines.append("| - | 0 | 0.00 | Aucun point ouvert |")
+    lines.extend(
+        [
+            "",
+            "## Regroupement priorite / fournisseur / anomalie",
+            "",
+            "| Priorite | Fournisseur | Anomalie facture | Statut | Factures | Total TTC | Questions | Action type | Exemples |",
+            "| --- | --- | --- | --- | ---: | ---: | ---: | --- | --- |",
+        ]
+    )
+    if review_group_rows:
+        for row in review_group_rows[:20]:
+            lines.append(
+                " | ".join(
+                    [
+                        "",
+                        _md_cell(row.get("priorite", "")),
+                        _md_cell(row.get("fournisseur", "")),
+                        _md_cell(row.get("anomalie_facture", "")),
+                        _md_cell(row.get("libelle_statut") or row.get("statut_rapprochement", "")),
+                        _md_cell(row.get("factures", "")),
+                        _md_cell(row.get("total_ttc", "")),
+                        _md_cell(row.get("questions_syndic", "")),
+                        _md_cell(row.get("action_type", "")),
+                        _md_cell(row.get("exemples_factures", "")),
+                        "",
+                    ]
+                )
+            )
+    else:
+        lines.append("| - | - | - | - | 0 | 0.00 | 0 | - | - |")
+    lines.extend(
+        [
+            "",
+            "## Controle comptes guide",
+            "",
+            "| Priorite | Fournisseur | Facture | TTC | Statut | Ligne candidate | Action suivante |",
+            "| --- | --- | --- | ---: | --- | --- | --- |",
+        ]
+    )
+    if review_rows:
+        for row in review_rows[:20]:
+            lines.append(
+                " | ".join(
+                    [
+                        "",
+                        _md_cell(row.get("priorite", "")),
+                        _md_cell(row.get("fournisseur", "")),
+                        _md_cell(row.get("numero_facture") or row.get("doc_id", "")),
+                        _md_cell(row.get("ttc", "")),
+                        _md_cell(row.get("libelle_statut") or row.get("statut_rapprochement", "")),
+                        _md_cell(row.get("libelle_depense") or row.get("ligne_depense_candidate", "")),
+                        _md_cell(row.get("prochaine_action", "")),
+                        "",
+                    ]
+                )
+            )
+    else:
+        lines.append("| - | - | - | 0.00 | Aucune facture guidee | - | - |")
+    question_rows = [row for row in review_rows if row.get("question_syndic")]
+    lines.extend(
+        [
+            "",
+            "## Questions syndic copiables",
+            "",
+            "| Priorite | Fournisseur | Facture | Question |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    if question_rows:
+        for row in question_rows[:10]:
+            lines.append(
+                " | ".join(
+                    [
+                        "",
+                        _md_cell(row.get("priorite", "")),
+                        _md_cell(row.get("fournisseur", "")),
+                        _md_cell(row.get("numero_facture") or row.get("doc_id", "")),
+                        _md_cell(row.get("question_syndic", "")),
+                        "",
+                    ]
+                )
+            )
+    else:
+        lines.append("| - | - | - | Aucune question prioritaire a relire |")
     lines.extend([
         "",
         "## Alias fournisseurs deduits",
@@ -1929,6 +2369,21 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         {row.get("doc_id", "") for row in invoices},
     )
     supplier_due_diligence = build_supplier_due_diligence_controls(instance, supplier_due_invoices, year)
+    review_rows = _build_comptascope_review_rows(
+        year=year,
+        invoices=invoices,
+        entries=entries,
+        invoice_anomalies=invoice_anomalies,
+        matches=expense_matches,
+    )
+    review_group_rows = _build_comptascope_review_group_rows(year=year, review_rows=review_rows)
+    expense_match_doc_ids = {row.get("doc_id", "") for row in expense_matches}
+    for row in review_rows:
+        if row.get("doc_id", "") in expense_match_doc_ids:
+            continue
+        control = _control_for_unmatched_review_row(row, year)
+        if control is not None:
+            controls.append(control)
 
     if not invoices:
         controls.append(
@@ -1951,6 +2406,9 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     non_matches_path = accounting_dir / f"non_rapproches_prioritaires_{year}.csv"
     alias_suggestions_path = accounting_dir / f"supplier_alias_suggestions_{year}.csv"
     supplier_due_diligence_path = accounting_dir / f"supplier_due_diligence_controls_{year}.csv"
+    review_path = accounting_dir / f"controle_comptes_guide_{year}.csv"
+    review_groups_path = accounting_dir / f"regroupement_controle_comptes_{year}.csv"
+    syndic_questions_path = accounting_dir / f"questions_syndic_comptascope_{year}.md"
     report_path = accounting_dir / f"rapport_comptascope_{year}.md"
     write_csv(entries_path, ACCOUNTING_ENTRY_FIELDS, entries)
     write_csv(controls_path, ACCOUNTING_CONTROL_FIELDS, controls)
@@ -1958,20 +2416,23 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     write_csv(expense_matches_path, INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
     write_csv(alias_suggestions_path, SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
     write_csv(supplier_due_diligence_path, SUPPLIER_DUE_DILIGENCE_FIELDS, supplier_due_diligence)
+    write_csv(review_path, COMPTASCOPE_REVIEW_FIELDS, review_rows)
+    write_csv(review_groups_path, COMPTASCOPE_REVIEW_GROUP_FIELDS, review_group_rows)
+    _write_syndic_questions(syndic_questions_path, year=year, review_rows=review_rows)
     non_matches = [
         {
             "doc_id": row.get("doc_id", ""),
             "fournisseur": row.get("fournisseur", ""),
             "numero_facture": row.get("numero_facture", ""),
             "ttc": row.get("ttc", ""),
-            "match_status": row.get("match_status", ""),
-            "match_priority": row.get("match_priority", ""),
-            "status_label": row.get("status_label", ""),
-            "match_reason": row.get("match_reason", ""),
-            "next_action": row.get("next_action", ""),
+            "match_status": row.get("statut_rapprochement", ""),
+            "match_priority": row.get("priorite", ""),
+            "status_label": row.get("libelle_statut", ""),
+            "match_reason": row.get("motif", ""),
+            "next_action": row.get("prochaine_action", ""),
         }
-        for row in expense_matches
-        if row.get("match_priority") != "OK"
+        for row in review_rows
+        if row.get("priorite") != "OK"
     ]
     non_matches.sort(key=lambda row: (_decimal(row.get("ttc")) or Decimal("0")), reverse=True)
     write_csv(non_matches_path, NON_MATCH_PRIORITY_FIELDS, non_matches)
@@ -1986,6 +2447,8 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         matches=expense_matches,
         alias_suggestions=alias_suggestions,
         supplier_due_diligence=supplier_due_diligence,
+        review_rows=review_rows,
+        review_group_rows=review_group_rows,
     )
 
     duckdb_path = accounting_dir / f"coproscope_accounting_{year}.duckdb"
@@ -2002,6 +2465,8 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         SUPPLIER_DUE_DILIGENCE_FIELDS,
         supplier_due_diligence,
     )
+    duckdb_tables["controle_comptes_guide"] = (COMPTASCOPE_REVIEW_FIELDS, review_rows)
+    duckdb_tables["regroupement_controle_comptes"] = (COMPTASCOPE_REVIEW_GROUP_FIELDS, review_group_rows)
     duckdb_written = _write_duckdb(duckdb_path, duckdb_tables)
 
     summary = {
@@ -2019,6 +2484,9 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         "supplier_due_diligence_status_counts": dict(
             Counter(row.get("coverage_status", "") for row in supplier_due_diligence)
         ),
+        "review_item_count": len(review_rows),
+        "review_group_count": len(review_group_rows),
+        "syndic_question_count": sum(1 for row in review_rows if row.get("question_syndic")),
         "invoice_evidence": str(invoice_path),
         "invoice_anomalies": str(invoice_anomalies_path),
         "ledger_reconstruction": str(entries_path),
@@ -2028,6 +2496,9 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         "non_rapproches_prioritaires": str(non_matches_path),
         "supplier_alias_suggestions": str(alias_suggestions_path),
         "supplier_due_diligence_controls": str(supplier_due_diligence_path),
+        "controle_comptes_guide": str(review_path),
+        "regroupement_controle_comptes": str(review_groups_path),
+        "questions_syndic_comptascope": str(syndic_questions_path),
         "report": str(report_path),
         "duckdb": str(duckdb_path) if duckdb_written else "",
         "generated_at": now_iso(),
@@ -2065,6 +2536,9 @@ def required_accounting_report_paths(instance: InstanceConfig, year: int) -> lis
         f"non_rapproches_prioritaires_{year}.csv",
         f"supplier_alias_suggestions_{year}.csv",
         f"supplier_due_diligence_controls_{year}.csv",
+        f"controle_comptes_guide_{year}.csv",
+        f"regroupement_controle_comptes_{year}.csv",
+        f"questions_syndic_comptascope_{year}.md",
         f"rapport_comptascope_{year}.md",
         f"summary_{year}.json",
     ]
@@ -2098,6 +2572,8 @@ def copy_accounting_tables_for_dashboard(instance: InstanceConfig, year: int, ta
         "non_rapproches_prioritaires",
         "supplier_alias_suggestions",
         "supplier_due_diligence_controls",
+        "controle_comptes_guide",
+        "regroupement_controle_comptes",
     ]:
         source = accounting_dir / f"{name}_{year}.csv"
         if not source.exists() and name == "ledger_reconstruction":
@@ -2111,4 +2587,9 @@ def copy_accounting_tables_for_dashboard(instance: InstanceConfig, year: int, ta
         destination = target_dir / report.name
         destination.write_text(report.read_text(encoding="utf-8"), encoding="utf-8")
         copied["rapport_comptascope"] = str(destination)
+    questions = accounting_dir / f"questions_syndic_comptascope_{year}.md"
+    if questions.exists():
+        destination = target_dir / questions.name
+        destination.write_text(questions.read_text(encoding="utf-8"), encoding="utf-8")
+        copied["questions_syndic_comptascope"] = str(destination)
     return copied
