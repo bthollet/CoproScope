@@ -29,6 +29,8 @@ Cette documentation est ecrite pour etre lisible par trois publics :
 | [Audit360](./audit360.md) | Couche transverse faits -> preuves -> risques -> actions. |
 | [FactureOps](./factureops.md) | Extraction et anomalies facture. |
 | [ComptaScope](./comptascope.md) | Rapprochements comptables candidats et rapport explicatif. |
+| [DocOps actionnable](./docops_actionnable.md) | Completude documentaire sous forme pieces presentes, manquantes, obsoletes et a demander. |
+| [IncidentOps](./incidentops.md) | Registre incidents, statuts, prochaines actions et preuves de cloture. |
 | [Strategie gestion copro](./strategie_coproscope_gestion_copro.md) | Passage de l'audit documentaire au cockpit de travail CS. |
 | [Plan d'implementation](./implementation_plan.md) | Contrat technique v1 et non-objectifs. |
 | [Orchestration multi-agents](./orchestration_agents.md) | Lancer plusieurs agents en parallele avec worktrees, ownership et garde-fous. |
@@ -47,7 +49,7 @@ Les images dans [`assets/etude-utilisateurs/`](./assets/etude-utilisateurs/) ill
 - controle des comptes guide ;
 - memoire de copropriete et passation CS.
 
-Elles servent a discuter le produit cible. Elles ne sont pas encore une interface livree.
+Elles servent a discuter le produit cible. L'interface locale v0 existe, mais ces images restent des concepts cibles.
 
 ## Ligne editoriale
 

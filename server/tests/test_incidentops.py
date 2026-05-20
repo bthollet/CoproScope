@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from coproscope.cli import _dispatch, build_parser
 from coproscope.core.common import RunContext, load_instance, read_csv
 from coproscope.modules import docuscope, incidentops
 
@@ -115,6 +116,25 @@ class IncidentOpsTests(unittest.TestCase):
                 }
             ],
         )
+
+    def test_cli_builds_incident_register(self) -> None:
+        signalement = self.example_root / "raw" / "2026-05-03_signalement_fuite_parking.txt"
+        signalement.write_text("Signalement incident\nLieu: Parking\nFuite persistante.\n", encoding="utf-8")
+        run = RunContext(self.instance, "incidentops cli setup")
+        docuscope.inventory(self.instance, run)
+        docuscope.extract_text(self.instance, run)
+
+        args = build_parser().parse_args(
+            [
+                "incidents",
+                "build",
+                "--instance-root",
+                str(self.example_root),
+            ]
+        )
+
+        self.assertEqual(_dispatch(args), 0)
+        self.assertTrue((self.example_root / "registers" / "registre_incidents.csv").exists())
 
 
 if __name__ == "__main__":

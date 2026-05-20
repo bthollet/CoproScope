@@ -24,7 +24,13 @@ Livrer rapidement une application web locale CoproScope qui montre :
 | L3 - View model CS | TERMINE | Cartes de priorite, statuts modules, actions | Une instance privee peut etre lue sans adapter les templates | Les modules s'affichent en operationnel ou en chantier selon les registres disponibles. |
 | L4 - Copro demo fictive | TERMINE | `coprocs demo build` | Instance demo generee hors Drive, sans reprise de contenu prive | Pseudonymisation seule interdite comme publication ; la demo est une instance a part, pas une vue du cockpit prive. |
 | L5 - Confidentialite publication | TERMINE | Checklist CNIL et rapport de validation | Risques individualisation/correlation/inference traites | BiffageOps sert au diagnostic et a la reduction de risque. |
-| L6 - Tests livraison | TERMINE | Tests unitaires + py_compile + routes | Interface, demo build et garde-fous valides | 47 tests serveur OK au dernier controle local. |
+| L6 - Tests livraison | TERMINE | Tests unitaires + py_compile + routes | Interface, demo build et garde-fous valides | 57 tests serveur OK au dernier controle local. |
+| Lot A - ComptaScope CS | INTEGRE | Questions syndic et controles comptes guides | Tests ComptaScope OK dans la suite complete | Reste a renforcer le parcours visuel de la vue comptes. |
+| Lot C - DocOps actionnable | INTEGRE | Matrice pieces presentes/manquantes/obsoletes/a demander | Test DocOps dedie OK dans la suite complete | Reste a brancher plus finement dans la vue documents. |
+| Lot D - Privacy revue | INTEGRE | File de decision humaine, statuts et blocages | Tests PrivacyOps OK dans la suite complete | Reste a ajouter une commande ou vue de validation plus ergonomique. |
+| Lot E - Decision-action-preuve | INTEGRE | Registre decisions-actions-preuves et commande CLI | Tests DecisionOps + CLI OK dans la suite complete | Reste a raccorder a SyndicOps, WorksOps et interface. |
+| Lot G - IncidentOps | INTEGRE | Registre incidents, export ouverts et commande CLI | Tests IncidentOps + CLI OK dans la suite complete | Reste a enrichir contrats, assurance, photos et cloture probatoire. |
+| Lots B/F/H | A_LANCER | SyndicOps complet, WorksOps, CommsOps/passation | Non integres dans cette passe | A lancer apres stabilisation de la branche d'integration. |
 
 ## Regles de livraison
 
@@ -49,3 +55,4 @@ Livrer rapidement une application web locale CoproScope qui montre :
 | 2026-05-20 | Documentation multi-agents | Ajout d'un contrat `AGENTS.md` et d'une page d'orchestration pour lancer plusieurs agents en parallele via worktrees, ownership et ports separes. |
 | 2026-05-20 | Lot 0 Sprint 2 | Ajout de la vue Actions, filtres, exports CSV/Markdown, compteur d'actions structure et tests UI. |
 | 2026-05-20 | Lots paralleles A-H | Ajout des briefs ComptaScope, SyndicOps, DocOps, PrivacyOps, Decision-action-preuve, WorksOps, IncidentOps, CommsOps/passation. |
+| 2026-05-20 | Integration lots termines | Lots A, C, D, E et G integres sur branche `codex/integration-livraisons`; faux fichiers `desktop.ini` retires de `.git`; `unittest discover -s tests -v` : 57 tests OK. |

@@ -52,6 +52,8 @@ flowchart LR
 | FactureOps | Amorce v1 | Factures candidates, anomalies de piece, intensite d'outil `L0` a `L4`. |
 | ComptaScope | Amorce v1 forte | Rapprochements facture/etat des depenses, priorites `OK`/`P2`/`P1`, rapport explicatif. |
 | AGOps | Premiere version | Reperage des documents AG, resolutions, annexes et points d'attention. |
+| DecisionOps | Amorce v1 | Registre decisions-actions-preuves depuis les resolutions AG et les preuves locales candidates. |
+| IncidentOps | Amorce v1 | Registre incidents, statuts, prochaines actions, preuves de cloture et export des ouverts. |
 | Audit360 | Couche transverse | Constats normalises, controles, preuves attendues, actions et diligences. |
 | GristOps / EvidenceOps | Local | Exports vers tableaux locaux et rapports reproductibles. |
 | `share-audit` / `share-export` | Solide | Frontiere public/prive pour publier seulement le genericisable. |
@@ -60,11 +62,11 @@ flowchart LR
 
 | Sujet | Etat clair |
 |---|---|
-| Application web locale | V0 en cours : cockpit local `coprocs ui serve`, branche sur les artefacts existants et affiche les chantiers. |
+| Application web locale | V0 livree : cockpit local `coprocs ui serve`, branche sur les artefacts existants et affiche les chantiers. |
 | Experience grand public complete | Pas encore. La priorite actuelle reste le conseil syndical implique. |
-| Registre decision -> action -> preuve | Priorite produit, pas encore livre comme module complet. |
+| Registre decision -> action -> preuve | Amorce v1 livree ; reste a brancher dans l'interface et les workflows demandes/travaux. |
 | WorksOps travaux/devis/reception | Cible prioritaire, pas encore livre. |
-| IncidentOps sinistres/signalements | Cible prioritaire, pas encore livre. |
+| IncidentOps sinistres/signalements | Amorce v1 livree ; reste a enrichir et raccorder a WorksOps/contrats/assurance. |
 | ContractOps contrats/obligations | Cible ulterieure. |
 | CommsOps syntheses diffusables | Cible ulterieure, deja preparee par les sorties. |
 | SaaS multi-tenant | Non prioritaire. Le cap reste local-first. |
@@ -103,10 +105,10 @@ Une ligne de vie de l'immeuble : contrats, travaux, sinistres, AG, decisions, pa
 
 La feuille de route issue de l'etude utilisateurs est volontairement simple :
 
-1. rendre visibles les forces actuelles : DocOps, PrivacyOps, SyndicOps, ComptaScope, AGOps, Audit360 ;
-2. construire le registre **decision -> action -> preuve** ;
-3. epaissir WorksOps, IncidentOps, ContractOps et CommsOps ;
-4. produire une interface locale sobre quand les objets metier sont assez stables ;
+1. rendre visibles les forces actuelles : DocOps, PrivacyOps, SyndicOps, ComptaScope, AGOps, DecisionOps, IncidentOps, Audit360 ;
+2. raccorder le registre **decision -> action -> preuve** aux demandes, travaux et preuves ;
+3. epaissir WorksOps, ContractOps et CommsOps ;
+4. enrichir l'interface locale sobre a mesure que les objets metier se stabilisent ;
 5. garder les outils avances CLI/DuckDB/Grist/Evidence pour les publics experts, sans en faire l'entree principale.
 
 Details : [Feuille de route](./docs/feuille_de_route.md).
@@ -133,6 +135,8 @@ Puis, a la racine du depot :
 .\server\.venv\Scripts\python.exe -m coproscope.cli grist sync --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli evidence build --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli demo build --source-instance-root .\examples\synthetic_copro --output-instance "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --mode fictive --year 2025
+.\server\.venv\Scripts\python.exe -m coproscope.cli decisions build --instance-root .\examples\synthetic_copro
+.\server\.venv\Scripts\python.exe -m coproscope.cli incidents build --instance-root .\examples\synthetic_copro
 .\server\.venv\Scripts\python.exe -m coproscope.cli ui serve --instance-root "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```

@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from coproscope.cli import _dispatch, build_parser
 from coproscope.core.common import RunContext, load_instance, read_csv
 from coproscope.modules import agscope, decisionops, docuscope
 
@@ -71,6 +72,26 @@ class DecisionOpsTests(unittest.TestCase):
         self.assertEqual(len(pv_rows), 1)
         self.assertEqual(pv_rows[0]["statut"], "PREUVE_A_DEMANDER")
         self.assertEqual(pv_rows[0]["proof_doc_ids"], "")
+
+    def test_cli_builds_decision_register(self) -> None:
+        run = RunContext(self.instance, "decisionops cli setup")
+        docuscope.inventory(self.instance, run)
+        docuscope.extract_text(self.instance, run)
+        docuscope.classify(self.instance, run, copy_files=False)
+        agscope.analyze(self.instance, run)
+
+        args = build_parser().parse_args(
+            [
+                "decisions",
+                "build",
+                "--instance-root",
+                str(self.example_root),
+                "--no-ag-analyze",
+            ]
+        )
+
+        self.assertEqual(_dispatch(args), 0)
+        self.assertTrue((self.example_root / "registers" / "registre_decisions_actions_preuves.csv").exists())
 
 
 if __name__ == "__main__":

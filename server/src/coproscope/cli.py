@@ -16,10 +16,12 @@ from .modules import (
     biffageops,
     demoops,
     docai,
+    decisionops,
     docuscope,
     evidenceops,
     factureops,
     gristops,
+    incidentops,
     privacyops,
     strategy,
     tools,
@@ -44,6 +46,8 @@ COMMAND_ALIASES = {
     "confidentialite": "privacy",
     "interface": "ui",
     "demonstration": "demo",
+    "decisions": "decisions",
+    "signalements": "incidents",
     "strategie": "strategy",
     "audit-partage": "share-audit",
     "export-partage": "share-export",
@@ -69,6 +73,8 @@ SUBCOMMAND_ALIASES = {
     "strategy_command": {"exporter": "export"},
     "ui_command": {"servir": "serve"},
     "demo_command": {"construire": "build"},
+    "decisions_command": {"construire": "build"},
+    "incidents_command": {"construire": "build"},
 }
 
 
@@ -205,6 +211,25 @@ def build_parser() -> argparse.ArgumentParser:
     demo_build.add_argument("--year", "--annee", dest="year", type=int, default=2025)
     demo_build.add_argument("--skip-source-audit", action="store_true", help="Ne pas lancer PrivacyOps/BiffageOps sur la source.")
     demo_build.add_argument("--max-text-chars", type=int, default=12000)
+
+    decisions_parser = subparsers.add_parser("decisions", parents=[instance_parent], help="Registre decisions-actions-preuves.")
+    decisions_subparsers = decisions_parser.add_subparsers(dest="decisions_command", required=True)
+    decisions_build = decisions_subparsers.add_parser(
+        "build",
+        aliases=["construire"],
+        parents=[instance_parent],
+        help="Construire le registre decisions-actions-preuves depuis AGOps et les preuves locales.",
+    )
+    decisions_build.add_argument("--no-ag-analyze", action="store_true", help="Ne pas relancer AGOps si le registre AG est vide.")
+
+    incidents_parser = subparsers.add_parser("incidents", aliases=["signalements"], parents=[instance_parent], help="Registre IncidentOps.")
+    incidents_subparsers = incidents_parser.add_subparsers(dest="incidents_command", required=True)
+    incidents_subparsers.add_parser(
+        "build",
+        aliases=["construire"],
+        parents=[instance_parent],
+        help="Construire le registre incidents, l'export des ouverts et le rapport IncidentOps.",
+    )
 
     strategy_parser = subparsers.add_parser("strategy", aliases=["strategie"], parents=[instance_parent], help="Strategie et feuille de route produit.")
     strategy_subparsers = strategy_parser.add_subparsers(dest="strategy_command", required=True)
@@ -440,6 +465,16 @@ def _dispatch(args: argparse.Namespace) -> int:
             run.log_action("ui_serve", instance.path, f"host={args.host}; port={args.port}; year={args.year}")
             print(f"CoproScope UI: http://{args.host}:{args.port}")
             serve(instance, year=args.year, host=args.host, port=args.port)
+            return 0
+        if args.command == "decisions" and args.decisions_command == "build":
+            result = decisionops.build_decision_register(instance, run, ensure_ag=not args.no_ag_analyze)
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "decisions build complete")
+            return 0
+        if args.command == "incidents" and args.incidents_command == "build":
+            result = incidentops.build_incident_register(instance, run)
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "incidents build complete")
             return 0
         if args.command == "strategy" and args.strategy_command == "export":
             result = strategy.export_strategy(instance, run)

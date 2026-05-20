@@ -43,6 +43,8 @@ Ce document ancre le contrat d'execution du produit. La priorisation produit det
 - `coprocs workers run`
 - `coprocs ui serve`
 - `coprocs demo build`
+- `coprocs decisions build`
+- `coprocs incidents build`
 - `coprocs strategy export`
 - `coprocs share-audit`
 - `coprocs share-export`
@@ -58,6 +60,8 @@ Alias francais importants :
 - `coprocs compta controles`
 - `coprocs interface servir`
 - `coprocs demonstration construire`
+- `coprocs decisions construire`
+- `coprocs signalements construire`
 
 ## Perimetre v1
 
@@ -71,6 +75,8 @@ Alias francais importants :
 - FactureOps produit les factures candidates et anomalies facture.
 - ComptaScope consomme FactureOps, rapproche les etats de depenses configures et explique chaque echec.
 - AGOps produit un premier registre AG.
+- DecisionOps transforme les resolutions AG en actions suivies avec preuves attendues.
+- IncidentOps structure les signalements et incidents ouverts.
 - Audit360 expose des formes generiques de controle.
 - GristOps/EvidenceOps produisent des sorties locales.
 
