@@ -121,6 +121,8 @@ Puis, a la racine du depot:
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```
 
+La reconstruction ComptaScope produit les factures candidates, les ecritures candidates, les controles, puis les rapprochements expliques avec l'etat des depenses quand une source est configuree. Le rapport local `rapport_comptascope_<annee>.md` distingue les rapprochements probables des non-rapprochements qui demandent encore alias, ventilation ou controle du grand livre.
+
 Pour fabriquer un export public propre:
 
 ```powershell

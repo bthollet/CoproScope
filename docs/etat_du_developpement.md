@@ -17,14 +17,14 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 - instance synthetique publique pour les tests ;
 - garde-fous de partage (`share-audit`, `share-export`) ;
 - outillage local installe/documente: Python 3.14, GitHub CLI, uv, DuckDB, PDF/OCR, Node/Evidence, Grist Desktop ;
-- ComptaScope v1 sur instance synthetique: factures, ecritures candidates, controles, exports Grist/Evidence locaux ;
+- ComptaScope v1 sur instance synthetique: factures, ecritures candidates, controles, rapprochements explicables facture/etat des depenses, exports Grist/Evidence locaux ;
 - documentation publique structuree en francais.
 
 ## Ce qui est en cours
 
 - enrichir DocOps sur de vrais corpus ;
 - epaissir SyndicOps sur les relances et la tracabilite fine ;
-- fiabiliser ComptaScope sur factures, rapprochements et controles comptables ;
+- fiabiliser ComptaScope sur factures, rapprochements explicables et controles comptables ;
 - affiner AGOps sur les annexes, majorites et suites post-AG ;
 - outiller davantage Audit360 comme couche transverse de controles et diligences ;
 - pousser plus loin la francisation la ou elle apporte une vraie clarte sans casser les interfaces techniques.
@@ -45,7 +45,7 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 | DocOps | bon socle | deja utile, heuristiques a enrichir |
 | SyndicOps | embryon utile | base en place, workflows a epaissir |
 | AGOps | premiere version | signaux utiles, couverture encore partielle |
-| ComptaScope | amorce v1 | reconstruction candidate sur factures synthetiques, a durcir sur cas reels |
+| ComptaScope | amorce v1 | reconstruction candidate sur factures synthetiques, rapprochement explicable et non-rapprochements causes |
 | Audit360 | extraction publique amorcee | formes generiques visibles, outillage encore a epaissir |
 | Documentation produit | bon socle | suffisamment claire pour une vraie relecture |
 | Francophonie | en cours d'inscription | preference explicite, chantier encore ouvert |

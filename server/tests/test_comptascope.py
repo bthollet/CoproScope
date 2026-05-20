@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from coproscope.core.common import RunContext, load_instance, read_csv
-from coproscope.modules.accounting import accounting_controls, reconstruct_accounting
+from coproscope.modules.accounting import accounting_controls, reconcile_invoice_expenses, reconstruct_accounting
 from coproscope.modules.evidenceops import build_evidence_report
 from coproscope.modules.gristops import sync_grist
 from coproscope.modules.tools import tools_status
@@ -35,11 +35,18 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertTrue(Path(str(result["invoice_evidence"])).exists())
         self.assertTrue(Path(str(result["ledger_reconstruction"])).exists())
         self.assertTrue(Path(str(result["duckdb"])).exists())
+        self.assertTrue(Path(str(result["invoice_expense_matches"])).exists())
+        self.assertTrue(Path(str(result["report"])).exists())
+        self.assertEqual(result["expense_match_counts"], {"MATCH_AMOUNT_ALIAS": 1})
 
         _, invoices = read_csv(Path(str(result["invoice_evidence"])))
         self.assertEqual(invoices[0]["numero_facture"], "FAC-2025-001")
         self.assertEqual(invoices[0]["ttc"], "1200.00")
         self.assertEqual(invoices[0]["statut_controle"], "PROBABLE")
+        _, matches = read_csv(Path(str(result["invoice_expense_matches"])))
+        self.assertEqual(matches[0]["match_status"], "MATCH_AMOUNT_ALIAS")
+        self.assertIn("alias fournisseur", matches[0]["match_reason"])
+        self.assertIn("NON_RAPPROCHE", Path(str(result["report"])).read_text(encoding="utf-8"))
 
     def test_controls_grist_and_evidence_exports(self) -> None:
         run = RunContext(self.instance, "workers accounting dashboards")
@@ -53,13 +60,62 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(grist["status"], "ok")
         self.assertEqual(evidence["status"], "ok")
         self.assertIn("invoice_evidence", grist["exports"])
+        self.assertIn("invoice_expense_matches", grist["exports"])
         self.assertGreaterEqual(evidence["invoice_count"], 1)
+        self.assertEqual(evidence["matched_count"], 1)
 
     def test_tools_status_shape(self) -> None:
         status = tools_status()
         self.assertIn("checks", status)
         self.assertTrue(any(check["name"] == "duckdb" for check in status["checks"]))
         self.assertTrue(any(check["name"] == "grist_api" for check in status["checks"]))
+
+    def test_reconciliation_explains_ambiguous_repeated_amounts(self) -> None:
+        invoices = [
+            {"doc_id": "DOC-1", "fournisseur": "ASV", "numero_facture": "F1", "ttc": "198.00", "compte_propose": "615000", "famille_charge": "entretien_maintenance"},
+            {"doc_id": "DOC-2", "fournisseur": "ASV", "numero_facture": "F2", "ttc": "198.00", "compte_propose": "615000", "famille_charge": "entretien_maintenance"},
+        ]
+        expenses = [
+            {
+                "statement_line_id": "DEP-1",
+                "account": "615000",
+                "reference": "X1",
+                "supplier_hint": "ASV",
+                "label": "ASV / intervention",
+                "amount": "198.00",
+            }
+        ]
+
+        matches = reconcile_invoice_expenses(invoices, expenses)
+
+        self.assertEqual(matches[0]["match_status"], "CANDIDAT_MONTANT_AMBIGU")
+        self.assertIn("plusieurs factures", matches[0]["match_reason"])
+
+    def test_reconstruct_can_start_from_preloaded_invoice_csv(self) -> None:
+        preload = self.example_root / "system" / "accounting" / "preloaded_invoice_evidence_2025.csv"
+        preload.parent.mkdir(parents=True, exist_ok=True)
+        preload.write_text(
+            "\n".join(
+                [
+                    "doc_id,fournisseur,numero_facture,date_facture,ttc,compte_propose,famille_charge,statut_controle,confidence",
+                    "PRE-1,PRELOADED SERVICES,PRE-2025-001,2025-02-01,42.00,615000,entretien_maintenance,PROBABLE,preloaded",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.instance.payload.setdefault("settings", {}).setdefault("comptascope", {})["invoice_evidence_csv"] = (
+            "./system/accounting/preloaded_invoice_evidence_2025.csv"
+        )
+
+        run = RunContext(self.instance, "accounting reconstruct")
+        result = reconstruct_accounting(self.instance, run, 2025)
+        run.finish("OK", "preloaded accounting complete")
+
+        _, invoices = read_csv(Path(str(result["invoice_evidence"])))
+        self.assertEqual(result["invoice_count"], 1)
+        self.assertEqual(invoices[0]["fournisseur"], "PRELOADED SERVICES")
+        self.assertEqual(invoices[0]["ttc"], "42.00")
 
 
 if __name__ == "__main__":

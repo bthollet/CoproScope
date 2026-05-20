@@ -43,6 +43,7 @@ Ce document ancre le plan d'implementation sur disque afin que le contrat d'exec
 - configuration des chemins par instance ;
 - CLI stable et serveur MCP minimal pour l'automatisation sure ;
 - schemas structures, configurations par defaut, prompts, templates et journaux d'ecriture.
+- ComptaScope rapproche les factures candidates avec les etats de depenses configures et explique chaque echec de rapprochement au lieu de le traiter comme une anomalie certaine.
 
 ## Non-objectifs explicites pour v1
 

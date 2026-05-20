@@ -52,6 +52,15 @@
       "models_dir": "./models",
       "max_pages": 30,
       "enabled_backends": []
+    },
+    "comptascope": {
+      "expense_statement_lines": "./system/accounting/expense_statement_lines_2025.csv",
+      "supplier_aliases": [
+        {
+          "supplier": "JARDINS EXEMPLE SERVICES",
+          "aliases": ["JEX"]
+        }
+      ]
     }
   }
 }

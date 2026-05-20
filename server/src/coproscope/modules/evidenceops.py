@@ -20,8 +20,13 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
 
     invoice_path = accounting_dir / f"invoice_evidence_{year}.csv"
     control_path = accounting_dir / f"accounting_controls_{year}.csv"
+    match_path = accounting_dir / f"invoice_expense_matches_{year}.csv"
+    report_path = accounting_dir / f"rapport_comptascope_{year}.md"
     _, invoices = read_csv(invoice_path)
     _, controls = read_csv(control_path)
+    _, matches = read_csv(match_path)
+    matched_count = sum(1 for row in matches if row.get("match_status", "").startswith("MATCH_"))
+    non_matched_count = sum(1 for row in matches if row.get("match_status") == "NON_RAPPROCHE")
 
     package = {
         "scripts": {"dev": "evidence dev", "build": "evidence build"},
@@ -38,6 +43,14 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
                 "",
                 f"- Factures candidates: {len(invoices)}",
                 f"- Controles ouverts: {len(controls)}",
+                f"- Rapprochements automatiques: {matched_count}",
+                f"- Factures non rapprochees a expliquer/controler: {non_matched_count}",
+                "",
+                "## Lecture comptable",
+                "",
+                "`NON_RAPPROCHE` signale une limite de rapprochement automatique, pas une absence comptable certaine. Les causes typiques sont les alias fournisseurs, les references internes, les ventilations multi-lignes, les regroupements et les extractions faibles.",
+                "",
+                f"- Rapport ComptaScope local: `{report_path.name}`",
                 "",
                 "Les donnees reelles restent locales. Les exports publics doivent utiliser l'instance synthetique.",
                 "",
@@ -51,6 +64,8 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
         "exports": copied,
         "invoice_count": len(invoices),
         "control_count": len(controls),
+        "matched_count": matched_count,
+        "non_matched_count": non_matched_count,
         "generated_at": now_iso(),
     }
     write_text(evidence_dir / "evidence_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=True))
