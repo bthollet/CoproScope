@@ -457,6 +457,59 @@ def _load_configured_invoice_evidence(instance: InstanceConfig, year: int) -> li
     return rows
 
 
+def _load_configured_supplier_due_invoice_triggers(
+    instance: InstanceConfig,
+    year: int,
+    existing_doc_ids: set[str],
+) -> list[dict[str, str]]:
+    settings = _comptascope_settings(instance)
+    if not _as_bool(settings.get("include_cross_year_supplier_due_diligence"), True):
+        return []
+    candidates = _configured_paths(
+        instance,
+        settings,
+        "invoice_evidence_csv",
+        "pre_accounting_invoices",
+        "pre_compta_invoices",
+        year=year,
+    )
+    rows: list[dict[str, str]] = []
+    seen_doc_ids = set(existing_doc_ids)
+    for path in candidates:
+        if not path.exists():
+            continue
+        _, loaded = read_csv(path)
+        for index, row in enumerate(loaded, start=1):
+            doc_id = row.get("doc_id") or f"INV-{year}-DILIGENCE-{len(rows) + index:04d}"
+            if doc_id in seen_doc_ids:
+                continue
+            anomalies = (row.get("anomalies") or "").replace(" | ", "|")
+            candidate = {
+                "doc_id": doc_id,
+                "sha256": row.get("sha256", ""),
+                "source_path": row.get("source_path") or row.get("chemin_piece") or row.get("original_path") or "",
+                "file_name": row.get("file_name") or row.get("aliases") or "",
+                "exercice": row.get("exercice") or row.get("year") or str(year),
+                "fournisseur": row.get("fournisseur") or row.get("supplier") or "",
+                "siren_siret": row.get("siren_siret") or row.get("siret") or row.get("siren") or "",
+                "numero_facture": row.get("numero_facture") or row.get("invoice_number") or "",
+                "date_facture": row.get("date_facture") or row.get("invoice_date") or "",
+                "ht": row.get("ht") or row.get("amount_ht") or "",
+                "tva": row.get("tva") or row.get("vat") or "",
+                "ttc": _money(_decimal(row.get("ttc") or row.get("amount_ttc") or row.get("montant_ttc"))),
+                "compte_propose": row.get("compte_propose") or row.get("account") or "",
+                "famille_charge": row.get("famille_charge") or row.get("control_family") or "",
+                "statut_controle": row.get("statut_controle") or "",
+                "confidence": row.get("confidence") or row.get("confiance") or "preloaded",
+                "anomalies": anomalies,
+                "extraction_method": row.get("extraction_method") or row.get("source_register") or "preloaded_csv",
+            }
+            if _invoice_is_supplier_due_diligence_trigger(candidate):
+                seen_doc_ids.add(doc_id)
+                rows.append(candidate)
+    return rows
+
+
 def _supplier_aliases_for(invoice: dict[str, str], aliases: dict[str, set[str]]) -> set[str]:
     supplier = _normal(invoice.get("fournisseur"))
     values = set(aliases.get(supplier, set()))
@@ -1870,7 +1923,12 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     expense_matches = reconcile_invoice_expenses(invoices, expense_lines, effective_aliases) if expense_lines else []
     for match in expense_matches:
         controls.extend(_controls_for_expense_match(match, year))
-    supplier_due_diligence = build_supplier_due_diligence_controls(instance, invoices, year)
+    supplier_due_invoices = invoices + _load_configured_supplier_due_invoice_triggers(
+        instance,
+        year,
+        {row.get("doc_id", "") for row in invoices},
+    )
+    supplier_due_diligence = build_supplier_due_diligence_controls(instance, supplier_due_invoices, year)
 
     if not invoices:
         controls.append(

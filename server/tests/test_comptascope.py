@@ -296,8 +296,9 @@ class ComptaScopeTests(unittest.TestCase):
         preload.write_text(
             "\n".join(
                 [
-                    "doc_id,fournisseur,siren_siret,numero_facture,date_facture,ttc,compte_propose,famille_charge,statut_controle,confidence,anomalies",
-                    "DD-1,ACME SERVICES,,AC-2025-001,2025-02-01,3000.00,615000,entretien_maintenance,BLOQUE_COMPTA,preloaded,SIREN_SIRET_ABSENT|DILIGENCE_REQUISE",
+                    "doc_id,exercice,fournisseur,siren_siret,numero_facture,date_facture,ttc,compte_propose,famille_charge,statut_controle,confidence,anomalies",
+                    "DD-1,2025,ACME SERVICES,,AC-2025-001,2025-02-01,3000.00,615000,entretien_maintenance,BLOQUE_COMPTA,preloaded,SIREN_SIRET_ABSENT|DILIGENCE_REQUISE",
+                    "DD-2,2024,ACME SERVICES,,AC-2024-001,2024-12-15,1200.00,615000,entretien_maintenance,BLOQUE_COMPTA,preloaded,DILIGENCE_REQUISE",
                 ]
             )
             + "\n",
@@ -339,7 +340,7 @@ class ComptaScopeTests(unittest.TestCase):
         result = reconstruct_accounting(self.instance, run, 2025)
         run.finish("OK", "supplier due diligence complete")
 
-        self.assertEqual(result["supplier_due_diligence_count"], 1)
+        self.assertEqual(result["supplier_due_diligence_count"], 2)
         _, rows = read_csv(Path(str(result["supplier_due_diligence_controls"])))
         self.assertEqual(rows[0]["coverage_status"], "COUVERT_RECENT_A_RECOUPER")
         self.assertIn("BGC-RES-TEST", rows[0]["existing_result_refs"])
