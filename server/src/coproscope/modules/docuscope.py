@@ -41,6 +41,12 @@ PRESERVE_FIELDS = {
     "text_path",
     "page_count",
     "text_char_count",
+    "extraction_level",
+    "text_quality",
+    "ocr_engine",
+    "docling_path",
+    "layout_path",
+    "ai_review_status",
     "sensitivity",
     "notes",
 }
@@ -167,13 +173,39 @@ def _read_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
 
 
 def _write_rows(path: Path, fields: list[str], rows: list[dict[str, str]]) -> None:
-    for field in ["status_ocr", "text_path", "page_count", "text_char_count", "notes"]:
+    for field in [
+        "status_ocr",
+        "text_path",
+        "page_count",
+        "text_char_count",
+        "extraction_level",
+        "text_quality",
+        "ocr_engine",
+        "docling_path",
+        "layout_path",
+        "ai_review_status",
+        "notes",
+    ]:
         if field not in fields:
             fields.append(field)
     write_csv(path, fields, rows)
 
 
-def _extract_pdf(path: Path) -> tuple[list[str], str]:
+def _extract_pdf_with_pymupdf(path: Path) -> tuple[list[str], str]:
+    try:
+        import fitz  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError("Module PyMuPDF/fitz indisponible.") from exc
+
+    document = fitz.open(str(path))
+    try:
+        pages = [document.load_page(index).get_text("text").strip() for index in range(document.page_count)]
+        return pages, str(document.page_count)
+    finally:
+        document.close()
+
+
+def _extract_pdf_with_pypdf(path: Path) -> tuple[list[str], str]:
     try:
         from pypdf import PdfReader
     except ImportError as exc:
@@ -188,6 +220,15 @@ def _extract_pdf(path: Path) -> tuple[list[str], str]:
             text = f"[ERREUR_EXTRACTION_PAGE_{index}: {exc}]"
         pages.append(text.strip())
     return pages, str(len(reader.pages))
+
+
+def _extract_pdf(path: Path) -> tuple[list[str], str, str]:
+    try:
+        pages, page_count = _extract_pdf_with_pymupdf(path)
+        return pages, page_count, "L1_NATIVE_TEXT_PYMUPDF"
+    except Exception:  # noqa: BLE001
+        pages, page_count = _extract_pdf_with_pypdf(path)
+        return pages, page_count, "L1_NATIVE_TEXT_PYPDF"
 
 
 def _extract_plain_text(path: Path) -> tuple[list[str], str]:
@@ -298,17 +339,23 @@ def _process_row(instance, row: dict[str, str]) -> dict[str, str]:
 
     try:
         if ext == "pdf":
-            pages, page_count = _extract_pdf(path)
+            pages, page_count, extraction_level = _extract_pdf(path)
         elif ext in TEXT_EXTENSIONS:
             pages, page_count = _extract_plain_text(path)
+            extraction_level = "L1_NATIVE_TEXT"
         elif ext in HTML_EXTENSIONS:
             pages, page_count = _extract_html(path)
+            extraction_level = "L1_NATIVE_HTML"
         elif ext == "docx":
             pages, page_count = _extract_docx(path)
+            extraction_level = "L1_NATIVE_DOCX"
         elif ext == "xlsx":
             pages, page_count = _extract_xlsx(path)
+            extraction_level = "L1_NATIVE_XLSX"
         else:
             row["status_ocr"] = "OCR_REQUIRED" if ext in {"png", "jpg", "jpeg", "tif", "tiff", "bmp"} else "UNSUPPORTED"
+            row["extraction_level"] = "L2_LOCAL_OCR_REQUIRED" if row["status_ocr"] == "OCR_REQUIRED" else ""
+            row["text_quality"] = "missing" if row["status_ocr"] == "OCR_REQUIRED" else "unsupported"
             return row
     except Exception as exc:  # noqa: BLE001
         row["status_ocr"] = "EXTRACTION_ERROR"
@@ -320,6 +367,8 @@ def _process_row(instance, row: dict[str, str]) -> dict[str, str]:
     row["text_path"] = relative_to(workspace_root, out)
     row["page_count"] = page_count
     row["text_char_count"] = str(total_chars)
+    row["extraction_level"] = extraction_level
+    row["text_quality"] = "strong" if total_chars >= 80 else "weak"
     if total_chars >= 80 or ext != "pdf":
         row["status_ocr"] = "TEXT_EXTRACTED"
         if total_chars < 80:
@@ -330,7 +379,7 @@ def _process_row(instance, row: dict[str, str]) -> dict[str, str]:
     return row
 
 
-def extract_text(instance, run: RunContext, doc_id: str | None = None) -> Path:
+def extract_text(instance, run: RunContext, doc_id: str | None = None, docai_mode: str | None = None) -> Path:
     registry_path = instance.register("documents")
     fields, rows = _read_rows(registry_path)
     processed = 0
@@ -343,6 +392,10 @@ def extract_text(instance, run: RunContext, doc_id: str | None = None) -> Path:
         processed += 1
     _write_rows(registry_path, fields, rows)
     run.log_action("write", registry_path, f"text extraction processed={processed}")
+    if docai_mode and docai_mode != "off":
+        from . import docai
+
+        docai.process_after_native_extract(instance, run, doc_id=doc_id, mode=docai_mode)
     return registry_path
 
 
@@ -358,6 +411,11 @@ def _text_sample(instance, row: dict[str, str]) -> str:
         path = workspace_root / text_path
         if path.exists():
             parts.append(path.read_text(encoding="utf-8", errors="ignore")[:6000])
+    docling_path = row.get("docling_path")
+    if docling_path:
+        path = workspace_root / docling_path
+        if path.exists():
+            parts.append(path.read_text(encoding="utf-8", errors="ignore")[:6000])
     return "\n".join(parts).lower()
 
 
@@ -368,29 +426,37 @@ def _classify(sample: str, file_name: str, original_path: str, rules: list[dict]
     for rule in rules:
         score = 0
         matched = False
-        for pattern in rule.get("filename_patterns", []):
+        filename_patterns = rule.get("filename_patterns", rule.get("motifs_nom_fichier", []))
+        path_patterns = rule.get("path_patterns", rule.get("motifs_chemin", []))
+        keywords = rule.get("keywords", rule.get("mots_cles", []))
+        filename_weight = int(rule.get("filename_weight", rule.get("poids_nom_fichier", 50)))
+        path_weight = int(rule.get("path_weight", rule.get("poids_chemin", 80)))
+        keyword_weight = int(rule.get("keyword_weight", rule.get("poids_mot_cle", 5)))
+        document_type = str(rule.get("document_type", rule.get("type_document", "A_CLASSER")))
+        for pattern in filename_patterns:
             if re.search(pattern, file_text, flags=re.IGNORECASE):
                 matched = True
-                score += int(rule.get("filename_weight", 50))
-        for pattern in rule.get("path_patterns", []):
+                score += filename_weight
+        for pattern in path_patterns:
             if re.search(pattern, path_text, flags=re.IGNORECASE):
                 matched = True
-                score += int(rule.get("path_weight", 80))
-        for keyword in rule.get("keywords", []):
+                score += path_weight
+        for keyword in keywords:
             if keyword.lower() in sample:
                 matched = True
-                score += int(rule.get("keyword_weight", 5))
+                score += keyword_weight
         if matched:
             score += int(rule.get("priority", 0))
         if score > best[2]:
-            best = (str(rule["lot"]), str(rule["document_type"]), score)
+            best = (str(rule["lot"]), document_type, score)
     return best
 
 
 def classify(instance, run: RunContext, copy_files: bool = True) -> Path:
     registry_path = instance.register("documents")
     fields, rows = _read_rows(registry_path)
-    rules = _load_taxonomy(instance).get("rules", [])
+    taxonomy = _load_taxonomy(instance)
+    rules = taxonomy.get("rules", taxonomy.get("regles", []))
     classified_dir = instance.artifact("classified_dir")
     workspace_root = instance.root("workspace")
 

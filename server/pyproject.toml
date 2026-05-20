@@ -5,11 +5,42 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "coproscope"
 version = "0.1.0"
-description = "Local-first documentary cockpit for copropriete workflows."
+description = "Cockpit documentaire local-first pour les workflows de copropriete."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Codex" }]
 dependencies = []
+
+[project.optional-dependencies]
+accounting = [
+  "duckdb>=1.5",
+  "pandas>=3.0",
+  "openpyxl>=3.1",
+  "pypdf>=5.3",
+  "PyMuPDF>=1.24",
+  "pdfplumber>=0.11",
+  "factur-x>=4.2",
+]
+dashboards = [
+  "grist-api>=0.1.1",
+]
+docai = [
+  "PyMuPDF>=1.24",
+  "docling>=2.0",
+  "rapidocr>=3.0",
+]
+vl = [
+  "torch>=2.0",
+  "torchvision>=0.15",
+  "transformers>=4.45",
+  "accelerate>=0.30",
+  "huggingface-hub>=0.24",
+  "qwen-vl-utils>=0.0.8",
+]
+layout = [
+  "transformers>=4.45",
+  "datasets>=2.0",
+]
 
 [project.scripts]
 coprocs = "coproscope.cli:main"
@@ -25,5 +56,6 @@ coproscope = [
   "configs/*.yml",
   "schemas/*.json",
   "templates/*.csv",
-  "prompts/*.md"
+  "prompts/*.md",
+  "extractors/invoices/*.json"
 ]

@@ -1,16 +1,16 @@
 {
   "version": 1,
-  "default_sensitivity": "internal",
-  "rules": [
+  "sensibilite_par_defaut": "internal",
+  "regles": [
     {
-      "path_keywords": ["_RESTREINT", "impayes", "contentieux", "banque", "avocats", "procedures"],
-      "sensitivity": "restricted",
-      "scope": "restricted"
+      "mots_cles_chemin": ["_RESTREINT", "impayes", "contentieux", "banque", "avocats", "procedures"],
+      "sensibilite": "restricted",
+      "perimetre": "restricted"
     },
     {
-      "path_keywords": ["communication", "diffusable"],
-      "sensitivity": "diffusable",
-      "scope": "coproprietaires"
+      "mots_cles_chemin": ["communication", "diffusable"],
+      "sensibilite": "diffusable",
+      "perimetre": "coproprietaires"
     }
   ]
 }

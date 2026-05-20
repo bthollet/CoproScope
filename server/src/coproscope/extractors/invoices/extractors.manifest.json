@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "domain": "invoices",
+  "policy": {
+    "provider_subextractors_required": true,
+    "filename_families_are_routing_only": true,
+    "default_cross_checks_required": true,
+    "cross_checks_are_evidence_not_final_validation": true,
+    "private_instance_extractors_forbidden_in_public_export": true,
+    "text_exploitation_priority": ["L1_NATIVE_TEXT", "L2_LOCAL_OCR", "L3_LOCAL_STRUCTURE_OR_VISUAL", "L4_AI_OR_ONLINE_REVIEW"],
+    "parsing_levels_requiring_confirmation": ["L4_AI_OR_ONLINE_REVIEW"],
+    "anomaly_workflow": [
+      "run_internal_cross_checks",
+      "escalate_to_next_local_parsing_level",
+      "request_user_confirmation_before_p4_ai_or_online_vision",
+      "keep_residual_anomaly_until_human_validation"
+    ],
+    "internal_cross_checks": [
+      "source_aliases_and_duplicate_names",
+      "native_text_supplier_identity",
+      "provider_identity_consensus",
+      "ledger_invoice_reference",
+      "ledger_amount_payment_reference",
+      "ag_budget_contract_decision_rules",
+      "amount_arithmetic_ht_tva_ttc",
+      "routing_year_and_supplier"
+    ],
+    "future_formats": ["factur-x", "xml", "ubl", "cii"],
+    "docai_evidence_sources": ["pymupdf_native_text", "local_ocr", "docling_markdown", "layout_json", "qwen_vl_review_notes"]
+  },
+  "filename_families": [
+    {
+      "family": "facture_timestamp",
+      "pattern": "^Facture_[0-9]",
+      "role": "initial_routing_only"
+    },
+    {
+      "family": "facture_nd",
+      "pattern": "^Facture_nd",
+      "role": "initial_routing_only"
+    },
+    {
+      "family": "facture_hono",
+      "pattern": "^Facture_Hono",
+      "role": "initial_routing_only"
+    },
+    {
+      "family": "facture_auto",
+      "pattern": "^Facture_Auto",
+      "role": "initial_routing_only"
+    }
+  ],
+  "provider_extractors": [
+    {
+      "provider_key": "generic",
+      "module_path": "server/src/coproscope/extractors/invoices/providers/generic.py",
+      "status": "generalizable",
+      "fixtures": [],
+      "notes": "Fallback only; provider-specific extractors should override it when a supplier format is known."
+    },
+    {
+      "provider_key": "engie",
+      "module_path": "server/src/coproscope/extractors/invoices/providers/engie.py",
+      "status": "generalizable",
+      "fixtures": ["server/tests/test_invoice_extractors.py::InvoiceExtractorTests"],
+      "notes": "Synthetic fixture only; extracts ENGIE invoice number, date, SIREN, HT and TTC from native text."
+    },
+    {
+      "provider_key": "omega_ascenseur",
+      "module_path": "server/src/coproscope/extractors/invoices/providers/omega_ascenseur.py",
+      "status": "generalizable",
+      "fixtures": ["server/tests/test_invoice_extractors.py::InvoiceExtractorTests"],
+      "notes": "Synthetic fixture only; extracts Omega Ascenseur invoice references and TTC from native text."
+    },
+    {
+      "provider_key": "edelen",
+      "module_path": "server/src/coproscope/extractors/invoices/providers/edelen.py",
+      "status": "generalizable",
+      "fixtures": ["server/tests/test_invoice_extractors.py::InvoiceExtractorTests"],
+      "notes": "Synthetic fixture only; extracts Edelen totals from Total HT/TVA/TTC blocks."
+    },
+    {
+      "provider_key": "phocea",
+      "module_path": "server/src/coproscope/extractors/invoices/providers/phocea.py",
+      "status": "generalizable",
+      "fixtures": ["server/tests/test_invoice_extractors.py::InvoiceExtractorTests"],
+      "notes": "Synthetic fixture only; extracts Phocea totals from Montant HT/TVA/TTC table blocks."
+    },
+    {
+      "provider_key": "cogelec",
+      "module_path": "server/src/coproscope/extractors/invoices/providers/cogelec.py",
+      "status": "generalizable",
+      "fixtures": ["server/tests/test_invoice_extractors.py::InvoiceExtractorTests"],
+      "notes": "Synthetic fixture only; extracts Cogelec compact key-value invoice text."
+    }
+  ],
+  "default_reconciliation_modules": [
+    {
+      "module_key": "default_invoice_reconciler",
+      "module_path": "server/src/coproscope/extractors/invoices/reconciliation.py",
+      "status": "generalizable",
+      "cross_checks": [
+        "supplier_from_pdf_text",
+        "supplier_from_ledger",
+        "decision_from_ag_budget_contract_rules",
+        "residual_controls_after_partial_lift"
+      ],
+      "notes": "Generic engine. Instances provide supplier rules, ledger lines and AG decision rules; results are evidence candidates, not final accounting validation."
+    }
+  ],
+  "default_visual_review_modules": [
+    {
+      "module_key": "frugal_supplier_visual_review",
+      "module_path": "server/src/coproscope/extractors/invoices/visual_review.py",
+      "status": "generalizable",
+      "strategy": [
+        "L1_native_text_before_ocr",
+        "L2_local_ocr_before_visual",
+        "L3_local_structure_or_visual_before_ai_or_online",
+        "L4_ai_or_online_visual_for_residual_cases",
+        "select_unresolved_or_weak_supplier_evidence",
+        "batch_first_page_contact_sheets",
+        "capture_supplier_override_with_evidence",
+        "keep_visual_lift_separate_from_final_accounting_validation"
+      ],
+      "notes": "Generic planning primitives for low-token visual supplier checks. Instance scripts render the contact sheets and record overrides."
+    }
+  ],
+  "extractor_generator_modules": [
+    {
+      "module_key": "docai_provider_extractor_generator",
+      "module_path": "server/src/coproscope/extractors/invoices/generator.py",
+      "status": "generalizable",
+      "evidence_sources": [
+        "native_text",
+        "ocr_text",
+        "docling_markdown",
+        "layout_json",
+        "visual_review"
+      ],
+      "notes": "Builds provider extractor prompts/templates from DocAI evidence while keeping filename families as routing hints only."
+    }
+  ]
+}

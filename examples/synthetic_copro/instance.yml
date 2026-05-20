@@ -30,7 +30,11 @@
   "artifacts": {
     "text_dir": "./staging/text",
     "classified_dir": "./staging/classified",
-    "reports_dir": "./outputs/reports"
+    "reports_dir": "./outputs/reports",
+    "docai_dir": "./staging/docai",
+    "accounting_dir": "./outputs/accounting",
+    "grist_dir": "./outputs/grist",
+    "evidence_dir": "./outputs/evidence"
   },
   "env": {
     "files": ["./.env.local"],
@@ -40,6 +44,25 @@
   "settings": {
     "never_modify_raw": true,
     "write_outputs_only": true,
-    "public_repo_url": "https://github.com/bthollet/CoproScope"
+    "public_repo_url": "https://github.com/bthollet/CoproScope",
+    "docai": {
+      "mode": "off",
+      "privacy": "local_only",
+      "device": "auto",
+      "models_dir": "./models",
+      "max_pages": 30,
+      "enabled_backends": []
+    },
+    "comptascope": {
+      "expense_statement_lines": "./system/accounting/expense_statement_lines_2025.csv",
+      "auto_infer_supplier_aliases": true,
+      "auto_alias_min_evidence": 2,
+      "supplier_aliases": [
+        {
+          "supplier": "JARDINS EXEMPLE SERVICES",
+          "aliases": ["JEX"]
+        }
+      ]
+    }
   }
 }

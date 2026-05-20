@@ -1,68 +1,68 @@
 {
   "version": 1,
-  "rules": [
+  "regles": [
     {
       "lot": "Syndic",
-      "document_type": "Contrat_Syndic",
-      "priority": 100,
-      "filename_patterns": ["contrat.*syndic", "mandat.*syndic"],
-      "keywords": ["contrat de syndic", "mandat de syndic", "honoraires du syndic"]
+      "type_document": "Contrat_Syndic",
+      "priorite": 100,
+      "motifs_nom_fichier": ["contrat.*syndic", "mandat.*syndic"],
+      "mots_cles": ["contrat de syndic", "mandat de syndic", "honoraires du syndic"]
     },
     {
       "lot": "AG",
-      "document_type": "Convocation_AG",
-      "priority": 90,
-      "filename_patterns": ["convocation", "ordre du jour"],
-      "keywords": ["convocation", "ordre du jour", "assemblee generale"]
+      "type_document": "Convocation_AG",
+      "priorite": 90,
+      "motifs_nom_fichier": ["convocation", "ordre du jour"],
+      "mots_cles": ["convocation", "ordre du jour", "assemblee generale"]
     },
     {
       "lot": "AG",
-      "document_type": "PV_AG",
-      "priority": 85,
-      "filename_patterns": ["pv.*ag", "proces.*verbal"],
-      "keywords": ["proces-verbal", "assemblee generale", "resolution"]
+      "type_document": "PV_AG",
+      "priorite": 85,
+      "motifs_nom_fichier": ["pv.*ag", "proces.*verbal"],
+      "mots_cles": ["proces-verbal", "assemblee generale", "resolution"]
     },
     {
       "lot": "Comptes",
-      "document_type": "Annexe_Comptable",
-      "priority": 80,
-      "filename_patterns": ["annexe", "budget", "etat_financier"],
-      "keywords": ["annexe", "etat financier", "budget previsionnel", "charges et produits"]
+      "type_document": "Annexe_Comptable",
+      "priorite": 80,
+      "motifs_nom_fichier": ["annexe", "budget", "etat_financier"],
+      "mots_cles": ["annexe", "etat financier", "budget previsionnel", "charges et produits"]
     },
     {
       "lot": "Factures_Fournisseurs",
-      "document_type": "Facture",
-      "priority": 75,
-      "filename_patterns": ["facture"],
-      "keywords": ["facture", "net a payer", "total ttc"]
+      "type_document": "Facture",
+      "priorite": 75,
+      "motifs_nom_fichier": ["facture"],
+      "mots_cles": ["facture", "net a payer", "total ttc"]
     },
     {
       "lot": "Factures_Fournisseurs",
-      "document_type": "Devis",
-      "priority": 70,
-      "filename_patterns": ["devis"],
-      "keywords": ["devis", "bon pour accord"]
+      "type_document": "Devis",
+      "priorite": 70,
+      "motifs_nom_fichier": ["devis"],
+      "mots_cles": ["devis", "bon pour accord"]
     },
     {
       "lot": "Contrats",
-      "document_type": "Contrat_Assurance",
-      "priority": 65,
-      "filename_patterns": ["assurance"],
-      "keywords": ["multirisques", "contrat d'assurance", "police d'assurance"]
+      "type_document": "Contrat_Assurance",
+      "priorite": 65,
+      "motifs_nom_fichier": ["assurance"],
+      "mots_cles": ["multirisques", "contrat d'assurance", "police d'assurance"]
     },
     {
       "lot": "ITE_Travaux",
-      "document_type": "Dossier_ITE_Travaux",
-      "priority": 60,
-      "filename_patterns": ["ite", "ravalement", "toiture", "ventilation"],
-      "keywords": ["ite", "isolation thermique", "ravalement", "maitrise d'oeuvre"]
+      "type_document": "Dossier_ITE_Travaux",
+      "priorite": 60,
+      "motifs_nom_fichier": ["ite", "ravalement", "toiture", "ventilation"],
+      "mots_cles": ["ite", "isolation thermique", "ravalement", "maitrise d'oeuvre"]
     },
     {
       "lot": "Communication",
-      "document_type": "Communication",
-      "priority": 40,
-      "filename_patterns": ["mail", "courriel", "relance", "note"],
-      "keywords": ["courriel", "relance", "demande", "reponse"]
+      "type_document": "Communication",
+      "priorite": 40,
+      "motifs_nom_fichier": ["mail", "courriel", "relance", "note"],
+      "mots_cles": ["courriel", "relance", "demande", "reponse"]
     }
   ]
 }

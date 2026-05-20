@@ -1,20 +1,23 @@
 # Plan d'implementation CoproScope v1
 
-Ce document ancre le plan d'implementation sur disque afin que le contrat d'execution du produit ne depenne pas de l'historique du chat.
+Ce document ancre le contrat d'execution du produit. La priorisation produit detaillee vit dans la [Feuille de route](./feuille_de_route.md).
 
 ## Resume
 
-- construire CoproScope comme un produit separe, avec un backend local-first dans `server/` ;
-- conserver les donnees reelles de copropriete hors du depot produit, via des instances privees ;
-- livrer un premier ensemble utile autour de DocOps, du socle SyndicOps et d'AGOps.
+- construire CoproScope comme un produit separe ;
+- conserver les donnees reelles de copropriete hors depot public ;
+- livrer d'abord un backend local-first, des registres, des controles et des sorties ;
+- rendre ensuite ces objets accessibles par un cockpit conseil syndical.
 
 ## Decisions d'architecture
 
-- le code produit, les configurations par defaut, les schemas, les prompts et les templates vivent dans `coproscope/server/` ;
-- les instances privees vivent hors du depot produit et exposent leurs chemins via `instance.yml` ;
-- une instance pilote privee valide le workflow reel ; `examples/synthetic_copro/` sert d'instance publique de validation ;
-- les ameliorations genericisables sont preparees pour le depot public `https://github.com/bthollet/CoproScope` ;
-- aucune migration destructive n'est autorisee ; les bruts restent en lecture seule ; les ecritures sont limitees au staging, aux sorties et aux registres.
+- Le code produit, les configurations par defaut, les schemas, les prompts et les templates vivent dans `server/`.
+- Les instances privees vivent hors depot produit et exposent leurs chemins via `instance.yml`.
+- Une instance synthetique publique sert de validation et de demonstration.
+- Aucune migration destructive n'est autorisee.
+- Les bruts restent en lecture seule.
+- Les ecritures sont limitees au staging, registres, sorties, rapports, privacy et biffages.
+- Les ameliorations genericisables peuvent remonter vers le depot public apres controle.
 
 ## Surface de commande v1
 
@@ -24,29 +27,64 @@ Ce document ancre le plan d'implementation sur disque afin que le contrat d'exec
 - `coprocs classify`
 - `coprocs missing-docs`
 - `coprocs kpi`
+- `coprocs privacy screen-existing`
+- `coprocs privacy redaction-queue`
+- `coprocs privacy redact`
+- `coprocs privacy redact-required`
 - `coprocs ag analyze`
 - `coprocs due-diligence summarize`
 - `coprocs pipeline run`
+- `coprocs tools status`
+- `coprocs invoices extract`
+- `coprocs accounting reconstruct`
+- `coprocs accounting controls`
+- `coprocs grist sync`
+- `coprocs evidence build`
+- `coprocs workers run`
+- `coprocs strategy export`
 - `coprocs share-audit`
 - `coprocs share-export`
 
+Alias francais importants :
+
+- `coprocs confidentialite scanner-existant`
+- `coprocs confidentialite file-biffage`
+- `coprocs confidentialite biffer`
+- `coprocs confidentialite biffer-requis`
+- `coprocs factures extraire`
+- `coprocs compta reconstituer`
+- `coprocs compta controles`
+
 ## Perimetre v1
 
-- coeur generique pour copropriete simple, avec points d'extension pour plus tard ;
-- configuration des chemins par instance ;
-- CLI stable et serveur MCP minimal pour l'automatisation sure ;
-- schemas structures, configurations par defaut, prompts, templates et journaux d'ecriture.
+- Coeur generique pour copropriete simple, avec points d'extension.
+- Configuration des chemins par instance.
+- CLI stable et serveur MCP minimal.
+- Schemas structures, configurations par defaut, prompts, templates et journaux.
+- DocOps produit le registre documentaire et la completude.
+- PrivacyOps enrichit les documents avec une politique d'acces.
+- BiffageOps construit la file de biffage et produit des versions biffees quand possible.
+- FactureOps produit les factures candidates et anomalies facture.
+- ComptaScope consomme FactureOps, rapproche les etats de depenses configures et explique chaque echec.
+- AGOps produit un premier registre AG.
+- Audit360 expose des formes generiques de controle.
+- GristOps/EvidenceOps produisent des sorties locales.
 
-## Non-objectifs explicites pour v1
+## Non-objectifs explicites v1
 
-- pas d'application web ;
-- pas de SaaS ni de serveur multi-tenant ;
-- pas de pile RAG obligatoire ;
-- pas encore de moteur natif multi-entites recursif.
+- Pas encore d'application web complete.
+- Pas de SaaS multi-tenant.
+- Pas de pile RAG obligatoire.
+- Pas de vote electronique complet.
+- Pas de moteur natif multi-entites complet.
+- Pas de publication de donnees reelles.
 
 ## Garde-fous
 
-- pas de secret dans Git ;
-- pas de document reel de copropriete dans le depot produit ;
-- pas d'ecriture dans les racines brutes ;
-- toute ecriture dans les registres et sorties doit etre journalisee.
+- Pas de secret dans Git.
+- Pas de document reel dans le depot produit.
+- Pas de carte de pseudonymisation dans le depot public.
+- Pas d'ecriture dans les racines brutes.
+- Pas de table comptable exportee sans rapport explicatif.
+- Pas de sortie diffusable sans controle confidentialite.
+

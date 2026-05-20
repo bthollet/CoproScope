@@ -15,6 +15,12 @@
     "lot": { "type": "string" },
     "status_ocr": { "type": "string" },
     "classification_status": { "type": "string" },
+    "extraction_level": { "type": "string" },
+    "text_quality": { "type": "string" },
+    "ocr_engine": { "type": "string" },
+    "docling_path": { "type": "string" },
+    "layout_path": { "type": "string" },
+    "ai_review_status": { "type": "string" },
     "sensitivity": { "type": "string" }
   }
 }

@@ -7,18 +7,38 @@ from pathlib import Path
 
 from ..core.common import RunContext, load_instance
 from ..core.doctor import run_doctor
-from ..modules import agscope, docuscope
+from ..modules import agscope, docai, docuscope
 
 
 TOOLS = [
-    {"name": "doctor", "description": "Validate an instance configuration."},
-    {"name": "inventory", "description": "Inventory raw documents for an instance."},
-    {"name": "extract-text", "description": "Extract native text for an instance."},
-    {"name": "classify", "description": "Classify documents for an instance."},
-    {"name": "missing-docs", "description": "Produce the completeness report."},
-    {"name": "kpi", "description": "Compute documentary KPIs."},
-    {"name": "ag.analyze", "description": "Analyze AG documents."}
+    {"name": "doctor", "description": "Diagnostiquer une instance CoproScope."},
+    {"name": "diagnostic", "description": "Alias francophone de doctor."},
+    {"name": "inventory", "description": "Inventorier les documents bruts d'une instance."},
+    {"name": "inventaire", "description": "Alias francophone de inventory."},
+    {"name": "extract-text", "description": "Extraire le texte natif d'une instance."},
+    {"name": "extraire-texte", "description": "Alias francophone de extract-text."},
+    {"name": "classify", "description": "Classer les documents d'une instance."},
+    {"name": "classer", "description": "Alias francophone de classify."},
+    {"name": "missing-docs", "description": "Produire le rapport de completude."},
+    {"name": "pieces-manquantes", "description": "Alias francophone de missing-docs."},
+    {"name": "kpi", "description": "Calculer les indicateurs documentaires."},
+    {"name": "indicateurs", "description": "Alias francophone de kpi."},
+    {"name": "ag.analyze", "description": "Analyser les documents d'AG."},
+    {"name": "ag.analyser", "description": "Alias francophone de ag.analyze."},
+    {"name": "docai.status", "description": "Lister les backends Document Intelligence disponibles."},
+    {"name": "docai.ocr", "description": "Executer l'OCR local Document Intelligence."},
+    {"name": "docai.enrich", "description": "Enrichir un document via Docling, Qwen VL ou LayoutLMv3."},
 ]
+
+TOOL_ALIASES = {
+    "diagnostic": "doctor",
+    "inventaire": "inventory",
+    "extraire-texte": "extract-text",
+    "classer": "classify",
+    "pieces-manquantes": "missing-docs",
+    "indicateurs": "kpi",
+    "ag.analyser": "ag.analyze",
+}
 
 
 def _instance_arg(arguments: dict) -> str:
@@ -40,6 +60,7 @@ def _capture_stdout(func, *args, **kwargs) -> str:
 
 
 def _call_tool(name: str, arguments: dict) -> dict:
+    name = TOOL_ALIASES.get(name, name)
     instance_value = _instance_arg(arguments)
     if Path(instance_value).is_dir():
         instance = load_instance(None, instance_value)
@@ -49,32 +70,44 @@ def _call_tool(name: str, arguments: dict) -> dict:
 
     if name == "doctor":
         output = _capture_stdout(run_doctor, instance, run)
-        run.finish("OK", "mcp doctor")
+        run.finish("OK", "mcp diagnostic")
         return {"content": output}
     if name == "inventory":
         path = docuscope.inventory(instance, run)
-        run.finish("OK", "mcp inventory")
+        run.finish("OK", "mcp inventaire")
         return {"content": str(path)}
     if name == "extract-text":
         path = docuscope.extract_text(instance, run, doc_id=arguments.get("doc_id"))
-        run.finish("OK", "mcp extract-text")
+        run.finish("OK", "mcp extraire-texte")
         return {"content": str(path)}
     if name == "classify":
         path = docuscope.classify(instance, run, copy_files=not bool(arguments.get("no_copy")))
-        run.finish("OK", "mcp classify")
+        run.finish("OK", "mcp classer")
         return {"content": str(path)}
     if name == "missing-docs":
         path = docuscope.missing_docs(instance, run)
-        run.finish("OK", "mcp missing-docs")
+        run.finish("OK", "mcp pieces-manquantes")
         return {"content": str(path)}
     if name == "kpi":
         path = docuscope.compute_kpis(instance, run)
-        run.finish("OK", "mcp kpi")
+        run.finish("OK", "mcp indicateurs")
         return {"content": str(path)}
     if name == "ag.analyze":
         agscope.analyze(instance, run)
-        run.finish("OK", "mcp ag.analyze")
+        run.finish("OK", "mcp ag.analyser")
         return {"content": "ok"}
+    if name == "docai.status":
+        result = docai.docai_status(instance, mode=arguments.get("mode"))
+        run.finish("OK", "mcp docai.status")
+        return {"content": json.dumps(result, ensure_ascii=True)}
+    if name == "docai.ocr":
+        path = docai.run_ocr(instance, run, doc_id=arguments.get("doc_id"), mode=arguments.get("mode", "local_basic"), engine=arguments.get("engine"))
+        run.finish("OK", "mcp docai.ocr")
+        return {"content": str(path)}
+    if name == "docai.enrich":
+        path = docai.enrich(instance, run, backend=arguments.get("backend", "docling"), doc_id=arguments.get("doc_id"), mode=arguments.get("mode", "local_basic"))
+        run.finish("OK", "mcp docai.enrich")
+        return {"content": str(path)}
     raise ValueError(f"Unknown tool: {name}")
 
 

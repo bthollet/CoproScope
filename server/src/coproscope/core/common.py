@@ -15,6 +15,42 @@ from typing import Any
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 SERVER_ROOT = PACKAGE_ROOT.parents[2]
 
+ROOT_KEY_ALIASES = {
+    "workspace": ("espace_travail", "workspace"),
+    "raw": ("bruts", "brut", "raw"),
+    "system": ("systeme", "system"),
+    "outputs": ("sorties", "outputs"),
+    "staging": ("preparation", "staging"),
+    "logs": ("journaux", "logs"),
+    "restricted": ("restreint", "restreints", "restricted"),
+}
+
+REGISTER_KEY_ALIASES = {
+    "documents": ("documents",),
+    "duplicates": ("doublons", "duplicates"),
+    "manifest": ("manifeste", "manifest"),
+    "requests": ("demandes", "requests"),
+    "ag": ("assemblees_generales", "ag"),
+    "findings": ("constats", "findings"),
+    "kpi": ("indicateurs", "kpi"),
+}
+
+MATRIX_KEY_ALIASES = {
+    "proofs": ("preuves", "proofs"),
+    "extranet": ("extranet",),
+    "due_diligence_dir": ("dossier_due_diligence", "dossier_diligence", "due_diligence_dir"),
+}
+
+ARTIFACT_KEY_ALIASES = {
+    "text_dir": ("dossier_textes", "text_dir"),
+    "classified_dir": ("dossier_classes", "classified_dir"),
+    "reports_dir": ("dossier_rapports", "reports_dir"),
+    "docai_dir": ("dossier_docai", "docai_dir"),
+    "accounting_dir": ("dossier_comptabilite", "accounting_dir"),
+    "grist_dir": ("dossier_grist", "grist_dir"),
+    "evidence_dir": ("dossier_evidence", "evidence_dir"),
+}
+
 DEFAULT_DOCUMENT_FIELDS = [
     "doc_id",
     "instance_id",
@@ -38,6 +74,12 @@ DEFAULT_DOCUMENT_FIELDS = [
     "text_path",
     "page_count",
     "text_char_count",
+    "extraction_level",
+    "text_quality",
+    "ocr_engine",
+    "docling_path",
+    "layout_path",
+    "ai_review_status",
     "sensitivity",
     "notes",
 ]
@@ -191,6 +233,13 @@ def parse_env_file(path: Path) -> dict[str, str]:
     return values
 
 
+def _first_present(mapping: dict[str, Any], names: tuple[str, ...], default: Any = None) -> Any:
+    for name in names:
+        if name in mapping and mapping[name] is not None:
+            return mapping[name]
+    return default
+
+
 @dataclass
 class InstanceConfig:
     path: Path
@@ -200,21 +249,32 @@ class InstanceConfig:
     def instance_root(self) -> Path:
         return self.path.parent
 
+    def _section(self, *names: str) -> dict[str, Any]:
+        value = _first_present(self.payload, tuple(names), {})
+        return dict(value) if isinstance(value, dict) else {}
+
+    def _section_value(self, section_names: tuple[str, ...], key_names: tuple[str, ...]) -> Any:
+        section = self._section(*section_names)
+        return _first_present(section, key_names)
+
     @property
     def instance_id(self) -> str:
-        return str(self.payload["instance_id"])
+        value = _first_present(self.payload, ("identifiant_instance", "instance_id"))
+        if value is None:
+            raise KeyError(f"Missing instance identifier in {self.path}")
+        return str(value)
 
     @property
     def display_name(self) -> str:
-        return str(self.payload["display_name"])
+        return str(_first_present(self.payload, ("nom_affichage", "display_name"), self.instance_id))
 
     @property
     def scope(self) -> str:
-        return str(self.payload.get("scope", "copro_simple"))
+        return str(_first_present(self.payload, ("perimetre", "scope"), "copro_simple"))
 
     @property
     def entity_id(self) -> str:
-        return str(self.payload.get("entity_id", "main"))
+        return str(_first_present(self.payload, ("identifiant_entite", "entite_id", "entity_id"), "main"))
 
     def resolve_path(self, value: str | None) -> Path | None:
         if not value:
@@ -225,7 +285,8 @@ class InstanceConfig:
         return (self.instance_root / candidate).resolve()
 
     def root(self, name: str) -> Path:
-        value = self.payload.get("roots", {}).get(name)
+        aliases = ROOT_KEY_ALIASES.get(name, (name,))
+        value = self._section_value(("racines", "roots"), aliases)
         if value is None:
             raise KeyError(f"Missing root '{name}' in {self.path}")
         resolved = self.resolve_path(str(value))
@@ -234,13 +295,15 @@ class InstanceConfig:
         return resolved
 
     def root_list(self, name: str) -> list[Path]:
-        values = self.payload.get("roots", {}).get(name, [])
+        aliases = ROOT_KEY_ALIASES.get(name, (name,))
+        values = self._section_value(("racines", "roots"), aliases) or []
         if isinstance(values, str):
             values = [values]
         return [self.resolve_path(str(item)) for item in values if self.resolve_path(str(item))]  # type: ignore[list-item]
 
     def register(self, name: str) -> Path:
-        value = self.payload.get("registers", {}).get(name)
+        aliases = REGISTER_KEY_ALIASES.get(name, (name,))
+        value = self._section_value(("registres", "registers"), aliases)
         if value is None:
             raise KeyError(f"Missing register '{name}' in {self.path}")
         resolved = self.resolve_path(str(value))
@@ -249,11 +312,13 @@ class InstanceConfig:
         return resolved
 
     def matrix(self, name: str) -> Path | None:
-        value = self.payload.get("matrices", {}).get(name)
+        aliases = MATRIX_KEY_ALIASES.get(name, (name,))
+        value = self._section_value(("matrices",), aliases)
         return self.resolve_path(str(value)) if value else None
 
     def artifact(self, name: str) -> Path:
-        value = self.payload.get("artifacts", {}).get(name)
+        aliases = ARTIFACT_KEY_ALIASES.get(name, (name,))
+        value = self._section_value(("artefacts", "artifacts"), aliases)
         if value is None:
             fallback = self.root("staging") / name
             return fallback
@@ -263,7 +328,8 @@ class InstanceConfig:
         return resolved
 
     def env_files(self) -> list[Path]:
-        values = self.payload.get("env", {}).get("files", [])
+        env_section = self._section("environnement", "env")
+        values = _first_present(env_section, ("fichiers", "files"), [])
         if isinstance(values, str):
             values = [values]
         resolved: list[Path] = []
@@ -274,18 +340,103 @@ class InstanceConfig:
         return resolved
 
     def required_env(self) -> list[str]:
-        values = self.payload.get("env", {}).get("required", [])
+        env_section = self._section("environnement", "env")
+        values = _first_present(env_section, ("obligatoires", "required"), [])
         return [str(item) for item in values]
 
     def optional_env(self) -> list[str]:
-        values = self.payload.get("env", {}).get("optional", [])
+        env_section = self._section("environnement", "env")
+        values = _first_present(env_section, ("optionnelles", "optional"), [])
         return [str(item) for item in values]
 
     def settings(self) -> dict[str, Any]:
-        return dict(self.payload.get("settings", {}))
+        return self._section("parametres", "settings")
+
+    def docai_settings(self, mode_override: str | None = None) -> dict[str, Any]:
+        settings = self.settings()
+        configured = settings.get("docai") or self._section("docai")
+        if not isinstance(configured, dict):
+            configured = {}
+
+        raw_mode = mode_override or _first_present(configured, ("mode",), "off")
+        mode = str(raw_mode).strip().lower().replace("-", "_")
+        if mode not in {"off", "local_basic", "local_heavy"}:
+            mode = "off"
+
+        enabled_backends = _first_present(configured, ("enabled_backends", "backends"), [])
+        if isinstance(enabled_backends, str):
+            enabled_backends = [enabled_backends]
+        enabled = [str(item).strip().lower().replace("-", "_") for item in enabled_backends if str(item).strip()]
+        if not enabled:
+            if mode == "local_basic":
+                enabled = ["pymupdf", "docling", "rapidocr", "sidecar_ocr"]
+            elif mode == "local_heavy":
+                enabled = ["pymupdf", "docling", "rapidocr", "sidecar_ocr", "qwen_vl", "layoutlmv3"]
+            else:
+                enabled = []
+
+        models_dir = _first_present(configured, ("models_dir", "dossier_modeles"), "./models")
+        max_pages = _first_present(configured, ("max_pages", "nombre_pages_max"), 30)
+        try:
+            max_pages = int(max_pages)
+        except (TypeError, ValueError):
+            max_pages = 30
+
+        return {
+            "mode": mode,
+            "privacy": str(_first_present(configured, ("privacy", "confidentialite"), "local_only")),
+            "device": str(_first_present(configured, ("device", "materiel"), "auto")),
+            "models_dir": str(models_dir),
+            "models_path": self.resolve_path(str(models_dir)),
+            "max_pages": max(1, max_pages),
+            "enabled_backends": enabled,
+        }
+
+    def politique_linguistique(self) -> dict[str, Any]:
+        settings = self.settings()
+        policy = settings.get("politique_linguistique") or settings.get("language_policy") or {}
+        if not isinstance(policy, dict):
+            policy = {}
+        return {
+            "langue_principale": str(
+                _first_present(
+                    settings,
+                    ("langue_principale", "primary_language"),
+                    _first_present(policy, ("langue_principale", "primary_language"), "fr"),
+                )
+            ),
+            "locale_preferree": str(
+                _first_present(
+                    settings,
+                    ("locale_preferree", "preferred_locale"),
+                    _first_present(policy, ("locale_preferree", "preferred_locale"), "fr-FR"),
+                )
+            ),
+            "preferer_le_francais": bool(
+                _first_present(policy, ("preferer_le_francais", "prefer_french"), True)
+            ),
+            "autoriser_anglais_technique": bool(
+                _first_present(
+                    policy,
+                    (
+                        "autoriser_anglais_uniquement_pour_compatibilite_technique",
+                        "allow_english_only_for_technical_compatibility",
+                    ),
+                    True,
+                )
+            ),
+            "traduire_sorties_diffusables": bool(
+                _first_present(
+                    policy,
+                    ("traduire_les_sorties_diffusables", "translate_diffusible_outputs"),
+                    True,
+                )
+            ),
+        }
 
     def classification_rules_path(self) -> Path:
-        override = self.payload.get("config_overrides", {}).get("classification_rules")
+        overrides = self._section("surcharges_config", "config_overrides")
+        override = _first_present(overrides, ("regles_classification", "classification_rules"))
         if override:
             resolved = self.resolve_path(str(override))
             if resolved is not None:
@@ -293,7 +444,8 @@ class InstanceConfig:
         return resource_path("configs", "taxonomy.default.yml")
 
     def completeness_rules_path(self) -> Path:
-        override = self.payload.get("config_overrides", {}).get("document_completeness")
+        overrides = self._section("surcharges_config", "config_overrides")
+        override = _first_present(overrides, ("completude_documentaire", "document_completeness"))
         if override:
             resolved = self.resolve_path(str(override))
             if resolved is not None:
@@ -301,7 +453,8 @@ class InstanceConfig:
         return resource_path("configs", "document_completeness.default.yml")
 
     def ag_rules_path(self) -> Path:
-        override = self.payload.get("config_overrides", {}).get("ag_rules")
+        overrides = self._section("surcharges_config", "config_overrides")
+        override = _first_present(overrides, ("regles_ag", "ag_rules"))
         if override:
             resolved = self.resolve_path(str(override))
             if resolved is not None:
@@ -309,7 +462,8 @@ class InstanceConfig:
         return resource_path("configs", "ag_rules.fr.yml")
 
     def sensitivity_rules_path(self) -> Path:
-        override = self.payload.get("config_overrides", {}).get("sensitivity_rules")
+        overrides = self._section("surcharges_config", "config_overrides")
+        override = _first_present(overrides, ("regles_sensibilite", "sensitivity_rules"))
         if override:
             resolved = self.resolve_path(str(override))
             if resolved is not None:

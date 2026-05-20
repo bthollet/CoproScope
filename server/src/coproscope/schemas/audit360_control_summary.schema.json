@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoproScope Audit360 Control Summary",
+  "type": "object",
+  "required": ["control_id", "point_de_controle", "statut_global"],
+  "properties": {
+    "control_id": { "type": "string" },
+    "point_de_controle": { "type": "string" },
+    "priorite_max": { "type": "string" },
+    "nb_constats": { "type": ["integer", "string"] },
+    "lots_concernes": { "type": "string" },
+    "blocs_concernes": { "type": "string" },
+    "pieces_ou_questions": { "type": "string" },
+    "entreprises": { "type": "string" },
+    "actions_a_faire": { "type": "string" },
+    "preuves_attendues": { "type": "string" },
+    "statut_global": { "type": "string" },
+    "sources": { "type": "string" }
+  }
+}
