@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from ..core.common import InstanceConfig, RunContext, now_iso, read_csv, write_text
-from .accounting import copy_accounting_tables_for_dashboard, reconstruct_accounting
+from .accounting import copy_accounting_tables_for_dashboard, ensure_accounting_outputs
 
 
 def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: str, year: int) -> dict[str, object]:
@@ -13,9 +13,8 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
     data_dir.mkdir(parents=True, exist_ok=True)
     pages_dir.mkdir(parents=True, exist_ok=True)
 
+    ensure_accounting_outputs(instance, run, year)
     accounting_dir = instance.artifact("accounting_dir") / str(year)
-    if not accounting_dir.exists():
-        reconstruct_accounting(instance, run, year)
     copied = copy_accounting_tables_for_dashboard(instance, year, data_dir)
 
     invoice_path = accounting_dir / f"invoice_evidence_{year}.csv"

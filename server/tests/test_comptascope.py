@@ -58,6 +58,8 @@ class ComptaScopeTests(unittest.TestCase):
     def test_controls_grist_and_evidence_exports(self) -> None:
         run = RunContext(self.instance, "workers accounting dashboards")
         reconstruct_accounting(self.instance, run, 2025)
+        report_path = self.example_root / "outputs" / "accounting" / "2025" / "rapport_comptascope_2025.md"
+        report_path.unlink()
         controls = accounting_controls(self.instance, run, 2025)
         grist = sync_grist(self.instance, run, target="local", dataset="demo", year=2025)
         evidence = build_evidence_report(self.instance, run, dataset="demo", year=2025)
@@ -69,6 +71,8 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertIn("invoice_evidence", grist["exports"])
         self.assertIn("invoice_expense_matches", grist["exports"])
         self.assertIn("supplier_alias_suggestions", grist["exports"])
+        self.assertIn("rapport_comptascope", grist["exports"])
+        self.assertTrue(report_path.exists())
         self.assertGreaterEqual(evidence["invoice_count"], 1)
         self.assertEqual(evidence["matched_count"], 1)
         self.assertIn("supplier_alias_suggestion_count", evidence)

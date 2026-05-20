@@ -1219,25 +1219,24 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     write_csv(invoice_path, INVOICE_EVIDENCE_FIELDS, invoices)
     write_csv(entries_path, ACCOUNTING_ENTRY_FIELDS, entries)
     write_csv(controls_path, ACCOUNTING_CONTROL_FIELDS, controls)
-    if expense_lines:
-        write_csv(expense_lines_path, EXPENSE_STATEMENT_FIELDS, expense_lines)
-        write_csv(expense_matches_path, INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
-        write_csv(alias_suggestions_path, SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
-        non_matches = [
-            {
-                "doc_id": row.get("doc_id", ""),
-                "fournisseur": row.get("fournisseur", ""),
-                "numero_facture": row.get("numero_facture", ""),
-                "ttc": row.get("ttc", ""),
-                "match_status": row.get("match_status", ""),
-                "match_reason": row.get("match_reason", ""),
-                "next_action": row.get("next_action", ""),
-            }
-            for row in expense_matches
-            if not row.get("match_status", "").startswith("MATCH_")
-        ]
-        non_matches.sort(key=lambda row: (_decimal(row.get("ttc")) or Decimal("0")), reverse=True)
-        write_csv(non_matches_path, NON_MATCH_PRIORITY_FIELDS, non_matches)
+    write_csv(expense_lines_path, EXPENSE_STATEMENT_FIELDS, expense_lines)
+    write_csv(expense_matches_path, INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
+    write_csv(alias_suggestions_path, SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
+    non_matches = [
+        {
+            "doc_id": row.get("doc_id", ""),
+            "fournisseur": row.get("fournisseur", ""),
+            "numero_facture": row.get("numero_facture", ""),
+            "ttc": row.get("ttc", ""),
+            "match_status": row.get("match_status", ""),
+            "match_reason": row.get("match_reason", ""),
+            "next_action": row.get("next_action", ""),
+        }
+        for row in expense_matches
+        if not row.get("match_status", "").startswith("MATCH_")
+    ]
+    non_matches.sort(key=lambda row: (_decimal(row.get("ttc")) or Decimal("0")), reverse=True)
+    write_csv(non_matches_path, NON_MATCH_PRIORITY_FIELDS, non_matches)
     _write_accounting_report(
         report_path,
         year=year,
@@ -1255,10 +1254,9 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
             "ledger_reconstruction": (ACCOUNTING_ENTRY_FIELDS, entries),
             "accounting_controls": (ACCOUNTING_CONTROL_FIELDS, controls),
     }
-    if expense_lines:
-        duckdb_tables["expense_statement_lines"] = (EXPENSE_STATEMENT_FIELDS, expense_lines)
-        duckdb_tables["invoice_expense_matches"] = (INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
-        duckdb_tables["supplier_alias_suggestions"] = (SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
+    duckdb_tables["expense_statement_lines"] = (EXPENSE_STATEMENT_FIELDS, expense_lines)
+    duckdb_tables["invoice_expense_matches"] = (INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
+    duckdb_tables["supplier_alias_suggestions"] = (SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
     duckdb_written = _write_duckdb(duckdb_path, duckdb_tables)
 
     summary = {
@@ -1274,10 +1272,10 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         "invoice_evidence": str(invoice_path),
         "ledger_reconstruction": str(entries_path),
         "accounting_controls": str(controls_path),
-        "expense_statement_lines": str(expense_lines_path) if expense_lines else "",
-        "invoice_expense_matches": str(expense_matches_path) if expense_lines else "",
-        "non_rapproches_prioritaires": str(non_matches_path) if expense_lines else "",
-        "supplier_alias_suggestions": str(alias_suggestions_path) if expense_lines else "",
+        "expense_statement_lines": str(expense_lines_path),
+        "invoice_expense_matches": str(expense_matches_path),
+        "non_rapproches_prioritaires": str(non_matches_path),
+        "supplier_alias_suggestions": str(alias_suggestions_path),
         "report": str(report_path),
         "duckdb": str(duckdb_path) if duckdb_written else "",
         "generated_at": now_iso(),
@@ -1288,10 +1286,9 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
 
 
 def accounting_controls(instance: InstanceConfig, run: RunContext, year: int) -> dict[str, object]:
+    ensure_accounting_outputs(instance, run, year)
     accounting_dir = instance.artifact("accounting_dir") / str(year)
     controls_path = accounting_dir / f"accounting_controls_{year}.csv"
-    if not controls_path.exists():
-        reconstruct_accounting(instance, run, year)
     _, rows = read_csv(controls_path)
     summary = {
         "status": "ok",
@@ -1302,6 +1299,35 @@ def accounting_controls(instance: InstanceConfig, run: RunContext, year: int) ->
     }
     run.log_action("accounting_controls", controls_path, f"year={year}; controls={len(rows)}")
     return summary
+
+
+def required_accounting_report_paths(instance: InstanceConfig, year: int) -> list[Path]:
+    accounting_dir = instance.artifact("accounting_dir") / str(year)
+    names = [
+        f"invoice_evidence_{year}.csv",
+        f"ledger_reconstruction_{year}.csv",
+        f"accounting_controls_{year}.csv",
+        f"expense_statement_lines_{year}.csv",
+        f"invoice_expense_matches_{year}.csv",
+        f"non_rapproches_prioritaires_{year}.csv",
+        f"supplier_alias_suggestions_{year}.csv",
+        f"rapport_comptascope_{year}.md",
+        f"summary_{year}.json",
+    ]
+    return [accounting_dir / name for name in names]
+
+
+def ensure_accounting_outputs(instance: InstanceConfig, run: RunContext, year: int) -> dict[str, object] | None:
+    missing = [path for path in required_accounting_report_paths(instance, year) if not path.exists()]
+    if missing:
+        result = reconstruct_accounting(instance, run, year)
+        run.log_action(
+            "accounting_report_refresh",
+            instance.artifact("accounting_dir") / str(year),
+            "missing=" + ",".join(path.name for path in missing),
+        )
+        return result
+    return None
 
 
 def copy_accounting_tables_for_dashboard(instance: InstanceConfig, year: int, target_dir: Path) -> dict[str, str]:

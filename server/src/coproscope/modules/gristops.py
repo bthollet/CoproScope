@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from ..core.common import InstanceConfig, RunContext, now_iso, write_text
-from .accounting import copy_accounting_tables_for_dashboard, reconstruct_accounting
+from .accounting import copy_accounting_tables_for_dashboard, ensure_accounting_outputs
 
 
 GRIST_TABLES = [
@@ -24,9 +24,7 @@ GRIST_TABLES = [
 def sync_grist(instance: InstanceConfig, run: RunContext, target: str, dataset: str, year: int) -> dict[str, object]:
     grist_dir = instance.artifact("grist_dir") / dataset / str(year)
     grist_dir.mkdir(parents=True, exist_ok=True)
-    accounting_dir = instance.artifact("accounting_dir") / str(year)
-    if not accounting_dir.exists():
-        reconstruct_accounting(instance, run, year)
+    ensure_accounting_outputs(instance, run, year)
 
     copied = copy_accounting_tables_for_dashboard(instance, year, grist_dir)
     manifest = {

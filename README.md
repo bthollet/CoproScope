@@ -122,6 +122,7 @@ Puis, a la racine du depot:
 ```
 
 La reconstruction ComptaScope produit les factures candidates, les ecritures candidates, les controles, puis les rapprochements expliques avec l'etat des depenses quand une source est configuree. Le rapport local `rapport_comptascope_<annee>.md` distingue les rapprochements probables des non-rapprochements qui demandent encore alias, ventilation ou controle du grand livre. Les alias fournisseurs repetes peuvent etre deduits automatiquement et les cas unitaires sont proposes a confirmer.
+Les commandes de controles et d'exports verifient aussi que le rapport ComptaScope existe: pas de tables comptables exportees sans rapport explicatif local.
 
 Pour fabriquer un export public propre:
 

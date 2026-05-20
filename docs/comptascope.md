@@ -14,6 +14,8 @@ ComptaScope est la brique comptable de CoproScope. Elle ne remplace pas une comp
 - `rapport_comptascope_<annee>.md`: rapport explicatif local, notamment sur les causes de non-rapprochement.
 - `coproscope_accounting_<annee>.duckdb`: base analytique locale si DuckDB est disponible.
 
+Ces sorties sont un contrat de production: meme lorsqu'aucun etat des depenses n'est configure, ComptaScope cree les rapports et tables vides correspondantes. Les commandes `accounting controls`, `grist sync` et `evidence build` verifient que le rapport ComptaScope existe et relancent la reconstruction si une sortie de rapport manque.
+
 ## Commandes
 
 ```powershell
