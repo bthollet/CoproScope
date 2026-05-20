@@ -2,10 +2,94 @@
 {% block content %}
 <section class="band">
   <div>
-    <p class="eyebrow">Chantiers visibles</p>
-    <h2>Ce qui n'est pas encore complet</h2>
+    <p class="eyebrow">Memoire de copropriete</p>
+    <h2>Decisions, incidents, travaux et passation</h2>
   </div>
-  <p class="lead">Ces blocs sont montres volontairement pour faire atterrir l'interface cible sans attendre que tout soit termine.</p>
+  <div class="kpi-grid">
+    <div><strong>{{ model.decisions.summary.total }}</strong><span>decisions suivies</span></div>
+    <div><strong>{{ model.decisions.summary.missing_proofs }}</strong><span>preuves manquantes</span></div>
+    <div><strong>{{ model.incidents.summary.open }}</strong><span>incidents ouverts</span></div>
+    <div><strong>{{ model.documents.actionable.summary.to_request }}</strong><span>pieces a demander</span></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>DecisionOps - decisions AG</h3>
+      <span>{{ model.decisions.summary.open }} ouvertes</span>
+    </div>
+    <table>
+      <thead><tr><th>Resolution</th><th>Statut</th><th>Echeance</th><th>Preuve attendue</th></tr></thead>
+      <tbody>
+      {% set decision_rows = model.decisions["items"] %}
+      {% for row in decision_rows[:12] %}
+        <tr>
+          <td><strong>{{ row.resolution_ref or row.decision_action_id }}</strong><br><small>{{ row.decision_text }}</small></td>
+          <td>{{ row.statut }}<br><small>{{ row.responsable }}</small></td>
+          <td>{{ row.echeance or "a fixer" }}</td>
+          <td>{{ row.preuve_attendue }}<br><code>{{ row.proof_doc_ids }}</code></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucun registre DecisionOps charge pour cette instance.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="button-row">
+      <a class="button-link secondary" href="/actions?scope=decisions">Actions decisions</a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>IncidentOps - incidents ouverts</h3>
+      <span>{{ model.incidents.summary.incomplete }} incomplets</span>
+    </div>
+    <table>
+      <thead><tr><th>Incident</th><th>Statut</th><th>Prochaine action</th><th>Preuve de cloture</th></tr></thead>
+      <tbody>
+      {% for row in model.incidents.open_rows[:12] %}
+        <tr>
+          <td><strong>{{ row.lieu or row.incident_id }}</strong><br><small>{{ row.date_signalement }} - {{ row.description }}</small></td>
+          <td>{{ row.status }}<br><small>{{ row.priority }}</small></td>
+          <td>{{ row.next_action }}<br><small>{{ row.action_due_date }}</small></td>
+          <td>{{ row.expected_closure_proof }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucun incident ouvert charge dans les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="button-row">
+      <a class="button-link secondary" href="/actions?scope=incidents">Actions incidents</a>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel warning">
+    <div class="panel-head">
+      <h3>WorksOps</h3>
+      <span>a lancer</span>
+    </div>
+    <p>Les travaux restent volontiers marques comme a lancer: on rattache d'abord les decisions AG, devis et preuves attendues, puis on ouvre un suivi travaux dedie.</p>
+    <div class="metric-row vertical">
+      <a href="/actions?scope=decisions"><strong>{{ model.decisions.summary.missing_proofs }}</strong><span>preuves travaux possibles</span></a>
+      <a href="/documents"><strong>{{ model.documents.actionable.summary.to_request }}</strong><span>pieces a demander</span></a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Passation CS</h3>
+      <span>memoire</span>
+    </div>
+    <p>La passation future pourra etre composee depuis les decisions ouvertes, incidents, demandes syndic, controles comptes et arbitrages confidentialite.</p>
+    <div class="metric-row vertical">
+      <a href="/actions"><strong>{{ model.action_summary.total }}</strong><span>actions ouvertes</span></a>
+      <a href="/confidentialite"><strong>{{ model.kpis.privacy_reviews }}</strong><span>revues diffusion</span></a>
+    </div>
+  </div>
 </section>
 
 <section class="module-grid wide">

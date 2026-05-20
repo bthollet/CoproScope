@@ -2384,17 +2384,23 @@ def _write_duckdb(path: Path, tables: dict[str, tuple[list[str], list[dict[str, 
     except ImportError:
         return False
 
+    def identifier(value: str) -> str:
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
+            raise ValueError(f"Unsafe DuckDB identifier: {value}")
+        return f'"{value}"'
+
     path.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(path))
     try:
         for table_name, (fields, rows) in tables.items():
-            con.execute(f"DROP TABLE IF EXISTS {table_name}")
-            columns = ", ".join(f"{field} VARCHAR" for field in fields)
-            con.execute(f"CREATE TABLE {table_name} ({columns})")
+            table = identifier(table_name)
+            columns = ", ".join(f"{identifier(field)} VARCHAR" for field in fields)
+            con.execute(f"DROP TABLE IF EXISTS {table}")  # nosec B608
+            con.execute(f"CREATE TABLE {table} ({columns})")  # nosec B608
             if rows:
                 placeholders = ", ".join("?" for _ in fields)
                 con.executemany(
-                    f"INSERT INTO {table_name} VALUES ({placeholders})",
+                    f"INSERT INTO {table} VALUES ({placeholders})",  # nosec B608
                     [[row.get(field, "") for field in fields] for row in rows],
                 )
     finally:

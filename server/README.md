@@ -38,3 +38,12 @@ L'objectif est de partager la forme reutilisable des controles et diligences, pa
 .\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root .. --config .\src\coproscope\configs\github_sharing.default.yml
 .\.venv\Scripts\python.exe -m coproscope.cli share-export --repo-root .. --config .\src\coproscope\configs\github_sharing.default.yml --output-dir ..\public-export --clean
 ```
+
+## Controles securite
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[security]"
+.\.venv\Scripts\python.exe -m pip_audit
+.\.venv\Scripts\bandit.exe -r src -q
+pre-commit run gitleaks --all-files
+```

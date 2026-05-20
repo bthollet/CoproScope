@@ -25,6 +25,15 @@ Cette documentation est ecrite pour etre lisible par trois publics :
 | [Feuille de route](./feuille_de_route.md) | Priorites P0/P1/P2/P3 en francais, issues de l'etude. |
 | [Etat du developpement](./etat_du_developpement.md) | Ce qui est livre, en cours, prevu, pas prioritaire. |
 | [Architecture et flux](./architecture_et_flux.md) | Separation depot public / instances privees / artefacts locaux. |
+| [Documentation noyau vs instance](./documentation_noyau_vs_instance.md) | Frontiere entre docs produit genericisables et docs d'instance sensibles. |
+| [Transition vault collaboratif](./transition_vault_collaboratif.md) | Strategie de passage vers un vault local signe et synchronisable. |
+| [Migration Drive vers local](./migration_drive_vers_local.md) | Runbook de bascule locale, nettoyage et garde-fous. |
+| [Format vault](./vault_format.md) | Format V1 du dossier sync chiffre, blobs et evenements. |
+| [Signatures et historique](./signatures_historique.md) | Modele append-only, signatures et reconstruction locale. |
+| [Objets metier et evenements V1](./objets_metier_evenements_v1.md) | Contrat des objets noyau et evenements collaboratifs. |
+| [Plugins officiels](./plugins_officiels.md) | Strategie de plugins signes, compatibles et revocables. |
+| [Batchs transition locale](./batchs_transition_locale.md) | Commandes Windows relancables depuis une autre conversation. |
+| [Reprise agents paralleles vault](./reprise_agents_paralleles_vault.md) | Lots paralleles sans collision et prompts de lancement. |
 | [Confidentialite et biffage](./confidentialite_et_biffage.md) | PrivacyOps, BiffageOps, colleges d'acces, versions diffusables. |
 | [Audit360](./audit360.md) | Couche transverse faits -> preuves -> risques -> actions. |
 | [FactureOps](./factureops.md) | Extraction et anomalies facture. |

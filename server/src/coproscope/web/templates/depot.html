@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Flux local</p>
+    <h2>Depot & exports</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.deposits.count }}</strong><span>depots traces</span></div>
+    <div><strong>{{ model.documents.documents.count }}</strong><span>documents</span></div>
+    <div><strong>{{ model.privacy.review_summary.to_arbitrate or 0 }}</strong><span>a arbitrer</span></div>
+    <div><strong>{{ model.action_summary.total }}</strong><span>actions</span></div>
+  </div>
+</section>
+
+{% if pipeline_status %}
+<section class="band notice-band">
+  <strong>Resultat</strong>
+  <span>{{ pipeline_status }} - manifeste mis a jour</span>
+</section>
+{% endif %}
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Nouveau depot</h3>
+      <span>pipeline leger auto</span>
+    </div>
+    <form class="upload-form" action="/depot{{ ui_token_query }}" method="post" enctype="multipart/form-data">
+      <input class="file-input" type="file" name="files" multiple>
+      <button class="button-link" type="submit">Deposer</button>
+    </form>
+    <div class="pipeline-list">
+      <div><strong>1</strong><span>Inventaire</span></div>
+      <div><strong>2</strong><span>Texte natif</span></div>
+      <div><strong>3</strong><span>Classement</span></div>
+      <div><strong>4</strong><span>Confidentialite</span></div>
+      <div><strong>5</strong><span>File biffage</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Exports</h3>
+      <span>{{ model.deposits.exports|length }}</span>
+    </div>
+    <div class="stack">
+      {% for export in model.deposits.exports %}
+      <a class="item" href="{{ export.href }}{{ ui_token_query if export.href.startswith('/exports/local.zip') else '' }}">
+        <strong>{{ export.label }}</strong>
+        <span>{{ export.kind }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Depot selectionne</h3>
+      <span>{{ selected_deposit.deposit_id if selected_deposit else "aucun" }}</span>
+    </div>
+    {% if selected_deposit %}
+    <div class="artifact-list">
+      <div class="artifact">
+        <strong>{{ selected_deposit.status }}</strong>
+        <span>{{ selected_deposit.files|length }} fichiers - {{ selected_deposit.doc_ids|length }} documents lies</span>
+        <code>{{ selected_deposit.target_dir }}</code>
+      </div>
+      {% for file in selected_deposit.files %}
+      <div class="artifact">
+        <strong>{{ file.stored_name }}</strong>
+        <span>{{ file.size_bytes }} octets</span>
+        <code>{{ file.path }}</code>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="button-row">
+      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/docai{{ ui_token_query }}">
+        <button class="button-link secondary" type="submit">DocAI local-heavy</button>
+      </form>
+      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/docops{{ ui_token_query }}">
+        <button class="button-link secondary" type="submit">DocOps</button>
+      </form>
+      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/compta{{ ui_token_query }}">
+        <button class="button-link secondary" type="submit">Compta</button>
+      </form>
+      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/all{{ ui_token_query }}">
+        <button class="button-link" type="submit">Tout hors DocAI</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="empty">Aucun depot UI trace pour cette instance.</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Etapes</h3>
+      <span>{{ selected_deposit.steps|length if selected_deposit else 0 }}</span>
+    </div>
+    {% if selected_deposit and selected_deposit.steps %}
+    <table>
+      <thead><tr><th>Etape</th><th>Statut</th><th>Documents</th></tr></thead>
+      <tbody>
+      {% for step in selected_deposit.steps[-14:] %}
+        <tr>
+          <td>{{ step.name }}{% if step.error %}<br><small>{{ step.error }}</small>{% endif %}</td>
+          <td><span class="pill severity-{{ 'p1' if step.status == 'error' else 'ok' }}">{{ step.status }}</span></td>
+          <td>{{ step.after.documents or 0 }}<br><small>{{ step.after.doc_ids|length if step.after.doc_ids else 0 }} lies</small></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Aucune etape post-depot visible.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>Historique</h3>
+    <span>{{ model.deposits["items"]|length }}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Depot</th>
+        <th>Fichiers</th>
+        <th>Documents</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in model.deposits["items"] %}
+      <tr>
+        <td><a href="/depot?depot={{ item.deposit_id }}{% if ui_token_param %}&{{ ui_token_param }}{% endif %}">{{ item.deposit_id }}</a><br><small>{{ item.created_at }}</small></td>
+        <td>{{ item.files|length }}</td>
+        <td>{{ item.doc_ids|length }}</td>
+        <td>{{ item.status }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">Aucun depot.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

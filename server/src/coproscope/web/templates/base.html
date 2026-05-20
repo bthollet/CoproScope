@@ -19,12 +19,14 @@
   </header>
 
   <nav class="nav" aria-label="Navigation principale">
-    <a class="{{ 'active' if page == 'overview' else '' }}" href="/">Cockpit</a>
-    <a class="{{ 'active' if page == 'actions' else '' }}" href="/actions">Actions</a>
-    <a class="{{ 'active' if page == 'accounting' else '' }}" href="/comptes">Comptes</a>
-    <a class="{{ 'active' if page == 'documents' else '' }}" href="/documents">Documents</a>
-    <a class="{{ 'active' if page == 'privacy' else '' }}" href="/confidentialite">Confidentialite</a>
-    <a class="{{ 'active' if page == 'workstreams' else '' }}" href="/chantiers">Chantiers</a>
+    <a class="{{ 'active' if page == 'overview' else '' }}" href="/{{ ui_token_query }}">Cockpit</a>
+    <a class="{{ 'active' if page == 'actions' else '' }}" href="/actions{{ ui_token_query }}">Actions</a>
+    <a class="{{ 'active' if page == 'accounting' else '' }}" href="/comptes{{ ui_token_query }}">Comptes</a>
+    <a class="{{ 'active' if page == 'documents' else '' }}" href="/documents{{ ui_token_query }}">Documents</a>
+    <a class="{{ 'active' if page == 'pieces' else '' }}" href="/pieces{{ ui_token_query }}">Atelier pieces</a>
+    <a class="{{ 'active' if page == 'privacy' else '' }}" href="/confidentialite{{ ui_token_query }}">Confidentialite</a>
+    <a class="{{ 'active' if page == 'workstreams' else '' }}" href="/chantiers{{ ui_token_query }}">Chantiers</a>
+    <a class="{{ 'active' if page == 'depot' else '' }}" href="/depot{{ ui_token_query }}">Depot & exports</a>
   </nav>
 
   <main>

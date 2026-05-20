@@ -9,6 +9,9 @@
     <div><strong>{{ model.kpis.documents }}</strong><span>documents</span></div>
     <div><strong>{{ model.kpis.invoices }}</strong><span>factures</span></div>
     <div><strong>{{ model.kpis.controls }}</strong><span>controles</span></div>
+    <div><strong>{{ model.kpis.decisions }}</strong><span>decisions suivies</span></div>
+    <div><strong>{{ model.kpis.open_incidents }}</strong><span>incidents ouverts</span></div>
+    <div><strong>{{ model.kpis.doc_requests }}</strong><span>pieces a demander</span></div>
     <div><strong>{{ model.kpis.actions }}</strong><span>actions a traiter</span></div>
   </div>
 </section>
@@ -38,6 +41,8 @@
       <a href="/actions?scope=comptes"><strong>{{ model.action_summary.accounting }}</strong><span>comptes</span></a>
       <a href="/actions?scope=confidentialite"><strong>{{ model.action_summary.privacy }}</strong><span>confidentialite</span></a>
       <a href="/actions?scope=documents"><strong>{{ model.action_summary.documents }}</strong><span>documents</span></a>
+      <a href="/actions?scope=decisions"><strong>{{ model.action_summary.decisions }}</strong><span>decisions</span></a>
+      <a href="/actions?scope=incidents"><strong>{{ model.action_summary.incidents }}</strong><span>incidents</span></a>
       <a href="/actions?scope=syndic"><strong>{{ model.action_summary.scope_counts.syndic }}</strong><span>syndic</span></a>
     </div>
     <p class="hint">Stock total d'actions uniques. La liste ci-dessous n'en montre qu'un apercu priorise.</p>

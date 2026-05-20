@@ -1,10 +1,24 @@
 from __future__ import annotations
 
+import os
+import secrets
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from ..core.common import InstanceConfig
+from .depot import (
+    DepositError,
+    build_local_export_zip,
+    create_deposit_from_uploads,
+    latest_deposit_manifest,
+    read_deposit_manifest,
+    run_accounting_pipeline,
+    run_all_non_heavy_pipeline,
+    run_docai_pipeline,
+    run_docops_pipeline,
+    run_light_pipeline,
+)
 from .viewmodel import actions_to_csv, actions_to_markdown, build_dashboard_model, filter_action_items
 
 try:  # Optional dependency: create_app raises a clearer error when it is absent.
@@ -16,33 +30,60 @@ except ImportError:  # pragma: no cover - depends on optional extra
 PACKAGE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = PACKAGE_DIR / "templates"
 STATIC_DIR = PACKAGE_DIR / "static"
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
 def _require_web_stack():
     try:
-        from fastapi import FastAPI, Request  # type: ignore
-        from fastapi.responses import HTMLResponse, Response  # type: ignore
+        from fastapi import FastAPI, HTTPException, Request  # type: ignore
+        from fastapi.responses import HTMLResponse, RedirectResponse, Response  # type: ignore
         from fastapi.staticfiles import StaticFiles  # type: ignore
         from fastapi.templating import Jinja2Templates  # type: ignore
     except ImportError as exc:  # pragma: no cover - depends on optional extra
         raise RuntimeError(
             "UI dependencies are missing. Install them with: python -m pip install -e .[ui]"
         ) from exc
-    return FastAPI, Request, HTMLResponse, Response, StaticFiles, Jinja2Templates
+    return FastAPI, HTTPException, Request, HTMLResponse, RedirectResponse, Response, StaticFiles, Jinja2Templates
 
 
-def create_app(instance: InstanceConfig, year: int = 2025):
-    FastAPI, Request, HTMLResponse, Response, StaticFiles, Jinja2Templates = _require_web_stack()
+def create_app(instance: InstanceConfig, year: int = 2025, access_token: str | None = None):
+    FastAPI, HTTPException, Request, HTMLResponse, RedirectResponse, Response, StaticFiles, Jinja2Templates = _require_web_stack()
 
     app = FastAPI(title="CoproScope local", docs_url=None, redoc_url=None)
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+    def _request_has_token(request: FastAPIRequest) -> bool:
+        if not access_token:
+            return False
+        supplied = request.query_params.get("token") or request.headers.get("x-coproscope-token", "")
+        return bool(supplied and secrets.compare_digest(str(supplied), access_token))
+
+    def _require_token(request: FastAPIRequest) -> None:
+        if not access_token:
+            return
+        if not _request_has_token(request):
+            raise HTTPException(status_code=403, detail="Jeton local requis.")
+
+    def _token_suffix(request: FastAPIRequest) -> str:
+        if not access_token or not _request_has_token(request):
+            return ""
+        return f"token={quote(access_token)}"
+
+    def _url_with_token(request: FastAPIRequest, path: str) -> str:
+        suffix = _token_suffix(request)
+        if not suffix:
+            return path
+        separator = "&" if "?" in path else "?"
+        return f"{path}{separator}{suffix}"
 
     def context(request: FastAPIRequest, page: str, **extra: object) -> dict[str, object]:
         values: dict[str, object] = {
             "request": request,
             "page": page,
             "model": build_dashboard_model(instance, year),
+            "ui_token_query": f"?{_token_suffix(request)}" if _token_suffix(request) else "",
+            "ui_token_param": _token_suffix(request),
         }
         values.update(extra)
         return values
@@ -107,6 +148,10 @@ def create_app(instance: InstanceConfig, year: int = 2025):
     def documents(request: FastAPIRequest):
         return templates.TemplateResponse(request=request, name="documents.html", context=context(request, "documents"))
 
+    @app.get("/pieces", response_class=HTMLResponse)
+    def pieces(request: FastAPIRequest):
+        return templates.TemplateResponse(request=request, name="pieces.html", context=context(request, "pieces"))
+
     @app.get("/confidentialite", response_class=HTMLResponse)
     def privacy(request: FastAPIRequest):
         return templates.TemplateResponse(request=request, name="privacy.html", context=context(request, "privacy"))
@@ -115,8 +160,55 @@ def create_app(instance: InstanceConfig, year: int = 2025):
     def workstreams(request: FastAPIRequest):
         return templates.TemplateResponse(request=request, name="workstreams.html", context=context(request, "workstreams"))
 
+    @app.get("/depot", response_class=HTMLResponse)
+    def depot_page(request: FastAPIRequest, depot: str = "", status: str = ""):
+        _require_token(request)
+        selected = read_deposit_manifest(instance, depot) if depot else latest_deposit_manifest(instance)
+        return templates.TemplateResponse(
+            request=request,
+            name="depot.html",
+            context=context(request, "depot", selected_deposit=selected, pipeline_status=status),
+        )
+
+    @app.post("/depot")
+    async def depot_upload(request: FastAPIRequest):
+        _require_token(request)
+        form = await request.form()
+        uploads = [value for key, value in form.multi_items() if key in {"files", "file"}]
+        try:
+            manifest = create_deposit_from_uploads(instance, uploads)
+        except DepositError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        run_light_pipeline(instance, manifest)
+        return RedirectResponse(
+            url=_url_with_token(request, f"/depot?depot={manifest['deposit_id']}&status=uploaded"),
+            status_code=303,
+        )
+
+    @app.post("/depot/{deposit_id}/pipeline/{pipeline}")
+    def depot_pipeline(request: FastAPIRequest, deposit_id: str, pipeline: str):
+        _require_token(request)
+        manifest = read_deposit_manifest(instance, deposit_id)
+        if manifest is None:
+            raise HTTPException(status_code=404, detail="Depot introuvable.")
+        if pipeline == "docai":
+            run_docai_pipeline(instance, manifest)
+        elif pipeline == "docops":
+            run_docops_pipeline(instance, manifest)
+        elif pipeline == "compta":
+            run_accounting_pipeline(instance, manifest, year)
+        elif pipeline == "all":
+            run_all_non_heavy_pipeline(instance, manifest, year)
+        else:
+            raise HTTPException(status_code=404, detail="Pipeline inconnu.")
+        return RedirectResponse(
+            url=_url_with_token(request, f"/depot?depot={deposit_id}&status={pipeline}"),
+            status_code=303,
+        )
+
     @app.get("/api/model")
-    def api_model():
+    def api_model(request: FastAPIRequest):
+        _require_token(request)
         return build_dashboard_model(instance, year)
 
     @app.get("/exports/actions.csv")
@@ -137,6 +229,22 @@ def create_app(instance: InstanceConfig, year: int = 2025):
             headers=_download_headers(f"coproscope_actions_{year}.md"),
         )
 
+    @app.get("/exports/local.zip")
+    def export_local_zip(request: FastAPIRequest):
+        _require_token(request)
+        _, rows = _filtered_actions()
+        payload = build_local_export_zip(
+            instance,
+            year=year,
+            actions_csv=actions_to_csv(rows),
+            actions_markdown=actions_to_markdown(rows),
+        )
+        return Response(
+            content=payload,
+            media_type="application/zip",
+            headers=_download_headers(f"coproscope_pack_local_{year}.zip"),
+        )
+
     @app.get("/health")
     def health():
         return {"status": "ok", "instance": instance.instance_id, "year": year}
@@ -144,7 +252,22 @@ def create_app(instance: InstanceConfig, year: int = 2025):
     return app
 
 
-def serve(instance: InstanceConfig, year: int = 2025, host: str = "127.0.0.1", port: int = 8765) -> None:
+def _ui_token() -> str:
+    return os.environ.get("COPROSCOPE_UI_TOKEN") or secrets.token_urlsafe(24)
+
+
+def serve(
+    instance: InstanceConfig,
+    year: int = 2025,
+    host: str = "127.0.0.1",
+    port: int = 8765,
+    *,
+    access_token: str | None = None,
+    unsafe_lan: bool = False,
+) -> None:
+    if host not in LOOPBACK_HOSTS and not unsafe_lan:
+        raise ValueError("Refusing to expose the UI outside loopback without --unsafe-lan.")
+    access_token = access_token or _ui_token()
     try:
         import uvicorn  # type: ignore
     except ImportError as exc:  # pragma: no cover - depends on optional extra
@@ -152,4 +275,5 @@ def serve(instance: InstanceConfig, year: int = 2025, host: str = "127.0.0.1", p
             "Uvicorn is missing. Install UI dependencies with: python -m pip install -e .[ui]"
         ) from exc
 
-    uvicorn.run(create_app(instance, year), host=host, port=port, log_level="info")
+    print(f"CoproScope UI token URL: http://{host}:{port}/?token={quote(access_token)}")
+    uvicorn.run(create_app(instance, year, access_token=access_token), host=host, port=port, log_level="info")

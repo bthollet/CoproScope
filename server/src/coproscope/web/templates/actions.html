@@ -20,6 +20,8 @@
     <a class="{{ 'active' if action_filters.scope == 'comptes' else '' }}" href="/actions?scope=comptes">Comptes {{ model.action_summary.scope_counts.comptes }}</a>
     <a class="{{ 'active' if action_filters.scope == 'confidentialite' else '' }}" href="/actions?scope=confidentialite">Confidentialite {{ model.action_summary.scope_counts.confidentialite }}</a>
     <a class="{{ 'active' if action_filters.scope == 'documents' else '' }}" href="/actions?scope=documents">Documents {{ model.action_summary.scope_counts.documents }}</a>
+    <a class="{{ 'active' if action_filters.scope == 'decisions' else '' }}" href="/actions?scope=decisions">Decisions {{ model.action_summary.scope_counts.decisions }}</a>
+    <a class="{{ 'active' if action_filters.scope == 'incidents' else '' }}" href="/actions?scope=incidents">Incidents {{ model.action_summary.scope_counts.incidents }}</a>
     <a class="{{ 'active' if action_filters.scope == 'syndic' else '' }}" href="/actions?scope=syndic">Syndic {{ model.action_summary.scope_counts.syndic }}</a>
   </div>
   <div class="button-row compact">

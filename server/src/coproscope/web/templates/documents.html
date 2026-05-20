@@ -13,6 +13,22 @@
   </div>
 </section>
 
+<section class="band">
+  <div>
+    <p class="eyebrow">DocOps actionnable</p>
+    <h3>Ce qu'on a, ce qui manque, ce qu'il faut demander</h3>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.documents.actionable.summary.present }}</strong><span>presents</span></div>
+    <div><strong>{{ model.documents.actionable.summary.missing }}</strong><span>manquants</span></div>
+    <div><strong>{{ model.documents.actionable.summary.obsolete }}</strong><span>obsoletes</span></div>
+    <div><strong>{{ model.documents.actionable.summary.to_request }}</strong><span>a demander</span></div>
+  </div>
+  <div class="button-row compact">
+    <a class="button-link secondary" href="/pieces{{ ui_token_query }}">Atelier pieces</a>
+  </div>
+</section>
+
 <section class="grid two">
   <div class="panel">
     <div class="panel-head">
@@ -33,7 +49,54 @@
 
   <div class="panel">
     <div class="panel-head">
-      <h3>Pieces a traiter</h3>
+      <h3>Pieces a demander</h3>
+      <span>{{ model.documents.actionable.to_request|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Priorite</th><th>Piece</th><th>Diligence</th></tr></thead>
+      <tbody>
+      {% for row in model.documents.actionable.to_request[:12] %}
+        <tr>
+          <td>{{ row.priority or row.criticality }}</td>
+          <td>{{ row.expected_piece or row.expected_label or row.subject }}<br><small>{{ row.reason }}</small></td>
+          <td>{{ row.suggested_diligence or row.action }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucune piece documentaire a demander dans les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="button-row">
+      <a class="button-link secondary" href="/actions?scope=documents">Voir les actions documents</a>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Pieces obsoletes ou a classer</h3>
+      <span>{{ model.documents.actionable.summary.obsolete + model.documents.actionable.summary.to_classify }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Statut</th><th>Piece attendue</th><th>Preuve locale</th></tr></thead>
+      <tbody>
+      {% for row in (model.documents.actionable.obsolete + model.documents.actionable.to_classify)[:12] %}
+        <tr>
+          <td>{{ row.status }}</td>
+          <td>{{ row.expected_label or row.document_type }}</td>
+          <td><code>{{ row.evidence_paths or row.matched_doc_ids }}</code></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucune piece obsolete ou a classer dans la matrice chargee.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Constats documentaires</h3>
       <span>{{ model.documents.stale_or_missing|length }}</span>
     </div>
     <table>

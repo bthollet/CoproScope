@@ -16,6 +16,33 @@
 <section class="grid two">
   <div class="panel">
     <div class="panel-head">
+      <h3>Lecture rapide</h3>
+      <span>P1 / P2 / OK</span>
+    </div>
+    <div class="guide-list">
+      <div><strong>P1</strong><span>Bloquant avant AG: piece, decision ou rattachement a obtenir.</span></div>
+      <div><strong>P2</strong><span>A confirmer: clarification utile mais pas bloquante seule.</span></div>
+      <div><strong>OK</strong><span>Rapprochement ou controle suffisamment documente dans les sorties.</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Avant AG</h3>
+      <span>decision CS</span>
+    </div>
+    <div class="metric-row vertical">
+      <a href="/actions?scope=comptes&priority=P1"><strong>{{ model.accounting.before_ag.blocking }}</strong><span>bloquants</span></a>
+      <a href="/actions?scope=comptes&priority=P2"><strong>{{ model.accounting.before_ag.to_confirm }}</strong><span>a confirmer</span></a>
+      <a href="/comptes"><strong>{{ model.accounting.before_ag.ok }}</strong><span>OK</span></a>
+      <a href="/actions?scope=syndic"><strong>{{ model.accounting.syndic_questions|length }}</strong><span>questions syndic</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
       <h3>Priorites de controle</h3>
       <span>{{ model.accounting.controls_p1|length }}</span>
     </div>
@@ -47,10 +74,46 @@
         <tr>
           <td>{{ row.priority }}</td>
           <td>{{ row.title }}<br><small>{{ row.source }}</small></td>
-          <td>{{ row.question }}<br><small>{{ row.reason }}</small></td>
+          <td><code>{{ row.question }}</code><br><small>{{ row.reason }}</small></td>
         </tr>
       {% else %}
         <tr><td colspan="3">Aucune question syndic n'a pu etre preparee depuis les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Fournisseurs a clarifier</h3>
+      <span>{{ model.accounting.supplier_focus|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Fournisseur</th><th>Lignes</th></tr></thead>
+      <tbody>
+      {% for row in model.accounting.supplier_focus %}
+        <tr><td>{{ row.supplier }}</td><td>{{ row.count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">Aucun fournisseur prioritaire dans les non rapproches.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Types de blocage</h3>
+      <span>{{ model.accounting.blocker_types.non_matches|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Statut rapprochement</th><th>Lignes</th></tr></thead>
+      <tbody>
+      {% for label, count in model.accounting.blocker_types.non_matches.items() %}
+        <tr><td>{{ label }}</td><td>{{ count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">Aucun type de blocage comptable charge.</td></tr>
       {% endfor %}
       </tbody>
     </table>

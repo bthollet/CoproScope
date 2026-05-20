@@ -158,7 +158,8 @@ main {
 
 .button-row,
 .filter-group,
-.metric-row {
+.metric-row,
+.upload-form {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -186,12 +187,64 @@ main {
   color: #ffffff;
   background: var(--accent);
   border-color: var(--accent);
+  cursor: pointer;
 }
 
 .button-link.secondary {
   color: var(--ink);
   background: #fbfcfb;
   border-color: var(--line);
+}
+
+button.button-link {
+  font: inherit;
+}
+
+.upload-form {
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.file-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #fbfcfb;
+  color: var(--muted);
+}
+
+.pipeline-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pipeline-list div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfcfb;
+}
+
+.pipeline-list strong {
+  display: block;
+  color: var(--accent);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pipeline-list span,
+.notice-band span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.notice-band {
+  justify-content: flex-start;
+  background: var(--accent-soft);
+  border-color: #abd8ca;
 }
 
 .filter-group {
@@ -308,6 +361,30 @@ main {
 .stack {
   display: grid;
   gap: 10px;
+}
+
+.guide-list {
+  display: grid;
+  gap: 9px;
+}
+
+.guide-list div {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  padding: 11px 12px;
+  background: #fbfcfb;
+}
+
+.guide-list strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.guide-list span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .item {
@@ -484,6 +561,11 @@ th {
   background: var(--warn-soft);
 }
 
+.pill.severity-ok {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 footer {
   padding: 22px clamp(18px, 4vw, 56px) 34px;
   color: var(--muted);
@@ -501,6 +583,10 @@ footer {
   .module-grid,
   .module-grid.wide {
     grid-template-columns: 1fr;
+  }
+
+  .pipeline-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .kpi-grid {
@@ -521,6 +607,10 @@ footer {
   }
 
   .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline-list {
     grid-template-columns: 1fr;
   }
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import secrets
 import sys
 from pathlib import Path
 
@@ -10,6 +12,7 @@ from .core.doctor import run_doctor
 from .core.due_diligence import summarize_due_diligence
 from .core.pipeline import run_pipeline
 from .core.share import audit_repo, export_shareable
+from .vault import core as vault_core
 from .modules import (
     accounting,
     agscope,
@@ -49,6 +52,7 @@ COMMAND_ALIASES = {
     "decisions": "decisions",
     "signalements": "incidents",
     "strategie": "strategy",
+    "coffre": "vault",
     "audit-partage": "share-audit",
     "export-partage": "share-export",
 }
@@ -75,6 +79,7 @@ SUBCOMMAND_ALIASES = {
     "demo_command": {"construire": "build"},
     "decisions_command": {"construire": "build"},
     "incidents_command": {"construire": "build"},
+    "vault_command": {"initialiser": "init", "importer": "import", "statut": "status", "verifier": "verify"},
 }
 
 
@@ -82,6 +87,13 @@ def _instance_parent() -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
     parent.add_argument("--instance", help="Chemin vers un fichier instance.yml ou un dossier d'instance.")
     parent.add_argument("--instance-root", help="Chemin vers un dossier d'instance contenant instance.yml.")
+    return parent
+
+
+def _vault_parent() -> argparse.ArgumentParser:
+    parent = argparse.ArgumentParser(add_help=False)
+    parent.add_argument("--local-root", required=True, help="Racine locale jetable/reconstructible du vault.")
+    parent.add_argument("--sync-root", required=True, help="Racine synchronisable chiffree du vault.")
     return parent
 
 
@@ -200,6 +212,11 @@ def build_parser() -> argparse.ArgumentParser:
     ui_serve.add_argument("--year", "--annee", dest="year", type=int, default=2025)
     ui_serve.add_argument("--host", default="127.0.0.1")
     ui_serve.add_argument("--port", type=int, default=8765)
+    ui_serve.add_argument(
+        "--unsafe-lan",
+        action="store_true",
+        help="Autoriser explicitement une ecoute hors loopback; protege par jeton local.",
+    )
 
     demo_parser = subparsers.add_parser("demo", aliases=["demonstration"], help="Fabrique de copro demo fictive.")
     demo_subparsers = demo_parser.add_subparsers(dest="demo_command", required=True)
@@ -234,6 +251,16 @@ def build_parser() -> argparse.ArgumentParser:
     strategy_parser = subparsers.add_parser("strategy", aliases=["strategie"], parents=[instance_parent], help="Strategie et feuille de route produit.")
     strategy_subparsers = strategy_parser.add_subparsers(dest="strategy_command", required=True)
     strategy_subparsers.add_parser("export", aliases=["exporter"], parents=[instance_parent], help="Exporter une strategie locale.")
+
+    vault_parent = _vault_parent()
+    vault_parser = subparsers.add_parser("vault", aliases=["coffre"], help="Vault local chiffre, signe et synchronisable.")
+    vault_subparsers = vault_parser.add_subparsers(dest="vault_command", required=True)
+    vault_subparsers.add_parser("init", aliases=["initialiser"], parents=[vault_parent], help="Initialiser un vault local et son dossier sync.")
+    vault_import = vault_subparsers.add_parser("import", aliases=["importer"], parents=[vault_parent], help="Importer un fichier dans le vault.")
+    vault_import.add_argument("--path", required=True, help="Fichier local a importer.")
+    vault_subparsers.add_parser("status", aliases=["statut"], parents=[vault_parent], help="Afficher le statut du vault.")
+    vault_subparsers.add_parser("verify", aliases=["verifier"], parents=[vault_parent], help="Verifier les evenements, signatures et blobs.")
+    vault_subparsers.add_parser("snapshot", parents=[vault_parent], help="Creer un snapshot chiffre de reconstruction rapide.")
 
     ag_parser = subparsers.add_parser("ag", aliases=["assemblee-generale"], parents=[instance_parent], help="Commandes du module AG.")
     ag_subparsers = ag_parser.add_subparsers(dest="ag_command", required=True)
@@ -337,6 +364,22 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "tools" and args.tools_command == "status":
         tools.print_tools_status()
         return 0
+    if args.command == "vault":
+        roots = vault_core.roots_from_args(args)
+        if args.vault_command == "init":
+            result = vault_core.vault_init(roots.local_root, roots.sync_root)
+        elif args.vault_command == "import":
+            result = vault_core.vault_import(roots.local_root, roots.sync_root, Path(args.path))
+        elif args.vault_command == "status":
+            result = vault_core.vault_status(roots.local_root, roots.sync_root)
+        elif args.vault_command == "verify":
+            result = vault_core.vault_verify(roots.local_root, roots.sync_root)
+        elif args.vault_command == "snapshot":
+            result = vault_core.vault_snapshot(roots.local_root, roots.sync_root)
+        else:
+            return 1
+        print(json.dumps(result, indent=2, ensure_ascii=True))
+        return 0 if result.get("ok", False) else 1
     if args.command == "demo" and args.demo_command == "build":
         source = load_instance(args.source_instance, args.source_instance_root)
         run = RunContext(source, command=" ".join(part for part in sys.argv[1:] if part))
@@ -463,8 +506,15 @@ def _dispatch(args: argparse.Namespace) -> int:
             from .web.app import serve
 
             run.log_action("ui_serve", instance.path, f"host={args.host}; port={args.port}; year={args.year}")
-            print(f"CoproScope UI: http://{args.host}:{args.port}")
-            serve(instance, year=args.year, host=args.host, port=args.port)
+            access_token = os.environ.get("COPROSCOPE_UI_TOKEN") or secrets.token_urlsafe(24)
+            serve(
+                instance,
+                year=args.year,
+                host=args.host,
+                port=args.port,
+                access_token=access_token,
+                unsafe_lan=args.unsafe_lan,
+            )
             return 0
         if args.command == "decisions" and args.decisions_command == "build":
             result = decisionops.build_decision_register(instance, run, ensure_ag=not args.no_ag_analyze)

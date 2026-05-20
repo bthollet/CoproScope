@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+{% set workshop = model.piece_workshop %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Sprint 4</p>
+    <h2>Atelier pieces</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ workshop.summary.total }}</strong><span>pieces suivies</span></div>
+    <div><strong>{{ workshop.summary.needs_action }}</strong><span>a traiter</span></div>
+    <div><strong>{{ workshop.summary.with_local_proof }}</strong><span>preuves locales</span></div>
+    <div><strong>{{ workshop.summary.without_local_proof }}</strong><span>sans preuve locale</span></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Pieces a demander</h3>
+      <span>{{ workshop.to_request|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Priorite</th><th>Piece</th><th>Point</th><th>Prochaine etape</th></tr></thead>
+      <tbody>
+      {% for item in workshop.to_request[:12] %}
+        <tr>
+          <td><span class="pill severity-{{ item.tone }}">{{ item.priority }}</span><br><small>{{ item.status }}</small></td>
+          <td>{{ item.piece }}<br><small>{{ item.source }}</small></td>
+          <td>{{ item.point_type }}<br><small>{{ item.point }}</small></td>
+          <td>{{ item.next_step }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune piece a demander dans les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Preuves locales a verifier</h3>
+      <span>{{ workshop.to_verify|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Statut</th><th>Piece</th><th>Preuve locale</th><th>Point</th></tr></thead>
+      <tbody>
+      {% for item in workshop.to_verify[:12] %}
+        <tr>
+          <td><span class="pill severity-{{ item.tone }}">{{ item.priority }}</span><br><small>{{ item.status }}</small></td>
+          <td>{{ item.piece }}<br><small>{{ item.source }}</small></td>
+          <td><code>{{ item.proof_ref }}</code></td>
+          <td>{{ item.point_type }}<br><small>{{ item.point }}</small></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune preuve locale a verifier dans les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>File atelier</h3>
+    <span>{{ workshop["items"]|length }}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Priorite</th>
+        <th>Piece ou preuve</th>
+        <th>Point de rattachement</th>
+        <th>Action attendue</th>
+        <th>Prochaine etape</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in workshop["items"] %}
+      <tr>
+        <td><span class="pill severity-{{ item.tone }}">{{ item.priority }}</span><br><small>{{ item.status }}</small></td>
+        <td>
+          <strong>{{ item.piece }}</strong><br>
+          <small>{{ item.source }}{% if item.request_id %} - {{ item.request_id }}{% endif %}</small>
+          {% if item.proof_ref %}<br><code>{{ item.proof_ref }}</code>{% endif %}
+        </td>
+        <td>{{ item.point_type }}<br><small>{{ item.point }}</small></td>
+        <td>{{ item.action }}</td>
+        <td>{{ item.next_step }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Aucune piece exploitable dans les artefacts charges.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Sources</h3>
+      <span>{{ workshop.summary.by_source|length }}</span>
+    </div>
+    <div class="metric-row vertical">
+      <a href="/documents{{ ui_token_query }}"><strong>{{ workshop.summary.docops }}</strong><span>DocOps</span></a>
+      <a href="/chantiers{{ ui_token_query }}"><strong>{{ workshop.summary.decisions }}</strong><span>DecisionOps</span></a>
+      <a href="/chantiers{{ ui_token_query }}"><strong>{{ workshop.summary.incidents }}</strong><span>IncidentOps</span></a>
+      <a href="/actions{{ ui_token_query }}"><strong>{{ model.action_summary.total }}</strong><span>Actions</span></a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Statuts</h3>
+      <span>{{ workshop.summary.by_status|length }}</span>
+    </div>
+    <div class="metric-row vertical">
+      {% for status, count in workshop.summary.by_status.items() %}
+      <a href="/pieces{{ ui_token_query }}"><strong>{{ count }}</strong><span>{{ status }}</span></a>
+      {% else %}
+      <div class="empty">Aucun statut charge.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
