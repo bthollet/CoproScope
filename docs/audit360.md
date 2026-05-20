@@ -23,7 +23,7 @@ Autrement dit, si DocOps dit "voici les pieces" et si SyndicOps / AGOps disent "
 
 ## Ce qui est generalisable
 
-La partie publiable d'`Audit360` ne reside pas dans les constats Beauvallon eux-memes.
+La partie publiable d'`Audit360` ne reside pas dans les constats d'une instance pilote elle-meme.
 
 Elle reside dans les **formes** et les **mecanismes** reutilisables:
 

@@ -17,7 +17,7 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 - instance synthetique publique pour les tests ;
 - garde-fous de partage (`share-audit`, `share-export`) ;
 - outillage local installe/documente: Python 3.14, GitHub CLI, uv, DuckDB, PDF/OCR, Node/Evidence, Grist Desktop ;
-- ComptaScope v1 sur instance synthetique: factures, ecritures candidates, controles, rapprochements explicables facture/etat des depenses, suggestions d'alias fournisseurs, exports Grist/Evidence locaux ;
+- ComptaScope v1 sur instance synthetique: factures, ecritures candidates, controles, rapprochements explicables facture/etat des depenses, suggestions d'alias fournisseurs, candidats locaux `P2` a confirmer, exports Grist/Evidence locaux ;
 - documentation publique structuree en francais.
 
 ## Ce qui est en cours
@@ -45,7 +45,7 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 | DocOps | bon socle | deja utile, heuristiques a enrichir |
 | SyndicOps | embryon utile | base en place, workflows a epaissir |
 | AGOps | premiere version | signaux utiles, couverture encore partielle |
-| ComptaScope | amorce v1 | reconstruction candidate sur factures synthetiques, rapprochement explicable, alias deduits et non-rapprochements causes |
+| ComptaScope | amorce v1 | reconstruction candidate sur factures synthetiques, rapprochement explicable, alias deduits, similarites de noms, divisions/regroupements et priorites P1/P2 |
 | Audit360 | extraction publique amorcee | formes generiques visibles, outillage encore a epaissir |
 | Documentation produit | bon socle | suffisamment claire pour une vraie relecture |
 | Francophonie | en cours d'inscription | preference explicite, chantier encore ouvert |

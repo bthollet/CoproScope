@@ -44,6 +44,7 @@ Ce document ancre le plan d'implementation sur disque afin que le contrat d'exec
 - CLI stable et serveur MCP minimal pour l'automatisation sure ;
 - schemas structures, configurations par defaut, prompts, templates et journaux d'ecriture.
 - ComptaScope rapproche les factures candidates avec les etats de depenses configures, deduit les alias fournisseurs repetes et explique chaque echec de rapprochement au lieu de le traiter comme une anomalie certaine.
+- Les rapprochements ComptaScope doivent etre classes en `OK`, `P2` ou `P1`: similarites de noms, divisions egales, sommes multi-lignes et regroupements de factures sont des candidats `P2` a confirmer, tandis que `NON_RAPPROCHE` reste reserve aux cas sans indice local suffisant.
 - Toute levee ou requalification de rapprochement doit produire le rapport ComptaScope dans la meme passe; les exports Grist/Evidence ne doivent jamais copier des tables comptables sans rapport explicatif a jour.
 
 ## Non-objectifs explicites pour v1

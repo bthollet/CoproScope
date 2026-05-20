@@ -75,6 +75,8 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertTrue(report_path.exists())
         self.assertGreaterEqual(evidence["invoice_count"], 1)
         self.assertEqual(evidence["matched_count"], 1)
+        self.assertEqual(evidence["candidate_p2_count"], 0)
+        self.assertEqual(evidence["priority_p1_count"], 0)
         self.assertIn("supplier_alias_suggestion_count", evidence)
 
     def test_tools_status_shape(self) -> None:
@@ -149,6 +151,85 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(suggestions[0]["suggestion_status"], "AUTO_APPLICABLE")
         self.assertEqual(suggestions[0]["suggested_alias"], "EAUCO")
         self.assertEqual(matches[0]["match_status"], "MATCH_AMOUNT_ALIAS")
+
+    def test_reconciliation_uses_local_name_similarity_as_p2_candidate(self) -> None:
+        invoices = [
+            {
+                "doc_id": "DOC-SIM",
+                "fournisseur": "A.M VINCENTELLI RENOVATION",
+                "numero_facture": "FC3869",
+                "ttc": "764.50",
+                "compte_propose": "615000",
+                "famille_charge": "entretien_maintenance",
+            }
+        ]
+        expenses = [
+            {
+                "statement_line_id": "DEP-SIM",
+                "account": "615000",
+                "reference": "INTERVENTION",
+                "supplier_hint": "AM VINCENTELLI",
+                "label": "AM VINCENTELLI / coffrage placo",
+                "amount": "764.50",
+            }
+        ]
+
+        matches = reconcile_invoice_expenses(invoices, expenses)
+
+        self.assertEqual(matches[0]["match_status"], "CANDIDAT_NOM_SIMILAIRE")
+        self.assertEqual(matches[0]["match_priority"], "P2")
+
+    def test_reconciliation_identifies_grouped_invoices_candidate(self) -> None:
+        invoices = [
+            {"doc_id": "DOC-G1", "fournisseur": "ACME SERVICES", "numero_facture": "G1", "ttc": "100.00", "compte_propose": "615000", "famille_charge": "entretien_maintenance"},
+            {"doc_id": "DOC-G2", "fournisseur": "ACME SERVICES", "numero_facture": "G2", "ttc": "150.00", "compte_propose": "615000", "famille_charge": "entretien_maintenance"},
+        ]
+        expenses = [
+            {
+                "statement_line_id": "DEP-G",
+                "account": "615000",
+                "reference": "REGROUP",
+                "supplier_hint": "ACME SERVICES",
+                "label": "ACME SERVICES / regroupement interventions",
+                "amount": "250.00",
+            }
+        ]
+
+        matches = reconcile_invoice_expenses(invoices, expenses)
+
+        self.assertEqual({row["match_status"] for row in matches}, {"CANDIDAT_REGROUPEMENT_FACTURES"})
+        self.assertTrue(all(row["match_priority"] == "P2" for row in matches))
+
+    def test_reconciliation_identifies_equal_division_candidate(self) -> None:
+        invoices = [
+            {"doc_id": "DOC-DIV", "fournisseur": "EAU EXEMPLE", "numero_facture": "D1", "ttc": "300.00", "compte_propose": "601000", "famille_charge": "energie_eau"}
+        ]
+        expenses = [
+            {"statement_line_id": "DEP-D1", "account": "601000", "reference": "C1", "supplier_hint": "EAU EXEMPLE", "label": "EAU EXEMPLE / compteur 1", "amount": "100.00"},
+            {"statement_line_id": "DEP-D2", "account": "601000", "reference": "C2", "supplier_hint": "EAU EXEMPLE", "label": "EAU EXEMPLE / compteur 2", "amount": "100.00"},
+            {"statement_line_id": "DEP-D3", "account": "601000", "reference": "C3", "supplier_hint": "EAU EXEMPLE", "label": "EAU EXEMPLE / compteur 3", "amount": "100.00"},
+        ]
+
+        matches = reconcile_invoice_expenses(invoices, expenses)
+
+        self.assertEqual(matches[0]["match_status"], "CANDIDAT_DIVISION_EGALE")
+        self.assertEqual(matches[0]["match_priority"], "P2")
+
+    def test_equal_division_requires_unique_local_candidate(self) -> None:
+        invoices = [
+            {"doc_id": "DOC-DIV-AMB", "fournisseur": "EAU EXEMPLE", "numero_facture": "D2", "ttc": "300.00", "compte_propose": "601000", "famille_charge": "energie_eau"}
+        ]
+        expenses = [
+            {"statement_line_id": "DEP-DA1", "account": "601000", "reference": "C1", "supplier_hint": "EAU EXEMPLE", "label": "EAU EXEMPLE / compteur 1", "amount": "100.00"},
+            {"statement_line_id": "DEP-DA2", "account": "601000", "reference": "C2", "supplier_hint": "EAU EXEMPLE", "label": "EAU EXEMPLE / compteur 2", "amount": "100.00"},
+            {"statement_line_id": "DEP-DA3", "account": "601000", "reference": "C3", "supplier_hint": "EAU EXEMPLE", "label": "EAU EXEMPLE / compteur 3", "amount": "100.00"},
+            {"statement_line_id": "DEP-DA4", "account": "601000", "reference": "C4", "supplier_hint": "EAU EXEMPLE", "label": "EAU EXEMPLE / compteur 4", "amount": "100.00"},
+        ]
+
+        matches = reconcile_invoice_expenses(invoices, expenses)
+
+        self.assertEqual(matches[0]["match_status"], "CANDIDAT_VENTILATION_AMBIGUE")
+        self.assertEqual(matches[0]["match_priority"], "P2")
 
     def test_reconstruct_can_start_from_preloaded_invoice_csv(self) -> None:
         preload = self.example_root / "system" / "accounting" / "preloaded_invoice_evidence_2025.csv"

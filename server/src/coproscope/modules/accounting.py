@@ -6,6 +6,7 @@ import re
 import unicodedata
 from collections import Counter
 from decimal import Decimal, InvalidOperation
+from difflib import SequenceMatcher
 from itertools import combinations
 from pathlib import Path
 from typing import Any, Iterable
@@ -83,6 +84,8 @@ INVOICE_EXPENSE_MATCH_FIELDS = [
     "ttc",
     "match_status",
     "match_confidence",
+    "match_priority",
+    "status_label",
     "statement_line_id",
     "statement_reference",
     "statement_label",
@@ -99,6 +102,8 @@ NON_MATCH_PRIORITY_FIELDS = [
     "numero_facture",
     "ttc",
     "match_status",
+    "match_priority",
+    "status_label",
     "match_reason",
     "next_action",
 ]
@@ -115,6 +120,114 @@ SUPPLIER_ALIAS_SUGGESTION_FIELDS = [
     "reason",
     "next_action",
 ]
+
+MATCH_STATUS_META: dict[str, dict[str, str]] = {
+    "MATCH_REFERENCE": {
+        "label": "Reference facture retrouvee",
+        "priority": "OK",
+        "meaning": "Le numero de facture ou une reference equivalente apparait dans l'etat des depenses.",
+        "local_treatment": "Recherche deterministe de reference apres normalisation des espaces et signes.",
+        "human_check": "Controle simple du libelle si le montant ou le fournisseur parait incoherent.",
+    },
+    "MATCH_AMOUNT_SUPPLIER": {
+        "label": "Montant exact + fournisseur reconnu",
+        "priority": "OK",
+        "meaning": "Une seule ligne porte le meme TTC et un nom fournisseur reconnu.",
+        "local_treatment": "Comparaison exacte du montant et reconnaissance du fournisseur dans le libelle/tiers.",
+        "human_check": "Controle ponctuel des postes sensibles.",
+    },
+    "MATCH_AMOUNT_ALIAS": {
+        "label": "Montant exact + alias fournisseur",
+        "priority": "OK",
+        "meaning": "Une seule ligne porte le meme TTC et un alias fournisseur configure ou deduit.",
+        "local_treatment": "Application des alias locaux confirmes ou auto-applicables.",
+        "human_check": "Conserver la trace de l'alias utilise.",
+    },
+    "CANDIDAT_SOMME_MULTI_LIGNES": {
+        "label": "Somme multi-lignes unique",
+        "priority": "P2",
+        "meaning": "Plusieurs lignes compatibles totalisent exactement le TTC de la facture.",
+        "local_treatment": "Recherche locale de combinaison unique de lignes inferieures au montant facture.",
+        "human_check": "Confirmer la ventilation par cle, compteur, batiment ou equipement.",
+    },
+    "CANDIDAT_MONTANT_FAMILLE": {
+        "label": "Montant exact + famille comptable",
+        "priority": "P2",
+        "meaning": "Une seule ligne porte le meme TTC et un compte compatible, mais le fournisseur n'est pas reconnu.",
+        "local_treatment": "Comparaison du compte/famille de charge avec le compte propose de la facture.",
+        "human_check": "Confirmer le libelle puis creer un alias si le lien est exact.",
+    },
+    "CANDIDAT_NOM_SIMILAIRE": {
+        "label": "Nom fournisseur tres similaire",
+        "priority": "P2",
+        "meaning": "Le montant et la famille concordent; le nom du tiers ressemble fortement au fournisseur.",
+        "local_treatment": "Similarite locale de noms, sans appel IA ni interpretation externe.",
+        "human_check": "Confirmer que les deux noms designent le meme tiers avant de valider.",
+    },
+    "CANDIDAT_DIVISION_EGALE": {
+        "label": "Facture divisee en lignes egales",
+        "priority": "P2",
+        "meaning": "La facture semble ventilee en plusieurs lignes de meme montant.",
+        "local_treatment": "Division exacte du TTC par un nombre de lignes compatibles.",
+        "human_check": "Verifier la cle de repartition ou le detail de ventilation.",
+    },
+    "CANDIDAT_REGROUPEMENT_FACTURES": {
+        "label": "Plusieurs factures regroupees",
+        "priority": "P2",
+        "meaning": "Plusieurs factures du meme fournisseur semblent former une seule ligne de depense.",
+        "local_treatment": "Somme exacte de plusieurs factures candidates vers une ligne de depense.",
+        "human_check": "Confirmer que la ligne comptable regroupe bien ces pieces.",
+    },
+    "CANDIDAT_REFERENCE_AMBIGUE": {
+        "label": "Reference trouvee plusieurs fois",
+        "priority": "P2",
+        "meaning": "La reference apparait dans plusieurs lignes possibles.",
+        "local_treatment": "Recherche deterministe de reference, mais sans departage unique.",
+        "human_check": "Departager par date, compte, montant ou piece.",
+    },
+    "CANDIDAT_MONTANT_AMBIGU": {
+        "label": "Montant exact ambigu",
+        "priority": "P2",
+        "meaning": "Le montant existe, mais plusieurs factures ou lignes peuvent correspondre.",
+        "local_treatment": "Comparaison exacte du montant avec detection des doublons/repetitions.",
+        "human_check": "Utiliser la date, la reference, le compte ou la ventilation pour departager.",
+    },
+    "CANDIDAT_VENTILATION_AMBIGUE": {
+        "label": "Ventilation possible mais ambigue",
+        "priority": "P2",
+        "meaning": "Plusieurs combinaisons de lignes peuvent reconstituer la facture.",
+        "local_treatment": "Recherche de sommes multi-lignes exactes.",
+        "human_check": "Limiter par date, compte, cle ou equipement avant validation.",
+    },
+    "CANDIDAT_MONTANT_SANS_NOM": {
+        "label": "Montant exact sans fournisseur reconnu",
+        "priority": "P2",
+        "meaning": "Le montant existe, mais le fournisseur ou son alias n'est pas reconnu.",
+        "local_treatment": "Comparaison exacte du TTC, sans preuve de tiers suffisante.",
+        "human_check": "Verifier le libelle et creer un alias si le lien est confirme.",
+    },
+    "CANDIDAT_FOURNISSEUR_SANS_MONTANT": {
+        "label": "Fournisseur reconnu sans montant exact",
+        "priority": "P2",
+        "meaning": "Le fournisseur est present, mais aucun montant identique n'a ete trouve.",
+        "local_treatment": "Recherche du fournisseur ou alias dans les lignes.",
+        "human_check": "Chercher regroupement, division, avoir ou regularisation.",
+    },
+    "CANDIDAT_FAMILLE_SEULE": {
+        "label": "Famille comptable compatible seulement",
+        "priority": "P2",
+        "meaning": "Le compte semble compatible, mais reference, montant et fournisseur ne suffisent pas.",
+        "local_treatment": "Rapprochement faible par compte/famille de charge.",
+        "human_check": "Comparer avec le grand livre et les pieces avant tout reclassement.",
+    },
+    "NON_RAPPROCHE": {
+        "label": "Aucun indice local suffisant",
+        "priority": "P1",
+        "meaning": "Aucune reference, montant, fournisseur, alias ou famille comptable suffisante n'a ete trouvee.",
+        "local_treatment": "Tous les traitements locaux disponibles ont echoue.",
+        "human_check": "Verifier grand livre, etat des depenses, OCR, piece manquante ou imputation hors perimetre.",
+    },
+}
 
 
 def _normal(value: str | None) -> str:
@@ -133,6 +246,31 @@ def _decimal(value: str | None) -> Decimal | None:
 
 def _money(value: Decimal | None) -> str:
     return f"{value:.2f}" if value is not None else ""
+
+
+def _status_meta(status: str) -> dict[str, str]:
+    return MATCH_STATUS_META.get(
+        status,
+        {
+            "label": status or "Statut non renseigne",
+            "priority": "P2",
+            "meaning": "Statut a documenter.",
+            "local_treatment": "Traitement local non detaille.",
+            "human_check": "Verifier la ligne source.",
+        },
+    )
+
+
+def _status_priority(status: str) -> str:
+    return _status_meta(status).get("priority", "P2")
+
+
+def _priority_rank(priority: str) -> int:
+    return {"P0": 0, "P1": 1, "P2": 2, "OK": 3}.get(priority or "", 4)
+
+
+def _is_confirmed_status(status: str) -> bool:
+    return _status_priority(status) == "OK"
 
 
 def _comptascope_settings(instance: InstanceConfig) -> dict[str, Any]:
@@ -393,6 +531,41 @@ def _supplier_match_kind(invoice: dict[str, str], line: dict[str, str], aliases:
     return ""
 
 
+def _supplier_similarity(left: str, right: str) -> Decimal:
+    left_norm = _normal(left)
+    right_norm = _normal(right)
+    if not left_norm or not right_norm:
+        return Decimal("0")
+    if left_norm in right_norm or right_norm in left_norm:
+        return Decimal("1")
+    left_tokens = _significant_supplier_tokens(left_norm)
+    right_tokens = _significant_supplier_tokens(right_norm)
+    token_score = Decimal("0")
+    if left_tokens and right_tokens:
+        common = left_tokens & right_tokens
+        token_score = Decimal(len(common) * 2) / Decimal(len(left_tokens) + len(right_tokens))
+    sequence_score = Decimal(str(SequenceMatcher(None, left_norm, right_norm).ratio()))
+    return max(token_score, sequence_score)
+
+
+def _similar_supplier_evidence(invoice: dict[str, str], line: dict[str, str]) -> tuple[str, Decimal]:
+    candidates = [
+        line.get("supplier_hint", ""),
+        _statement_alias_candidate(line),
+    ]
+    label = line.get("label", "")
+    if "/" in label:
+        candidates.append(label.split("/", 1)[0])
+    best_name = ""
+    best_score = Decimal("0")
+    for candidate in candidates:
+        score = _supplier_similarity(invoice.get("fournisseur", ""), candidate)
+        if score > best_score:
+            best_score = score
+            best_name = candidate
+    return best_name, best_score
+
+
 def _family_matches(invoice: dict[str, str], line: dict[str, str]) -> bool:
     account = re.sub(r"\D", "", line.get("account", ""))
     proposed = re.sub(r"\D", "", invoice.get("compte_propose", ""))
@@ -423,6 +596,7 @@ def _candidate_row(
     reason: str,
     action: str,
 ) -> dict[str, str]:
+    meta = _status_meta(status)
     return {
         "doc_id": invoice.get("doc_id", ""),
         "numero_facture": invoice.get("numero_facture", ""),
@@ -430,6 +604,8 @@ def _candidate_row(
         "ttc": invoice.get("ttc", ""),
         "match_status": status,
         "match_confidence": confidence,
+        "match_priority": meta.get("priority", "P2"),
+        "status_label": meta.get("label", status),
         "statement_line_id": line.get("statement_line_id", "") if line else "",
         "statement_reference": line.get("reference", "") if line else "",
         "statement_label": line.get("label", "") if line else "",
@@ -455,6 +631,33 @@ def _find_split_match(
                 matches.append(list(group))
                 if len(matches) > 1:
                     return [], len(matches)
+    if len(matches) == 1:
+        return matches[0], 1
+    return [], len(matches)
+
+
+def _find_equal_division(
+    invoice_amount: Decimal,
+    candidates: list[dict[str, str]],
+    max_lines: int = 24,
+) -> tuple[list[dict[str, str]], int]:
+    by_amount: dict[Decimal, list[dict[str, str]]] = {}
+    for line in candidates:
+        amount = _decimal(line.get("amount"))
+        if amount is None or amount <= 0 or amount >= invoice_amount:
+            continue
+        by_amount.setdefault(amount, []).append(line)
+    matches: list[list[dict[str, str]]] = []
+    for amount, lines in by_amount.items():
+        if len(lines) > max_lines:
+            continue
+        ratio = invoice_amount / amount
+        if ratio == ratio.to_integral_value() and ratio >= 2:
+            needed = int(ratio)
+            if len(lines) == needed:
+                matches.append(lines)
+            elif len(lines) > needed:
+                return [], 2
     if len(matches) == 1:
         return matches[0], 1
     return [], len(matches)
@@ -553,6 +756,67 @@ def _merge_supplier_aliases(*sources: dict[str, set[str]]) -> dict[str, set[str]
     return merged
 
 
+def _grouped_invoice_candidates(
+    invoices: list[dict[str, str]],
+    expense_lines: list[dict[str, str]],
+    supplier_aliases: dict[str, set[str]],
+    current_results: list[dict[str, str]],
+    max_group_size: int = 6,
+) -> dict[str, dict[str, str]]:
+    result_by_doc = {row.get("doc_id", ""): row for row in current_results}
+    open_invoices = [
+        invoice
+        for invoice in invoices
+        if not _is_confirmed_status(result_by_doc.get(invoice.get("doc_id", ""), {}).get("match_status", ""))
+        and _decimal(invoice.get("ttc")) is not None
+    ]
+    updates: dict[str, dict[str, str]] = {}
+    for line in expense_lines:
+        line_amount = _decimal(line.get("amount"))
+        if line_amount is None or line_amount <= 0:
+            continue
+        by_supplier: dict[str, list[dict[str, str]]] = {}
+        for invoice in open_invoices:
+            amount = _decimal(invoice.get("ttc"))
+            if amount is None or amount >= line_amount:
+                continue
+            supplier_match = _supplier_match_kind(invoice, line, supplier_aliases)
+            similar_name, similarity_score = _similar_supplier_evidence(invoice, line)
+            if not (supplier_match or _family_matches(invoice, line) or similarity_score >= Decimal("0.70")):
+                continue
+            key = _normal(invoice.get("fournisseur"))
+            if key:
+                by_supplier.setdefault(key, []).append(invoice)
+        for candidates in by_supplier.values():
+            if len(candidates) < 2 or len(candidates) > 16:
+                continue
+            matches: list[tuple[dict[str, str], ...]] = []
+            for size in range(2, min(max_group_size, len(candidates)) + 1):
+                for group in combinations(candidates, size):
+                    total = sum((_decimal(invoice.get("ttc")) or Decimal("0")) for invoice in group)
+                    if total == line_amount:
+                        matches.append(group)
+                        if len(matches) > 1:
+                            break
+                if len(matches) > 1:
+                    break
+            if len(matches) != 1:
+                continue
+            group = matches[0]
+            for invoice in group:
+                updates[invoice.get("doc_id", "")] = _candidate_row(
+                    invoice,
+                    "CANDIDAT_REGROUPEMENT_FACTURES",
+                    "A_CONFIRMATION_HUMAINE",
+                    line,
+                    len(group),
+                    "invoice_group_sum",
+                    "Plusieurs factures du meme fournisseur totalisent exactement une ligne de depense.",
+                    "Confirmer que la ligne comptable regroupe bien ces factures avant validation.",
+                )
+    return updates
+
+
 def reconcile_invoice_expenses(
     invoices: list[dict[str, str]],
     expense_lines: list[dict[str, str]],
@@ -584,6 +848,7 @@ def reconcile_invoice_expenses(
             supplier_match = _supplier_match_kind(invoice, line, supplier_aliases)
             family_match = _family_matches(invoice, line)
             amount_match = amount is not None and line_amount == amount
+            similar_name, similarity_score = _similar_supplier_evidence(invoice, line)
             line_infos.append(
                 {
                     "line": line,
@@ -592,6 +857,8 @@ def reconcile_invoice_expenses(
                     "supplier_match": supplier_match,
                     "family_match": family_match,
                     "amount_match": amount_match,
+                    "similar_name": similar_name,
+                    "similarity_score": similarity_score,
                 }
             )
 
@@ -663,12 +930,32 @@ def reconcile_invoice_expenses(
                 )
             )
             continue
+        similar_supplier = [
+            info
+            for info in line_infos
+            if info["amount_match"] and info["family_match"] and info["similarity_score"] >= Decimal("0.70")
+        ]
+        if len(similar_supplier) == 1 and not repeated_invoice:
+            similar_name = similar_supplier[0].get("similar_name", "")
+            results.append(
+                _candidate_row(
+                    invoice,
+                    "CANDIDAT_NOM_SIMILAIRE",
+                    "A_CONFIRMATION_HUMAINE",
+                    similar_supplier[0]["line"],
+                    1,
+                    "amount_family_name_similarity",
+                    f"Montant TTC exact, famille comptable compatible, et nom proche detecte localement: {similar_name}.",
+                    "Confirmer que les deux noms designent le meme fournisseur, puis ajouter l'alias si besoin.",
+                )
+            )
+            continue
         if len(exact_family) == 1 and not repeated_invoice:
             results.append(
                 _candidate_row(
                     invoice,
-                    "MATCH_AMOUNT_ACCOUNT_FAMILY",
-                    "PROBABLE",
+                    "CANDIDAT_MONTANT_FAMILLE",
+                    "A_CONFIRMATION_HUMAINE",
                     exact_family[0]["line"],
                     1,
                     "amount_account_family",
@@ -703,6 +990,26 @@ def reconcile_invoice_expenses(
                 and info["amount"] < amount
                 and (info["supplier_match"] or info["family_match"])
             ]
+            division_match, division_count = _find_equal_division(amount, split_candidates)
+            if division_count == 1 and division_match and not repeated_invoice:
+                first = dict(division_match[0])
+                first["statement_line_id"] = " + ".join(line.get("statement_line_id", "") for line in division_match)
+                first["reference"] = " + ".join(line.get("reference", "") for line in division_match if line.get("reference"))
+                first["label"] = " / ".join(line.get("label", "") for line in division_match if line.get("label"))
+                first["amount"] = _money(sum((_decimal(line.get("amount")) or Decimal("0")) for line in division_match))
+                results.append(
+                    _candidate_row(
+                        invoice,
+                        "CANDIDAT_DIVISION_EGALE",
+                        "A_CONFIRMATION_HUMAINE",
+                        first,
+                        len(division_match),
+                        "equal_division",
+                        "Le TTC de la facture se divise exactement en plusieurs lignes compatibles de meme montant.",
+                        "Verifier la cle de repartition, le compteur, le batiment ou l'equipement avant validation.",
+                    )
+                )
+                continue
             split_match, split_count = _find_split_match(amount, split_candidates)
             if split_count == 1 and split_match and not repeated_invoice:
                 first = dict(split_match[0])
@@ -713,8 +1020,8 @@ def reconcile_invoice_expenses(
                 results.append(
                     _candidate_row(
                         invoice,
-                        "MATCH_SPLIT_SUM",
-                        "PROBABLE",
+                        "CANDIDAT_SOMME_MULTI_LIGNES",
+                        "A_CONFIRMATION_HUMAINE",
                         first,
                         len(split_match),
                         "split_sum",
@@ -742,21 +1049,25 @@ def reconcile_invoice_expenses(
         supplier_only = [info for info in line_infos if info["supplier_match"]]
         family_only = [info for info in line_infos if info["family_match"]]
         if amount_only:
+            status = "CANDIDAT_MONTANT_SANS_NOM"
             reason = "Le montant TTC existe dans l'etat des depenses, mais le fournisseur ou l'alias n'est pas reconnu."
             action = "Ajouter un alias fournisseur ou verifier que le libelle comptable vise la meme piece."
             line = amount_only[0]["line"]
             candidate_count = len(amount_only)
         elif supplier_only:
+            status = "CANDIDAT_FOURNISSEUR_SANS_MONTANT"
             reason = "Le fournisseur semble present, mais aucun montant identique n'a ete trouve."
             action = "Chercher une ventilation, un regroupement, un avoir ou une regularisation."
             line = supplier_only[0]["line"]
             candidate_count = len(supplier_only)
         elif family_only:
+            status = "CANDIDAT_FAMILLE_SEULE"
             reason = "La famille comptable est compatible, mais ni reference, ni montant exact, ni fournisseur reconnu ne suffisent."
             action = "Comparer les lignes du compte candidat et completer les alias/factures manquantes."
             line = family_only[0]["line"]
             candidate_count = len(family_only)
         else:
+            status = "NON_RAPPROCHE"
             reason = "Aucune ligne de depense ne porte la reference, le montant exact, le fournisseur ou une famille comptable suffisante."
             action = "Verifier l'etat des depenses, le grand livre, les libelles OCR et la presence de la piece."
             line = None
@@ -764,7 +1075,7 @@ def reconcile_invoice_expenses(
         results.append(
             _candidate_row(
                 invoice,
-                "NON_RAPPROCHE",
+                status,
                 "A_CONTROLER",
                 line,
                 candidate_count,
@@ -773,6 +1084,10 @@ def reconcile_invoice_expenses(
                 action,
             )
         )
+
+    grouped_updates = _grouped_invoice_candidates(invoices, expense_lines, supplier_aliases, results)
+    if grouped_updates:
+        results = [grouped_updates.get(row.get("doc_id", ""), row) for row in results]
 
     return results
 
@@ -932,10 +1247,11 @@ def _entry_for_invoice(row: dict[str, str], year: int, entry_index: int) -> dict
 
 def _controls_for_expense_match(row: dict[str, str], year: int) -> list[dict[str, str]]:
     status = row.get("match_status", "")
-    if status.startswith("MATCH_"):
+    priority = row.get("match_priority") or _status_priority(status)
+    if priority == "OK":
         return []
-    severity = "P1" if status == "NON_RAPPROCHE" else "P2"
-    control = "FACTURE_NON_RAPPROCHEE_ETAT_DEPENSES" if status == "NON_RAPPROCHE" else "RAPPROCHEMENT_A_CONTROLER"
+    severity = priority if priority in {"P0", "P1", "P2"} else "P2"
+    control = "FACTURE_NON_RAPPROCHEE_ETAT_DEPENSES" if status == "NON_RAPPROCHE" else "RAPPROCHEMENT_CANDIDAT_A_CONFIRMER"
     return [
         {
             "control_id": f"CTRL-{year}-{row.get('doc_id', '')}-{control}",
@@ -948,12 +1264,6 @@ def _controls_for_expense_match(row: dict[str, str], year: int) -> list[dict[str
             "action": row.get("next_action", ""),
         }
     ]
-
-
-def _counter_lines(counter: Counter[str], empty_label: str = "Aucun") -> list[str]:
-    if not counter:
-        return [f"- {empty_label}"]
-    return [f"- {key}: {value}" for key, value in counter.most_common()]
 
 
 def _md_cell(value: str) -> str:
@@ -974,19 +1284,31 @@ def _write_accounting_report(
     alias_suggestions = alias_suggestions or []
     total_ttc = sum((_decimal(row.get("ttc")) or Decimal("0")) for row in invoices)
     match_statuses = Counter(row.get("match_status", "") or "SANS_ETAT_DEPENSES" for row in matches)
-    non_match_reasons = Counter(row.get("match_reason", "") for row in matches if not row.get("match_status", "").startswith("MATCH_"))
-    supplier_non_matches = Counter(row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER" for row in matches if row.get("match_status") == "NON_RAPPROCHE")
+    priority_counts = Counter(row.get("match_priority", _status_priority(row.get("match_status", ""))) for row in matches)
+    supplier_open_counts = Counter(row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER" for row in matches if row.get("match_priority") != "OK")
+    supplier_open_totals: Counter[str] = Counter()
+    for row in matches:
+        if row.get("match_priority") != "OK":
+            supplier_open_totals[row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER"] += _decimal(row.get("ttc")) or Decimal("0")
     control_severities = Counter(row.get("severity", "") for row in controls)
     alias_statuses = Counter(row.get("suggestion_status", "") for row in alias_suggestions)
     priority_items = [
-        row for row in matches if row.get("match_status", "") and not row.get("match_status", "").startswith("MATCH_")
+        row for row in matches if row.get("match_status", "") and row.get("match_priority") != "OK"
     ]
-    priority_items.sort(key=lambda row: (_decimal(row.get("ttc")) or Decimal("0")), reverse=True)
+    priority_items.sort(
+        key=lambda row: (
+            _priority_rank(row.get("match_priority", "")),
+            -(_decimal(row.get("ttc")) or Decimal("0")),
+        )
+    )
+    matched_count = priority_counts.get("OK", 0)
+    p1_count = priority_counts.get("P1", 0)
+    p2_count = priority_counts.get("P2", 0)
 
     lines = [
         f"# Rapport ComptaScope {year}",
         "",
-        "Ce rapport explique la reconstruction comptable candidate et les rapprochements avec l'etat des depenses quand il est disponible.",
+        "Ce rapport explique ce que ComptaScope a rapproche localement, ce qui reste candidat, et ce qui doit etre controle en priorite.",
         "",
         "## Synthese",
         "",
@@ -994,33 +1316,115 @@ def _write_accounting_report(
         f"- Ecritures candidates: {len(entries)}",
         f"- Total TTC facture: {_money(total_ttc)} EUR",
         f"- Lignes d'etat des depenses exploitees: {len(expense_lines)}",
-        f"- Controles ouverts: {len(controls)}",
-        f"- Controles P0: {control_severities.get('P0', 0)}",
-        f"- Controles P1: {control_severities.get('P1', 0)}",
+        f"- Rapprochements locaux suffisants: {matched_count}",
+        f"- Candidats a confirmer P2: {p2_count}",
+        f"- Points de rapprochement P1: {p1_count}",
+        f"- Controles comptables ouverts: {len(controls)}",
+        f"- Controles comptables P0: {control_severities.get('P0', 0)}",
+        f"- Controles comptables P1: {control_severities.get('P1', 0)}",
+        f"- Controles comptables P2: {control_severities.get('P2', 0)}",
         f"- Alias fournisseurs proposes: {len(alias_suggestions)}",
         f"- Alias auto-appliques: {alias_statuses.get('AUTO_APPLICABLE', 0)}",
         "",
-        "## Rapprochements",
+        "## Lecture rapide",
         "",
-        *_counter_lines(match_statuses, "Aucun rapprochement calcule"),
+        "- `OK`: ComptaScope a une preuve locale suffisante pour rapprocher automatiquement.",
+        "- `P2`: ComptaScope a trouve un candidat local plausible; une confirmation humaine suffit souvent.",
+        "- `P1`: ComptaScope n'a pas assez d'indices locaux; il faut controler le grand livre, l'etat des depenses ou la piece.",
+        "- Les statuts P2 ne sont pas des erreurs: ce sont des traitements locaux avances qui evitent de demander une interpretation IA.",
         "",
-        "## Comment lire un non-rapprochement",
+        "## Etat des rapprochements facture / etat des depenses",
         "",
-        "`NON_RAPPROCHE` ne veut pas dire que la facture est absente de la comptabilite. Cela veut dire que ComptaScope n'a pas encore trouve de preuve deterministe suffisante dans l'etat des depenses.",
+        "| Statut | Libelle clair | Priorite | Nombre | Ce que cela veut dire | Traitement local applique | Confirmation attendue |",
+        "| --- | --- | --- | ---: | --- | --- | --- |",
+    ]
+    ordered_statuses = sorted(
+        match_statuses.items(),
+        key=lambda item: (_priority_rank(_status_priority(item[0])), -item[1], item[0]),
+    )
+    for status, count in ordered_statuses:
+        meta = _status_meta(status)
+        lines.append(
+            " | ".join(
+                [
+                    "",
+                    _md_cell(status),
+                    _md_cell(meta.get("label", status)),
+                    _md_cell(meta.get("priority", "")),
+                    str(count),
+                    _md_cell(meta.get("meaning", "")),
+                    _md_cell(meta.get("local_treatment", "")),
+                    _md_cell(meta.get("human_check", "")),
+                    "",
+                ]
+            )
+        )
+    lines.extend(
+        [
         "",
-        "ComptaScope avance automatiquement quand il trouve une reference de facture, un montant exact avec fournisseur reconnu, un alias fournisseur configure, une famille comptable compatible, ou une somme unique de lignes ventilees.",
+        "## Traitements locaux appliques",
         "",
-        "Une facture peut rester non rapprochee si le syndic utilise un alias, une reference interne, une ventilation par cle/batiment/equipement, un regroupement de factures, ou si l'extraction OCR a affaibli le numero ou le montant.",
+        "ComptaScope applique ces traitements dans l'ordre, sans interpretation externe:",
         "",
-        "## Causes a traiter",
+        "1. reference de facture dans l'etat des depenses ;",
+        "2. montant TTC exact avec fournisseur reconnu ;",
+        "3. montant TTC exact avec alias fournisseur configure ou deduit ;",
+        "4. montant TTC exact avec nom fournisseur tres similaire ;",
+        "5. montant TTC exact avec famille comptable compatible ;",
+        "6. division d'une facture en plusieurs lignes egales ;",
+        "7. somme de plusieurs lignes vers une facture ;",
+        "8. regroupement de plusieurs factures vers une ligne ;",
+        "9. qualification des cas restants en candidats P2 ou non-rapproches P1.",
         "",
-        *_counter_lines(non_match_reasons, "Aucune cause ouverte"),
+        "Un `NON_RAPPROCHE` ne veut donc pas dire que la facture est absente de la comptabilite. Cela veut dire qu'aucun traitement local n'a produit de preuve suffisante.",
+        "",
+        "## Causes a traiter par ordre de priorite",
+        "",
+        "| Priorite | Cause locale | Nombre | Action type |",
+        "| --- | --- | ---: | --- |",
+    ])
+    open_statuses = [
+        (status, count)
+        for status, count in ordered_statuses
+        if _status_priority(status) != "OK"
+    ]
+    if open_statuses:
+        for status, count in open_statuses:
+            meta = _status_meta(status)
+            lines.append(
+                f"| {_md_cell(meta.get('priority', ''))} | {_md_cell(meta.get('label', status))} | {count} | {_md_cell(meta.get('human_check', ''))} |"
+            )
+    else:
+        lines.append("| - | Aucune cause ouverte | 0 | - |")
+    lines.extend([
+        "",
+        "## Fournisseurs a prioriser",
+        "",
+        "| Fournisseur | Points ouverts | Total TTC ouvert | Priorite de lecture |",
+        "| --- | ---: | ---: | --- |",
+    ])
+    if supplier_open_counts:
+        supplier_rows = sorted(
+            supplier_open_counts.items(),
+            key=lambda item: (
+                0 if any(row.get("fournisseur") == item[0] and row.get("match_priority") == "P1" for row in matches) else 1,
+                -(supplier_open_totals.get(item[0], Decimal("0"))),
+                item[0],
+            ),
+        )
+        for supplier, count in supplier_rows[:15]:
+            total = supplier_open_totals.get(supplier, Decimal("0"))
+            priority = "P1 d'abord" if any(row.get("fournisseur") == supplier and row.get("match_priority") == "P1" for row in matches) else "P2 a confirmer"
+            lines.append(f"| {_md_cell(supplier)} | {count} | {_money(total)} | {priority} |")
+    else:
+        lines.append("| - | 0 | 0.00 | Aucun point ouvert |")
+    lines.extend([
         "",
         "## Alias fournisseurs deduits",
         "",
         "| Statut | Fournisseur | Alias propose | Preuves | Total TTC | Exemple |",
         "| --- | --- | --- | ---: | ---: | --- |",
-    ]
+    ])
     if alias_suggestions:
         for row in alias_suggestions[:15]:
             lines.append(
@@ -1042,23 +1446,22 @@ def _write_accounting_report(
     lines.extend(
         [
             "",
-            "## Fournisseurs a prioriser",
-            "",
-            *_counter_lines(supplier_non_matches, "Aucun fournisseur non rapproche"),
-            "",
             "## Exemples prioritaires a expliquer",
             "",
-            "| Statut | Fournisseur | Facture | TTC | Cause | Action |",
-            "| --- | --- | --- | ---: | --- | --- |",
+            "| Priorite | Statut | Libelle clair | Fournisseur | Facture | TTC | Cause locale | Action demandee |",
+            "| --- | --- | --- | --- | --- | ---: | --- | --- |",
         ]
     )
     if priority_items:
         for row in priority_items[:15]:
+            meta = _status_meta(row.get("match_status", ""))
             lines.append(
                 " | ".join(
                     [
                         "",
+                        _md_cell(row.get("match_priority", "")),
                         _md_cell(row.get("match_status", "")),
+                        _md_cell(row.get("status_label", meta.get("label", ""))),
                         _md_cell(row.get("fournisseur", "")),
                         _md_cell(row.get("numero_facture", "")),
                         _md_cell(row.get("ttc", "")),
@@ -1069,7 +1472,7 @@ def _write_accounting_report(
                 )
             )
     else:
-        lines.append("| - | - | - | - | Aucun point prioritaire | - |")
+        lines.append("| - | - | - | - | - | - | Aucun point prioritaire | - |")
     lines.extend(
         [
             "",
@@ -1078,7 +1481,7 @@ def _write_accounting_report(
             "- Completer les alias fournisseurs locaux lorsque le montant existe mais le libelle differe.",
             "- Departager les montants ambigus par reference, date, compte ou cle de repartition.",
             "- Controler les ventilations multi-lignes avant de les traiter comme rapprochements forts.",
-            "- Comparer les non-rapproches restants avec le grand livre et les pieces manquantes.",
+            "- Comparer les blocages P1 restants avec le grand livre et les pieces manquantes.",
             "",
         ]
     )
@@ -1229,11 +1632,13 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
             "numero_facture": row.get("numero_facture", ""),
             "ttc": row.get("ttc", ""),
             "match_status": row.get("match_status", ""),
+            "match_priority": row.get("match_priority", ""),
+            "status_label": row.get("status_label", ""),
             "match_reason": row.get("match_reason", ""),
             "next_action": row.get("next_action", ""),
         }
         for row in expense_matches
-        if not row.get("match_status", "").startswith("MATCH_")
+        if row.get("match_priority") != "OK"
     ]
     non_matches.sort(key=lambda row: (_decimal(row.get("ttc")) or Decimal("0")), reverse=True)
     write_csv(non_matches_path, NON_MATCH_PRIORITY_FIELDS, non_matches)

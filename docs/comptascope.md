@@ -11,7 +11,7 @@ ComptaScope est la brique comptable de CoproScope. Elle ne remplace pas une comp
 - `invoice_expense_matches_<annee>.csv`: rapprochements factures / etat des depenses, avec cause et prochaine action.
 - `non_rapproches_prioritaires_<annee>.csv`: non-rapprochements et candidats ambigus classes par montant.
 - `supplier_alias_suggestions_<annee>.csv`: alias fournisseurs deduits ou proposes a partir des montants et familles comptables.
-- `rapport_comptascope_<annee>.md`: rapport explicatif local, notamment sur les causes de non-rapprochement.
+- `rapport_comptascope_<annee>.md`: rapport explicatif local, avec synthese, priorites, causes, traitements locaux appliques et exemples a traiter.
 - `coproscope_accounting_<annee>.duckdb`: base analytique locale si DuckDB est disponible.
 
 Ces sorties sont un contrat de production: meme lorsqu'aucun etat des depenses n'est configure, ComptaScope cree les rapports et tables vides correspondantes. Les commandes `accounting controls`, `grist sync` et `evidence build` verifient que le rapport ComptaScope existe et relancent la reconstruction si une sortie de rapport manque.
@@ -42,15 +42,39 @@ Alias francais:
 
 ComptaScope ne considere plus `NON_RAPPROCHE` comme une conclusion comptable. C'est un signal d'explication: l'automate n'a pas encore trouve de preuve deterministe suffisante.
 
+Le rapport utilise trois niveaux de lecture:
+
+- `OK`: preuve locale suffisante pour rapprocher sans demander d'interpretation supplementaire.
+- `P2`: candidat plausible trouve par traitement local; confirmation humaine attendue, mais ce n'est pas un blocage prioritaire.
+- `P1`: aucun indice local suffisant; controle prioritaire du grand livre, de l'etat des depenses, de l'OCR ou de la piece.
+
 Les statuts de rapprochement principaux sont:
 
 - `MATCH_REFERENCE`: la reference de facture apparait dans une ligne de depense.
 - `MATCH_AMOUNT_SUPPLIER`: montant TTC exact et fournisseur reconnu.
 - `MATCH_AMOUNT_ALIAS`: montant TTC exact et alias fournisseur configure.
-- `MATCH_AMOUNT_ACCOUNT_FAMILY`: montant TTC exact et compte/famille compatible, fournisseur a confirmer.
-- `MATCH_SPLIT_SUM`: plusieurs lignes compatibles totalisent exactement la facture.
-- `CANDIDAT_MONTANT_AMBIGU` ou `CANDIDAT_VENTILATION_AMBIGUE`: ComptaScope peut avancer, mais plusieurs choix restent possibles.
-- `NON_RAPPROCHE`: reference, montant, fournisseur, alias et famille comptable ne suffisent pas encore.
+- `CANDIDAT_MONTANT_FAMILLE`: montant TTC exact et compte/famille compatible, fournisseur a confirmer (`P2`).
+- `CANDIDAT_SOMME_MULTI_LIGNES`: plusieurs lignes compatibles totalisent exactement la facture (`P2`).
+- `CANDIDAT_NOM_SIMILAIRE`: montant, famille et nom fournisseur tres proche concordent (`P2`).
+- `CANDIDAT_DIVISION_EGALE`: le TTC d'une facture se divise exactement en lignes de meme montant (`P2`).
+- `CANDIDAT_REGROUPEMENT_FACTURES`: plusieurs factures du meme fournisseur totalisent une ligne de depense (`P2`).
+- `CANDIDAT_MONTANT_AMBIGU` ou `CANDIDAT_VENTILATION_AMBIGUE`: ComptaScope peut avancer, mais plusieurs choix restent possibles (`P2`).
+- `CANDIDAT_MONTANT_SANS_NOM`, `CANDIDAT_FOURNISSEUR_SANS_MONTANT` ou `CANDIDAT_FAMILLE_SEULE`: un indice local existe, mais il ne suffit pas seul (`P2`).
+- `NON_RAPPROCHE`: reference, montant, fournisseur, alias, similarite de nom et famille comptable ne suffisent pas (`P1`).
+
+Les traitements locaux sont volontairement explicites et ordonnes:
+
+1. reference de facture dans l'etat des depenses ;
+2. montant TTC exact avec fournisseur reconnu ;
+3. montant TTC exact avec alias fournisseur configure ou deduit ;
+4. montant TTC exact avec nom fournisseur tres similaire ;
+5. montant TTC exact avec famille comptable compatible ;
+6. division d'une facture en lignes egales ;
+7. somme de plusieurs lignes vers une facture ;
+8. regroupement de plusieurs factures vers une ligne ;
+9. classement des cas restants en candidats `P2` ou blocages `P1`.
+
+Une similarite de nom evidente ne doit donc plus remonter comme blocage dur: elle devient un candidat `P2` a confirmer. L'outil ne valide pas le rapprochement a la place du conseil syndical, mais il produit une cause locale, une action attendue et une priorite.
 
 Les alias et sources de lignes se configurent dans `settings.comptascope`:
 

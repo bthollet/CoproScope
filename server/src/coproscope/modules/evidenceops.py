@@ -6,6 +6,20 @@ from ..core.common import InstanceConfig, RunContext, now_iso, read_csv, write_t
 from .accounting import copy_accounting_tables_for_dashboard, ensure_accounting_outputs
 
 
+def _match_priority(row: dict[str, str]) -> str:
+    priority = row.get("match_priority", "")
+    if priority:
+        return priority
+    status = row.get("match_status", "")
+    if status == "NON_RAPPROCHE":
+        return "P1"
+    if status.startswith("MATCH_"):
+        return "OK"
+    if status:
+        return "P2"
+    return ""
+
+
 def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: str, year: int) -> dict[str, object]:
     evidence_dir = instance.artifact("evidence_dir") / dataset / str(year)
     data_dir = evidence_dir / "sources" / "comptascope"
@@ -26,8 +40,9 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
     _, controls = read_csv(control_path)
     _, matches = read_csv(match_path)
     _, aliases = read_csv(alias_path)
-    matched_count = sum(1 for row in matches if row.get("match_status", "").startswith("MATCH_"))
-    non_matched_count = sum(1 for row in matches if row.get("match_status") == "NON_RAPPROCHE")
+    matched_count = sum(1 for row in matches if _match_priority(row) == "OK")
+    candidate_p2_count = sum(1 for row in matches if _match_priority(row) == "P2")
+    priority_p1_count = sum(1 for row in matches if _match_priority(row) == "P1")
     auto_alias_count = sum(1 for row in aliases if row.get("suggestion_status") == "AUTO_APPLICABLE")
 
     package = {
@@ -44,15 +59,16 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
                 "Rapport local genere depuis les tables candidates CoproScope.",
                 "",
                 f"- Factures candidates: {len(invoices)}",
-                f"- Controles ouverts: {len(controls)}",
-                f"- Rapprochements automatiques: {matched_count}",
-                f"- Factures non rapprochees a expliquer/controler: {non_matched_count}",
+                f"- Controles comptables ouverts: {len(controls)}",
+                f"- Rapprochements locaux suffisants: {matched_count}",
+                f"- Candidats locaux P2 a confirmer: {candidate_p2_count}",
+                f"- Points de rapprochement P1: {priority_p1_count}",
                 f"- Alias fournisseurs deduits: {len(aliases)}",
                 f"- Alias auto-applicables: {auto_alias_count}",
                 "",
                 "## Lecture comptable",
                 "",
-                "`NON_RAPPROCHE` signale une limite de rapprochement automatique, pas une absence comptable certaine. Les causes typiques sont les alias fournisseurs, les references internes, les ventilations multi-lignes, les regroupements et les extractions faibles.",
+                "`OK` indique une preuve locale suffisante. `P2` indique un candidat local a confirmer: alias, nom similaire, ventilation, division egale ou regroupement. `P1` indique qu'aucun indice local suffisant n'a ete trouve et qu'un controle prioritaire du grand livre, de l'etat des depenses ou de la piece est necessaire.",
                 "",
                 f"- Rapport ComptaScope local: `{report_path.name}`",
                 "",
@@ -69,7 +85,9 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
         "invoice_count": len(invoices),
         "control_count": len(controls),
         "matched_count": matched_count,
-        "non_matched_count": non_matched_count,
+        "candidate_p2_count": candidate_p2_count,
+        "priority_p1_count": priority_p1_count,
+        "non_matched_count": priority_p1_count,
         "supplier_alias_suggestion_count": len(aliases),
         "supplier_alias_auto_count": auto_alias_count,
         "generated_at": now_iso(),

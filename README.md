@@ -121,7 +121,7 @@ Puis, a la racine du depot:
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```
 
-La reconstruction ComptaScope produit les factures candidates, les ecritures candidates, les controles, puis les rapprochements expliques avec l'etat des depenses quand une source est configuree. Le rapport local `rapport_comptascope_<annee>.md` distingue les rapprochements probables des non-rapprochements qui demandent encore alias, ventilation ou controle du grand livre. Les alias fournisseurs repetes peuvent etre deduits automatiquement et les cas unitaires sont proposes a confirmer.
+La reconstruction ComptaScope produit les factures candidates, les ecritures candidates, les controles, puis les rapprochements expliques avec l'etat des depenses quand une source est configuree. Le rapport local `rapport_comptascope_<annee>.md` classe chaque cas en `OK`, `P2` ou `P1`: `OK` pour les preuves locales suffisantes, `P2` pour les candidats locaux a confirmer, `P1` pour les vrais blocages sans indice suffisant. Les traitements locaux couvrent maintenant les alias repetes, les noms fournisseurs tres similaires, les divisions egales, les sommes multi-lignes et les regroupements de factures.
 Les commandes de controles et d'exports verifient aussi que le rapport ComptaScope existe: pas de tables comptables exportees sans rapport explicatif local.
 
 Pour fabriquer un export public propre:
