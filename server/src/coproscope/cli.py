@@ -10,7 +10,20 @@ from .core.doctor import run_doctor
 from .core.due_diligence import summarize_due_diligence
 from .core.pipeline import run_pipeline
 from .core.share import audit_repo, export_shareable
-from .modules import accounting, agscope, docai, docuscope, evidenceops, factureops, gristops, strategy, tools, workers
+from .modules import (
+    accounting,
+    agscope,
+    biffageops,
+    docai,
+    docuscope,
+    evidenceops,
+    factureops,
+    gristops,
+    privacyops,
+    strategy,
+    tools,
+    workers,
+)
 
 
 COMMAND_ALIASES = {
@@ -27,6 +40,7 @@ COMMAND_ALIASES = {
     "factures": "invoices",
     "outils": "tools",
     "compta": "accounting",
+    "confidentialite": "privacy",
     "strategie": "strategy",
     "audit-partage": "share-audit",
     "export-partage": "share-export",
@@ -42,6 +56,13 @@ SUBCOMMAND_ALIASES = {
     "grist_command": {"synchroniser": "sync"},
     "evidence_command": {"construire": "build"},
     "workers_command": {"executer": "run"},
+    "privacy_command": {
+        "screening-existant": "screen-existing",
+        "scanner-existant": "screen-existing",
+        "biffer": "redact",
+        "file-biffage": "redaction-queue",
+        "biffer-requis": "redact-required",
+    },
     "strategy_command": {"exporter": "export"},
 }
 
@@ -125,6 +146,36 @@ def build_parser() -> argparse.ArgumentParser:
     workers_run = workers_subparsers.add_parser("run", aliases=["executer"], parents=[instance_parent], help="Executer un groupe de workers.")
     workers_run.add_argument("--scope", choices=["inventory", "documents", "syndic", "ag", "invoices", "accounting", "dashboards", "all"], default="all")
     workers_run.add_argument("--year", "--annee", dest="year", type=int, default=2025)
+
+    privacy_parser = subparsers.add_parser("privacy", aliases=["confidentialite"], parents=[instance_parent], help="Screening, politique d'acces et BiffageOps.")
+    privacy_subparsers = privacy_parser.add_subparsers(dest="privacy_command", required=True)
+    privacy_screen = privacy_subparsers.add_parser(
+        "screen-existing",
+        aliases=["screening-existant", "scanner-existant"],
+        parents=[instance_parent],
+        help="Scanner les documents deja deposes et enrichir le registre confidentialite.",
+    )
+    privacy_screen.add_argument("--skip-generated", action="store_true", help="Ne pas scanner outputs/staging.")
+    privacy_screen.add_argument("--max-text-chars", type=int, default=50000, help="Nombre maximum de caracteres lus localement par document.")
+    privacy_queue = privacy_subparsers.add_parser(
+        "redaction-queue",
+        aliases=["file-biffage"],
+        parents=[instance_parent],
+        help="Construire la file BiffageOps sans biffer les sources.",
+    )
+    privacy_redact = privacy_subparsers.add_parser("redact", aliases=["biffer"], parents=[instance_parent], help="Biffer un document par doc_id.")
+    privacy_redact.add_argument("--doc-id", required=True)
+    privacy_redact.add_argument("--mode", choices=["redaction_irreversible", "pseudonymisation_tracee"], default="redaction_irreversible")
+    privacy_redact.add_argument("--target-college", default="C2_Coproprietaires")
+    privacy_required = privacy_subparsers.add_parser(
+        "redact-required",
+        aliases=["biffer-requis"],
+        parents=[instance_parent],
+        help="Biffer les documents de la file qui sont prets pour un biffage local.",
+    )
+    privacy_required.add_argument("--mode", choices=["redaction_irreversible", "pseudonymisation_tracee"], default="redaction_irreversible")
+    privacy_required.add_argument("--target-college", default="C2_Coproprietaires")
+    privacy_required.add_argument("--limit", type=int, default=None)
 
     strategy_parser = subparsers.add_parser("strategy", aliases=["strategie"], parents=[instance_parent], help="Strategie et roadmap produit.")
     strategy_subparsers = strategy_parser.add_subparsers(dest="strategy_command", required=True)
@@ -294,6 +345,43 @@ def _dispatch(args: argparse.Namespace) -> int:
             result = workers.run_workers(instance, run, scope=args.scope, year=args.year)
             print(json.dumps(result, indent=2, ensure_ascii=True))
             run.finish("OK", "workers run complete")
+            return 0
+        if args.command == "privacy" and args.privacy_command == "screen-existing":
+            result = privacyops.screen_existing(
+                instance,
+                run,
+                include_generated=not args.skip_generated,
+                max_text_chars=args.max_text_chars,
+            )
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "privacy screen-existing complete")
+            return 0
+        if args.command == "privacy" and args.privacy_command == "redaction-queue":
+            result = biffageops.build_redaction_queue(instance, run)
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "privacy redaction-queue complete")
+            return 0
+        if args.command == "privacy" and args.privacy_command == "redact":
+            result = biffageops.redact_document(
+                instance,
+                run,
+                doc_id=args.doc_id,
+                mode=args.mode,
+                target_college=args.target_college,
+            )
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "privacy redact complete")
+            return 0
+        if args.command == "privacy" and args.privacy_command == "redact-required":
+            result = biffageops.redact_required_documents(
+                instance,
+                run,
+                mode=args.mode,
+                target_college=args.target_college,
+                limit=args.limit,
+            )
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "privacy redact-required complete")
             return 0
         if args.command == "strategy" and args.strategy_command == "export":
             result = strategy.export_strategy(instance, run)

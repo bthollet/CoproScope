@@ -33,6 +33,9 @@ REGISTER_KEY_ALIASES = {
     "ag": ("assemblees_generales", "ag"),
     "findings": ("constats", "findings"),
     "kpi": ("indicateurs", "kpi"),
+    "privacy_screening": ("screening_confidentialite", "privacy_screening"),
+    "redactions": ("biffages", "redactions"),
+    "redaction_map": ("table_correspondance_biffage", "redaction_map"),
 }
 
 MATRIX_KEY_ALIASES = {
@@ -49,6 +52,8 @@ ARTIFACT_KEY_ALIASES = {
     "accounting_dir": ("dossier_comptabilite", "accounting_dir"),
     "grist_dir": ("dossier_grist", "grist_dir"),
     "evidence_dir": ("dossier_evidence", "evidence_dir"),
+    "privacy_dir": ("dossier_confidentialite", "privacy_dir"),
+    "redacted_dir": ("dossier_biffages", "redacted_dir"),
 }
 
 DEFAULT_DOCUMENT_FIELDS = [
@@ -81,6 +86,23 @@ DEFAULT_DOCUMENT_FIELDS = [
     "layout_path",
     "ai_review_status",
     "sensitivity",
+    "raw_max_college",
+    "derivative_max_college",
+    "publication_form",
+    "restriction_reasons",
+    "personal_data_level",
+    "ip_status",
+    "ai_processing_ceiling",
+    "review_required",
+    "policy_confidence",
+    "required_transformations",
+    "screening_signals",
+    "privacy_review_status",
+    "redaction_status",
+    "redaction_mode",
+    "redacted_path",
+    "redacted_sha256",
+    "redaction_map_id",
     "notes",
 ]
 
@@ -469,6 +491,15 @@ class InstanceConfig:
             if resolved is not None:
                 return resolved
         return resource_path("configs", "sensitivity_rules.default.yml")
+
+    def privacy_rules_path(self) -> Path:
+        overrides = self._section("surcharges_config", "config_overrides")
+        override = _first_present(overrides, ("regles_confidentialite", "privacy_rules"))
+        if override:
+            resolved = self.resolve_path(str(override))
+            if resolved is not None:
+                return resolved
+        return resource_path("configs", "privacy_rules.default.yml")
 
 
 def load_instance(instance: str | None, instance_root: str | None) -> InstanceConfig:

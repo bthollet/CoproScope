@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from ..core.common import InstanceConfig, RunContext, append_note, module_available, read_csv, relative_to, write_csv
+from ..core.privacy import apply_access_policy, ensure_policy_fields
 
 
 DOCAI_FIELDS = [
@@ -30,6 +31,7 @@ def _read_rows(instance: InstanceConfig) -> tuple[Path, list[str], list[dict[str
     for field in DOCAI_FIELDS + ["status_ocr", "text_path", "page_count", "text_char_count", "notes"]:
         if field not in fields:
             fields.append(field)
+    ensure_policy_fields(fields)
     return registry_path, fields, rows
 
 
@@ -211,6 +213,7 @@ def run_ocr(
             row["ocr_engine"] = used_engine
             row["extraction_level"] = _append_level(row.get("extraction_level", ""), f"L2_LOCAL_OCR_{used_engine.upper()}")
             row["text_quality"] = "strong" if len(text.strip()) >= 80 else "weak"
+            apply_access_policy(row, text=text, instance=instance)
             lifted += 1
         else:
             row["ocr_engine"] = selected or "unavailable"
@@ -299,6 +302,10 @@ def enrich(
         source = _source_path(instance, row)
         if not source.exists():
             row["notes"] = append_note(row.get("notes", ""), "DocAI enrich: fichier source introuvable.")
+            continue
+        if normalized_backend == "qwen_vl" and row.get("ai_processing_ceiling") == "no_ai":
+            row["ai_review_status"] = "DISABLED_PRIVACY_POLICY_NO_AI"
+            row["notes"] = append_note(row.get("notes", ""), "DocAI Qwen VL: bloque par la politique confidentialite.")
             continue
         if normalized_backend == "qwen_vl" and settings["mode"] != "local_heavy":
             row["ai_review_status"] = "DISABLED_REQUIRES_LOCAL_HEAVY"

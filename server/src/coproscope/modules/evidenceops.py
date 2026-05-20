@@ -20,8 +20,13 @@ def _match_priority(row: dict[str, str]) -> str:
     return ""
 
 
+def _dataset_college(dataset: str) -> str:
+    return "C0_Public" if dataset == "demo" else "C4_Conseil_Syndical"
+
+
 def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: str, year: int) -> dict[str, object]:
-    evidence_dir = instance.artifact("evidence_dir") / dataset / str(year)
+    access_college = _dataset_college(dataset)
+    evidence_dir = instance.artifact("evidence_dir") / dataset / access_college / str(year)
     data_dir = evidence_dir / "sources" / "comptascope"
     pages_dir = evidence_dir / "pages"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -86,6 +91,7 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
     manifest = {
         "status": "ok",
         "dataset": dataset,
+        "access_college": access_college,
         "year": year,
         "exports": copied,
         "invoice_count": len(invoices),
@@ -98,6 +104,7 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
         "supplier_alias_suggestion_count": len(aliases),
         "supplier_alias_auto_count": auto_alias_count,
         "supplier_due_diligence_count": len(supplier_due),
+        "security": "Evidence datasets are partitioned by access college. Redaction maps are never exported.",
         "generated_at": now_iso(),
     }
     write_text(evidence_dir / "evidence_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=True))

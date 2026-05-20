@@ -24,6 +24,7 @@ from ..core.common import (
     write_csv,
     write_text,
 )
+from ..core.privacy import apply_access_policy, ensure_policy_fields
 from .coprolink import request_metrics
 
 
@@ -48,6 +49,23 @@ PRESERVE_FIELDS = {
     "layout_path",
     "ai_review_status",
     "sensitivity",
+    "raw_max_college",
+    "derivative_max_college",
+    "publication_form",
+    "restriction_reasons",
+    "personal_data_level",
+    "ip_status",
+    "ai_processing_ceiling",
+    "review_required",
+    "policy_confidence",
+    "required_transformations",
+    "screening_signals",
+    "privacy_review_status",
+    "redaction_status",
+    "redaction_mode",
+    "redacted_path",
+    "redacted_sha256",
+    "redaction_map_id",
     "notes",
 }
 
@@ -127,11 +145,12 @@ def inventory(instance, run: RunContext) -> Path:
         for field in PRESERVE_FIELDS:
             if previous.get(field):
                 row[field] = previous[field]
+        apply_access_policy(row, instance=instance)
         rows.append(row)
         by_digest[digest].append(row)
 
     rows.sort(key=lambda item: (item["file_name"].lower(), item["doc_id"]))
-    write_csv(registry_path, DEFAULT_DOCUMENT_FIELDS, rows)
+    write_csv(registry_path, ensure_policy_fields(list(DEFAULT_DOCUMENT_FIELDS)), rows)
     run.log_action("write", registry_path, f"inventory rows={len(rows)}")
 
     duplicates_rows: list[dict[str, str]] = []
@@ -188,6 +207,7 @@ def _write_rows(path: Path, fields: list[str], rows: list[dict[str, str]]) -> No
     ]:
         if field not in fields:
             fields.append(field)
+    ensure_policy_fields(fields)
     write_csv(path, fields, rows)
 
 
@@ -389,6 +409,8 @@ def extract_text(instance, run: RunContext, doc_id: str | None = None, docai_mod
         if row.get("status_ocr") == "OCR_DONE":
             continue
         row.update(_process_row(instance, row))
+        text = _text_sample(instance, row) if row.get("text_path") else ""
+        apply_access_policy(row, text=text, instance=instance)
         processed += 1
     _write_rows(registry_path, fields, rows)
     run.log_action("write", registry_path, f"text extraction processed={processed}")
@@ -468,6 +490,7 @@ def classify(instance, run: RunContext, copy_files: bool = True) -> Path:
         row["document_type"] = doc_type
         row["suspected_date"] = row.get("suspected_date") or detect_date(sample or row.get("file_name", ""))
         row["classification_status"] = "AUTO_CLASSIFIED" if score else "A_CLASSER"
+        apply_access_policy(row, text=sample, instance=instance)
         if copy_files:
             source = workspace_root / row["original_path"]
             target_dir = classified_dir / lot
