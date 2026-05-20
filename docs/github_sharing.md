@@ -21,6 +21,9 @@ Faciliter la remontee des ameliorations generiques issues du travail sur des ins
 - les fichiers reels de copropriete ;
 - les exports OCR/texte issus de fichiers prives ;
 - les manifestes qui exposent des chemins prives ;
+- les cartes de correspondance de pseudonymisation ;
+- les registres de biffage issus d'une instance reelle ;
+- les documents biffes lies a une instance reelle non genericisee ;
 - `.env.local`, tokens, cles API et chemins de secrets ;
 - les donnees nominatives, bancaires, contentieuses ou d'impayes.
 
@@ -37,6 +40,8 @@ Faciliter la remontee des ameliorations generiques issues du travail sur des ins
 
 - `coprocs share-audit --repo-root .. --config src/coproscope/configs/github_sharing.default.yml`
 - `coprocs share-export --repo-root .. --config src/coproscope/configs/github_sharing.default.yml --output-dir ../public-export --clean`
+- `coprocs privacy screen-existing --instance-root examples/synthetic_copro`
+- `coprocs privacy redaction-queue --instance-root examples/synthetic_copro`
 - `coprocs tools status`
 
 Pour ComptaScope, ne publier que l'instance synthetique:
@@ -51,6 +56,7 @@ Les exports equivalents produits sur instance reelle restent hors GitHub.
 
 - Le changement est-il vraiment generique ?
 - Contient-il un chemin reel, un nom de fichier prive, une personne, un lot, une banque ou un detail contentieux ?
+- Depend-il d'une carte de biffage ou d'une pseudonymisation issue d'une instance reelle ?
 - Peut-on demontrer le comportement avec l'exemple synthetique uniquement ?
 - Les attentes d'environnement sont-elles documentees via `.env.example` plutot que par des secrets ?
 

@@ -2,79 +2,85 @@
 
 ## Resume franc
 
-CoproScope n'est plus une simple intention. Le depot public contient deja un noyau logiciel, une CLI exploitable, une instance synthetique, un outillage de publication propre vers GitHub, et une premiere couche documentaire suffisamment solide pour soutenir une vraie relecture.
+CoproScope n'est plus une intention. Le depot contient un noyau logiciel local-first, une CLI, une instance synthetique, des modules documentaires et comptables, une premiere couche de confidentialite/biffage, des exports locaux et une documentation produit structuree.
 
-L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le rendre plus net, plus contributif et plus robuste.
+Le chantier principal n'est plus "prouver que l'idee existe". Le chantier principal est maintenant de rendre ce noyau lisible et utilisable par un conseil syndical, pas seulement par un utilisateur technique.
 
-## Ce qui est deja livre
+## Ce qui est livre ou deja exploitable
 
-- depot public initialise et relie a GitHub ;
-- paquet `server/` avec CLI `coprocs` ;
-- pipeline v1: inventaire, extraction texte, classement, completude, KPI, AG, synthese de diligence publique ;
-- serveur MCP minimal ;
-- schemas, configs, prompts et templates versionnes ;
-- premiere extraction publique de la couche Audit360 sous forme de doc, schemas et gabarits ;
-- instance synthetique publique pour les tests ;
-- garde-fous de partage (`share-audit`, `share-export`) ;
-- outillage local installe/documente: Python 3.14, GitHub CLI, uv, DuckDB, PDF/OCR, Node/Evidence, Grist Desktop ;
-- FactureOps v1 sur instance synthetique: factures candidates, anomalies facture et niveaux d'intensite `L0` a `L4` ;
-- ComptaScope v1 sur instance synthetique: ecritures candidates, controles comptables, rapprochements explicables facture/etat des depenses, suggestions d'alias fournisseurs, candidats locaux `P2` a confirmer, exports Grist/Evidence locaux ;
-- documentation publique structuree en francais.
+- Depot public structure.
+- Paquet `server/` avec CLI `coprocs`.
+- Instance synthetique publique pour tests et demonstrations.
+- Pipeline v1 : inventaire, extraction texte, classement, screening confidentialite, file de biffage, completude, KPI, AG, synthese de diligence.
+- Serveur MCP minimal.
+- Schemas, configs, prompts et templates versionnes.
+- DocOps : inventaire, hash, extraction, classement, completude.
+- PrivacyOps : screening confidentialite et politiques d'acces.
+- BiffageOps : file de biffage et versions biffees/pseudonymisees lorsque possible.
+- FactureOps v1 : factures candidates, anomalies facture, intensite `L0` a `L4`.
+- ComptaScope v1 : ecritures candidates, controles, rapprochements explicables, `OK`/`P2`/`P1`, rapports et exports.
+- AGOps : premiere lecture des convocations, PV, annexes, resolutions.
+- Audit360 : gabarits generiques de constats, controles, preuves attendues, syntheses.
+- GristOps / EvidenceOps : exports locaux et rapports reproductibles.
+- `share-audit` et `share-export` : frontiere public/prive.
+- Documentation mise a jour avec etude utilisateurs, feuille de route et concepts UX.
 
-## Ce qui est en cours
+## Ce qui est en cours ou a epaissir
 
-- enrichir DocOps sur de vrais corpus ;
-- epaissir SyndicOps sur les relances et la tracabilite fine ;
-- fiabiliser FactureOps sur les extractions et anomalies facture ;
-- fiabiliser ComptaScope sur les rapprochements explicables et controles comptables ;
-- affiner AGOps sur les annexes, majorites et suites post-AG ;
-- outiller davantage Audit360 comme couche transverse de controles et diligences ;
-- pousser plus loin la francisation la ou elle apporte une vraie clarte sans casser les interfaces techniques.
+| Sujet | Etat |
+|---|---|
+| DocOps | Bon socle ; doit devenir une vue utilisateur simple. |
+| PrivacyOps / BiffageOps | Nouveau socle ; a consolider par tests, interface de revue et validation humaine. |
+| SyndicOps | Embryon utile ; doit devenir workflow complet de demandes et relances. |
+| ComptaScope | Amorce forte ; doit devenir lisible par non-comptables. |
+| AGOps | Premiere version ; doit s'ouvrir au suivi post-AG. |
+| Audit360 | Tres prometteur ; doit etre decline par parcours concrets. |
+| Grist/Evidence | Utile pour experts ; doit etre mieux guide. |
 
-## Ce qui vient ensuite
+## Ce qui n'existe pas encore
 
-- ContractOps ;
-- WorksOps ;
-- CommsOps ;
-- consolidation des conventions de contribution publique.
+- Application web locale.
+- Cockpit conseil syndical.
+- Registre decision -> action -> preuve.
+- WorksOps travaux/devis/reception.
+- IncidentOps sinistres/signalements.
+- ContractOps contrats/obligations.
+- CommsOps syntheses diffusables.
+- Dossier de passation conseil syndical.
+- Experience "grand public" complete.
+
+## Ce qui n'est pas prioritaire
+
+- SaaS multi-tenant.
+- Application mobile native complete.
+- Vote electronique complet.
+- Reseau social de coproprietaires.
+- Chatbot IA autonome sans preuves citees.
+- Jumeau numerique 3D.
 
 ## Niveau de maturite par bloc
 
-| Sujet | Niveau actuel | Commentaire |
+| Bloc | Niveau actuel | Commentaire |
 |---|---|---|
-| Frontiere public / prive | bon | garde-fous presents, export public outille |
-| CLI | bon socle | surface stable, encore perfectible |
-| DocOps | bon socle | deja utile, heuristiques a enrichir |
-| SyndicOps | embryon utile | base en place, workflows a epaissir |
-| AGOps | premiere version | signaux utiles, couverture encore partielle |
-| FactureOps | amorce v1 | extraction facture, anomalies separees et intensite L0-L4 |
-| ComptaScope | amorce v1 | reconstruction candidate depuis FactureOps, rapprochement explicable, alias deduits, similarites de noms, divisions/regroupements et priorites P1/P2 |
-| Audit360 | extraction publique amorcee | formes generiques visibles, outillage encore a epaissir |
-| Documentation produit | bon socle | suffisamment claire pour une vraie relecture |
-| Francophonie | en cours d'inscription | preference explicite, chantier encore ouvert |
-
-## Ce qu'un relecteur doit retenir
-
-- le produit a deja une forme coherente ;
-- la separation entre depot public et instances privees est un principe central, pas un detail ;
-- le projet vise d'abord l'utilite operationnelle, ensuite l'extension fonctionnelle ;
-- les choix de structure ne sont pas encore tous figes, mais la direction est deja nette.
-
-## Ce qu'une bonne relecture peut apporter maintenant
-
-- dire si la promesse produit se comprend vite ;
-- verifier si les priorites fonctionnelles semblent justes ;
-- pointer les zones encore trop implicites ;
-- aider a rendre le depot plus accueillant pour les futures contributions.
+| Frontiere public / prive | Bon | Garde-fous presents, export public outille. |
+| CLI | Bon socle | Surface large, encore a stabiliser autour des nouvelles commandes. |
+| DocOps | Bon socle | Deja utile, encore trop technique pour un CS non expert. |
+| PrivacyOps | Nouveau socle | Screening et regles presents, interface de revue absente. |
+| BiffageOps | Nouveau socle | File et biffage presents, tests et UX a renforcer. |
+| SyndicOps | Embryon utile | Besoin fort, workflow a epaissir. |
+| FactureOps | Amorce v1 | Extraction et anomalies separees de la compta. |
+| ComptaScope | Amorce v1 forte | Tres differenciant, mais doit etre rendu pedagogique. |
+| AGOps | Premiere version | A prolonger vers suivi des decisions. |
+| Audit360 | Couche transverse | Forme generique claire, usages a instancier. |
+| Interface locale | Absente | Prochaine grande marche UX. |
 
 ## Prochaine phase logique
 
-La suite naturelle est de consolider les couches deja presentes plutot que d'ouvrir trop tot de nouveaux blocs:
+1. Stabiliser les nouvelles briques PrivacyOps/BiffageOps.
+2. Documenter et tester les registres produits par le pipeline.
+3. Construire un prototype de cockpit sur instance synthetique.
+4. Mettre ComptaScope en forme "controle comptes guide".
+5. Construire le registre decision -> action -> preuve.
+6. Ouvrir WorksOps et IncidentOps en mode minimal.
+7. Preparer CommsOps pour produire des syntheses biffees ou agregees.
 
-1. enrichir les regles et sorties DocOps ;
-2. densifier les chaines de preuve SyndicOps ;
-3. fiabiliser FactureOps sur les extractions et anomalies facture ;
-4. fiabiliser ComptaScope sur les rapprochements facture/depense ;
-5. fiabiliser AGOps sur de vrais cas de preparation ;
-6. epaissir Audit360 sur les controles, preuves attendues et diligences ;
-7. continuer a extraire vers le public uniquement ce qui est proprement genericisable.

@@ -1,179 +1,182 @@
 # CoproScope
 
-> Reprendre la main sur la matiere documentaire d'une copropriete, sans sortir les pieces d'un espace prive.
+> Reprendre la main sur une copropriete sans devenir syndic, sans perdre les preuves, sans exposer les donnees sensibles.
 
-CoproScope est un cockpit documentaire et operationnel local-first pour conseils syndicaux. L'idee est simple et utile: transformer un fonds documentaire disperse en base de travail lisible, probatoire et actionnable.
+CoproScope est un cockpit local-first pour conseils syndicaux. Il transforme un fonds documentaire disperse en matiere de travail lisible, probatoire et actionnable : documents, demandes au syndic, assemblees generales, factures, comptes, controles, biffages et restitutions.
 
-Autrement dit, CoproScope aide a passer de:
+Ce n'est pas un extranet de plus. Ce n'est pas un logiciel de syndic officiel. C'est une couche de **preuve + action + memoire** pour les equipes de conseil syndical qui veulent comprendre, verifier, relancer, transmettre et diffuser proprement.
 
-- "on a plein de pieces, mais personne ne sait vraiment quoi en faire"
+![Concept cockpit conseil syndical](./docs/assets/etude-utilisateurs/cockpit-conseil-syndical.png)
 
-a:
+## Pourquoi CoproScope existe
 
-- "on sait ce qu'on a, ce qu'il manque, ce qu'il faut relancer, et ce qu'on peut diffuser proprement".
+Dans beaucoup de coproprietes, le probleme n'est pas seulement l'absence d'information. C'est plutot que l'information est :
+
+- eparpillee entre extranet, Drive, mails, dossiers locaux et pieces papier ;
+- difficile a relier a une decision, une depense, une demande ou une preuve ;
+- rarement transformee en action suivie ;
+- fragile lors des changements de membres du conseil syndical ;
+- sensible a partager, parce qu'elle contient parfois des donnees personnelles, financieres ou contentieuses.
+
+L'etude utilisateurs 2026 confirme un point simple : les conseils syndicaux n'ont pas seulement besoin de "voir des documents". Ils ont besoin de savoir **quoi faire maintenant**, **avec quelle preuve**, **dans quel role**, **sans se surexposer**.
+
+Lire la synthese : [Etude utilisateurs](./docs/etude_utilisateurs.md).
+
+## Ce que CoproScope aide a faire
 
 ```mermaid
 flowchart LR
-    A["Documents bruts<br/>Drive, extranet, dossiers locaux"] --> B["DocOps<br/>inventaire, hash, extraction, classement"]
-    B --> C["SyndicOps<br/>demandes, relances, preuves"]
-    B --> D["AGOps<br/>convocations, resolutions, annexes"]
-    B --> I["FactureOps<br/>extraction, anomalies facture"]
-    I --> E["ComptaScope<br/>ecritures candidates, rapprochements"]
-    B --> H["Audit360<br/>constats, controles, diligences"]
-    C --> H
-    D --> H
-    E --> H
-    H --> F["Sorties diffusables<br/>registres, rapports, matrices"]
-    H --> G["Ameliorations genericisees<br/>publiees sur GitHub"]
+    A["Documents bruts<br/>extranet, Drive, mails, dossiers"] --> B["DocOps<br/>inventaire, hash, texte, classement"]
+    B --> C["PrivacyOps<br/>screening confidentialite"]
+    C --> D["BiffageOps<br/>file de biffage, versions diffusables"]
+    B --> E["SyndicOps<br/>demandes, relances, pieces attendues"]
+    B --> F["AGOps<br/>convocations, resolutions, annexes"]
+    B --> G["FactureOps<br/>factures candidates, anomalies"]
+    G --> H["ComptaScope<br/>rapprochements, controles, rapport"]
+    E --> I["Audit360<br/>faits, preuves, risques, actions"]
+    F --> I
+    H --> I
+    I --> J["Sorties CS<br/>registres, rapports, syntheses"]
 ```
 
-## Pourquoi ce projet existe
+## Ce qui existe deja
 
-Dans beaucoup de coproprietes, l'information n'est pas vraiment absente. Elle est surtout:
+| Bloc | Etat | Ce que ca fait aujourd'hui |
+|---|---|---|
+| CLI `coprocs` | Solide | Point d'entree local pour lancer les traitements. |
+| Instance synthetique | Solide | Exemple public non sensible pour tests et demonstrations. |
+| DocOps | Deja exploitable | Inventaire, hash, extraction texte, classement, completude, KPI. |
+| PrivacyOps | Nouveau socle | Screening confidentialite, colleges d'acces, risques d'exposition. |
+| BiffageOps | Nouveau socle | File de biffage, biffage local de documents texte/PDF/DOCX selon disponibilites. |
+| SyndicOps | Embryon utile | Registre de demandes, pieces attendues, relances et preuves a epaissir. |
+| FactureOps | Amorce v1 | Factures candidates, anomalies de piece, intensite d'outil `L0` a `L4`. |
+| ComptaScope | Amorce v1 forte | Rapprochements facture/etat des depenses, priorites `OK`/`P2`/`P1`, rapport explicatif. |
+| AGOps | Premiere version | Reperage des documents AG, resolutions, annexes et points d'attention. |
+| Audit360 | Couche transverse | Constats normalises, controles, preuves attendues, actions et diligences. |
+| GristOps / EvidenceOps | Local | Exports vers tableaux locaux et rapports reproductibles. |
+| `share-audit` / `share-export` | Solide | Frontiere public/prive pour publier seulement le genericisable. |
 
-- eparpillee ;
-- mal reliee ;
-- difficile a verifier ;
-- rarement transformee en action propre.
+## Ce qui n'existe pas encore
 
-CoproScope ne traite pas cela comme un simple probleme de rangement. Le projet reconstruit une **chaine documentaire**:
+| Sujet | Etat clair |
+|---|---|
+| Application web locale | Pas encore. Les objets metier sont consolides avant l'interface. |
+| Experience grand public complete | Pas encore. La priorite actuelle reste le conseil syndical implique. |
+| Registre decision -> action -> preuve | Priorite produit, pas encore livre comme module complet. |
+| WorksOps travaux/devis/reception | Cible prioritaire, pas encore livre. |
+| IncidentOps sinistres/signalements | Cible prioritaire, pas encore livre. |
+| ContractOps contrats/obligations | Cible ulterieure. |
+| CommsOps syntheses diffusables | Cible ulterieure, deja preparee par les sorties. |
+| SaaS multi-tenant | Non prioritaire. Le cap reste local-first. |
+| Vote electronique complet | Non prioritaire : le besoin fort est plutot preparation et suivi post-AG. |
+| Chatbot IA autonome | Non souhaite sans sources citees et validation humaine. |
 
-1. identifier les pieces ;
-2. ne pas toucher aux originaux ;
-3. relier documents, demandes, AG et constats ;
-4. produire des sorties utiles ;
-5. ne publier vers GitHub que ce qui a ete vraiment generalise.
+## Les concepts UX cibles
 
-## Ce que le projet apporte deja
+L'etude utilisateurs propose quatre directions d'interface. Elles ne sont pas encore le produit, mais elles montrent la forme souhaitable.
 
-Le depot public contient deja:
+### 1. Cockpit conseil syndical
 
-- un paquet `server/` avec la CLI `coprocs` ;
-- un pipeline v1 exploitable ;
-- une instance synthetique publique pour tester et demonstrer ;
-- une premiere extraction publique de la couche **Audit360** sous forme de doc, schemas et gabarits ;
-- une frontiere outillee entre **public** et **prive** via `share-audit` et `share-export` ;
-- une premiere brique **FactureOps** pour extraire et qualifier les factures candidates sur donnees synthetiques ;
-- une premiere brique **ComptaScope** pour reconstruire des ecritures candidates et rapprocher l'etat des depenses ;
-- une couche documentaire en francais, pensee pour la lecture et la relecture.
+Une vue priorisee : demandes en retard, pieces manquantes, echeances AG, controles comptes, alertes.
 
-## Ce que CoproScope cherche a construire
+![Cockpit conseil syndical](./docs/assets/etude-utilisateurs/cockpit-conseil-syndical.png)
 
-Pas seulement un outil qui classe des fichiers.
+### 2. Registre decisions, actions, preuves
 
-Plutot un systeme qui aide une equipe a:
+Chaque resolution d'AG devient une action suivie, reliee aux pieces, relances, preuves et historiques.
 
-- savoir ce qu'elle a vraiment ;
-- voir ce qui manque ;
-- mieux preparer ses demandes au syndic ;
-- mieux preparer ses AG ;
-- produire des sorties propres, relisibles et partageables ;
-- faire remonter progressivement dans le depot public ce qui devient vraiment reusable.
+![Registre decisions actions preuves](./docs/assets/etude-utilisateurs/registre-decisions-actions-preuves.png)
 
-## Les blocs fonctionnels cibles
+### 3. Controle des comptes guide
 
-- **DocOps** : inventaire, hash, doublons, extraction texte, classement, completude.
-- **FactureOps** : detection des factures, extraction fournisseur/numero/date/montants, anomalies facture, intensite L0-L4.
-- **SyndicOps** : registre des demandes, pieces attendues, relances, chaines de preuve.
-- **ComptaScope** : ecritures candidates, rapprochements facture/etat des depenses, controles comptables, exports DuckDB/Grist/Evidence.
-- **AGOps** : preparation d'assemblee generale, resolutions, annexes, majorites, points d'attention.
-- **Audit360** : couche transverse de constats, points de controle, preuves attendues, actions et diligences.
-- **Ensuite** : ContractOps, WorksOps et CommsOps, une fois le socle documentaire stabilise.
+ComptaScope devient lisible pour un conseil syndical : rapprochements, `P1`, `P2`, questions au syndic, rapport AG.
 
-## Ce que le projet privilegie
+![Controle des comptes guide](./docs/assets/etude-utilisateurs/controle-comptes-guide.png)
 
-- **local-first** : les documents reels restent dans leur espace prive ;
-- **probatoire** : les traces et journaux priment sur les effets de manche ;
-- **francophone par defaut** : quand c'est utile, les surfaces produit et la documentation parlent francais ;
-- **incremental** : on livre des couches utiles, pas un systeme total abstrait ;
-- **generalisation sans fuite** : une instance reelle sert a apprendre, le depot public sert a partager proprement.
+### 4. Memoire de copropriete
 
-## Positionnement IA
+Une ligne de vie de l'immeuble : contrats, travaux, sinistres, AG, decisions, passation du conseil syndical.
 
-Pour l'instant, CoproScope s'appuie de maniere pragmatique sur des agents IA grand public et peu chers quand cela aide a accelerer l'analyse et la production.
+![Memoire de copropriete](./docs/assets/etude-utilisateurs/memoire-copropriete.png)
 
-Mais l'architecture accumule volontairement un maximum de briques locales:
+## Feuille de route produit
 
-- inventaire ;
-- hash et registres ;
-- extraction texte native ;
-- regles documentaires ;
-- zones de travail separees ;
-- exports publics propres.
+La feuille de route issue de l'etude utilisateurs est volontairement simple :
 
-Le cap est clair: rendre possible, a terme, un deploiement d'IA mieux maitrise, jusqu'a des usages hors ligne lorsque le contexte, le niveau de sensibilite ou les contraintes d'hebergement l'exigeront.
+1. rendre visibles les forces actuelles : DocOps, PrivacyOps, SyndicOps, ComptaScope, AGOps, Audit360 ;
+2. construire le registre **decision -> action -> preuve** ;
+3. epaissir WorksOps, IncidentOps, ContractOps et CommsOps ;
+4. produire une interface locale sobre quand les objets metier sont assez stables ;
+5. garder les outils avances CLI/DuckDB/Grist/Evidence pour les publics experts, sans en faire l'entree principale.
+
+Details : [Feuille de route](./docs/feuille_de_route.md).
 
 ## Demarrage rapide
 
-Depuis le dossier [`server/`](./server):
+Depuis le dossier [`server/`](./server) :
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .
 ```
 
-Puis, a la racine du depot:
+Puis, a la racine du depot :
 
 ```powershell
 .\server\.venv\Scripts\python.exe -m coproscope.cli doctor --instance-root .\examples\synthetic_copro
 .\server\.venv\Scripts\python.exe -m coproscope.cli pipeline run --instance-root .\examples\synthetic_copro
-.\server\.venv\Scripts\python.exe -m coproscope.cli tools status
+.\server\.venv\Scripts\python.exe -m coproscope.cli privacy screen-existing --instance-root .\examples\synthetic_copro
+.\server\.venv\Scripts\python.exe -m coproscope.cli privacy redaction-queue --instance-root .\examples\synthetic_copro
 .\server\.venv\Scripts\python.exe -m coproscope.cli invoices extract --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli accounting reconstruct --instance-root .\examples\synthetic_copro --year 2025
+.\server\.venv\Scripts\python.exe -m coproscope.cli accounting controls --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli grist sync --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli evidence build --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```
 
-FactureOps produit les factures candidates et les anomalies facture. ComptaScope consomme ces sorties pour produire les ecritures candidates, les controles comptables, puis les rapprochements expliques avec l'etat des depenses quand une source est configuree. Le rapport local `rapport_comptascope_<annee>.md` classe chaque rapprochement en `OK`, `P2` ou `P1`: `OK` pour les preuves locales suffisantes, `P2` pour les candidats locaux a confirmer, `P1` pour les vrais blocages sans indice suffisant. Les traitements locaux couvrent maintenant les alias repetes, les noms fournisseurs tres similaires, les divisions egales, les sommes multi-lignes et les regroupements de factures.
-Les commandes de controles et d'exports verifient aussi que le rapport ComptaScope existe: pas de tables comptables exportees sans rapport explicatif local.
-
-Pour fabriquer un export public propre:
+Pour fabriquer un export public propre :
 
 ```powershell
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-export --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml --output-dir ..\public-export --clean
 ```
 
-## Parcours de lecture conseille
+## Parcours de lecture
 
-### Si tu as 5 minutes
+Si tu as 5 minutes :
 
+- [Etude utilisateurs](./docs/etude_utilisateurs.md)
 - [Concept et philosophie](./docs/concept_et_philosophie.md)
 - [Etat du developpement](./docs/etat_du_developpement.md)
 
-Tu ressorts avec une idee claire de la promesse produit et de sa maturite.
-
-### Si tu as 15 minutes
+Si tu veux comprendre le produit :
 
 - [Fonctions cibles](./docs/fonctions_cibles.md)
+- [Feuille de route](./docs/feuille_de_route.md)
 - [Architecture et flux](./docs/architecture_et_flux.md)
-- [FactureOps](./docs/factureops.md)
-- [ComptaScope](./docs/comptascope.md)
-- [Strategie gestion copro](./docs/strategie_coproscope_gestion_copro.md)
+- [Confidentialite et biffage](./docs/confidentialite_et_biffage.md)
 - [Audit360](./docs/audit360.md)
 
-Tu peux deja faire une relecture utile du repo.
-
-### Si tu veux contribuer ou challenger les choix
+Si tu veux contribuer :
 
 - [Plan d'implementation](./docs/implementation_plan.md)
-- [Audit360](./docs/audit360.md)
 - [Politique de partage GitHub](./docs/github_sharing.md)
-- [Index de la documentation](./docs/README.md)
+- [Instance synthetique](./examples/synthetic_copro/)
 
-## Comment aider maintenant
+## Principes non negociables
 
-Une bonne relecture sur CoproScope peut nous aider sur quatre choses:
-
-- dire si la promesse produit se comprend vite ;
-- verifier si les priorites fonctionnelles sont bien ordonnees ;
-- pointer les zones encore trop implicites ;
-- aider a rendre le depot plus accueillant pour les futures contributions.
+- Les documents reels restent hors depot public.
+- Les originaux ne sont pas modifies.
+- Les sorties doivent citer leurs sources.
+- Les donnees sensibles doivent etre detectees, protegees ou biffees avant diffusion.
+- Les traitements IA peuvent aider, mais ne remplacent pas la preuve ni la validation humaine.
+- Les contributions publiques doivent etre genericisees.
 
 ## Structure du depot
 
 - [`server/`](./server) : code produit, CLI, MCP minimal, schemas, configs, prompts, templates et tests.
-- [`docs/`](./docs) : vision produit, architecture, fonctions cibles, etat d'avancement, regles de partage.
-- [`examples/synthetic_copro/`](./examples/synthetic_copro) : instance publique non sensible pour les tests et la demonstration.
+- [`docs/`](./docs) : vision produit, etude utilisateurs, feuille de route, architecture, fonctions cibles, etat d'avancement.
+- [`examples/synthetic_copro/`](./examples/synthetic_copro) : instance publique non sensible pour tests et demonstration.
 
-Les donnees reelles de copropriete, les secrets, les exports OCR prives, les journaux locaux et les sorties generees n'ont pas leur place dans ce depot public.
+Les donnees reelles de copropriete, secrets, exports OCR prives, journaux locaux, cartes de biffage et sorties generees n'ont pas leur place dans ce depot public.
+

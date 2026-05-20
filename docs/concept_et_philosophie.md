@@ -2,107 +2,105 @@
 
 ## Idee centrale
 
-CoproScope est un cockpit documentaire et operationnel pour conseil syndical. Il part d'un constat simple: dans beaucoup de coproprietes, l'information existe deja, mais elle est dispersee, fragile, peu tracable et rarement transformable en action propre.
+CoproScope est un cockpit local-first pour conseil syndical.
 
-Le projet ne cherche pas a "faire de l'IA sur des PDF" pour le principe. Il cherche a reconstruire une colonne vertebrale documentaire:
+Il part d'un constat simple : dans beaucoup de coproprietes, l'information existe deja, mais elle est dispersee, fragile, peu tracable, peu actionnable et parfois trop sensible pour etre partagee telle quelle.
 
-1. des pieces identifiees ;
-2. des registres explicites ;
-3. des diligences rattachees a des preuves ;
-4. des sorties diffusables lisibles ;
-5. une couche Audit360 pour structurer constats et controles ;
-6. un noyau logiciel separable des cas reels.
+Le projet reconstruit une chaine :
 
-Autrement dit: rendre la matiere documentaire **moins subie** et **plus pilotable**.
+1. identifier les pieces ;
+2. proteger les originaux ;
+3. qualifier la confidentialite ;
+4. biffer ou agreger avant diffusion si necessaire ;
+5. relier documents, demandes, decisions, factures, comptes et constats ;
+6. produire des sorties relisibles ;
+7. ne publier que le genericisable.
 
-## Le probleme auquel CoproScope repond
+## Ce que l'etude utilisateurs a clarifie
 
-Sans outillage, un conseil syndical se retrouve souvent avec:
+L'etude UX/SHS montre que le besoin n'est pas seulement documentaire.
 
-- des documents eparpilles entre Drive, mails, extranet et dossiers locaux ;
-- des demandes au syndic difficiles a historiser ;
-- des AG preparees avec des pieces incompletes ;
-- des constats sans chaine de preuve propre ;
-- un melange risque entre travail prive et partage public.
+Le conseil syndical a besoin de :
 
-CoproScope traite ce probleme comme un probleme de **chaine documentaire**, pas seulement comme un probleme de rangement.
+- preuve : savoir d'ou vient l'information ;
+- action : savoir quoi faire maintenant ;
+- memoire : ne pas perdre l'historique ;
+- limite : savoir ce qui releve ou non du role CS ;
+- diffusion : expliquer sans exposer de donnees sensibles.
 
-## La promesse, en termes simples
+CoproScope doit donc eviter deux ecueils :
 
-Quand CoproScope fonctionne bien, une equipe doit pouvoir dire:
+- devenir une simple arborescence de fichiers ;
+- devenir un outil d'audit si expert qu'il surcharge les benevoles.
 
-- "on sait ce qu'on a" ;
-- "on sait ce qu'il manque" ;
-- "on sait a quoi rattacher une demande ou un constat" ;
-- "on peut transformer un constat en controle, preuve attendue et action" ;
-- "on peut preparer une AG sans repartir de zero" ;
-- "on peut ameliorer l'outil publiquement sans exposer notre instance privee".
+## La promesse en termes simples
 
-## A qui cela s'adresse
+Quand CoproScope fonctionne bien, une equipe peut dire :
 
-- conseils syndicaux qui veulent une lecture plus nette de leur fonds documentaire ;
-- coproprietaires tres impliques qui ont besoin de relier pieces, demandes, AG et travaux ;
-- petites equipes qui veulent un outillage sobre, local-first et audit-able.
+- on sait ce qu'on a ;
+- on sait ce qu'il manque ;
+- on sait ce qui est sensible ;
+- on sait ce qu'on peut diffuser ;
+- on sait quelle demande ou decision rattacher a quelle preuve ;
+- on sait quels points traiter avant l'AG ;
+- on peut transmettre le dossier au prochain conseil syndical.
+
+## Ce que CoproScope est
+
+- un outil local-first ;
+- un cockpit documentaire et operationnel ;
+- un assistant de controle pour conseil syndical ;
+- un systeme de registres et preuves ;
+- une aide a la restitution propre ;
+- une base open source genericisable.
 
 ## Ce que CoproScope n'est pas
 
-- pas un SaaS de gestion locative ;
-- pas un coffre-fort magique qui "comprend tout" sans traces ;
-- pas une simple arborescence de dossiers ;
-- pas une plateforme lourde qui impose d'emblee cloud, RAG et orchestration complexe.
+- pas un syndic ;
+- pas une comptabilite officielle ;
+- pas un SaaS multi-tenant ;
+- pas un extranet de plus ;
+- pas un reseau social de copropriete ;
+- pas un chatbot qui decide sans sources ;
+- pas un outil qui publie des documents reels dans GitHub.
 
 ## Principes de conception
 
 ### 1. Les originaux ne se touchent pas
 
-Les racines brutes restent en lecture seule. Toute transformation passe par les zones de preparation, les registres, les sorties et les journaux.
+Les racines brutes restent en lecture seule. Toute transformation passe par les registres, sorties, journaux, versions biffees ou artefacts locaux.
 
 ### 2. La preuve prime
 
-Chaque automatisation utile doit laisser une trace exploitable: manifeste, registre, journal d'action, rapport, constat, diligence.
+Chaque automatisation utile doit laisser une trace : hash, registre, source, methode, statut, rapport, action attendue.
 
 ### 3. Le prive reste prive
 
-Une instance reelle sert a apprendre et a valider. Le depot public ne recoit que des briques genericisees, propres, documentees et testees.
+Les instances reelles restent hors depot. Le depot public recoit le code, les schemas, les exemples synthetiques, les methodes et les formes genericisees.
 
-### 4. La francophonie est une preference structurelle
+### 4. La confidentialite est une fonction produit
 
-Quand c'est pertinent, CoproScope privilegie:
+PrivacyOps et BiffageOps ne sont pas des details techniques. Ils rendent possible la diffusion prudente : screening, college d'acces, biffage, pseudonymisation, version diffusable.
 
-- les noms fonctionnels en francais ;
-- les documents publics en francais ;
-- les sorties diffusables en francais ;
-- l'anglais seulement lorsqu'il sert une compatibilite technique, un identifiant ou une integration externe.
+### 5. Le conseil syndical n'est pas un persona unique
 
-### 5. L'outil doit rester operable
+Un CS peut etre vigie, pompier, batisseur, expert, fatigue ou captif du syndic. CoproScope doit accepter ces niveaux de maturite.
 
-Un socle utile vaut mieux qu'une vision totale mais abstraite. CoproScope avance par couches utiles: DocOps, puis SyndicOps, puis AGOps.
+### 6. L'IA doit rester sous preuve
 
-### 6. Audit360 est une couche transverse, pas un a-cote
+Les aides IA peuvent accelerer l'extraction, la synthese ou la revue. Elles ne doivent pas effacer la source, le doute, la validation humaine ou la politique de confidentialite.
 
-Quand CoproScope parle d'audit, il ne parle pas seulement de produire une note.
+### 7. L'interface vient apres les objets metier
 
-Il parle de rendre reproductible une chaine:
-
-- relever un fait ;
-- citer sa source ;
-- expliciter le risque ou le point de controle ;
-- preciser la preuve attendue ;
-- rattacher une action ou une diligence.
-
-### 7. Pragmatique maintenant, plus souverain ensuite
-
-Aujourd'hui, CoproScope peut s'appuyer sur des agents IA grand public et peu chers pour aller vite.
-
-Mais il est construit de facon a conserver un maximum de briques locales et auditables, avec une direction assumee: reduire la dependance aux services externes et rendre possible a terme un deploiement d'IA mieux maitrise, jusqu'au hors ligne quand cela devient necessaire.
+Pas d'application web prematuree. L'interface locale devient pertinente quand les registres, statuts et rapports sont assez stables.
 
 ## Pourquoi c'est mobilisateur
 
-Le projet est construit de sorte que chaque progression utile compte vraiment:
+Chaque couche utile rend le travail du conseil syndical un peu moins solitaire :
 
-- une meilleure regle de classement rend le corpus plus lisible ;
-- un meilleur registre rend une demande syndic plus solide ;
-- une meilleure lecture AG aide une vraie preparation ;
-- une meilleure doc rend le projet plus partageable.
+- une piece retrouvee evite une relance floue ;
+- un biffage evite une diffusion risquee ;
+- un rapprochement comptable produit une vraie question ;
+- une resolution suivie evite l'oubli post-AG ;
+- une memoire de copropriete evite de repartir de zero.
 
-On n'est pas en train d'ecrire une vision abstraite: on essaie de construire un outil qui devient plus utile a mesure qu'on le clarifie.

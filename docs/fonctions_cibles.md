@@ -1,150 +1,136 @@
 # Fonctions cibles
 
+Cette page distingue clairement ce qui existe, ce qui est en cours, ce qui est cible, et ce qui n'est pas prioritaire.
+
 ## Vue d'ensemble
 
-| Bloc | But | Entrees typiques | Sorties attendues | Statut |
+| Bloc | But | Entrees typiques | Sorties attendues | Etat |
 |---|---|---|---|---|
-| DocOps | Reconstituer un registre documentaire fiable | bruts Drive, extranet, dossiers locaux | inventaire, hash, doublons, texte, classement, completude | en cours, deja exploitable |
-| SyndicOps | Structurer la relation documentaire avec le syndic | demandes, reponses, mails, pieces attendues | registre des demandes, relances, constats, diligences | en cours, socle present |
-| FactureOps | Extraire et qualifier les factures | pieces detectees par DocOps, Factur-X/XML/CSV, OCR local | factures candidates, anomalies facture, niveau d'intensite L0-L4 | amorce v1 |
-| ComptaScope | Reconstituer et controler les flux comptables | factures candidates FactureOps, annexes, etats de depenses, contrats | ecritures candidates, controles comptables, rapprochements, exports DuckDB/Grist/Evidence | amorce v1 |
-| AGOps | Standardiser la preparation des AG | convocations, PV, annexes, resolutions | registre AG, rapport de preparation, points d'attention | en cours, premiere version presente |
-| Audit360 | Transformer les signaux metier en controles relisibles | pieces, demandes, AG, sujets travaux ou contrats | constats normalises, repertoire de controles, syntheses, diligences | en cours d'extraction publique |
-| ContractOps | Mieux suivre contrats et obligations | contrats, avenants, attestations | registre contrats, alertes, clauses clefs | cible ulterieure |
-| WorksOps | Suivre devis, travaux et entreprises | devis, factures, assurance, diligence publique | chronologies, comparatifs, alertes, constats | cible ulterieure |
-| CommsOps | Organiser les communications diffusables | notes, syntheses, courriels, comptes rendus | sorties partageables, suivis de diffusion | cible ulterieure |
+| DocOps | Reconstituer un registre documentaire fiable | bruts Drive, extranet, dossiers locaux | inventaire, hash, texte, classement, completude | deja exploitable |
+| PrivacyOps | Qualifier le risque de diffusion | registre documents, chemins, texte extrait | screening confidentialite, colleges d'acces, transformations | nouveau socle |
+| BiffageOps | Produire des versions biffees ou pseudonymisees | documents a transformer, signaux sensibles | file de biffage, registre biffages, versions biffees | nouveau socle |
+| SyndicOps | Structurer la relation documentaire avec le syndic | demandes, reponses, pieces attendues | registre demandes, relances, preuves, diligences | embryon utile |
+| FactureOps | Extraire et qualifier les factures | pieces detectees, texte, OCR, sources structurees | factures candidates, anomalies facture, intensite L0-L4 | amorce v1 |
+| ComptaScope | Controler et expliquer les flux comptables | factures, annexes, etats de depenses, contrats | rapprochements, controles, rapport, exports | amorce v1 forte |
+| AGOps | Aider la preparation et le suivi AG | convocations, PV, annexes, resolutions | registre AG, points d'attention | premiere version |
+| Audit360 | Transformer signaux en controles actionnables | pieces, demandes, AG, compta, travaux | constats, risques, preuves attendues, actions | couche transverse |
+| GristOps | Donner des tables locales de pilotage | registres CSV, sorties metier | exports locaux consultables | socle local |
+| EvidenceOps | Produire des rapports reproductibles | CSV/DuckDB, Markdown, SQL | pages de rapport locales | socle local |
+| ContractOps | Suivre contrats et obligations | contrats, avenants, attestations | registre contrats, alertes, clauses clefs | cible |
+| WorksOps | Suivre devis, travaux, reception | devis, assurances, decisions, factures | comparatifs, chronologies, garanties | cible prioritaire |
+| IncidentOps | Suivre incidents et sinistres | signalements, photos, assurances | tickets, statuts, preuves de cloture | cible prioritaire |
+| CommsOps | Produire des sorties diffusables | notes, rapports, versions biffees | syntheses, PDF, messages propres | cible prioritaire |
+| Interface locale | Rendre le produit accessible | registres et rapports stabilises | cockpit CS, vues metier | pas encore |
 
-## DocOps
+## Ce qui existe deja
 
-DocOps est le premier socle, parce qu'il conditionne tout le reste.
+### DocOps
 
-Fonctions recherchees:
+DocOps est le socle. Il sert a savoir ce que l'on a, ce qui manque et ce qui peut etre cite comme preuve.
+
+Fonctions deja presentes ou amorcees :
 
 - inventaire des pieces brutes ;
 - empreintes SHA-256 ;
-- detection de doublons ;
 - extraction de texte natif ;
-- signalement OCR ;
 - classement assiste ;
-- rapport de completude documentaire ;
-- index probatoire.
+- rapport de completude ;
+- KPI documentaires ;
+- integration de champs confidentialite dans le registre documents.
 
-Signes de reussite:
+### PrivacyOps et BiffageOps
 
-- on sait ce qu'on a ;
-- on sait ce qui manque ;
-- on peut citer une piece par identifiant ;
-- on ne travaille plus a l'aveugle.
+Ces deux briques rendent la promesse local-first plus credible.
 
-## SyndicOps
+Fonctions presentes :
 
-SyndicOps transforme les demandes eparses en suivi clair.
+- screening des documents existants ;
+- detection de signaux sensibles ;
+- college d'acces brut et derive ;
+- transformations requises ;
+- file de biffage ;
+- biffage local de textes/PDF/DOCX selon dependances ;
+- registre des biffages ;
+- table de correspondance pour pseudonymisation tracee.
 
-Fonctions recherchees:
+Voir : [Confidentialite et biffage](./confidentialite_et_biffage.md).
 
-- registre unique des demandes ;
-- piece attendue rattachee a chaque demande ;
-- suivi des reponses et des relances ;
-- rattachement demande -> document -> constat -> diligence ;
-- indicateurs de couverture et de reponse.
+### FactureOps
 
-Signes de reussite:
+FactureOps transforme des pieces documentaires en factures candidates.
 
-- les relances ne repartent pas de zero ;
-- les demandes ont une preuve d'origine ;
-- les reponses partielles sont visibles ;
-- les trous documentaires deviennent actionnables.
+Fonctions presentes :
 
-## FactureOps
+- detection de factures ;
+- extraction fournisseur, numero, date, montants ;
+- anomalies de piece ;
+- intensite d'outil `L0` a `L4` ;
+- separation entre anomalie facture et controle comptable.
 
-FactureOps est la couche amont specialisee dans les factures. Elle ne fait pas de comptabilite: elle transforme des pieces documentaires en factures candidates exploitables.
+### ComptaScope
 
-Fonctions recherchees:
+ComptaScope ne remplace pas la comptabilite officielle. Il produit une lecture candidate, controlee et explicable.
 
-- detecter les factures et avoirs ;
-- extraire fournisseur, numero, date, HT, TVA, TTC ;
-- proposer un compte et une famille de charge ;
-- signaler les anomalies facture ;
-- conserver la source, le hash, la methode d'extraction et le niveau d'intensite ;
-- produire `invoice_evidence` et `invoice_anomalies`.
+Fonctions presentes :
 
-Signes de reussite:
+- ecritures candidates ;
+- rapprochements facture / etat des depenses ;
+- statuts `OK`, `P2`, `P1` ;
+- alias fournisseurs ;
+- similarites, divisions, sommes multi-lignes, regroupements ;
+- rapport explicatif local ;
+- exports DuckDB/Grist/Evidence.
 
-- les anomalies de piece ne sont plus confondues avec les controles comptables ;
-- chaque facture candidate renvoie a une preuve documentaire ;
-- l'intensite des outils est lisible de `L0_STRUCTURED_SOURCE` a `L4_AI_OR_ONLINE_REVIEW`.
+### AGOps
 
-## ComptaScope
+AGOps aide a preparer les assemblees generales.
 
-ComptaScope transforme les factures candidates FactureOps et les sources comptables en objets auditables sans pretendre tenir la comptabilite officielle.
+Fonctions presentes :
 
-Fonctions recherchees:
+- reperage des convocations, PV, annexes ;
+- registre AG ;
+- resolutions detectees ;
+- points d'attention.
 
-- produire une ecriture candidate ;
-- rapprocher factures et etat des depenses ;
-- signaler les controles comptables et les rapprochements a confirmer ;
-- exporter vers CSV, DuckDB, Grist et Evidence.
+## Ce qui existe mais doit devenir plus utilisable
 
-Signes de reussite:
+| Bloc | Probleme UX actuel | Direction |
+|---|---|---|
+| DocOps | Produit des registres, mais pas encore une vue CS simple. | Vue documents attendus/manquants/obsoletes. |
+| PrivacyOps | Puissant mais technique. | Vue "peut-on diffuser ?" avec preuves et actions. |
+| SyndicOps | Socle present, workflow incomplet. | Statuts, echeances, relances, preuves, modeles. |
+| ComptaScope | Tres utile mais expert. | Controle comptes guide, questions au syndic, rapport AG. |
+| AGOps | Prepare l'AG, suit peu l'apres-AG. | Registre decisions-actions-preuves. |
+| Audit360 | Concept fort, encore abstrait. | Tableaux faits/preuves/risques/actions par parcours. |
 
-- chaque ligne comptable candidate renvoie a une facture candidate FactureOps ;
-- les hypotheses restent marquees comme telles ;
-- les ecarts et manques deviennent visibles avant discussion avec le syndic.
+## Ce qui n'existe pas encore
 
-## AGOps
+| Bloc | Pourquoi c'est important |
+|---|---|
+| Registre decision -> action -> preuve | Transformer les PV d'AG en travail suivi. |
+| WorksOps | Gros besoin sur travaux, devis, reception, garanties. |
+| IncidentOps | Les sinistres et incidents sont des douleurs quotidiennes. |
+| ContractOps | Les contrats structurent charges, obligations et mises en concurrence. |
+| CommsOps | Le CS doit produire des syntheses claires sans fuite de donnees. |
+| Passation CS | La memoire du conseil syndical est fragile. |
+| Interface locale | Le produit doit devenir utilisable sans lire des CSV. |
 
-AGOps vise a rendre la preparation d'AG lisible et reproductible.
+## Hors perimetre court terme
 
-Fonctions recherchees:
-
-- reperage des convocations, PV et annexes ;
-- comptage indicatif des resolutions ;
-- signalement d'annexes manquantes ;
-- rappel des majorites detectees ;
-- rapport d'aide a la preparation AG.
-
-Signes de reussite:
-
-- les pieces utiles a l'AG sont visibles en amont ;
-- les annexes manquantes remontent avant la reunion ;
-- le conseil syndical dispose d'une base de lecture partageable.
-
-## Audit360
-
-Audit360 sert a rendre les analyses comparables, relisibles et actionnables.
-
-Fonctions recherchees:
-
-- normaliser des constats issus de sources heterogenes ;
-- consolider ces constats dans un repertoire de controles ;
-- produire une synthese par point de controle ;
-- expliciter les preuves attendues ;
-- rattacher une action, une relance ou une diligence a chaque point utile.
-
-Signes de reussite:
-
-- les analyses ne restent pas dispersees dans des notes ;
-- les points de controle reviennent d'un dossier a l'autre avec une forme stable ;
-- un relecteur comprend vite le lien entre fait, risque, preuve et action ;
-- les sorties sont assez propres pour etre discutees ou diffusees.
+- SaaS multi-tenant.
+- Application mobile native complete.
+- Vote electronique complet.
+- Reseau social de coproprietaires.
+- Chatbot IA autonome sans sources.
+- Remplacement de la comptabilite officielle ou du syndic.
 
 ## Regle de priorisation
 
-L'ordre de construction reste volontairement strict:
+L'ordre de construction recommande :
 
-1. DocOps
-2. SyndicOps
-3. FactureOps
-4. ComptaScope
-5. AGOps
-6. puis seulement ContractOps, WorksOps et CommsOps
+1. stabiliser les registres et preuves ;
+2. rendre les modules existants visibles dans un cockpit ;
+3. construire les chaines manquantes : decisions, travaux, incidents, passation ;
+4. produire des sorties diffusables biffees ou agregees ;
+5. seulement ensuite, enrichir l'interface et les automatisations.
 
-Cette discipline evite d'empiler des couches "intelligentes" sur un socle documentaire encore flou.
-
-## Ce qui reste hors perimetre court terme
-
-- application web ;
-- orchestration cloud lourde ;
-- moteur multi-entites complet ;
-- experience "grand public" ;
-- promesses d'automatisation sans trace ni verification.

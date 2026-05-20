@@ -2,23 +2,20 @@
 
 ## Vue simple
 
-CoproScope se construit autour d'une separation stricte entre:
+CoproScope se construit autour d'une separation stricte entre :
 
-- le **produit public** ;
-- les **instances privees** ;
-- les **artefacts locaux generes**.
+- le depot public ;
+- les instances privees ;
+- les artefacts locaux generes ;
+- les sorties diffusables ou genericisables.
 
-Cette separation est importante parce qu'elle permet au projet d'etre a la fois:
-
-- utile sur des cas reels ;
-- prudent sur les donnees ;
-- publiable et relisible comme produit open source.
+Cette separation permet au projet d'etre utile sur des cas reels sans publier de documents reels.
 
 ```mermaid
 flowchart TB
     A["Depot public CoproScope"] --> B["server/<br/>code, schemas, configs, tests"]
-    A --> C["docs/<br/>vision, architecture, etat"]
-    A --> D["examples/synthetic_copro/<br/>instance de demonstration"]
+    A --> C["docs/<br/>vision, etude utilisateurs, feuille de route"]
+    A --> D["examples/synthetic_copro/<br/>instance non sensible"]
 
     E["Instances privees hors depot"] --> F["instance.yml"]
     F --> B
@@ -26,19 +23,27 @@ flowchart TB
     B --> G["staging local"]
     B --> H["registres locaux"]
     B --> I["rapports locaux"]
+    B --> J["privacy / biffages locaux"]
 
-    G --> J["share-audit / share-export"]
-    J --> A
+    J --> K["versions biffees ou agregees"]
+    H --> L["Grist local"]
+    I --> M["Evidence local"]
+
+    K --> N["sorties diffusables"]
+    B --> O["share-audit / share-export"]
+    O --> A
 ```
 
 ## Ce qu'on met dans le depot public
 
 - le code genericisable ;
 - les schemas et configurations par defaut ;
-- les gabarits de restitution generiques, y compris pour Audit360 ;
+- les gabarits de restitution generiques ;
 - les prompts, templates et tests ;
-- une documentation qui explique le produit ;
-- une instance synthetique publique pour prouver le comportement.
+- la documentation produit ;
+- l'etude utilisateurs synthetisee ;
+- une instance synthetique publique ;
+- des concepts UX non sensibles.
 
 ## Ce qu'on garde hors du depot public
 
@@ -46,85 +51,104 @@ flowchart TB
 - les documents de copropriete ;
 - les exports OCR ou texte issus de pieces privees ;
 - les journaux locaux d'execution ;
-- les sorties operationnelles propres a une copropriete.
+- les cartes de correspondance de pseudonymisation ;
+- les sorties operationnelles propres a une copropriete ;
+- les documents biffes s'ils restent lies a un cas reel non genericise.
 
-## Choix IA actuel
+## Pipeline v1
 
-Le projet adopte pour l'instant une posture pragmatique:
+Le pipeline actuel suit cette logique :
 
-- utiliser quand c'est utile des agents IA grand public et peu chers ;
-- garder localement le maximum de briques structurantes ;
-- preparer une architecture qui puisse accueillir plus tard des traitements mieux maitrises, voire hors ligne.
+1. bootstrap de l'etat d'instance ;
+2. inventaire des documents ;
+3. extraction texte ;
+4. classement ;
+5. screening confidentialite ;
+6. file de biffage ;
+7. rapport de pieces manquantes ;
+8. KPI documentaires ;
+9. analyse AG ;
+10. synthese de diligence.
 
-L'objectif n'est donc pas de rester dependant d'une IA distante. L'objectif est de construire des couches documentaires et logicielles qui rendent credible, plus tard, un deploiement sur environnement controle.
+Les traitements factures/comptes, Grist et Evidence restent commandes separement pour controler leur execution et leurs preconditions.
+
+## Place de la confidentialite
+
+La confidentialite intervient avant les sorties diffusables.
+
+```mermaid
+flowchart LR
+    A["Document brut"] --> B["DocOps"]
+    B --> C["PrivacyOps"]
+    C --> D{"Diffusable tel quel ?"}
+    D -->|oui| E["Sortie possible"]
+    D -->|non| F["BiffageOps"]
+    F --> G["Version biffee / agregee"]
+    G --> H["Sortie diffusable sous controle"]
+```
+
+## Place d'Audit360
+
+Audit360 agrege les signaux des autres modules :
+
+- pieces inventoriees ;
+- demandes et reponses ;
+- anomalies facture ;
+- rapprochements comptables ;
+- resolutions AG ;
+- plus tard contrats, travaux, incidents.
+
+Il transforme ces signaux en chaine :
+
+`fait -> preuve -> risque -> action`.
 
 ## Arborescence utile
 
 ### `server/`
 
-Le coeur logiciel.
+Le coeur logiciel :
 
 - `src/coproscope/cli.py` : point d'entree CLI ;
-- `src/coproscope/core/` : logique transverse ;
-- `src/coproscope/modules/` : modules DocOps, SyndicOps, FactureOps, ComptaScope, AGOps, GristOps et EvidenceOps ;
-- `src/coproscope/configs/` : parametres par defaut ;
+- `src/coproscope/core/` : logique transverse, instances, partage, confidentialite ;
+- `src/coproscope/modules/` : DocOps, PrivacyOps, BiffageOps, FactureOps, ComptaScope, AGOps, GristOps, EvidenceOps ;
+- `src/coproscope/configs/` : configurations par defaut ;
 - `src/coproscope/schemas/` : contrats de donnees ;
 - `tests/` : validations automatiques.
 
 ### `docs/`
 
-La couche de lecture humaine:
+La couche de lecture humaine :
 
+- etude utilisateurs ;
 - vision produit ;
-- fonctions cibles ;
-- etat du developpement ;
+- feuille de route ;
 - architecture ;
-- regles de partage.
+- etat du developpement ;
+- confidentialite ;
+- modules metier.
 
 ### `examples/synthetic_copro/`
 
-L'instance publique de demonstration:
+L'instance publique de demonstration :
 
 - aucune donnee reelle ;
 - pas de secrets ;
-- utile pour tests, demos et contributions.
+- utile pour tests, demos et contribution.
 
-## Logique de flux
+## Choix IA actuel
 
-1. une instance declare ses racines via `instance.yml` ;
-2. `coprocs` lit les documents bruts sans les modifier ;
-3. DocOps, SyndicOps, FactureOps, ComptaScope et AGOps structurent la matiere utile ;
-4. GristOps et EvidenceOps produisent des vues locales ;
-5. Audit360 peut transformer ces signaux en constats, controles, preuves attendues et diligences ;
-6. le systeme ecrit seulement dans les espaces de preparation, registres, sorties et journaux ;
-7. `share-audit` verifie ce qui est publiable ;
-8. `share-export` construit un arbre public propre ;
-9. seules les briques genericisees peuvent remonter sur GitHub.
+Le projet reste pragmatique :
 
-## Comment Audit360 se branche
+- utiliser des aides IA quand elles accelerent ;
+- garder des registres locaux et auditables ;
+- rendre les incertitudes visibles ;
+- ne jamais transformer une sortie IA en preuve finale sans source et validation.
 
-La couche `Audit360` sert de point de passage entre l'analyse locale et la restitution relisible.
+## Ce que cette architecture protege
 
-Elle peut agreger:
+- la capacite a travailler sur de vrais corpus ;
+- la separation entre public et prive ;
+- la reproductibilite des controles ;
+- la possibilite d'une interface locale future ;
+- la confiance dans les sorties diffusables.
 
-- des pieces inventoriees par DocOps ;
-- des anomalies facture produites par FactureOps ;
-- des demandes et reponses suivies par SyndicOps ;
-- des signaux de convocation, resolution ou annexe issus d'AGOps ;
-- plus tard, des sujets contrats, travaux ou sinistres.
-
-Sa vocation publique n'est pas de publier des conclusions privees.
-
-Sa vocation publique est de publier des **formes generiques de travail**:
-
-- constats normalises ;
-- repertoires de controles ;
-- syntheses de controles ;
-- gabarits de diligences et sorties diffusables.
-
-## Ce que cette architecture essaie de proteger
-
-- la valeur operationnelle sur des cas reels ;
-- la frontiere public / prive ;
-- la capacite a publier du code reusable sans fuite de donnees ;
-- la possibilite pour un relecteur externe de comprendre vite ou sont les responsabilites du produit.
