@@ -55,6 +55,8 @@
     },
     "comptascope": {
       "expense_statement_lines": "./system/accounting/expense_statement_lines_2025.csv",
+      "auto_infer_supplier_aliases": true,
+      "auto_alias_min_evidence": 2,
       "supplier_aliases": [
         {
           "supplier": "JARDINS EXEMPLE SERVICES",

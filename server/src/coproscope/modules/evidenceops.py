@@ -21,12 +21,15 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
     invoice_path = accounting_dir / f"invoice_evidence_{year}.csv"
     control_path = accounting_dir / f"accounting_controls_{year}.csv"
     match_path = accounting_dir / f"invoice_expense_matches_{year}.csv"
+    alias_path = accounting_dir / f"supplier_alias_suggestions_{year}.csv"
     report_path = accounting_dir / f"rapport_comptascope_{year}.md"
     _, invoices = read_csv(invoice_path)
     _, controls = read_csv(control_path)
     _, matches = read_csv(match_path)
+    _, aliases = read_csv(alias_path)
     matched_count = sum(1 for row in matches if row.get("match_status", "").startswith("MATCH_"))
     non_matched_count = sum(1 for row in matches if row.get("match_status") == "NON_RAPPROCHE")
+    auto_alias_count = sum(1 for row in aliases if row.get("suggestion_status") == "AUTO_APPLICABLE")
 
     package = {
         "scripts": {"dev": "evidence dev", "build": "evidence build"},
@@ -45,6 +48,8 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
                 f"- Controles ouverts: {len(controls)}",
                 f"- Rapprochements automatiques: {matched_count}",
                 f"- Factures non rapprochees a expliquer/controler: {non_matched_count}",
+                f"- Alias fournisseurs deduits: {len(aliases)}",
+                f"- Alias auto-applicables: {auto_alias_count}",
                 "",
                 "## Lecture comptable",
                 "",
@@ -66,6 +71,8 @@ def build_evidence_report(instance: InstanceConfig, run: RunContext, dataset: st
         "control_count": len(controls),
         "matched_count": matched_count,
         "non_matched_count": non_matched_count,
+        "supplier_alias_suggestion_count": len(aliases),
+        "supplier_alias_auto_count": auto_alias_count,
         "generated_at": now_iso(),
     }
     write_text(evidence_dir / "evidence_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=True))

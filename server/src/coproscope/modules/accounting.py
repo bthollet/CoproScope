@@ -103,6 +103,19 @@ NON_MATCH_PRIORITY_FIELDS = [
     "next_action",
 ]
 
+SUPPLIER_ALIAS_SUGGESTION_FIELDS = [
+    "supplier",
+    "suggested_alias",
+    "suggestion_status",
+    "evidence_count",
+    "total_ttc",
+    "example_doc_id",
+    "example_statement_line_id",
+    "example_statement_label",
+    "reason",
+    "next_action",
+]
+
 
 def _normal(value: str | None) -> str:
     return normalized_for_match(value or "")
@@ -133,6 +146,14 @@ def _as_list(value: Any) -> list[Any]:
     if isinstance(value, list):
         return value
     return [value]
+
+
+def _as_bool(value: Any, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "oui", "on"}
 
 
 def _configured_paths(instance: InstanceConfig, settings: dict[str, Any], *keys: str, year: int) -> list[Path]:
@@ -307,6 +328,57 @@ def _line_text(line: dict[str, str]) -> str:
     )
 
 
+def _statement_alias_candidate_with_source(line: dict[str, str]) -> tuple[str, str]:
+    hint = normalize_statement_alias(line.get("supplier_hint", ""))
+    if hint:
+        return hint, "supplier_hint"
+    label = line.get("label", "")
+    if "/" in label:
+        left = label.split("/", 1)[0]
+        left = re.sub(r"^\s*[A-Z0-9._-]{3,24}\s+", "", left)
+        alias = normalize_statement_alias(left)
+        if alias:
+            return alias, "label_prefix"
+    return "", ""
+
+
+def _statement_alias_candidate(line: dict[str, str]) -> str:
+    return _statement_alias_candidate_with_source(line)[0]
+
+
+def normalize_statement_alias(value: str) -> str:
+    text = re.sub(r"\s+", " ", value or "").strip(" -_/")
+    normalized = _normal(text)
+    if not normalized:
+        return ""
+    weak = {
+        "assur",
+        "assurance",
+        "avoir",
+        "cb",
+        "cheque",
+        "const",
+        "demeure",
+        "dos",
+        "dossier",
+        "facture",
+        "honoraires",
+        "mise",
+        "paiement",
+        "prelevement",
+        "rar",
+        "reglement",
+        "suivi",
+        "vac",
+        "vacation",
+        "virement",
+    }
+    tokens = [token for token in re.split(r"[^a-z0-9]+", normalized) if token]
+    if not tokens or all(token in weak or token.isdigit() for token in tokens):
+        return ""
+    return text
+
+
 def _supplier_match_kind(invoice: dict[str, str], line: dict[str, str], aliases: dict[str, set[str]]) -> str:
     haystack = _normal(_line_text(line))
     supplier = _normal(invoice.get("fournisseur"))
@@ -386,6 +458,99 @@ def _find_split_match(
     if len(matches) == 1:
         return matches[0], 1
     return [], len(matches)
+
+
+def suggest_supplier_aliases(
+    invoices: list[dict[str, str]],
+    expense_lines: list[dict[str, str]],
+    supplier_aliases: dict[str, set[str]] | None = None,
+    min_auto_evidence: int = 2,
+) -> list[dict[str, str]]:
+    """Propose supplier aliases from repeated amount/account-family evidence."""
+
+    supplier_aliases = supplier_aliases or {}
+    grouped: dict[tuple[str, str], dict[str, Any]] = {}
+    for invoice in invoices:
+        amount = _decimal(invoice.get("ttc"))
+        if amount is None:
+            continue
+        supplier = invoice.get("fournisseur", "")
+        supplier_key = _normal(supplier)
+        if not supplier_key:
+            continue
+        for line in expense_lines:
+            line_amount = _decimal(line.get("amount"))
+            if line_amount != amount or not _family_matches(invoice, line):
+                continue
+            if _supplier_match_kind(invoice, line, supplier_aliases):
+                continue
+            alias, alias_source = _statement_alias_candidate_with_source(line)
+            alias_key = _normal(alias)
+            if not alias_key or alias_key == supplier_key or alias_key in supplier_aliases.get(supplier_key, set()):
+                continue
+            key = (supplier, alias)
+            bucket = grouped.setdefault(
+                key,
+                {
+                    "supplier": supplier,
+                    "suggested_alias": alias,
+                    "count": 0,
+                    "total": Decimal("0"),
+                    "example_doc_id": invoice.get("doc_id", ""),
+                    "example_statement_line_id": line.get("statement_line_id", ""),
+                    "example_statement_label": line.get("label", ""),
+                    "alias_source": alias_source,
+                },
+            )
+            bucket["count"] += 1
+            bucket["total"] += amount
+
+    suggestions: list[dict[str, str]] = []
+    for bucket in grouped.values():
+        count = int(bucket["count"])
+        status = "AUTO_APPLICABLE" if count >= min_auto_evidence and bucket.get("alias_source") == "supplier_hint" else "A_CONTROLER"
+        suggestions.append(
+            {
+                "supplier": bucket["supplier"],
+                "suggested_alias": bucket["suggested_alias"],
+                "suggestion_status": status,
+                "evidence_count": str(count),
+                "total_ttc": _money(bucket["total"]),
+                "example_doc_id": bucket["example_doc_id"],
+                "example_statement_line_id": bucket["example_statement_line_id"],
+                "example_statement_label": bucket["example_statement_label"],
+                "reason": "Montants exacts et famille comptable compatible avec un libelle fournisseur different.",
+                "next_action": "Auto-applicable si le motif est repete; sinon confirmer puis ajouter l'alias dans la configuration locale.",
+            }
+        )
+    suggestions.sort(
+        key=lambda row: (
+            row.get("suggestion_status") != "AUTO_APPLICABLE",
+            -int(row.get("evidence_count") or "0"),
+            row.get("supplier", ""),
+        )
+    )
+    return suggestions
+
+
+def supplier_aliases_from_suggestions(suggestions: list[dict[str, str]]) -> dict[str, set[str]]:
+    aliases: dict[str, set[str]] = {}
+    for row in suggestions:
+        if row.get("suggestion_status") != "AUTO_APPLICABLE":
+            continue
+        supplier = row.get("supplier", "")
+        alias = row.get("suggested_alias", "")
+        if supplier and alias:
+            aliases.setdefault(_normal(supplier), set()).add(_normal(alias))
+    return aliases
+
+
+def _merge_supplier_aliases(*sources: dict[str, set[str]]) -> dict[str, set[str]]:
+    merged: dict[str, set[str]] = {}
+    for source in sources:
+        for supplier, aliases in source.items():
+            merged.setdefault(supplier, set()).update(aliases)
+    return merged
 
 
 def reconcile_invoice_expenses(
@@ -804,12 +969,15 @@ def _write_accounting_report(
     controls: list[dict[str, str]],
     expense_lines: list[dict[str, str]],
     matches: list[dict[str, str]],
+    alias_suggestions: list[dict[str, str]] | None = None,
 ) -> None:
+    alias_suggestions = alias_suggestions or []
     total_ttc = sum((_decimal(row.get("ttc")) or Decimal("0")) for row in invoices)
     match_statuses = Counter(row.get("match_status", "") or "SANS_ETAT_DEPENSES" for row in matches)
     non_match_reasons = Counter(row.get("match_reason", "") for row in matches if not row.get("match_status", "").startswith("MATCH_"))
     supplier_non_matches = Counter(row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER" for row in matches if row.get("match_status") == "NON_RAPPROCHE")
     control_severities = Counter(row.get("severity", "") for row in controls)
+    alias_statuses = Counter(row.get("suggestion_status", "") for row in alias_suggestions)
     priority_items = [
         row for row in matches if row.get("match_status", "") and not row.get("match_status", "").startswith("MATCH_")
     ]
@@ -829,6 +997,8 @@ def _write_accounting_report(
         f"- Controles ouverts: {len(controls)}",
         f"- Controles P0: {control_severities.get('P0', 0)}",
         f"- Controles P1: {control_severities.get('P1', 0)}",
+        f"- Alias fournisseurs proposes: {len(alias_suggestions)}",
+        f"- Alias auto-appliques: {alias_statuses.get('AUTO_APPLICABLE', 0)}",
         "",
         "## Rapprochements",
         "",
@@ -846,15 +1016,42 @@ def _write_accounting_report(
         "",
         *_counter_lines(non_match_reasons, "Aucune cause ouverte"),
         "",
-        "## Fournisseurs a prioriser",
+        "## Alias fournisseurs deduits",
         "",
-        *_counter_lines(supplier_non_matches, "Aucun fournisseur non rapproche"),
-        "",
-        "## Exemples prioritaires a expliquer",
-        "",
-        "| Statut | Fournisseur | Facture | TTC | Cause | Action |",
-        "| --- | --- | --- | ---: | --- | --- |",
+        "| Statut | Fournisseur | Alias propose | Preuves | Total TTC | Exemple |",
+        "| --- | --- | --- | ---: | ---: | --- |",
     ]
+    if alias_suggestions:
+        for row in alias_suggestions[:15]:
+            lines.append(
+                " | ".join(
+                    [
+                        "",
+                        _md_cell(row.get("suggestion_status", "")),
+                        _md_cell(row.get("supplier", "")),
+                        _md_cell(row.get("suggested_alias", "")),
+                        _md_cell(row.get("evidence_count", "")),
+                        _md_cell(row.get("total_ttc", "")),
+                        _md_cell(row.get("example_statement_label", "")),
+                        "",
+                    ]
+                )
+            )
+    else:
+        lines.append("| - | - | - | 0 | 0.00 | Aucun alias deduit |")
+    lines.extend(
+        [
+            "",
+            "## Fournisseurs a prioriser",
+            "",
+            *_counter_lines(supplier_non_matches, "Aucun fournisseur non rapproche"),
+            "",
+            "## Exemples prioritaires a expliquer",
+            "",
+            "| Statut | Fournisseur | Facture | TTC | Cause | Action |",
+            "| --- | --- | --- | ---: | --- | --- |",
+        ]
+    )
     if priority_items:
         for row in priority_items[:15]:
             lines.append(
@@ -975,8 +1172,25 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
             if entry is not None:
                 entries.append(entry)
 
+    settings = _comptascope_settings(instance)
+    configured_aliases = _load_supplier_aliases(instance)
+    try:
+        min_alias_evidence = int(settings.get("auto_alias_min_evidence", 2))
+    except (TypeError, ValueError):
+        min_alias_evidence = 2
     expense_lines = _load_expense_statement_lines(instance, accounting_dir, year)
-    expense_matches = reconcile_invoice_expenses(invoices, expense_lines, _load_supplier_aliases(instance)) if expense_lines else []
+    alias_suggestions = (
+        suggest_supplier_aliases(invoices, expense_lines, configured_aliases, max(2, min_alias_evidence))
+        if expense_lines
+        else []
+    )
+    inferred_aliases = (
+        supplier_aliases_from_suggestions(alias_suggestions)
+        if _as_bool(settings.get("auto_infer_supplier_aliases"), True)
+        else {}
+    )
+    effective_aliases = _merge_supplier_aliases(configured_aliases, inferred_aliases)
+    expense_matches = reconcile_invoice_expenses(invoices, expense_lines, effective_aliases) if expense_lines else []
     for match in expense_matches:
         controls.extend(_controls_for_expense_match(match, year))
 
@@ -1000,6 +1214,7 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     expense_lines_path = accounting_dir / f"expense_statement_lines_{year}.csv"
     expense_matches_path = accounting_dir / f"invoice_expense_matches_{year}.csv"
     non_matches_path = accounting_dir / f"non_rapproches_prioritaires_{year}.csv"
+    alias_suggestions_path = accounting_dir / f"supplier_alias_suggestions_{year}.csv"
     report_path = accounting_dir / f"rapport_comptascope_{year}.md"
     write_csv(invoice_path, INVOICE_EVIDENCE_FIELDS, invoices)
     write_csv(entries_path, ACCOUNTING_ENTRY_FIELDS, entries)
@@ -1007,6 +1222,7 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     if expense_lines:
         write_csv(expense_lines_path, EXPENSE_STATEMENT_FIELDS, expense_lines)
         write_csv(expense_matches_path, INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
+        write_csv(alias_suggestions_path, SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
         non_matches = [
             {
                 "doc_id": row.get("doc_id", ""),
@@ -1030,6 +1246,7 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         controls=controls,
         expense_lines=expense_lines,
         matches=expense_matches,
+        alias_suggestions=alias_suggestions,
     )
 
     duckdb_path = accounting_dir / f"coproscope_accounting_{year}.duckdb"
@@ -1041,6 +1258,7 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     if expense_lines:
         duckdb_tables["expense_statement_lines"] = (EXPENSE_STATEMENT_FIELDS, expense_lines)
         duckdb_tables["invoice_expense_matches"] = (INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
+        duckdb_tables["supplier_alias_suggestions"] = (SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
     duckdb_written = _write_duckdb(duckdb_path, duckdb_tables)
 
     summary = {
@@ -1051,12 +1269,15 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         "control_count": len(controls),
         "expense_statement_line_count": len(expense_lines),
         "expense_match_counts": dict(Counter(row.get("match_status", "") for row in expense_matches)),
+        "supplier_alias_suggestion_count": len(alias_suggestions),
+        "supplier_alias_auto_count": sum(1 for row in alias_suggestions if row.get("suggestion_status") == "AUTO_APPLICABLE"),
         "invoice_evidence": str(invoice_path),
         "ledger_reconstruction": str(entries_path),
         "accounting_controls": str(controls_path),
         "expense_statement_lines": str(expense_lines_path) if expense_lines else "",
         "invoice_expense_matches": str(expense_matches_path) if expense_lines else "",
         "non_rapproches_prioritaires": str(non_matches_path) if expense_lines else "",
+        "supplier_alias_suggestions": str(alias_suggestions_path) if expense_lines else "",
         "report": str(report_path),
         "duckdb": str(duckdb_path) if duckdb_written else "",
         "generated_at": now_iso(),
@@ -1094,6 +1315,7 @@ def copy_accounting_tables_for_dashboard(instance: InstanceConfig, year: int, ta
         "expense_statement_lines",
         "invoice_expense_matches",
         "non_rapproches_prioritaires",
+        "supplier_alias_suggestions",
     ]:
         source = accounting_dir / f"{name}_{year}.csv"
         if not source.exists() and name == "ledger_reconstruction":

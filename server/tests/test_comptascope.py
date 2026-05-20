@@ -6,7 +6,13 @@ import unittest
 from pathlib import Path
 
 from coproscope.core.common import RunContext, load_instance, read_csv
-from coproscope.modules.accounting import accounting_controls, reconcile_invoice_expenses, reconstruct_accounting
+from coproscope.modules.accounting import (
+    accounting_controls,
+    reconcile_invoice_expenses,
+    reconstruct_accounting,
+    suggest_supplier_aliases,
+    supplier_aliases_from_suggestions,
+)
 from coproscope.modules.evidenceops import build_evidence_report
 from coproscope.modules.gristops import sync_grist
 from coproscope.modules.tools import tools_status
@@ -38,6 +44,7 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertTrue(Path(str(result["invoice_expense_matches"])).exists())
         self.assertTrue(Path(str(result["report"])).exists())
         self.assertEqual(result["expense_match_counts"], {"MATCH_AMOUNT_ALIAS": 1})
+        self.assertIn("supplier_alias_suggestion_count", result)
 
         _, invoices = read_csv(Path(str(result["invoice_evidence"])))
         self.assertEqual(invoices[0]["numero_facture"], "FAC-2025-001")
@@ -61,8 +68,10 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(evidence["status"], "ok")
         self.assertIn("invoice_evidence", grist["exports"])
         self.assertIn("invoice_expense_matches", grist["exports"])
+        self.assertIn("supplier_alias_suggestions", grist["exports"])
         self.assertGreaterEqual(evidence["invoice_count"], 1)
         self.assertEqual(evidence["matched_count"], 1)
+        self.assertIn("supplier_alias_suggestion_count", evidence)
 
     def test_tools_status_shape(self) -> None:
         status = tools_status()
@@ -90,6 +99,52 @@ class ComptaScopeTests(unittest.TestCase):
 
         self.assertEqual(matches[0]["match_status"], "CANDIDAT_MONTANT_AMBIGU")
         self.assertIn("plusieurs factures", matches[0]["match_reason"])
+
+    def test_reconciliation_can_infer_repeated_supplier_aliases(self) -> None:
+        invoices = [
+            {
+                "doc_id": "DOC-1",
+                "fournisseur": "EAU EXEMPLE",
+                "numero_facture": "EAU-1",
+                "ttc": "120.00",
+                "compte_propose": "601000",
+                "famille_charge": "energie_eau",
+            },
+            {
+                "doc_id": "DOC-2",
+                "fournisseur": "EAU EXEMPLE",
+                "numero_facture": "EAU-2",
+                "ttc": "240.00",
+                "compte_propose": "601000",
+                "famille_charge": "energie_eau",
+            },
+        ]
+        expenses = [
+            {
+                "statement_line_id": "DEP-1",
+                "account": "601000",
+                "reference": "COMPTEUR-1",
+                "supplier_hint": "EAUCO",
+                "label": "EAUCO / compteur 1",
+                "amount": "120.00",
+            },
+            {
+                "statement_line_id": "DEP-2",
+                "account": "601000",
+                "reference": "COMPTEUR-2",
+                "supplier_hint": "EAUCO",
+                "label": "EAUCO / compteur 2",
+                "amount": "240.00",
+            },
+        ]
+
+        suggestions = suggest_supplier_aliases(invoices, expenses)
+        aliases = supplier_aliases_from_suggestions(suggestions)
+        matches = reconcile_invoice_expenses(invoices, expenses, aliases)
+
+        self.assertEqual(suggestions[0]["suggestion_status"], "AUTO_APPLICABLE")
+        self.assertEqual(suggestions[0]["suggested_alias"], "EAUCO")
+        self.assertEqual(matches[0]["match_status"], "MATCH_AMOUNT_ALIAS")
 
     def test_reconstruct_can_start_from_preloaded_invoice_csv(self) -> None:
         preload = self.example_root / "system" / "accounting" / "preloaded_invoice_evidence_2025.csv"

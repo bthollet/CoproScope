@@ -10,6 +10,7 @@ ComptaScope est la brique comptable de CoproScope. Elle ne remplace pas une comp
 - `expense_statement_lines_<annee>.csv`: lignes d'etat des depenses normalisees quand une source est configuree.
 - `invoice_expense_matches_<annee>.csv`: rapprochements factures / etat des depenses, avec cause et prochaine action.
 - `non_rapproches_prioritaires_<annee>.csv`: non-rapprochements et candidats ambigus classes par montant.
+- `supplier_alias_suggestions_<annee>.csv`: alias fournisseurs deduits ou proposes a partir des montants et familles comptables.
 - `rapport_comptascope_<annee>.md`: rapport explicatif local, notamment sur les causes de non-rapprochement.
 - `coproscope_accounting_<annee>.duckdb`: base analytique locale si DuckDB est disponible.
 
@@ -56,6 +57,8 @@ Les alias et sources de lignes se configurent dans `settings.comptascope`:
   "comptascope": {
     "invoice_evidence_csv": "./system/accounting/invoice_evidence_2025.csv",
     "expense_statement_lines": "./system/accounting/expense_statement_lines_2025.csv",
+    "auto_infer_supplier_aliases": true,
+    "auto_alias_min_evidence": 2,
     "supplier_aliases": [
       {"supplier": "JARDINS EXEMPLE SERVICES", "aliases": ["JEX"]}
     ]
@@ -64,6 +67,8 @@ Les alias et sources de lignes se configurent dans `settings.comptascope`:
 ```
 
 Si `invoice_evidence_csv` est renseigne, ComptaScope repart de ce registre deja extrait au lieu de rescanner les bruts. C'est le mode adapte aux reprises d'audit: on peut enrichir les rapprochements, les alias et les rapports sans refaire toute l'extraction documentaire.
+
+Le mecanisme d'alias automatique reste prudent: un alias n'est auto-applique que lorsqu'au moins deux factures du meme fournisseur ont un montant exact, une famille comptable compatible, et le meme indice fournisseur structure dans l'etat des depenses. Les alias deduits seulement d'un libelle libre ou d'un cas unitaire restent proposes en `A_CONTROLER`.
 
 ## Limites
 
