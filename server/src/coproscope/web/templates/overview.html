@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band hero-band">
+  <div>
+    <p class="eyebrow">Cockpit conseil syndical</p>
+    <h2>Ce qui demande attention maintenant</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.kpis.documents }}</strong><span>documents</span></div>
+    <div><strong>{{ model.kpis.invoices }}</strong><span>factures</span></div>
+    <div><strong>{{ model.kpis.controls }}</strong><span>controles</span></div>
+    <div><strong>{{ model.kpis.actions }}</strong><span>actions a traiter</span></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Priorites</h3>
+      <span>{{ model.priorities|length }}</span>
+    </div>
+    <div class="stack">
+      {% for priority in model.priorities %}
+      <a class="item severity-{{ priority.severity|lower }}" href="{{ priority.href }}">
+        <strong>{{ priority.title }}</strong>
+        <span>{{ priority.detail }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Apercu des actions</h3>
+      <span>{{ model.action_summary.preview_count }} / {{ model.action_summary.total }}</span>
+    </div>
+    <div class="metric-row">
+      <a href="/actions?scope=comptes"><strong>{{ model.action_summary.accounting }}</strong><span>comptes</span></a>
+      <a href="/actions?scope=confidentialite"><strong>{{ model.action_summary.privacy }}</strong><span>confidentialite</span></a>
+      <a href="/actions?scope=documents"><strong>{{ model.action_summary.documents }}</strong><span>documents</span></a>
+      <a href="/actions?scope=syndic"><strong>{{ model.action_summary.scope_counts.syndic }}</strong><span>syndic</span></a>
+    </div>
+    <p class="hint">Stock total d'actions uniques. La liste ci-dessous n'en montre qu'un apercu priorise.</p>
+    <div class="stack">
+      {% for action in model.actions %}
+      <a class="item" href="{{ action.href }}">
+        <strong>{{ action.title }}</strong>
+        <span>{{ action.source }} - {{ action.priority }} - {{ action.status }} - {{ action.next_step }}</span>
+      </a>
+      {% else %}
+      <div class="empty">Aucune action prioritaire construite depuis les artefacts disponibles.</div>
+      {% endfor %}
+    </div>
+    <div class="button-row">
+      <a class="button-link" href="/actions">Voir toutes les actions</a>
+      <a class="button-link secondary" href="/exports/actions.csv">Exporter CSV</a>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="panel-head">
+    <h3>Etat des modules</h3>
+    <span>visible, meme incomplet</span>
+  </div>
+  <div class="module-grid">
+    {% for module in model.modules %}
+    <a class="module-card status-{{ module.status|replace(' ', '-') }}" href="{{ module.href }}">
+      <span>{{ module.status }}</span>
+      <strong>{{ module.label }}</strong>
+      <small>{{ module.detail }}</small>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

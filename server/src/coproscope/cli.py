@@ -14,6 +14,7 @@ from .modules import (
     accounting,
     agscope,
     biffageops,
+    demoops,
     docai,
     docuscope,
     evidenceops,
@@ -41,6 +42,8 @@ COMMAND_ALIASES = {
     "outils": "tools",
     "compta": "accounting",
     "confidentialite": "privacy",
+    "interface": "ui",
+    "demonstration": "demo",
     "strategie": "strategy",
     "audit-partage": "share-audit",
     "export-partage": "share-export",
@@ -64,6 +67,8 @@ SUBCOMMAND_ALIASES = {
         "biffer-requis": "redact-required",
     },
     "strategy_command": {"exporter": "export"},
+    "ui_command": {"servir": "serve"},
+    "demo_command": {"construire": "build"},
 }
 
 
@@ -157,6 +162,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     privacy_screen.add_argument("--skip-generated", action="store_true", help="Ne pas scanner outputs/staging.")
     privacy_screen.add_argument("--max-text-chars", type=int, default=50000, help="Nombre maximum de caracteres lus localement par document.")
+    privacy_screen.add_argument("--prune-unseen", action="store_true", help="Remplacer le registre par le perimetre scanne au lieu de conserver les anciennes lignes.")
+    privacy_screen.add_argument(
+        "--scan-workspace-prefixes",
+        action="store_true",
+        help="Inclure explicitement les dossiers metier 100_, 200_, 220_, etc. en plus du brut/restreint.",
+    )
     privacy_queue = privacy_subparsers.add_parser(
         "redaction-queue",
         aliases=["file-biffage"],
@@ -177,7 +188,25 @@ def build_parser() -> argparse.ArgumentParser:
     privacy_required.add_argument("--target-college", default="C2_Coproprietaires")
     privacy_required.add_argument("--limit", type=int, default=None)
 
-    strategy_parser = subparsers.add_parser("strategy", aliases=["strategie"], parents=[instance_parent], help="Strategie et roadmap produit.")
+    ui_parser = subparsers.add_parser("ui", aliases=["interface"], parents=[instance_parent], help="Interface web locale CoproScope.")
+    ui_subparsers = ui_parser.add_subparsers(dest="ui_command", required=True)
+    ui_serve = ui_subparsers.add_parser("serve", aliases=["servir"], parents=[instance_parent], help="Servir le cockpit web local.")
+    ui_serve.add_argument("--year", "--annee", dest="year", type=int, default=2025)
+    ui_serve.add_argument("--host", default="127.0.0.1")
+    ui_serve.add_argument("--port", type=int, default=8765)
+
+    demo_parser = subparsers.add_parser("demo", aliases=["demonstration"], help="Fabrique de copro demo fictive.")
+    demo_subparsers = demo_parser.add_subparsers(dest="demo_command", required=True)
+    demo_build = demo_subparsers.add_parser("build", aliases=["construire"], help="Generer une instance demo fictive partageable.")
+    demo_build.add_argument("--source-instance", help="Chemin vers instance.yml source ou dossier source.")
+    demo_build.add_argument("--source-instance-root", help="Dossier source contenant instance.yml.")
+    demo_build.add_argument("--output-instance", required=True, help="Dossier ou fichier instance.yml de sortie.")
+    demo_build.add_argument("--mode", choices=["fictive"], default="fictive")
+    demo_build.add_argument("--year", "--annee", dest="year", type=int, default=2025)
+    demo_build.add_argument("--skip-source-audit", action="store_true", help="Ne pas lancer PrivacyOps/BiffageOps sur la source.")
+    demo_build.add_argument("--max-text-chars", type=int, default=12000)
+
+    strategy_parser = subparsers.add_parser("strategy", aliases=["strategie"], parents=[instance_parent], help="Strategie et feuille de route produit.")
     strategy_subparsers = strategy_parser.add_subparsers(dest="strategy_command", required=True)
     strategy_subparsers.add_parser("export", aliases=["exporter"], parents=[instance_parent], help="Exporter une strategie locale.")
 
@@ -283,6 +312,26 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "tools" and args.tools_command == "status":
         tools.print_tools_status()
         return 0
+    if args.command == "demo" and args.demo_command == "build":
+        source = load_instance(args.source_instance, args.source_instance_root)
+        run = RunContext(source, command=" ".join(part for part in sys.argv[1:] if part))
+        try:
+            result = demoops.build_demo_instance(
+                source,
+                run,
+                output_instance=Path(args.output_instance),
+                mode=args.mode,
+                year=args.year,
+                run_source_audit=not args.skip_source_audit,
+                max_text_chars=args.max_text_chars,
+            )
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "demo build complete")
+            return 0 if result["status"] == "ok" else 1
+        except Exception as exc:  # noqa: BLE001
+            run.log_error(str(exc))
+            run.finish("ERROR", str(exc))
+            raise
 
     instance = load_instance(args.instance, args.instance_root)
     run = RunContext(instance, command=" ".join(part for part in sys.argv[1:] if part))
@@ -352,6 +401,8 @@ def _dispatch(args: argparse.Namespace) -> int:
                 run,
                 include_generated=not args.skip_generated,
                 max_text_chars=args.max_text_chars,
+                prune_unseen=args.prune_unseen,
+                scan_workspace_prefixes=args.scan_workspace_prefixes,
             )
             print(json.dumps(result, indent=2, ensure_ascii=True))
             run.finish("OK", "privacy screen-existing complete")
@@ -382,6 +433,13 @@ def _dispatch(args: argparse.Namespace) -> int:
             )
             print(json.dumps(result, indent=2, ensure_ascii=True))
             run.finish("OK", "privacy redact-required complete")
+            return 0
+        if args.command == "ui" and args.ui_command == "serve":
+            from .web.app import serve
+
+            run.log_action("ui_serve", instance.path, f"host={args.host}; port={args.port}; year={args.year}")
+            print(f"CoproScope UI: http://{args.host}:{args.port}")
+            serve(instance, year=args.year, host=args.host, port=args.port)
             return 0
         if args.command == "strategy" and args.strategy_command == "export":
             result = strategy.export_strategy(instance, run)

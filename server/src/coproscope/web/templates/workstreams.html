@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Chantiers visibles</p>
+    <h2>Ce qui n'est pas encore complet</h2>
+  </div>
+  <p class="lead">Ces blocs sont montres volontairement pour faire atterrir l'interface cible sans attendre que tout soit termine.</p>
+</section>
+
+<section class="module-grid wide">
+  {% for stream in model.workstreams %}
+  <article class="module-card status-{{ stream.status|replace(' ', '-') }}">
+    <span>{{ stream.status }}</span>
+    <strong>{{ stream.label }}</strong>
+    <small>{{ stream.detail }}</small>
+    <em>{{ stream.next }}</em>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -20,7 +20,7 @@ Cette page distingue clairement ce qui existe, ce qui est en cours, ce qui est c
 | WorksOps | Suivre devis, travaux, reception | devis, assurances, decisions, factures | comparatifs, chronologies, garanties | cible prioritaire |
 | IncidentOps | Suivre incidents et sinistres | signalements, photos, assurances | tickets, statuts, preuves de cloture | cible prioritaire |
 | CommsOps | Produire des sorties diffusables | notes, rapports, versions biffees | syntheses, PDF, messages propres | cible prioritaire |
-| Interface locale | Rendre le produit accessible | registres et rapports stabilises | cockpit CS, vues metier | pas encore |
+| Interface locale | Rendre le produit accessible | registres et rapports stabilises | cockpit CS, vues metier, actions | v0 locale |
 
 ## Ce qui existe deja
 
@@ -113,7 +113,6 @@ Fonctions presentes :
 | ContractOps | Les contrats structurent charges, obligations et mises en concurrence. |
 | CommsOps | Le CS doit produire des syntheses claires sans fuite de donnees. |
 | Passation CS | La memoire du conseil syndical est fragile. |
-| Interface locale | Le produit doit devenir utilisable sans lire des CSV. |
 
 ## Hors perimetre court terme
 
@@ -129,8 +128,7 @@ Fonctions presentes :
 L'ordre de construction recommande :
 
 1. stabiliser les registres et preuves ;
-2. rendre les modules existants visibles dans un cockpit ;
+2. enrichir le cockpit local existant ;
 3. construire les chaines manquantes : decisions, travaux, incidents, passation ;
 4. produire des sorties diffusables biffees ou agregees ;
 5. seulement ensuite, enrichir l'interface et les automatisations.
-

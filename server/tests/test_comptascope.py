@@ -299,6 +299,7 @@ class ComptaScopeTests(unittest.TestCase):
                     "doc_id,exercice,fournisseur,siren_siret,numero_facture,date_facture,ttc,compte_propose,famille_charge,statut_controle,confidence,anomalies",
                     "DD-1,2025,ACME SERVICES,,AC-2025-001,2025-02-01,3000.00,615000,entretien_maintenance,BLOQUE_COMPTA,preloaded,SIREN_SIRET_ABSENT|DILIGENCE_REQUISE",
                     "DD-2,2024,ACME SERVICES,,AC-2024-001,2024-12-15,1200.00,615000,entretien_maintenance,BLOQUE_COMPTA,preloaded,DILIGENCE_REQUISE",
+                    "DD-3,2025,OMEGA ASCENSEUR,,OM-2025-001,2025-03-01,1800.00,615000,entretien_maintenance,BLOQUE_COMPTA,preloaded,DILIGENCE_REQUISE",
                 ]
             )
             + "\n",
@@ -328,24 +329,40 @@ class ComptaScopeTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
+        register_results = matrices_dir / "registre_constats.csv"
+        register_results.write_text(
+            "\n".join(
+                [
+                    "constat_id,fact_summary,next_action,diligence_id",
+                    "CST-OMEGA,Le contrat OMEGA Ascenseur est deja instruit dans un controle recent,Demander avis CS et mise en concurrence,DIL-DD-014",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         self.instance.payload.setdefault("settings", {}).setdefault("comptascope", {})["invoice_evidence_csv"] = (
             "./system/accounting/preloaded_invoice_evidence_2025.csv"
         )
         self.instance.payload["settings"]["comptascope"]["supplier_due_diligence"] = {
             "admin_controls_csv": "./system/matrices/controles_administratifs.csv",
-            "result_csv": "./system/matrices/background_results.csv",
+            "result_csv": [
+                "./system/matrices/background_results.csv",
+                "./system/matrices/registre_constats.csv",
+            ],
         }
 
         run = RunContext(self.instance, "accounting reconstruct")
         result = reconstruct_accounting(self.instance, run, 2025)
         run.finish("OK", "supplier due diligence complete")
 
-        self.assertEqual(result["supplier_due_diligence_count"], 2)
+        self.assertEqual(result["supplier_due_diligence_count"], 3)
         _, rows = read_csv(Path(str(result["supplier_due_diligence_controls"])))
         self.assertEqual(rows[0]["coverage_status"], "COUVERT_RECENT_A_RECOUPER")
         self.assertIn("BGC-RES-TEST", rows[0]["existing_result_refs"])
         self.assertIn("ADM-005", rows[0]["controls_to_apply"])
         self.assertIn("DIL-DD-003", rows[0]["diligence_liee"])
+        omega_row = next(row for row in rows if row["fournisseur"] == "OMEGA ASCENSEUR")
+        self.assertIn("CST-OMEGA", omega_row["existing_result_refs"])
         self.assertIn("Diligences fournisseur", Path(str(result["report"])).read_text(encoding="utf-8"))
 
 

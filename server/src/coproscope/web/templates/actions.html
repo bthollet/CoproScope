@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Sprint 2</p>
+    <h2>Actions a traiter</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.action_summary.total }}</strong><span>stock total</span></div>
+    <div><strong>{{ model.action_summary.by_priority.P1 or 0 }}</strong><span>P1</span></div>
+    <div><strong>{{ model.action_summary.by_priority.P2 or 0 }}</strong><span>P2</span></div>
+    <div><strong>{{ action_rows|length }}</strong><span>vue courante</span></div>
+  </div>
+</section>
+
+<section class="band action-toolbar">
+  <div class="filter-group">
+    <span>Perimetre</span>
+    <a class="{{ 'active' if action_filters.scope == 'tous' else '' }}" href="/actions">Tous {{ model.action_summary.scope_counts.tous }}</a>
+    <a class="{{ 'active' if action_filters.scope == 'comptes' else '' }}" href="/actions?scope=comptes">Comptes {{ model.action_summary.scope_counts.comptes }}</a>
+    <a class="{{ 'active' if action_filters.scope == 'confidentialite' else '' }}" href="/actions?scope=confidentialite">Confidentialite {{ model.action_summary.scope_counts.confidentialite }}</a>
+    <a class="{{ 'active' if action_filters.scope == 'documents' else '' }}" href="/actions?scope=documents">Documents {{ model.action_summary.scope_counts.documents }}</a>
+    <a class="{{ 'active' if action_filters.scope == 'syndic' else '' }}" href="/actions?scope=syndic">Syndic {{ model.action_summary.scope_counts.syndic }}</a>
+  </div>
+  <div class="button-row compact">
+    <a class="button-link" href="/exports/actions.csv{{ action_query_suffix }}">CSV</a>
+    <a class="button-link secondary" href="/exports/actions.md{{ action_query_suffix }}">Markdown</a>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Priorites</h3>
+      <span>{{ model.action_summary.by_priority|length }}</span>
+    </div>
+    <div class="metric-row vertical">
+      {% for priority, count in model.action_summary.by_priority.items() %}
+      <a href="/actions?priority={{ priority }}"><strong>{{ count }}</strong><span>{{ priority }}</span></a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Statuts</h3>
+      <span>{{ model.action_summary.by_status|length }}</span>
+    </div>
+    <div class="metric-row vertical">
+      {% for status, count in model.action_summary.by_status.items() %}
+      <a href="/actions?status={{ status }}"><strong>{{ count }}</strong><span>{{ status }}</span></a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>Liste de travail</h3>
+    <span>{{ action_rows|length }}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Priorite</th>
+        <th>Domaine</th>
+        <th>Action</th>
+        <th>Responsable</th>
+        <th>Preuve</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for action in action_rows[:80] %}
+      <tr>
+        <td><span class="pill severity-{{ action.priority|lower }}">{{ action.priority }}</span><br><small>{{ action.status }}</small></td>
+        <td>{{ action.domain_label }}<br><small>{{ action.source }}{% if action.channel %} - {{ action.channel }}{% endif %}</small></td>
+        <td><strong>{{ action.title }}</strong><br><small>{{ action.next_step }}</small></td>
+        <td>{{ action.owner }}</td>
+        <td><code>{{ action.evidence }}</code></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Aucune action dans cette vue.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if action_rows|length > 80 %}
+  <p class="hint">La page affiche les 80 premieres lignes de la vue courante. Les exports contiennent toute la selection.</p>
+  {% endif %}
+</section>
+{% endblock %}

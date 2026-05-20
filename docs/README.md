@@ -13,7 +13,7 @@ Cette documentation est ecrite pour etre lisible par trois publics :
 | 5 min | [Etude utilisateurs](./etude_utilisateurs.md) + [Etat du developpement](./etat_du_developpement.md) | Comprendre le besoin, ce qui existe et ce qui manque. |
 | 15 min | Ajouter [Concept et philosophie](./concept_et_philosophie.md), [Fonctions cibles](./fonctions_cibles.md), [Feuille de route](./feuille_de_route.md) | Comprendre le produit et les priorites. |
 | 30 min | Ajouter [Architecture et flux](./architecture_et_flux.md), [Confidentialite et biffage](./confidentialite_et_biffage.md), [Audit360](./audit360.md) | Comprendre les choix structurants. |
-| Contribution | Ajouter [Plan d'implementation](./implementation_plan.md), [Politique de partage GitHub](./github_sharing.md), [Outillage](./outillage_open_source.md) | Contribuer sans casser les garde-fous. |
+| Contribution | Ajouter [Plan d'implementation](./implementation_plan.md), [Orchestration multi-agents](./orchestration_agents.md), [Politique de partage GitHub](./github_sharing.md), [Outillage](./outillage_open_source.md) | Contribuer seul ou a plusieurs sans casser les garde-fous. |
 
 ## Carte de la doc
 
@@ -31,6 +31,9 @@ Cette documentation est ecrite pour etre lisible par trois publics :
 | [ComptaScope](./comptascope.md) | Rapprochements comptables candidats et rapport explicatif. |
 | [Strategie gestion copro](./strategie_coproscope_gestion_copro.md) | Passage de l'audit documentaire au cockpit de travail CS. |
 | [Plan d'implementation](./implementation_plan.md) | Contrat technique v1 et non-objectifs. |
+| [Orchestration multi-agents](./orchestration_agents.md) | Lancer plusieurs agents en parallele avec worktrees, ownership et garde-fous. |
+| [Lots paralleles approfondis](./lots_paralleles.md) | Briefs de lots A-H pour conversations independantes approfondies. |
+| [Registre de suivi livraison interface](./registre_suivi_livraison_interface.md) | Suivi operationnel du cockpit local et de la copro demo fictive. |
 | [Politique de partage GitHub](./github_sharing.md) | Ce qui peut ou ne peut pas remonter dans le depot public. |
 | [Outillage open source](./outillage_open_source.md) | Outils locaux installes, retenus ou reportes. |
 | [Registre d'avancement](./registre_avancement.md) | Historique des etapes genericisables. |
@@ -55,4 +58,3 @@ La documentation doit rester :
 - prudente sur les donnees sensibles ;
 - francaise dans ses termes quand cela aide la comprehension ;
 - concrete : chaque promesse doit renvoyer a un module, un livrable ou une limite.
-

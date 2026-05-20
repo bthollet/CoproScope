@@ -17,10 +17,12 @@ from ..core.common import (
     write_text,
 )
 from ..core.privacy import (
+    ACCESS_RANK,
     SCREENING_FIELDS,
     apply_access_policy,
     ensure_policy_fields,
     exposure_risk_for,
+    normalize_college,
 )
 from ..core.sanitizer import extract_docx_package_text
 
@@ -64,6 +66,31 @@ DEFAULT_WORKSPACE_PREFIXES = (
     "290_",
 )
 TEXT_EXTENSIONS = {"txt", "md", "csv", "tsv", "json", "yml", "yaml", "html", "htm"}
+REVIEW_STATUSES = {
+    "DIFFUSABLE_BRUT",
+    "DIFFUSABLE_APRES_BIFFAGE",
+    "DIFFUSABLE_APRES_AGREGATION",
+    "BLOQUE",
+    "A_ARBITRER",
+}
+DIFFUSION_REVIEW_STATUSES = {
+    "DIFFUSABLE_BRUT",
+    "DIFFUSABLE_APRES_BIFFAGE",
+    "DIFFUSABLE_APRES_AGREGATION",
+}
+REVIEW_DECISION_FIELDS = [
+    "review_status_recommendation",
+    "review_next_step",
+    "review_justification_required",
+    "privacy_review_justification",
+    "privacy_review_owner",
+    "privacy_reviewed_at",
+    "publication_blocker",
+]
+SCREENING_REVIEW_FIELDS = list(SCREENING_FIELDS)
+for _field in ["privacy_review_status", *REVIEW_DECISION_FIELDS]:
+    if _field not in SCREENING_REVIEW_FIELDS:
+        SCREENING_REVIEW_FIELDS.append(_field)
 
 
 def _privacy_dir(instance: InstanceConfig) -> Path:
@@ -179,12 +206,24 @@ def _read_existing_text_artifact(instance: InstanceConfig, row: dict[str, str], 
     return _read_text_file(path, max_chars)
 
 
-def _scan_roots(instance: InstanceConfig, include_generated: bool) -> list[Path]:
+def _scan_roots(
+    instance: InstanceConfig,
+    include_generated: bool,
+    *,
+    scan_workspace_prefixes: bool | None = None,
+) -> list[Path]:
     roots: list[Path] = []
     workspace = instance.root("workspace")
-    for root_name in ("raw", "system"):
+    privacy_settings = instance.settings().get("privacyops") or instance.settings().get("privacy") or {}
+    if not isinstance(privacy_settings, dict):
+        privacy_settings = {}
+    try:
+        roots.append(instance.root("raw"))
+    except KeyError:
+        pass
+    if privacy_settings.get("scan_system"):
         try:
-            roots.append(instance.root(root_name))
+            roots.append(instance.root("system"))
         except KeyError:
             pass
     if include_generated:
@@ -195,9 +234,12 @@ def _scan_roots(instance: InstanceConfig, include_generated: bool) -> list[Path]
                 pass
     roots.extend(instance.root_list("restricted"))
 
-    for child in workspace.iterdir() if workspace.exists() else []:
-        if child.is_dir() and child.name.startswith(DEFAULT_WORKSPACE_PREFIXES):
-            roots.append(child)
+    if scan_workspace_prefixes is None:
+        scan_workspace_prefixes = bool(privacy_settings.get("scan_workspace_prefixes"))
+    if scan_workspace_prefixes:
+        for child in workspace.iterdir() if workspace.exists() else []:
+            if child.is_dir() and child.name.startswith(DEFAULT_WORKSPACE_PREFIXES):
+                roots.append(child)
 
     unique: list[Path] = []
     seen: set[str] = set()
@@ -242,6 +284,141 @@ def _existing_indexes(rows: list[dict[str, str]]) -> tuple[dict[str, dict[str, s
     return by_path, by_digest
 
 
+def _ensure_review_fields(fields: list[str]) -> list[str]:
+    for field in REVIEW_DECISION_FIELDS:
+        if field not in fields:
+            fields.append(field)
+    return fields
+
+
+def _parts(value: str) -> set[str]:
+    return {part.strip() for part in value.split(";") if part.strip()}
+
+
+def _wide_diffusion_target(row: dict[str, str]) -> bool:
+    target = normalize_college(
+        row.get("derivative_max_college") or row.get("raw_max_college"),
+        default="C2_Coproprietaires",
+    )
+    return ACCESS_RANK[target] <= ACCESS_RANK["C2_Coproprietaires"]
+
+
+def _recommended_review_decision(row: dict[str, str]) -> tuple[str, str, str]:
+    transformations = _parts(row.get("required_transformations", ""))
+    publication_form = row.get("publication_form", "")
+    priority, _exposure_risk, recommended_action = exposure_risk_for(row)
+
+    if priority == "P0":
+        return (
+            "BLOQUE",
+            "Retirer le document du chemin de diffusion large puis refaire une revue PrivacyOps.",
+            "Document sensible detecte dans un chemin de diffusion large.",
+        )
+    if publication_form == "raw" and not transformations:
+        return (
+            "DIFFUSABLE_BRUT",
+            "Valider que la source peut etre diffusee telle quelle et tracer la justification.",
+            "",
+        )
+    if "aggregation" in transformations:
+        return (
+            "DIFFUSABLE_APRES_AGREGATION",
+            "Produire une synthese agregee qui ne reprend pas les lignes sensibles.",
+            "",
+        )
+    if "redaction" in transformations:
+        return (
+            "DIFFUSABLE_APRES_BIFFAGE",
+            "Produire ou verifier une version biffee avant diffusion.",
+            "",
+        )
+    if "metadata_only" in transformations or publication_form == "metadata_only":
+        return (
+            "BLOQUE",
+            "Ne pas diffuser le contenu ; garder seulement une reference ou une meta-donnee.",
+            "La politique limite ce document a une diffusion metadata_only.",
+        )
+    if row.get("review_required"):
+        return (
+            "A_ARBITRER",
+            recommended_action or "Arbitrer le statut de diffusion avant toute sortie large.",
+            "La politique automatique demande une revue humaine.",
+        )
+    return (
+        "A_ARBITRER",
+        recommended_action or "Verifier manuellement le statut de diffusion.",
+        "Aucune decision de diffusion robuste n'a ete deduite.",
+    )
+
+
+def _has_human_review(previous: dict[str, str], digest: str) -> bool:
+    if previous.get("sha256") != digest:
+        return False
+    status = previous.get("privacy_review_status", "")
+    if status not in REVIEW_STATUSES:
+        return False
+    return bool(
+        previous.get("privacy_reviewed_at")
+        or previous.get("privacy_review_owner")
+        or previous.get("privacy_review_justification")
+    )
+
+
+def _apply_review_defaults(row: dict[str, str], previous: dict[str, str], digest: str) -> None:
+    recommendation, next_step, blocker = _recommended_review_decision(row)
+    row["review_status_recommendation"] = recommendation
+    row["review_next_step"] = next_step
+    row["publication_blocker"] = blocker
+    row["review_justification_required"] = "YES" if _wide_diffusion_target(row) else ""
+
+    if _has_human_review(previous, digest):
+        row["privacy_review_status"] = previous.get("privacy_review_status", "")
+        row["privacy_review_justification"] = previous.get("privacy_review_justification", "")
+        row["privacy_review_owner"] = previous.get("privacy_review_owner", "")
+        row["privacy_reviewed_at"] = previous.get("privacy_reviewed_at", "")
+        return
+
+    if blocker:
+        row["privacy_review_status"] = "BLOQUE"
+    elif row.get("review_required"):
+        row["privacy_review_status"] = "A_ARBITRER"
+    else:
+        row["privacy_review_status"] = recommendation
+    row["privacy_review_justification"] = ""
+    row["privacy_review_owner"] = ""
+    row["privacy_reviewed_at"] = ""
+
+
+def _validate_review_decision(row: dict[str, str], status: str, justification: str) -> None:
+    transformations = _parts(row.get("required_transformations", ""))
+    if row.get("publication_blocker") and status != "BLOQUE":
+        raise ValueError(f"{row.get('doc_id', 'document')} is blocked by PrivacyOps: {row['publication_blocker']}")
+    if status in DIFFUSION_REVIEW_STATUSES and _wide_diffusion_target(row) and not justification.strip():
+        raise ValueError("A justification is required before any broad diffusion decision.")
+    if status == "DIFFUSABLE_BRUT":
+        blocking_transformations = transformations.intersection({"redaction", "aggregation", "metadata_only"})
+        if row.get("publication_form") != "raw" or blocking_transformations:
+            raise ValueError("Raw diffusion is not allowed while PrivacyOps requires redaction, aggregation or metadata_only.")
+
+
+def _sync_screening_review_decision(instance: InstanceConfig, doc_id: str, updates: dict[str, str]) -> None:
+    path = privacy_screening_path(instance)
+    if not path.exists():
+        return
+    fields, rows = read_csv(path)
+    fields = fields or list(SCREENING_REVIEW_FIELDS)
+    for field in SCREENING_REVIEW_FIELDS:
+        if field not in fields:
+            fields.append(field)
+    changed = False
+    for row in rows:
+        if row.get("doc_id") == doc_id:
+            row.update(updates)
+            changed = True
+    if changed:
+        write_csv(path, fields, rows)
+
+
 def _base_document_row(
     instance: InstanceConfig,
     workspace_root: Path,
@@ -278,7 +455,7 @@ def _base_document_row(
 
 def _screening_row(row: dict[str, str]) -> dict[str, str]:
     priority, exposure_risk, action = exposure_risk_for(row)
-    values = {field: row.get(field, "") for field in SCREENING_FIELDS}
+    values = {field: row.get(field, "") for field in SCREENING_REVIEW_FIELDS}
     values.update(
         {
             "exposure_risk": exposure_risk,
@@ -293,8 +470,11 @@ def _write_report(instance: InstanceConfig, screening_rows: list[dict[str, str]]
     report_path = instance.artifact("reports_dir") / "rapport_screening_confidentialite.md"
     by_raw = Counter(row.get("raw_max_college", "") for row in screening_rows)
     by_priority = Counter(row.get("remediation_priority", "") for row in screening_rows)
+    by_review_status = Counter(row.get("privacy_review_status", "") for row in screening_rows)
     to_redact = sum(1 for row in screening_rows if "redaction" in row.get("required_transformations", ""))
     review = sum(1 for row in screening_rows if row.get("review_required"))
+    blocked = sum(1 for row in screening_rows if row.get("privacy_review_status") == "BLOQUE")
+    justification_required = sum(1 for row in screening_rows if row.get("review_justification_required"))
 
     lines = [
         "# Rapport de screening confidentialite",
@@ -303,6 +483,8 @@ def _write_report(instance: InstanceConfig, screening_rows: list[dict[str, str]]
         f"- Documents screenes: {len(screening_rows)}",
         f"- Documents a biffer: {to_redact}",
         f"- Documents a revoir: {review}",
+        f"- Documents bloques: {blocked}",
+        f"- Decisions avec justification requise: {justification_required}",
         "",
         "## Repartition par college brut",
         "",
@@ -325,9 +507,20 @@ def _write_report(instance: InstanceConfig, screening_rows: list[dict[str, str]]
     lines.extend(
         [
             "",
+            "## File de decision humaine",
+            "",
+            "| Statut | Nombre |",
+            "| --- | ---: |",
+        ]
+    )
+    for status, count in sorted(by_review_status.items()):
+        lines.append(f"| {status or '-'} | {count} |")
+    lines.extend(
+        [
+            "",
             "## Points a traiter",
             "",
-            "| Priorite | Risque | Document | College brut | Transformation | Action |",
+            "| Priorite | Statut | Document | College brut | Recommandation | Prochaine etape |",
             "| --- | --- | --- | --- | --- | --- |",
         ]
     )
@@ -335,6 +528,7 @@ def _write_report(instance: InstanceConfig, screening_rows: list[dict[str, str]]
         row
         for row in screening_rows
         if row.get("remediation_priority") in {"P0", "P1", "P2"}
+        or row.get("privacy_review_status") in {"BLOQUE", "A_ARBITRER"}
     ]
     for row in priority_rows[:50]:
         lines.append(
@@ -342,11 +536,11 @@ def _write_report(instance: InstanceConfig, screening_rows: list[dict[str, str]]
                 [
                     "",
                     row.get("remediation_priority", ""),
-                    row.get("exposure_risk", ""),
+                    row.get("privacy_review_status", ""),
                     row.get("doc_id", ""),
                     row.get("raw_max_college", ""),
-                    row.get("required_transformations", ""),
-                    row.get("recommended_action", ""),
+                    row.get("review_status_recommendation", ""),
+                    row.get("publication_blocker") or row.get("review_next_step") or row.get("recommended_action", ""),
                     "",
                 ]
             )
@@ -363,6 +557,8 @@ def screen_existing(
     *,
     include_generated: bool = True,
     max_text_chars: int = 50000,
+    prune_unseen: bool = False,
+    scan_workspace_prefixes: bool | None = None,
 ) -> dict[str, object]:
     workspace_root = instance.root("workspace")
     documents_path = instance.register("documents")
@@ -373,14 +569,27 @@ def screen_existing(
         if field not in fields:
             fields.append(field)
     ensure_policy_fields(fields)
+    _ensure_review_fields(fields)
     by_path, by_digest = _existing_indexes(document_rows)
     seen_at = now_iso()
-    updated_by_path: dict[str, dict[str, str]] = {
-        row.get("original_path", "").replace("\\", "/").lower(): row for row in document_rows if row.get("original_path")
-    }
+    updated_by_path: dict[str, dict[str, str]] = (
+        {}
+        if prune_unseen
+        else {
+            row.get("original_path", "").replace("\\", "/").lower(): row
+            for row in document_rows
+            if row.get("original_path")
+        }
+    )
     screening_rows: list[dict[str, str]] = []
 
-    for path in _iter_files(_scan_roots(instance, include_generated)):
+    for path in _iter_files(
+        _scan_roots(
+            instance,
+            include_generated,
+            scan_workspace_prefixes=scan_workspace_prefixes,
+        )
+    ):
         try:
             digest = sha256_file(path)
             relative_path = relative_to(workspace_root, path)
@@ -394,13 +603,14 @@ def screen_existing(
         if not text.strip():
             text = _read_existing_text_artifact(instance, row, max_text_chars)
         apply_access_policy(row, text=text, instance=instance)
+        _apply_review_defaults(row, previous, digest)
         updated_by_path[key] = row
         screening_rows.append(_screening_row(row))
 
     document_rows = sorted(updated_by_path.values(), key=lambda item: (item.get("original_path", "").lower(), item.get("doc_id", "")))
     write_csv(documents_path, fields, document_rows)
     screening_path = privacy_screening_path(instance)
-    write_csv(screening_path, SCREENING_FIELDS, screening_rows)
+    write_csv(screening_path, SCREENING_REVIEW_FIELDS, screening_rows)
     report_path = _write_report(instance, screening_rows)
     run.log_action("privacy_screen_existing", screening_path, f"rows={len(screening_rows)}")
     run.log_action("write", documents_path, f"privacy enriched documents={len(document_rows)}")
@@ -413,6 +623,55 @@ def screen_existing(
         "report": str(report_path),
         "by_raw_college": dict(Counter(row.get("raw_max_college", "") for row in screening_rows)),
         "priority_counts": dict(Counter(row.get("remediation_priority", "") for row in screening_rows)),
+        "review_status_counts": dict(Counter(row.get("privacy_review_status", "") for row in screening_rows)),
+    }
+
+
+def record_human_review_decision(
+    instance: InstanceConfig,
+    run: RunContext,
+    *,
+    doc_id: str,
+    status: str,
+    justification: str = "",
+    reviewer: str = "",
+) -> dict[str, object]:
+    status = status.strip().upper()
+    if status not in REVIEW_STATUSES:
+        raise ValueError(f"Unsupported privacy review status: {status}")
+
+    documents_path = instance.register("documents")
+    fields, rows = read_csv(documents_path)
+    fields = fields or list(DEFAULT_DOCUMENT_FIELDS)
+    ensure_policy_fields(fields)
+    _ensure_review_fields(fields)
+    row = next((item for item in rows if item.get("doc_id") == doc_id), None)
+    if row is None:
+        raise ValueError(f"Unknown document id: {doc_id}")
+
+    if not row.get("review_status_recommendation"):
+        recommendation, next_step, blocker = _recommended_review_decision(row)
+        row["review_status_recommendation"] = recommendation
+        row["review_next_step"] = next_step
+        row["publication_blocker"] = blocker
+        row["review_justification_required"] = "YES" if _wide_diffusion_target(row) else ""
+
+    _validate_review_decision(row, status, justification)
+    updates = {
+        "privacy_review_status": status,
+        "privacy_review_justification": justification.strip(),
+        "privacy_review_owner": reviewer.strip(),
+        "privacy_reviewed_at": now_iso(),
+    }
+    row.update(updates)
+    write_csv(documents_path, fields, rows)
+    _sync_screening_review_decision(instance, doc_id, updates)
+    run.log_action("privacy_review_decision", documents_path, f"doc_id={doc_id}; status={status}")
+    return {
+        "status": "ok",
+        "doc_id": doc_id,
+        "privacy_review_status": status,
+        "justification_required": bool(row.get("review_justification_required")),
     }
 
 

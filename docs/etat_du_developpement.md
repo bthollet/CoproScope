@@ -22,6 +22,8 @@ Le chantier principal n'est plus "prouver que l'idee existe". Le chantier princi
 - AGOps : premiere lecture des convocations, PV, annexes, resolutions.
 - Audit360 : gabarits generiques de constats, controles, preuves attendues, syntheses.
 - GristOps / EvidenceOps : exports locaux et rapports reproductibles.
+- Interface locale v0 : cockpit web, vues metier, actions et exports CSV/Markdown.
+- Copro demo fictive : generation d'une instance publiable separee des donnees reelles.
 - `share-audit` et `share-export` : frontiere public/prive.
 - Documentation mise a jour avec etude utilisateurs, feuille de route et concepts UX.
 
@@ -30,7 +32,7 @@ Le chantier principal n'est plus "prouver que l'idee existe". Le chantier princi
 | Sujet | Etat |
 |---|---|
 | DocOps | Bon socle ; doit devenir une vue utilisateur simple. |
-| PrivacyOps / BiffageOps | Nouveau socle ; a consolider par tests, interface de revue et validation humaine. |
+| PrivacyOps / BiffageOps | Nouveau socle ; file de revue humaine et garde-fous presents, UX a epaissir. |
 | SyndicOps | Embryon utile ; doit devenir workflow complet de demandes et relances. |
 | ComptaScope | Amorce forte ; doit devenir lisible par non-comptables. |
 | AGOps | Premiere version ; doit s'ouvrir au suivi post-AG. |
@@ -39,7 +41,6 @@ Le chantier principal n'est plus "prouver que l'idee existe". Le chantier princi
 
 ## Ce qui n'existe pas encore
 
-- Application web locale.
 - Cockpit conseil syndical.
 - Registre decision -> action -> preuve.
 - WorksOps travaux/devis/reception.
@@ -65,22 +66,21 @@ Le chantier principal n'est plus "prouver que l'idee existe". Le chantier princi
 | Frontiere public / prive | Bon | Garde-fous presents, export public outille. |
 | CLI | Bon socle | Surface large, encore a stabiliser autour des nouvelles commandes. |
 | DocOps | Bon socle | Deja utile, encore trop technique pour un CS non expert. |
-| PrivacyOps | Nouveau socle | Screening et regles presents, interface de revue absente. |
+| PrivacyOps | Nouveau socle | Screening, regles et file de revue humaine presents ; parcours utilisateur a renforcer. |
 | BiffageOps | Nouveau socle | File et biffage presents, tests et UX a renforcer. |
 | SyndicOps | Embryon utile | Besoin fort, workflow a epaissir. |
 | FactureOps | Amorce v1 | Extraction et anomalies separees de la compta. |
 | ComptaScope | Amorce v1 forte | Tres differenciant, mais doit etre rendu pedagogique. |
 | AGOps | Premiere version | A prolonger vers suivi des decisions. |
 | Audit360 | Couche transverse | Forme generique claire, usages a instancier. |
-| Interface locale | Absente | Prochaine grande marche UX. |
+| Interface locale | V0 locale | Cockpit web en lecture prioritaire ; a transformer en parcours de travail complet. |
 
 ## Prochaine phase logique
 
-1. Stabiliser les nouvelles briques PrivacyOps/BiffageOps.
-2. Documenter et tester les registres produits par le pipeline.
-3. Construire un prototype de cockpit sur instance synthetique.
-4. Mettre ComptaScope en forme "controle comptes guide".
-5. Construire le registre decision -> action -> preuve.
-6. Ouvrir WorksOps et IncidentOps en mode minimal.
+1. Stabiliser et integrer les livraisons de lots dans une branche propre.
+2. Mettre ComptaScope en forme "controle comptes guide".
+3. Transformer DocOps en vue pieces presentes/manquantes/obsoletes.
+4. Construire le registre decision -> action -> preuve.
+5. Ouvrir WorksOps et IncidentOps en mode minimal.
+6. Faire converger les demandes vers SyndicOps.
 7. Preparer CommsOps pour produire des syntheses biffees ou agregees.
-

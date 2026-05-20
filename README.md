@@ -60,7 +60,7 @@ flowchart LR
 
 | Sujet | Etat clair |
 |---|---|
-| Application web locale | Pas encore. Les objets metier sont consolides avant l'interface. |
+| Application web locale | V0 en cours : cockpit local `coprocs ui serve`, branche sur les artefacts existants et affiche les chantiers. |
 | Experience grand public complete | Pas encore. La priorite actuelle reste le conseil syndical implique. |
 | Registre decision -> action -> preuve | Priorite produit, pas encore livre comme module complet. |
 | WorksOps travaux/devis/reception | Cible prioritaire, pas encore livre. |
@@ -117,7 +117,7 @@ Depuis le dossier [`server/`](./server) :
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe -m pip install -e ".[ui]"
 ```
 
 Puis, a la racine du depot :
@@ -132,8 +132,12 @@ Puis, a la racine du depot :
 .\server\.venv\Scripts\python.exe -m coproscope.cli accounting controls --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli grist sync --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli evidence build --instance-root .\examples\synthetic_copro --dataset demo --year 2025
+.\server\.venv\Scripts\python.exe -m coproscope.cli demo build --source-instance-root .\examples\synthetic_copro --output-instance "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --mode fictive --year 2025
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui serve --instance-root "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```
+
+Par defaut, `privacy screen-existing` scanne le brut, les zones restreintes et, sauf `--skip-generated`, les sorties/staging. Pour auditer aussi les dossiers metier deja classes (`100_`, `220_`, `230_`, etc.), utiliser explicitement `--scan-workspace-prefixes`. Pour nettoyer un registre qui avait ete trop large, ajouter `--prune-unseen`.
 
 Pour fabriquer un export public propre :
 
@@ -160,6 +164,8 @@ Si tu veux comprendre le produit :
 Si tu veux contribuer :
 
 - [Plan d'implementation](./docs/implementation_plan.md)
+- [Orchestration multi-agents](./docs/orchestration_agents.md)
+- [Lots paralleles approfondis](./docs/lots_paralleles.md)
 - [Politique de partage GitHub](./docs/github_sharing.md)
 - [Instance synthetique](./examples/synthetic_copro/)
 
@@ -179,4 +185,3 @@ Si tu veux contribuer :
 - [`examples/synthetic_copro/`](./examples/synthetic_copro) : instance publique non sensible pour tests et demonstration.
 
 Les donnees reelles de copropriete, secrets, exports OCR prives, journaux locaux, cartes de biffage et sorties generees n'ont pas leur place dans ce depot public.
-

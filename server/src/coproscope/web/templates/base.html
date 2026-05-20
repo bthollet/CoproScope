@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoproScope - {{ model.instance.name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">CoproScope local</p>
+      <h1>{{ model.instance.name }}</h1>
+    </div>
+    <div class="instance-meta">
+      <span>Exercice {{ model.instance.year }}</span>
+      <span>{{ model.instance.id }}</span>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a class="{{ 'active' if page == 'overview' else '' }}" href="/">Cockpit</a>
+    <a class="{{ 'active' if page == 'actions' else '' }}" href="/actions">Actions</a>
+    <a class="{{ 'active' if page == 'accounting' else '' }}" href="/comptes">Comptes</a>
+    <a class="{{ 'active' if page == 'documents' else '' }}" href="/documents">Documents</a>
+    <a class="{{ 'active' if page == 'privacy' else '' }}" href="/confidentialite">Confidentialite</a>
+    <a class="{{ 'active' if page == 'workstreams' else '' }}" href="/chantiers">Chantiers</a>
+  </nav>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    Interface locale en lecture prioritaire. Les bruts, secrets, cartes de correspondance et dossiers restreints ne sont pas servis par l'application.
+  </footer>
+</body>
+</html>

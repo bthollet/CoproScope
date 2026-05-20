@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">ComptaScope</p>
+    <h2>Controle des comptes guide</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.accounting.invoices.count }}</strong><span>factures candidates</span></div>
+    <div><strong>{{ model.accounting.controls.count }}</strong><span>controles</span></div>
+    <div><strong>{{ model.accounting.non_matches.count }}</strong><span>non rapproches</span></div>
+    <div><strong>{{ model.accounting.anomalies.count }}</strong><span>anomalies facture</span></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Priorites de controle</h3>
+      <span>{{ model.accounting.controls_p1|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Severite</th><th>Controle</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for row in model.accounting.controls_p1[:12] %}
+        <tr>
+          <td>{{ row.severity or row.status }}</td>
+          <td>{{ row.control or row.evidence }}</td>
+          <td>{{ row.action }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucun controle P1/P0 visible dans les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Questions au syndic preparees</h3>
+      <span>{{ model.accounting.syndic_questions|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Priorite</th><th>Sujet</th><th>Question</th></tr></thead>
+      <tbody>
+      {% for row in model.accounting.syndic_questions[:12] %}
+        <tr>
+          <td>{{ row.priority }}</td>
+          <td>{{ row.title }}<br><small>{{ row.source }}</small></td>
+          <td>{{ row.question }}<br><small>{{ row.reason }}</small></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucune question syndic n'a pu etre preparee depuis les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Artefacts</h3>
+      <span>{{ model.accounting.artifacts|length }}</span>
+    </div>
+    <div class="artifact-list">
+      {% for artifact in model.accounting.artifacts %}
+      <div class="artifact">
+        <strong>{{ artifact.label }}</strong>
+        <span>{{ artifact.state }}{% if artifact.count %} - {{ artifact.count }} lignes{% endif %}</span>
+        <code>{{ artifact.path }}</code>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Rapport local</h3>
+      <span>{{ "pret" if model.accounting.report.exists else "absent" }}</span>
+    </div>
+    {% if model.accounting.report.exists %}
+    <pre class="report">{{ model.accounting.report.text }}</pre>
+    {% else %}
+    <div class="empty">Le rapport ComptaScope n'est pas encore genere pour cet exercice.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

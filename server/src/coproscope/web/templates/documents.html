@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">DocOps, SyndicOps, AGOps</p>
+    <h2>Documents, preuves et demandes</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.documents.documents.count }}</strong><span>documents</span></div>
+    <div><strong>{{ model.documents.requests.count }}</strong><span>demandes syndic</span></div>
+    <div><strong>{{ model.documents.ag.count }}</strong><span>lignes AG</span></div>
+    <div><strong>{{ model.documents.findings.count }}</strong><span>constats</span></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Typologie documentaire</h3>
+      <span>{{ model.documents.document_types|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Type</th><th>Nombre</th></tr></thead>
+      <tbody>
+      {% for label, count in model.documents.document_types.items() %}
+        <tr><td>{{ label }}</td><td>{{ count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">Registre documentaire absent ou vide.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Pieces a traiter</h3>
+      <span>{{ model.documents.stale_or_missing|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Severite</th><th>Fait</th><th>Diligence</th></tr></thead>
+      <tbody>
+      {% for row in model.documents.stale_or_missing[:12] %}
+        <tr>
+          <td>{{ row.severity }}</td>
+          <td>{{ row.fact }}</td>
+          <td>{{ row.diligence }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucun constat documentaire prioritaire charge.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Artefacts</h3>
+      <span>{{ model.documents.artifacts|length }}</span>
+    </div>
+    <div class="artifact-list">
+      {% for artifact in model.documents.artifacts %}
+      <div class="artifact">
+        <strong>{{ artifact.label }}</strong>
+        <span>{{ artifact.state }}{% if artifact.count %} - {{ artifact.count }} lignes{% endif %}</span>
+        <code>{{ artifact.path }}</code>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Rapport de completude</h3>
+      <span>{{ "pret" if model.documents.missing_report.exists else "absent" }}</span>
+    </div>
+    {% if model.documents.missing_report.exists %}
+    <pre class="report">{{ model.documents.missing_report.text }}</pre>
+    {% else %}
+    <div class="empty">Le rapport de completude n'est pas encore genere pour cette instance.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -30,6 +30,13 @@ class PrivacyOpsTests(unittest.TestCase):
                 return row
         raise AssertionError(f"Missing row for {file_name}")
 
+    def _screening_row_for_file(self, file_name: str) -> dict[str, str]:
+        _, rows = read_csv(privacyops.privacy_screening_path(self.instance))
+        for row in rows:
+            if row.get("file_name") == file_name:
+                return row
+        raise AssertionError(f"Missing screening row for {file_name}")
+
     def _inject_dirty_docx_parts(self, path: Path) -> None:
         temp_path = path.with_name(path.name + ".dirty.tmp")
         rels = (
@@ -120,6 +127,9 @@ class PrivacyOpsTests(unittest.TestCase):
         self.assertEqual(row["raw_max_college"], "C8_Restreint_Critique")
         self.assertEqual(row["derivative_max_college"], "C2_Coproprietaires")
         self.assertIn("human_review", row["required_transformations"])
+        self.assertEqual(row["privacy_review_status"], "A_ARBITRER")
+        self.assertEqual(row["review_status_recommendation"], "DIFFUSABLE_APRES_AGREGATION")
+        self.assertEqual(row["review_justification_required"], "YES")
         self.assertEqual(row["ai_processing_ceiling"], "no_ai")
         self.assertNotIn("jean.dupont@example.com", row["screening_signals"])
         self.assertNotIn("Jean Dupont", row["screening_signals"])
@@ -143,6 +153,8 @@ class PrivacyOpsTests(unittest.TestCase):
         self.assertNotEqual(row["publication_form"], "raw")
         self.assertIn("aggregation", row["required_transformations"])
         self.assertIn("human_review", row["required_transformations"])
+        self.assertEqual(row["privacy_review_status"], "BLOQUE")
+        self.assertIn("chemin de diffusion large", row["publication_blocker"])
 
     def test_clear_ag_path_can_broaden_default_c4_to_c2(self) -> None:
         ag_dir = self.example_root / "220_Assemblees_generales" / "221_AG_par_date" / "2026-04-29_AGE"
@@ -151,12 +163,69 @@ class PrivacyOpsTests(unittest.TestCase):
         source.write_text("Convocation assemblee generale sans donnees nominatives.\n", encoding="utf-8")
 
         run = RunContext(self.instance, "privacy ag path")
-        privacyops.screen_existing(self.instance, run, include_generated=False)
+        privacyops.screen_existing(self.instance, run, include_generated=False, scan_workspace_prefixes=True)
         row = self._row_for_file("2026-04-29_convocation.md")
 
         self.assertEqual(row["raw_max_college"], "C2_Coproprietaires")
         self.assertEqual(row["derivative_max_college"], "C2_Coproprietaires")
         self.assertEqual(row["publication_form"], "raw")
+        self.assertEqual(row["privacy_review_status"], "DIFFUSABLE_BRUT")
+
+    def test_human_review_decision_requires_justification_for_wide_diffusion(self) -> None:
+        ag_dir = self.example_root / "220_Assemblees_generales" / "221_AG_par_date" / "2026-04-29_AGE"
+        ag_dir.mkdir(parents=True, exist_ok=True)
+        source = ag_dir / "2026-04-29_convocation.md"
+        source.write_text("Convocation assemblee generale sans donnees nominatives.\n", encoding="utf-8")
+
+        run = RunContext(self.instance, "privacy human review")
+        privacyops.screen_existing(self.instance, run, include_generated=False, scan_workspace_prefixes=True)
+        row = self._row_for_file("2026-04-29_convocation.md")
+
+        with self.assertRaises(ValueError):
+            privacyops.record_human_review_decision(
+                self.instance,
+                run,
+                doc_id=row["doc_id"],
+                status="DIFFUSABLE_BRUT",
+            )
+
+        result = privacyops.record_human_review_decision(
+            self.instance,
+            run,
+            doc_id=row["doc_id"],
+            status="DIFFUSABLE_BRUT",
+            justification="Convocation AG sans donnees nominatives ni signal sensible.",
+            reviewer="CS",
+        )
+
+        self.assertEqual(result["status"], "ok")
+        reviewed = self._row_for_file("2026-04-29_convocation.md")
+        screened = self._screening_row_for_file("2026-04-29_convocation.md")
+        self.assertEqual(reviewed["privacy_review_status"], "DIFFUSABLE_BRUT")
+        self.assertEqual(screened["privacy_review_status"], "DIFFUSABLE_BRUT")
+        self.assertEqual(reviewed["privacy_review_owner"], "CS")
+        self.assertIn("Convocation AG", reviewed["privacy_review_justification"])
+
+    def test_human_review_cannot_mark_required_transformation_as_raw_diffusion(self) -> None:
+        source = self.example_root / "raw" / "note_a_biffer_brut.md"
+        source.write_text(
+            "Note de travail avec Monsieur Jean Dupont et jean.dupont@example.com.\n",
+            encoding="utf-8",
+        )
+
+        run = RunContext(self.instance, "privacy raw forbidden")
+        privacyops.screen_existing(self.instance, run, include_generated=False)
+        row = self._row_for_file("note_a_biffer_brut.md")
+
+        with self.assertRaises(ValueError):
+            privacyops.record_human_review_decision(
+                self.instance,
+                run,
+                doc_id=row["doc_id"],
+                status="DIFFUSABLE_BRUT",
+                justification="Decision humaine explicite.",
+                reviewer="CS",
+            )
 
     def test_path_rules_do_not_scan_body_text_as_path_markers(self) -> None:
         ag_dir = self.example_root / "220_Assemblees_generales" / "221_AG_par_date" / "2026-04-29_AGE"
@@ -168,7 +237,7 @@ class PrivacyOpsTests(unittest.TestCase):
         )
 
         run = RunContext(self.instance, "privacy path body")
-        privacyops.screen_existing(self.instance, run, include_generated=False)
+        privacyops.screen_existing(self.instance, run, include_generated=False, scan_workspace_prefixes=True)
         row = self._row_for_file("2026-04-29_note_finance_generique.md")
 
         self.assertEqual(row["raw_max_college"], "C4_Conseil_Syndical")

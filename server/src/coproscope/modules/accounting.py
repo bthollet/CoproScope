@@ -553,11 +553,40 @@ def _supplier_match_score(left: str, right: str) -> Decimal:
     left_tokens = _significant_supplier_tokens(left)
     right_tokens = _significant_supplier_tokens(right)
     if not left_tokens or not right_tokens:
-        return Decimal(str(SequenceMatcher(None, left_norm, right_norm).ratio()))
+        return Decimal("0")
     overlap = Decimal(len(left_tokens & right_tokens))
+    if not overlap:
+        return Decimal("0")
+    if overlap and len(left_tokens) == 1:
+        return Decimal("0.90")
     token_score = overlap / Decimal(max(len(left_tokens), len(right_tokens)))
+    left_coverage = overlap / Decimal(len(left_tokens))
+    if len(left_tokens) <= 2:
+        token_score = max(token_score, left_coverage)
     sequence_score = Decimal(str(SequenceMatcher(None, left_norm, right_norm).ratio()))
     return max(token_score, sequence_score)
+
+
+def _supplier_text_match_score(supplier: str, text: str) -> Decimal:
+    supplier_norm = _normal(supplier)
+    text_norm = _normal(text)
+    if not supplier_norm or not text_norm:
+        return Decimal("0")
+    if supplier_norm in text_norm:
+        return Decimal("0.95")
+    supplier_tokens = _significant_supplier_tokens(supplier)
+    supplier_tokens_for_text = supplier_tokens - {"renovation"} if len(supplier_tokens) > 1 else supplier_tokens
+    text_tokens = _significant_supplier_tokens(text)
+    if not supplier_tokens_for_text or not text_tokens:
+        return Decimal("0")
+    overlap = len(supplier_tokens_for_text & text_tokens)
+    if not overlap:
+        return Decimal("0")
+    if overlap == len(supplier_tokens_for_text):
+        return Decimal("0.90")
+    if len(supplier_tokens_for_text) <= 2:
+        return Decimal(str(overlap / len(supplier_tokens_for_text)))
+    return Decimal(str(overlap / max(len(supplier_tokens_for_text), len(text_tokens))))
 
 
 def _row_actor(row: dict[str, str]) -> str:
@@ -571,10 +600,38 @@ def _row_actor(row: dict[str, str]) -> str:
     )
 
 
+def _row_search_text(row: dict[str, str]) -> str:
+    fields = [
+        "acteur",
+        "cible",
+        "producteur_piece",
+        "supplier",
+        "fournisseur",
+        "fact_summary",
+        "extract",
+        "expected_evidence",
+        "next_action",
+        "notes",
+        "chantier",
+        "fait",
+        "en_cours",
+        "prochaine_action",
+        "documents_attendus",
+        "sortie_attendue",
+        "lot",
+        "procedure_id",
+        "diligence_id",
+    ]
+    return " ".join(str(row.get(field) or "") for field in fields)
+
+
 def _row_reference(row: dict[str, str]) -> str:
     identifier = (
         row.get("resultat_id")
         or row.get("controle_id")
+        or row.get("constat_id")
+        or row.get("procedure_id")
+        or row.get("id")
         or row.get("acteur")
         or row.get("cible")
         or row.get("producteur_piece")
@@ -587,11 +644,24 @@ def _row_reference(row: dict[str, str]) -> str:
     return identifier
 
 
-def _matching_rows(supplier: str, rows: list[dict[str, str]], threshold: Decimal = Decimal("0.72")) -> list[dict[str, str]]:
+def _matching_rows(
+    supplier: str,
+    rows: list[dict[str, str]],
+    threshold: Decimal = Decimal("0.72"),
+    aliases: set[str] | None = None,
+) -> list[dict[str, str]]:
+    candidate_names = {supplier, *(aliases or set())}
+    candidate_names = {name for name in candidate_names if name}
     matches: list[tuple[Decimal, dict[str, str]]] = []
     for row in rows:
         actor = _row_actor(row)
-        score = _supplier_match_score(supplier, actor)
+        search_text = _row_search_text(row)
+        actor_score = max((_supplier_match_score(name, actor) for name in candidate_names), default=Decimal("0"))
+        text_score = max(
+            (_supplier_text_match_score(name, search_text) for name in candidate_names),
+            default=Decimal("0"),
+        )
+        score = max(actor_score, text_score)
         if score >= threshold:
             matches.append((score, row))
     matches.sort(key=lambda item: item[0], reverse=True)
@@ -680,6 +750,11 @@ def build_supplier_due_diligence_controls(
     admin_rows = _load_rows_with_source(
         _configured_paths_no_year(instance, settings, "admin_controls_csv", "admin_controls", "control_matrix")
     )
+    supplier_aliases = _load_supplier_aliases(instance)
+    try:
+        result_threshold = Decimal(str(settings.get("result_match_threshold", "0.50")))
+    except Exception:
+        result_threshold = Decimal("0.50")
 
     rows: list[dict[str, str]] = []
     for invoice in invoices:
@@ -687,8 +762,9 @@ def build_supplier_due_diligence_controls(
             continue
         supplier = invoice.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER"
         codes = _invoice_due_diligence_codes(invoice)
-        matching_worklist = _matching_rows(supplier, worklist_rows)
-        matching_results = _matching_rows(supplier, result_rows)
+        aliases = supplier_aliases.get(_normal(supplier), set())
+        matching_worklist = _matching_rows(supplier, worklist_rows, aliases=aliases)
+        matching_results = _matching_rows(supplier, result_rows, threshold=result_threshold, aliases=aliases)
         controls = _admin_controls_for_codes(admin_rows, codes)
         if matching_results:
             coverage = "COUVERT_RECENT_A_RECOUPER"

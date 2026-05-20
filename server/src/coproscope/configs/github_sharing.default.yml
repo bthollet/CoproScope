@@ -3,6 +3,7 @@
   "url_depot_public": "https://github.com/bthollet/CoproScope",
   "chemins_autorises_partage": [
     "README.md",
+    "AGENTS.md",
     "LICENSE",
     ".gitignore",
     "server/",
