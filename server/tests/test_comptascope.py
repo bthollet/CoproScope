@@ -45,8 +45,14 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertTrue(Path(str(result["ledger_reconstruction"])).exists())
         self.assertTrue(Path(str(result["duckdb"])).exists())
         self.assertTrue(Path(str(result["invoice_expense_matches"])).exists())
+        self.assertTrue(Path(str(result["controle_comptes_guide"])).exists())
+        self.assertTrue(Path(str(result["regroupement_controle_comptes"])).exists())
+        self.assertTrue(Path(str(result["questions_syndic_comptascope"])).exists())
         self.assertTrue(Path(str(result["report"])).exists())
         self.assertEqual(result["expense_match_counts"], {"MATCH_AMOUNT_ALIAS": 1})
+        self.assertEqual(result["review_item_count"], 1)
+        self.assertEqual(result["review_group_count"], 1)
+        self.assertEqual(result["syndic_question_count"], 0)
         self.assertIn("supplier_alias_suggestion_count", result)
         self.assertIn("invoice_anomaly_count", result)
 
@@ -58,7 +64,18 @@ class ComptaScopeTests(unittest.TestCase):
         _, matches = read_csv(Path(str(result["invoice_expense_matches"])))
         self.assertEqual(matches[0]["match_status"], "MATCH_AMOUNT_ALIAS")
         self.assertIn("alias fournisseur", matches[0]["match_reason"])
-        self.assertIn("NON_RAPPROCHE", Path(str(result["report"])).read_text(encoding="utf-8"))
+        _, guide_rows = read_csv(Path(str(result["controle_comptes_guide"])))
+        self.assertEqual(guide_rows[0]["priorite"], "OK")
+        self.assertEqual(guide_rows[0]["statut_rapprochement"], "MATCH_AMOUNT_ALIAS")
+        self.assertEqual(guide_rows[0]["question_syndic"], "")
+        _, group_rows = read_csv(Path(str(result["regroupement_controle_comptes"])))
+        self.assertEqual(group_rows[0]["priorite"], "OK")
+        self.assertEqual(group_rows[0]["fournisseur"], "JARDINS EXEMPLE SERVICES")
+        self.assertEqual(group_rows[0]["anomalie_facture"], "SANS_ANOMALIE_FACTURE")
+        report_text = Path(str(result["report"])).read_text(encoding="utf-8")
+        self.assertIn("NON_RAPPROCHE", report_text)
+        self.assertIn("Regroupement priorite / fournisseur / anomalie", report_text)
+        self.assertIn("Questions syndic copiables", report_text)
 
     def test_controls_grist_and_evidence_exports(self) -> None:
         run = RunContext(self.instance, "workers accounting dashboards")
@@ -77,6 +94,9 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertIn("invoice_anomalies", grist["exports"])
         self.assertIn("invoice_expense_matches", grist["exports"])
         self.assertIn("supplier_alias_suggestions", grist["exports"])
+        self.assertIn("controle_comptes_guide", grist["exports"])
+        self.assertIn("regroupement_controle_comptes", grist["exports"])
+        self.assertIn("questions_syndic_comptascope", grist["exports"])
         self.assertIn("rapport_comptascope", grist["exports"])
         self.assertTrue(report_path.exists())
         self.assertGreaterEqual(evidence["invoice_count"], 1)
@@ -85,6 +105,63 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(evidence["candidate_p2_count"], 0)
         self.assertEqual(evidence["priority_p1_count"], 0)
         self.assertIn("supplier_alias_suggestion_count", evidence)
+
+    def test_reconstruct_exports_copyable_syndic_questions_for_open_items(self) -> None:
+        preload = self.example_root / "system" / "accounting" / "preloaded_invoice_evidence_2025.csv"
+        preload.parent.mkdir(parents=True, exist_ok=True)
+        preload.write_text(
+            "\n".join(
+                [
+                    "doc_id,fournisseur,numero_facture,date_facture,ttc,compte_propose,famille_charge,statut_controle,confidence",
+                    "Q-1,QUESTION SERVICES,Q-2025-001,2025-02-01,999.00,601000,energie_eau,PROBABLE,preloaded",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.instance.payload.setdefault("settings", {}).setdefault("comptascope", {})["invoice_evidence_csv"] = (
+            "./system/accounting/preloaded_invoice_evidence_2025.csv"
+        )
+
+        run = RunContext(self.instance, "accounting reconstruct")
+        result = reconstruct_accounting(self.instance, run, 2025)
+        run.finish("OK", "copyable syndic questions complete")
+
+        self.assertEqual(result["expense_match_counts"], {"NON_RAPPROCHE": 1})
+        self.assertEqual(result["syndic_question_count"], 1)
+        _, guide_rows = read_csv(Path(str(result["controle_comptes_guide"])))
+        self.assertEqual(guide_rows[0]["priorite"], "P1")
+        self.assertEqual(guide_rows[0]["statut_rapprochement"], "NON_RAPPROCHE")
+        self.assertIn("grand livre", guide_rows[0]["question_syndic"])
+        _, group_rows = read_csv(Path(str(result["regroupement_controle_comptes"])))
+        self.assertEqual(group_rows[0]["priorite"], "P1")
+        self.assertEqual(group_rows[0]["questions_syndic"], "1")
+        self.assertEqual(group_rows[0]["statut_rapprochement"], "NON_RAPPROCHE")
+        questions_text = Path(str(result["questions_syndic_comptascope"])).read_text(encoding="utf-8")
+        self.assertIn("Objet: Controle comptes 2025 - QUESTION SERVICES - Q-2025-001", questions_text)
+        self.assertIn("```text", questions_text)
+
+    def test_reconstruct_guides_when_expense_statement_is_missing(self) -> None:
+        expense_statement = self.example_root / "system" / "accounting" / "expense_statement_lines_2025.csv"
+        expense_statement.unlink()
+
+        run = RunContext(self.instance, "accounting reconstruct")
+        result = reconstruct_accounting(self.instance, run, 2025)
+        run.finish("OK", "missing expense statement guided")
+
+        self.assertEqual(result["expense_statement_line_count"], 0)
+        self.assertEqual(result["expense_match_counts"], {})
+        self.assertEqual(result["review_item_count"], 1)
+        self.assertEqual(result["syndic_question_count"], 1)
+        self.assertEqual(result["control_count"], 1)
+        _, guide_rows = read_csv(Path(str(result["controle_comptes_guide"])))
+        self.assertEqual(guide_rows[0]["priorite"], "P2")
+        self.assertEqual(guide_rows[0]["statut_rapprochement"], "SANS_ETAT_DEPENSES")
+        self.assertIn("etat des depenses", guide_rows[0]["question_syndic"])
+        _, non_matches = read_csv(Path(str(result["non_rapproches_prioritaires"])))
+        self.assertEqual(non_matches[0]["match_status"], "SANS_ETAT_DEPENSES")
+        report_text = Path(str(result["report"])).read_text(encoding="utf-8")
+        self.assertIn("Etat des depenses non exploite", report_text)
 
     def test_tools_status_shape(self) -> None:
         status = tools_status()
