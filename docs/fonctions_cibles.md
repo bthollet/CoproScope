@@ -13,6 +13,7 @@ Cette page distingue clairement ce qui existe, ce qui est en cours, ce qui est c
 | FactureOps | Extraire et qualifier les factures | pieces detectees, texte, OCR, sources structurees | factures candidates, anomalies facture, intensite L0-L4 | amorce v1 |
 | ComptaScope | Controler et expliquer les flux comptables | factures, annexes, etats de depenses, contrats | rapprochements, controles, rapport, exports | amorce v1 forte |
 | AGOps | Aider la preparation et le suivi AG | convocations, PV, annexes, resolutions | registre AG, points d'attention | premiere version |
+| DecisionOps | Transformer une resolution AG en action suivie | registre AG, documents classes, textes extraits | registre decisions-actions-preuves, rapport de suivi | amorce v1 |
 | Audit360 | Transformer signaux en controles actionnables | pieces, demandes, AG, compta, travaux | constats, risques, preuves attendues, actions | couche transverse |
 | GristOps | Donner des tables locales de pilotage | registres CSV, sorties metier | exports locaux consultables | socle local |
 | EvidenceOps | Produire des rapports reproductibles | CSV/DuckDB, Markdown, SQL | pages de rapport locales | socle local |
@@ -92,6 +93,18 @@ Fonctions presentes :
 - resolutions detectees ;
 - points d'attention.
 
+### DecisionOps
+
+DecisionOps ajoute le chainon apres AG: une resolution n'est plus seulement un texte archive, elle devient une ligne de suivi avec action attendue, responsable, echeance, preuve attendue, pieces candidates et statut.
+
+Fonctions presentes en amorce :
+
+- lecture du registre AG produit par AGOps quand il existe ;
+- extraction de lignes de resolutions depuis les textes AG ;
+- creation du registre `registre_decisions_actions_preuves.csv` ;
+- rattachement automatique de preuves locales candidates par type de piece et mots-clefs ;
+- rapport local `rapport_decisions_actions_preuves.md`.
+
 ## Ce qui existe mais doit devenir plus utilisable
 
 | Bloc | Probleme UX actuel | Direction |
@@ -107,7 +120,7 @@ Fonctions presentes :
 
 | Bloc | Pourquoi c'est important |
 |---|---|
-| Registre decision -> action -> preuve | Transformer les PV d'AG en travail suivi. |
+| Registre decision -> action -> preuve | Amorce presente ; reste a brancher a l'interface et aux workflows demandes/travaux. |
 | WorksOps | Gros besoin sur travaux, devis, reception, garanties. |
 | IncidentOps | Les sinistres et incidents sont des douleurs quotidiennes. |
 | ContractOps | Les contrats structurent charges, obligations et mises en concurrence. |
