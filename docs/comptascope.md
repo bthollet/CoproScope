@@ -1,12 +1,19 @@
 # ComptaScope
 
-ComptaScope est la brique comptable de CoproScope. Elle ne remplace pas une comptabilite officielle: elle reconstruit des ecritures candidates a partir des pieces, afin d'aider un conseil syndical a controler, rapprocher et expliquer.
+ComptaScope est la brique comptable de CoproScope. Elle ne remplace pas une comptabilite officielle: elle reconstruit des ecritures candidates a partir des factures candidates produites par FactureOps et des sources comptables disponibles, afin d'aider un conseil syndical a controler, rapprocher et expliquer.
+
+Frontiere metier:
+
+- DocOps produit la preuve documentaire brute.
+- FactureOps extrait les factures et signale les anomalies de piece.
+- ComptaScope reconstruit les ecritures candidates, rapproche l'etat des depenses et signale les controles comptables.
 
 ## Donnees produites
 
-- `invoice_evidence_<annee>.csv`: factures candidates, montants, fournisseur, compte propose, anomalies.
+- `invoice_evidence_<annee>.csv`: factures candidates produites par FactureOps.
+- `invoice_anomalies_<annee>.csv`: anomalies facture produites par FactureOps.
 - `ledger_reconstruction_<annee>.csv`: ecritures candidates debit charge / credit fournisseur.
-- `accounting_controls_<annee>.csv`: controles P0/P1 a traiter.
+- `accounting_controls_<annee>.csv`: controles comptables et rapprochements a traiter.
 - `expense_statement_lines_<annee>.csv`: lignes d'etat des depenses normalisees quand une source est configuree.
 - `invoice_expense_matches_<annee>.csv`: rapprochements factures / etat des depenses, avec cause et prochaine action.
 - `non_rapproches_prioritaires_<annee>.csv`: non-rapprochements et candidats ambigus classes par montant.
@@ -19,6 +26,7 @@ Ces sorties sont un contrat de production: meme lorsqu'aucun etat des depenses n
 ## Commandes
 
 ```powershell
+.\server\.venv\Scripts\python.exe -m coproscope.cli invoices extract --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli accounting reconstruct --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli accounting controls --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli grist sync --instance-root .\examples\synthetic_copro --dataset demo --year 2025
@@ -28,6 +36,7 @@ Ces sorties sont un contrat de production: meme lorsqu'aucun etat des depenses n
 Alias francais:
 
 ```powershell
+.\server\.venv\Scripts\python.exe -m coproscope.cli factures extraire --instance-root .\examples\synthetic_copro --annee 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli compta reconstituer --instance-root .\examples\synthetic_copro --annee 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli compta controles --instance-root .\examples\synthetic_copro --annee 2025
 ```
@@ -39,6 +48,8 @@ Alias francais:
 - `A_CONTROLER`: anomalie P0 ou information indispensable manquante.
 
 ## Rapprochement facture / etat des depenses
+
+Les anomalies facture et les controles comptables sont volontairement separes. Une anomalie facture dit que la piece ou son extraction est incomplete. Un controle comptable dit qu'une ecriture, un rapprochement ou une preuve comptable doit etre traite.
 
 ComptaScope ne considere plus `NON_RAPPROCHE` comme une conclusion comptable. C'est un signal d'explication: l'automate n'a pas encore trouve de preuve deterministe suffisante.
 

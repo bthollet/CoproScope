@@ -225,10 +225,10 @@ def _extract_pdf_with_pypdf(path: Path) -> tuple[list[str], str]:
 def _extract_pdf(path: Path) -> tuple[list[str], str, str]:
     try:
         pages, page_count = _extract_pdf_with_pymupdf(path)
-        return pages, page_count, "P1_NATIVE_TEXT_PYMUPDF"
+        return pages, page_count, "L1_NATIVE_TEXT_PYMUPDF"
     except Exception:  # noqa: BLE001
         pages, page_count = _extract_pdf_with_pypdf(path)
-        return pages, page_count, "P1_NATIVE_TEXT_PYPDF"
+        return pages, page_count, "L1_NATIVE_TEXT_PYPDF"
 
 
 def _extract_plain_text(path: Path) -> tuple[list[str], str]:
@@ -342,19 +342,19 @@ def _process_row(instance, row: dict[str, str]) -> dict[str, str]:
             pages, page_count, extraction_level = _extract_pdf(path)
         elif ext in TEXT_EXTENSIONS:
             pages, page_count = _extract_plain_text(path)
-            extraction_level = "P1_NATIVE_TEXT"
+            extraction_level = "L1_NATIVE_TEXT"
         elif ext in HTML_EXTENSIONS:
             pages, page_count = _extract_html(path)
-            extraction_level = "P1_NATIVE_HTML"
+            extraction_level = "L1_NATIVE_HTML"
         elif ext == "docx":
             pages, page_count = _extract_docx(path)
-            extraction_level = "P1_NATIVE_DOCX"
+            extraction_level = "L1_NATIVE_DOCX"
         elif ext == "xlsx":
             pages, page_count = _extract_xlsx(path)
-            extraction_level = "P1_NATIVE_XLSX"
+            extraction_level = "L1_NATIVE_XLSX"
         else:
             row["status_ocr"] = "OCR_REQUIRED" if ext in {"png", "jpg", "jpeg", "tif", "tiff", "bmp"} else "UNSUPPORTED"
-            row["extraction_level"] = "P2_LOCAL_OCR_REQUIRED" if row["status_ocr"] == "OCR_REQUIRED" else ""
+            row["extraction_level"] = "L2_LOCAL_OCR_REQUIRED" if row["status_ocr"] == "OCR_REQUIRED" else ""
             row["text_quality"] = "missing" if row["status_ocr"] == "OCR_REQUIRED" else "unsupported"
             return row
     except Exception as exc:  # noqa: BLE001

@@ -48,7 +48,7 @@ class DocAITests(unittest.TestCase):
 
         self.assertEqual(after.get("status_ocr"), "OCR_DONE")
         self.assertEqual(after.get("ocr_engine"), "sidecar_ocr")
-        self.assertIn("P2_LOCAL_OCR_SIDECAR_OCR", after.get("extraction_level", ""))
+        self.assertIn("L2_LOCAL_OCR_SIDECAR_OCR", after.get("extraction_level", ""))
         self.assertTrue((self.example_root / after["text_path"]).exists())
 
     def test_docling_and_layout_enrichment_write_artifacts_without_heavy_dependencies(self) -> None:
@@ -63,8 +63,8 @@ class DocAITests(unittest.TestCase):
 
         self.assertTrue((self.example_root / enriched["docling_path"]).exists())
         self.assertTrue((self.example_root / enriched["layout_path"]).exists())
-        self.assertIn("P1_DOCLING_STRUCTURE", enriched.get("extraction_level", ""))
-        self.assertIn("P3_LAYOUT_LAYOUTLMV3", enriched.get("extraction_level", ""))
+        self.assertIn("L3_LOCAL_STRUCTURE_DOCLING", enriched.get("extraction_level", ""))
+        self.assertIn("L3_LOCAL_STRUCTURE_LAYOUTLMV3", enriched.get("extraction_level", ""))
 
     def test_docai_status_reports_optional_backends(self) -> None:
         status = docai.docai_status(self.instance, mode="local-basic")

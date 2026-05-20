@@ -66,7 +66,7 @@ Le coeur logiciel.
 
 - `src/coproscope/cli.py` : point d'entree CLI ;
 - `src/coproscope/core/` : logique transverse ;
-- `src/coproscope/modules/` : modules DocOps, SyndicOps, ComptaScope, AGOps, GristOps et EvidenceOps ;
+- `src/coproscope/modules/` : modules DocOps, SyndicOps, FactureOps, ComptaScope, AGOps, GristOps et EvidenceOps ;
 - `src/coproscope/configs/` : parametres par defaut ;
 - `src/coproscope/schemas/` : contrats de donnees ;
 - `tests/` : validations automatiques.
@@ -93,7 +93,7 @@ L'instance publique de demonstration:
 
 1. une instance declare ses racines via `instance.yml` ;
 2. `coprocs` lit les documents bruts sans les modifier ;
-3. DocOps, SyndicOps, ComptaScope et AGOps structurent la matiere utile ;
+3. DocOps, SyndicOps, FactureOps, ComptaScope et AGOps structurent la matiere utile ;
 4. GristOps et EvidenceOps produisent des vues locales ;
 5. Audit360 peut transformer ces signaux en constats, controles, preuves attendues et diligences ;
 6. le systeme ecrit seulement dans les espaces de preparation, registres, sorties et journaux ;
@@ -108,6 +108,7 @@ La couche `Audit360` sert de point de passage entre l'analyse locale et la resti
 Elle peut agreger:
 
 - des pieces inventoriees par DocOps ;
+- des anomalies facture produites par FactureOps ;
 - des demandes et reponses suivies par SyndicOps ;
 - des signaux de convocation, resolution ou annexe issus d'AGOps ;
 - plus tard, des sujets contrats, travaux ou sinistres.

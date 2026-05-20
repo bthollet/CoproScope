@@ -6,7 +6,8 @@
 |---|---|---|---|---|
 | DocOps | Reconstituer un registre documentaire fiable | bruts Drive, extranet, dossiers locaux | inventaire, hash, doublons, texte, classement, completude | en cours, deja exploitable |
 | SyndicOps | Structurer la relation documentaire avec le syndic | demandes, reponses, mails, pieces attendues | registre des demandes, relances, constats, diligences | en cours, socle present |
-| ComptaScope | Reconstituer et controler les flux comptables | factures, annexes, etats de depenses, contrats | factures candidates, ecritures candidates, controles, exports DuckDB/Grist/Evidence | amorce v1 |
+| FactureOps | Extraire et qualifier les factures | pieces detectees par DocOps, Factur-X/XML/CSV, OCR local | factures candidates, anomalies facture, niveau d'intensite L0-L4 | amorce v1 |
+| ComptaScope | Reconstituer et controler les flux comptables | factures candidates FactureOps, annexes, etats de depenses, contrats | ecritures candidates, controles comptables, rapprochements, exports DuckDB/Grist/Evidence | amorce v1 |
 | AGOps | Standardiser la preparation des AG | convocations, PV, annexes, resolutions | registre AG, rapport de preparation, points d'attention | en cours, premiere version presente |
 | Audit360 | Transformer les signaux metier en controles relisibles | pieces, demandes, AG, sujets travaux ou contrats | constats normalises, repertoire de controles, syntheses, diligences | en cours d'extraction publique |
 | ContractOps | Mieux suivre contrats et obligations | contrats, avenants, attestations | registre contrats, alertes, clauses clefs | cible ulterieure |
@@ -54,22 +55,39 @@ Signes de reussite:
 - les reponses partielles sont visibles ;
 - les trous documentaires deviennent actionnables.
 
-## ComptaScope
+## FactureOps
 
-ComptaScope transforme les pieces comptables en objets auditables sans pretendre tenir la comptabilite officielle.
+FactureOps est la couche amont specialisee dans les factures. Elle ne fait pas de comptabilite: elle transforme des pieces documentaires en factures candidates exploitables.
 
 Fonctions recherchees:
 
 - detecter les factures et avoirs ;
 - extraire fournisseur, numero, date, HT, TVA, TTC ;
 - proposer un compte et une famille de charge ;
+- signaler les anomalies facture ;
+- conserver la source, le hash, la methode d'extraction et le niveau d'intensite ;
+- produire `invoice_evidence` et `invoice_anomalies`.
+
+Signes de reussite:
+
+- les anomalies de piece ne sont plus confondues avec les controles comptables ;
+- chaque facture candidate renvoie a une preuve documentaire ;
+- l'intensite des outils est lisible de `L0_STRUCTURED_SOURCE` a `L4_AI_OR_ONLINE_REVIEW`.
+
+## ComptaScope
+
+ComptaScope transforme les factures candidates FactureOps et les sources comptables en objets auditables sans pretendre tenir la comptabilite officielle.
+
+Fonctions recherchees:
+
 - produire une ecriture candidate ;
-- signaler les anomalies P0/P1 ;
+- rapprocher factures et etat des depenses ;
+- signaler les controles comptables et les rapprochements a confirmer ;
 - exporter vers CSV, DuckDB, Grist et Evidence.
 
 Signes de reussite:
 
-- chaque ligne comptable candidate renvoie a une piece ;
+- chaque ligne comptable candidate renvoie a une facture candidate FactureOps ;
 - les hypotheses restent marquees comme telles ;
 - les ecarts et manques deviennent visibles avant discussion avec le syndic.
 
@@ -116,9 +134,10 @@ L'ordre de construction reste volontairement strict:
 
 1. DocOps
 2. SyndicOps
-3. ComptaScope
-4. AGOps
-5. puis seulement ContractOps, WorksOps et CommsOps
+3. FactureOps
+4. ComptaScope
+5. AGOps
+6. puis seulement ContractOps, WorksOps et CommsOps
 
 Cette discipline evite d'empiler des couches "intelligentes" sur un socle documentaire encore flou.
 

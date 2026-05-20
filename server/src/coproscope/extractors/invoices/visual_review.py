@@ -5,15 +5,15 @@ from typing import Iterable
 
 UNRESOLVED_SUPPLIER = "FOURNISSEUR_A_IDENTIFIER"
 TEXT_EXPLOITATION_PRIORITY = (
-    "P1_NATIVE_TEXT",
-    "P2_LOCAL_OCR",
-    "P3_LOCAL_VISUAL_TOOL",
-    "P4_AI_OR_ONLINE_VISUAL",
+    "L1_NATIVE_TEXT",
+    "L2_LOCAL_OCR",
+    "L3_LOCAL_STRUCTURE_OR_VISUAL",
+    "L4_AI_OR_ONLINE_REVIEW",
 )
-PARSING_LEVELS_REQUIRING_CONFIRMATION = frozenset({"P4_AI_OR_ONLINE_VISUAL"})
+PARSING_LEVELS_REQUIRING_CONFIRMATION = frozenset({"L4_AI_OR_ONLINE_REVIEW"})
 DEFAULT_VISUAL_REVIEW_PROMPT = (
-    "Use P3 local visual review first, then propose P4 AI or online vision only for "
-    "residual cases after P1 native text and P2 local OCR. P4 requires explicit user "
+    "Use L3 local structural or visual review first, then propose L4 AI or online vision only for "
+    "residual cases after L1 native text and L2 local OCR. L4 requires explicit user "
     "confirmation before any external or AI-vision processing. Review compact first-page "
     "contact sheets only. Identify supplier headers, logos, legal names, and obvious "
     "non-invoice receipts. Return evidence-backed overrides; do not mark accounting "

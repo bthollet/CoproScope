@@ -17,7 +17,8 @@ flowchart LR
     A["Documents bruts<br/>Drive, extranet, dossiers locaux"] --> B["DocOps<br/>inventaire, hash, extraction, classement"]
     B --> C["SyndicOps<br/>demandes, relances, preuves"]
     B --> D["AGOps<br/>convocations, resolutions, annexes"]
-    B --> E["ComptaScope<br/>factures, ecritures candidates, controles"]
+    B --> I["FactureOps<br/>extraction, anomalies facture"]
+    I --> E["ComptaScope<br/>ecritures candidates, rapprochements"]
     B --> H["Audit360<br/>constats, controles, diligences"]
     C --> H
     D --> H
@@ -52,7 +53,8 @@ Le depot public contient deja:
 - une instance synthetique publique pour tester et demonstrer ;
 - une premiere extraction publique de la couche **Audit360** sous forme de doc, schemas et gabarits ;
 - une frontiere outillee entre **public** et **prive** via `share-audit` et `share-export` ;
-- une premiere brique **ComptaScope** pour reconstruire des factures/ecritures candidates sur donnees synthetiques ;
+- une premiere brique **FactureOps** pour extraire et qualifier les factures candidates sur donnees synthetiques ;
+- une premiere brique **ComptaScope** pour reconstruire des ecritures candidates et rapprocher l'etat des depenses ;
 - une couche documentaire en francais, pensee pour la lecture et la relecture.
 
 ## Ce que CoproScope cherche a construire
@@ -71,8 +73,9 @@ Plutot un systeme qui aide une equipe a:
 ## Les blocs fonctionnels cibles
 
 - **DocOps** : inventaire, hash, doublons, extraction texte, classement, completude.
+- **FactureOps** : detection des factures, extraction fournisseur/numero/date/montants, anomalies facture, intensite L0-L4.
 - **SyndicOps** : registre des demandes, pieces attendues, relances, chaines de preuve.
-- **ComptaScope** : factures, fournisseurs, comptes candidats, controles, exports DuckDB/Grist/Evidence.
+- **ComptaScope** : ecritures candidates, rapprochements facture/etat des depenses, controles comptables, exports DuckDB/Grist/Evidence.
 - **AGOps** : preparation d'assemblee generale, resolutions, annexes, majorites, points d'attention.
 - **Audit360** : couche transverse de constats, points de controle, preuves attendues, actions et diligences.
 - **Ensuite** : ContractOps, WorksOps et CommsOps, une fois le socle documentaire stabilise.
@@ -115,13 +118,14 @@ Puis, a la racine du depot:
 .\server\.venv\Scripts\python.exe -m coproscope.cli doctor --instance-root .\examples\synthetic_copro
 .\server\.venv\Scripts\python.exe -m coproscope.cli pipeline run --instance-root .\examples\synthetic_copro
 .\server\.venv\Scripts\python.exe -m coproscope.cli tools status
+.\server\.venv\Scripts\python.exe -m coproscope.cli invoices extract --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli accounting reconstruct --instance-root .\examples\synthetic_copro --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli grist sync --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli evidence build --instance-root .\examples\synthetic_copro --dataset demo --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```
 
-La reconstruction ComptaScope produit les factures candidates, les ecritures candidates, les controles, puis les rapprochements expliques avec l'etat des depenses quand une source est configuree. Le rapport local `rapport_comptascope_<annee>.md` classe chaque cas en `OK`, `P2` ou `P1`: `OK` pour les preuves locales suffisantes, `P2` pour les candidats locaux a confirmer, `P1` pour les vrais blocages sans indice suffisant. Les traitements locaux couvrent maintenant les alias repetes, les noms fournisseurs tres similaires, les divisions egales, les sommes multi-lignes et les regroupements de factures.
+FactureOps produit les factures candidates et les anomalies facture. ComptaScope consomme ces sorties pour produire les ecritures candidates, les controles comptables, puis les rapprochements expliques avec l'etat des depenses quand une source est configuree. Le rapport local `rapport_comptascope_<annee>.md` classe chaque rapprochement en `OK`, `P2` ou `P1`: `OK` pour les preuves locales suffisantes, `P2` pour les candidats locaux a confirmer, `P1` pour les vrais blocages sans indice suffisant. Les traitements locaux couvrent maintenant les alias repetes, les noms fournisseurs tres similaires, les divisions egales, les sommes multi-lignes et les regroupements de factures.
 Les commandes de controles et d'exports verifient aussi que le rapport ComptaScope existe: pas de tables comptables exportees sans rapport explicatif local.
 
 Pour fabriquer un export public propre:
@@ -143,6 +147,7 @@ Tu ressorts avec une idee claire de la promesse produit et de sa maturite.
 
 - [Fonctions cibles](./docs/fonctions_cibles.md)
 - [Architecture et flux](./docs/architecture_et_flux.md)
+- [FactureOps](./docs/factureops.md)
 - [ComptaScope](./docs/comptascope.md)
 - [Strategie gestion copro](./docs/strategie_coproscope_gestion_copro.md)
 - [Audit360](./docs/audit360.md)

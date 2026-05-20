@@ -33,6 +33,8 @@ L'objectif est de partager la forme reutilisable des controles et diligences, pa
 ```powershell
 .\.venv\Scripts\python.exe -m coproscope.cli doctor --instance-root ..\examples\synthetic_copro
 .\.venv\Scripts\python.exe -m coproscope.cli pipeline run --instance-root ..\examples\synthetic_copro
+.\.venv\Scripts\python.exe -m coproscope.cli invoices extract --instance-root ..\examples\synthetic_copro --year 2025
+.\.venv\Scripts\python.exe -m coproscope.cli accounting reconstruct --instance-root ..\examples\synthetic_copro --year 2025
 .\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root .. --config .\src\coproscope\configs\github_sharing.default.yml
 .\.venv\Scripts\python.exe -m coproscope.cli share-export --repo-root .. --config .\src\coproscope\configs\github_sharing.default.yml --output-dir ..\public-export --clean
 ```

@@ -209,7 +209,7 @@ def run_ocr(
             row["text_char_count"] = str(len(text.strip()))
             row["status_ocr"] = "OCR_DONE"
             row["ocr_engine"] = used_engine
-            row["extraction_level"] = _append_level(row.get("extraction_level", ""), f"P2_LOCAL_OCR_{used_engine.upper()}")
+            row["extraction_level"] = _append_level(row.get("extraction_level", ""), f"L2_LOCAL_OCR_{used_engine.upper()}")
             row["text_quality"] = "strong" if len(text.strip()) >= 80 else "weak"
             lifted += 1
         else:
@@ -245,7 +245,7 @@ def _write_docling(instance: InstanceConfig, row: dict[str, str], source: Path) 
         markdown += "DocAI: aucun texte source disponible pour l'enrichissement Docling.\n"
 
     row["docling_path"] = _write_text_artifact(instance, row, "docling.md", markdown)
-    row["extraction_level"] = _append_level(row.get("extraction_level", ""), "P1_DOCLING_STRUCTURE")
+    row["extraction_level"] = _append_level(row.get("extraction_level", ""), "L3_LOCAL_STRUCTURE_DOCLING")
     if engine != "docling":
         row["notes"] = append_note(row.get("notes", ""), f"DocAI Docling: {engine}.")
 
@@ -261,7 +261,7 @@ def _write_layout_payload(instance: InstanceConfig, row: dict[str, str], backend
         "note": "Layout backend hook; model-specific extraction remains optional and local-only.",
     }
     row["layout_path"] = _write_json_artifact(instance, row, "layout.json", payload)
-    row["extraction_level"] = _append_level(row.get("extraction_level", ""), f"P3_LAYOUT_{backend.upper()}")
+    row["extraction_level"] = _append_level(row.get("extraction_level", ""), f"L3_LOCAL_STRUCTURE_{backend.upper()}")
 
 
 def _write_qwen_review_payload(instance: InstanceConfig, row: dict[str, str]) -> None:
@@ -275,7 +275,7 @@ def _write_qwen_review_payload(instance: InstanceConfig, row: dict[str, str]) ->
     }
     _write_json_artifact(instance, row, "qwen_vl.review.json", payload)
     row["ai_review_status"] = str(payload["status"])
-    row["extraction_level"] = _append_level(row.get("extraction_level", ""), "P4_LOCAL_QWEN_VL_REVIEW")
+    row["extraction_level"] = _append_level(row.get("extraction_level", ""), "L4_AI_OR_ONLINE_REVIEW_QWEN_VL")
 
 
 def enrich(

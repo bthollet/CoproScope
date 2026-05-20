@@ -10,7 +10,7 @@ from .core.doctor import run_doctor
 from .core.due_diligence import summarize_due_diligence
 from .core.pipeline import run_pipeline
 from .core.share import audit_repo, export_shareable
-from .modules import accounting, agscope, docai, docuscope, evidenceops, gristops, strategy, tools, workers
+from .modules import accounting, agscope, docai, docuscope, evidenceops, factureops, gristops, strategy, tools, workers
 
 
 COMMAND_ALIASES = {
@@ -24,6 +24,7 @@ COMMAND_ALIASES = {
     "diligence": "due-diligence",
     "chaine": "pipeline",
     "ia-doc": "docai",
+    "factures": "invoices",
     "outils": "tools",
     "compta": "accounting",
     "strategie": "strategy",
@@ -37,6 +38,7 @@ SUBCOMMAND_ALIASES = {
     "pipeline_command": {"executer": "run"},
     "tools_command": {"statut": "status"},
     "accounting_command": {"reconstituer": "reconstruct", "controles": "controls"},
+    "invoices_command": {"extraire": "extract"},
     "grist_command": {"synchroniser": "sync"},
     "evidence_command": {"construire": "build"},
     "workers_command": {"executer": "run"},
@@ -94,6 +96,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Synthese des controles comptables.",
     )
     accounting_controls.add_argument("--year", "--annee", dest="year", type=int, required=True)
+
+    invoices_parser = subparsers.add_parser("invoices", aliases=["factures"], parents=[instance_parent], help="Commandes FactureOps.")
+    invoices_subparsers = invoices_parser.add_subparsers(dest="invoices_command", required=True)
+    invoices_extract = invoices_subparsers.add_parser(
+        "extract",
+        aliases=["extraire"],
+        parents=[instance_parent],
+        help="Extraire et analyser les factures candidates via FactureOps.",
+    )
+    invoices_extract.add_argument("--year", "--annee", dest="year", type=int, required=True)
 
     grist_parser = subparsers.add_parser("grist", parents=[instance_parent], help="Exports et synchronisation Grist.")
     grist_subparsers = grist_parser.add_subparsers(dest="grist_command", required=True)
@@ -262,6 +274,11 @@ def _dispatch(args: argparse.Namespace) -> int:
             result = accounting.accounting_controls(instance, run, year=args.year)
             print(json.dumps(result, indent=2, ensure_ascii=True))
             run.finish("OK", "accounting controls complete")
+            return 0
+        if args.command == "invoices" and args.invoices_command == "extract":
+            result = factureops.extract_invoices(instance, run, year=args.year)
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "invoices extract complete")
             return 0
         if args.command == "grist" and args.grist_command == "sync":
             result = gristops.sync_grist(instance, run, target=args.target, dataset=args.dataset, year=args.year)

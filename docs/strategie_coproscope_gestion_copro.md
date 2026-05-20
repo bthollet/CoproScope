@@ -10,7 +10,8 @@ CoproScope passe d'un lecteur critique de documents vers un cockpit local-first 
 |---|---|---|
 | DocOps | Inventaire, hash, extraction, preuve documentaire | registre documents, textes, completude |
 | SyndicOps | Demandes, relances, reponses, delais | registre demandes, preuves, relances |
-| ComptaScope | Factures, ecritures candidates, controles | factures, grand livre candidat, anomalies |
+| FactureOps | Extraction et qualification des factures | factures candidates, anomalies facture, intensite L0-L4 |
+| ComptaScope | Reconstruction et rapprochement comptable | grand livre candidat, controles comptables, rapprochements |
 | AGOps | Convocations, resolutions, suites | registre AG, points d'attention |
 | WorksOps | Devis, travaux, receptions, garanties | suivi operations, ecarts, preuves |
 | Audit360 | Controles transverses et diligences | constats, risques, actions |
@@ -25,8 +26,8 @@ Chaque ligne structuree doit rester reliee a une source: fichier, hash, page, li
 
 1. Ingestion: inventaire, hash, extraction texte.
 2. Qualification: type documentaire, fournisseur, exercice, sensibilite.
-3. Exploitation: factures, contrats, demandes syndic, AG, travaux.
-4. Controle: anomalies, preuves manquantes, rapprochements.
+3. Extraction metier: factures, contrats, demandes syndic, AG, travaux.
+4. Controle: anomalies facture, controles comptables, preuves manquantes, rapprochements.
 5. Pilotage: Grist local pour agir, Evidence pour expliquer.
 6. Publication: uniquement code, docs, schemas, tests et exemples synthetiques.
 

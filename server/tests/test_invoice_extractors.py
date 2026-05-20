@@ -78,7 +78,7 @@ Total TTC 120,00
         seed = build_provider_extractor_seed("ACME MAINTENANCE", evidence)
         prompt = build_extractor_generation_prompt(seed)
         self.assertIn("Docling Markdown", prompt)
-        self.assertIn("Qwen VL visual-review notes", prompt)
+        self.assertIn("L4 AI or online visual-review notes", prompt)
         self.assertIn("Provider key: acme_maintenance", prompt)
 
     def test_provider_extractors_parse_significant_supplier_formats(self) -> None:
@@ -234,9 +234,10 @@ MTT_TTC:117,32NETAPAYER:117,32
         self.assertTrue(needs_visual_supplier_review("FOURNISSEUR_A_IDENTIFIER", text_chars=200, confidence=""))
         self.assertTrue(needs_visual_supplier_review("ENGIE", text_chars=12, confidence="TEXT_WEAK"))
         self.assertFalse(needs_visual_supplier_review("ENGIE", text_chars=200, confidence="TEXT_STRONG"))
-        self.assertEqual(TEXT_EXPLOITATION_PRIORITY[-1], "P4_AI_OR_ONLINE_VISUAL")
-        self.assertFalse(parsing_level_requires_confirmation("P3_LOCAL_VISUAL_TOOL"))
-        self.assertTrue(parsing_level_requires_confirmation("P4_AI_OR_ONLINE_VISUAL"))
+        self.assertEqual(TEXT_EXPLOITATION_PRIORITY[-1], "L4_AI_OR_ONLINE_REVIEW")
+        self.assertFalse(parsing_level_requires_confirmation("L3_LOCAL_STRUCTURE_OR_VISUAL"))
+        self.assertTrue(parsing_level_requires_confirmation("L4_AI_OR_ONLINE_REVIEW"))
+        self.assertFalse(any(level.startswith(("P1_", "P2_", "P3_", "P4_")) for level in TEXT_EXPLOITATION_PRIORITY))
 
     def test_default_internal_cross_checks_are_defined_before_parsing_escalation(self) -> None:
         self.assertIn("provider_identity_consensus", DEFAULT_INTERNAL_CROSS_CHECKS)

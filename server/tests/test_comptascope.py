@@ -14,8 +14,10 @@ from coproscope.modules.accounting import (
     supplier_aliases_from_suggestions,
 )
 from coproscope.modules.evidenceops import build_evidence_report
+from coproscope.modules.factureops import extract_invoices
 from coproscope.modules.gristops import sync_grist
 from coproscope.modules.tools import tools_status
+from coproscope.modules.workers import run_workers
 
 
 class ComptaScopeTests(unittest.TestCase):
@@ -39,17 +41,20 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(result["invoice_count"], 1)
         self.assertEqual(result["entry_count"], 1)
         self.assertTrue(Path(str(result["invoice_evidence"])).exists())
+        self.assertTrue(Path(str(result["invoice_anomalies"])).exists())
         self.assertTrue(Path(str(result["ledger_reconstruction"])).exists())
         self.assertTrue(Path(str(result["duckdb"])).exists())
         self.assertTrue(Path(str(result["invoice_expense_matches"])).exists())
         self.assertTrue(Path(str(result["report"])).exists())
         self.assertEqual(result["expense_match_counts"], {"MATCH_AMOUNT_ALIAS": 1})
         self.assertIn("supplier_alias_suggestion_count", result)
+        self.assertIn("invoice_anomaly_count", result)
 
         _, invoices = read_csv(Path(str(result["invoice_evidence"])))
         self.assertEqual(invoices[0]["numero_facture"], "FAC-2025-001")
         self.assertEqual(invoices[0]["ttc"], "1200.00")
         self.assertEqual(invoices[0]["statut_controle"], "PROBABLE")
+        self.assertEqual(invoices[0]["evidence_level"], "L1_NATIVE_TEXT")
         _, matches = read_csv(Path(str(result["invoice_expense_matches"])))
         self.assertEqual(matches[0]["match_status"], "MATCH_AMOUNT_ALIAS")
         self.assertIn("alias fournisseur", matches[0]["match_reason"])
@@ -69,11 +74,13 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(grist["status"], "ok")
         self.assertEqual(evidence["status"], "ok")
         self.assertIn("invoice_evidence", grist["exports"])
+        self.assertIn("invoice_anomalies", grist["exports"])
         self.assertIn("invoice_expense_matches", grist["exports"])
         self.assertIn("supplier_alias_suggestions", grist["exports"])
         self.assertIn("rapport_comptascope", grist["exports"])
         self.assertTrue(report_path.exists())
         self.assertGreaterEqual(evidence["invoice_count"], 1)
+        self.assertIn("invoice_anomaly_count", evidence)
         self.assertEqual(evidence["matched_count"], 1)
         self.assertEqual(evidence["candidate_p2_count"], 0)
         self.assertEqual(evidence["priority_p1_count"], 0)
@@ -84,6 +91,31 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertIn("checks", status)
         self.assertTrue(any(check["name"] == "duckdb" for check in status["checks"]))
         self.assertTrue(any(check["name"] == "grist_api" for check in status["checks"]))
+
+    def test_factureops_extracts_invoice_evidence_and_anomalies(self) -> None:
+        run = RunContext(self.instance, "invoices extract")
+        result = extract_invoices(self.instance, run, 2025)
+        run.finish("OK", "invoices extract complete")
+
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["invoice_count"], 1)
+        self.assertTrue(Path(str(result["invoice_evidence"])).exists())
+        self.assertTrue(Path(str(result["invoice_anomalies"])).exists())
+        _, invoices = read_csv(Path(str(result["invoice_evidence"])))
+        self.assertEqual(invoices[0]["evidence_level"], "L1_NATIVE_TEXT")
+
+    def test_workers_invoices_scope_does_not_reconstruct_ledger(self) -> None:
+        accounting_dir = self.example_root / "outputs" / "accounting"
+        if accounting_dir.exists():
+            shutil.rmtree(accounting_dir)
+        run = RunContext(self.instance, "workers invoices")
+        result = run_workers(self.instance, run, scope="invoices", year=2025)
+        run.finish("OK", "workers invoices complete")
+
+        self.assertEqual([action["worker"] for action in result["actions"]], ["invoice_worker"])
+        self.assertTrue((accounting_dir / "2025" / "invoice_evidence_2025.csv").exists())
+        self.assertTrue((accounting_dir / "2025" / "invoice_anomalies_2025.csv").exists())
+        self.assertFalse((accounting_dir / "2025" / "ledger_reconstruction_2025.csv").exists())
 
     def test_reconciliation_explains_ambiguous_repeated_amounts(self) -> None:
         invoices = [
@@ -256,6 +288,64 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(result["invoice_count"], 1)
         self.assertEqual(invoices[0]["fournisseur"], "PRELOADED SERVICES")
         self.assertEqual(invoices[0]["ttc"], "42.00")
+        self.assertEqual(invoices[0]["evidence_level"], "L0_STRUCTURED_SOURCE")
+
+    def test_supplier_due_diligence_reuses_existing_methodology(self) -> None:
+        preload = self.example_root / "system" / "accounting" / "preloaded_invoice_evidence_2025.csv"
+        preload.parent.mkdir(parents=True, exist_ok=True)
+        preload.write_text(
+            "\n".join(
+                [
+                    "doc_id,fournisseur,siren_siret,numero_facture,date_facture,ttc,compte_propose,famille_charge,statut_controle,confidence,anomalies",
+                    "DD-1,ACME SERVICES,,AC-2025-001,2025-02-01,3000.00,615000,entretien_maintenance,BLOQUE_COMPTA,preloaded,SIREN_SIRET_ABSENT|DILIGENCE_REQUISE",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        matrices_dir = self.example_root / "system" / "matrices"
+        admin_controls = matrices_dir / "controles_administratifs.csv"
+        admin_controls.write_text(
+            "\n".join(
+                [
+                    "controle_id,producteur_piece,famille_piece,controle_a_produire,preuve_attendue,risque_couvert,priorite,diligence_liee,statut,notes",
+                    "ADM-005,Prestataire,Devis contrat facture,Verifier identite juridique exacte,SIREN/SIRET,Risque homonyme,P0,DIL-DD-003,A_PRODUIRE,",
+                    "ADM-010,Entreprise travaux,Devis marche,Verifier assurance et qualification,Attestations,Risque travaux non couverts,P0,DIL-DD-005,A_PRODUIRE,",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        results = matrices_dir / "background_results.csv"
+        results.write_text(
+            "\n".join(
+                [
+                    "resultat_id,acteur,controle,sources_utilisees,resultat_premiere_passe,qualification,action_suite,diligence_liee,statut",
+                    "BGC-RES-TEST,ACME SERVICES,RNE/API,API Recherche Entreprises,Controle recent existant,IDENTITE_ACTIVE_A_RECOUPER,Produire pieces primaires,DIL-DD-003,EN_COURS",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.instance.payload.setdefault("settings", {}).setdefault("comptascope", {})["invoice_evidence_csv"] = (
+            "./system/accounting/preloaded_invoice_evidence_2025.csv"
+        )
+        self.instance.payload["settings"]["comptascope"]["supplier_due_diligence"] = {
+            "admin_controls_csv": "./system/matrices/controles_administratifs.csv",
+            "result_csv": "./system/matrices/background_results.csv",
+        }
+
+        run = RunContext(self.instance, "accounting reconstruct")
+        result = reconstruct_accounting(self.instance, run, 2025)
+        run.finish("OK", "supplier due diligence complete")
+
+        self.assertEqual(result["supplier_due_diligence_count"], 1)
+        _, rows = read_csv(Path(str(result["supplier_due_diligence_controls"])))
+        self.assertEqual(rows[0]["coverage_status"], "COUVERT_RECENT_A_RECOUPER")
+        self.assertIn("BGC-RES-TEST", rows[0]["existing_result_refs"])
+        self.assertIn("ADM-005", rows[0]["controls_to_apply"])
+        self.assertIn("DIL-DD-003", rows[0]["diligence_liee"])
+        self.assertIn("Diligences fournisseur", Path(str(result["report"])).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

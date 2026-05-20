@@ -20,9 +20,11 @@ Son role n'est pas seulement de decrire le projet. Elle doit aussi aider quelqu'
 ### Pour relire le repo
 
 1. [Architecture et flux](./architecture_et_flux.md)
-2. [Audit360](./audit360.md)
-3. [Plan d'implementation](./implementation_plan.md)
-4. [Politique de partage GitHub](./github_sharing.md)
+2. [FactureOps](./factureops.md)
+3. [ComptaScope](./comptascope.md)
+4. [Audit360](./audit360.md)
+5. [Plan d'implementation](./implementation_plan.md)
+6. [Politique de partage GitHub](./github_sharing.md)
 
 ### Pour contribuer
 
@@ -45,6 +47,7 @@ Son role n'est pas seulement de decrire le projet. Elle doit aussi aider quelqu'
 | [Concept et philosophie](./concept_et_philosophie.md) | comprendre le probleme vise et la promesse produit |
 | [Fonctions cibles](./fonctions_cibles.md) | voir les blocs fonctionnels recherches et leur priorisation |
 | [Audit360](./audit360.md) | comprendre la couche transverse de constats, controles et diligences |
+| [FactureOps](./factureops.md) | comprendre l'extraction et les anomalies facture |
 | [ComptaScope](./comptascope.md) | comprendre la reconstruction comptable candidate |
 | [Outillage open source](./outillage_open_source.md) | connaitre les outils installes, retenus ou reportes |
 | [Strategie gestion copro](./strategie_coproscope_gestion_copro.md) | lire le passage du pur audit vers le cockpit de gestion |

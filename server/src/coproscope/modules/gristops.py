@@ -11,10 +11,12 @@ from .accounting import copy_accounting_tables_for_dashboard, ensure_accounting_
 GRIST_TABLES = [
     "Documents",
     "Factures",
+    "Anomalies_Factures",
     "Fournisseurs",
     "Contrats",
     "Compta_2025",
     "Anomalies",
+    "Diligences_Fournisseurs",
     "Demandes_Syndic",
     "Travaux",
     "AG",

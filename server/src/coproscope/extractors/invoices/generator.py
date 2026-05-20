@@ -38,11 +38,10 @@ Provider: {seed.provider_name}
 Provider key: {seed.provider_key}
 
 Use the evidence in this priority order:
-1. Native PDF text from PyMuPDF or pypdf.
-2. Local OCR text from RapidOCR, GutenOCR, or sidecar OCR.
-3. Docling Markdown/tables.
-4. Layout JSON from PyMuPDF/LayoutLMv3/LayoutALM.
-5. Qwen VL visual-review notes as evidence only, never as final accounting validation.
+1. L1 native PDF/text extraction from PyMuPDF, pypdf, or plain text.
+2. L2 local OCR text from RapidOCR, GutenOCR, or sidecar OCR.
+3. L3 local structure/visual evidence from Docling Markdown/tables or layout JSON.
+4. L4 AI or online visual-review notes as evidence only, never as final accounting validation.
 
 Return deterministic Python code compatible with InvoiceExtraction.
 Extract only these fields: {fields}.

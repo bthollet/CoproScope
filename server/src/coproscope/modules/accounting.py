@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import json
 import re
 import unicodedata
@@ -12,30 +11,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from ..core.common import InstanceConfig, RunContext, now_iso, read_csv, sha256_file, write_csv, write_text
-from ..extractors.invoices import DocumentExtractionEvidence, extract_generic_invoice_from_evidence
 from ..extractors.invoices.reconciliation import invoice_keys, normalized_for_match, parse_amount
+from .factureops import INVOICE_ANOMALY_FIELDS, INVOICE_EVIDENCE_FIELDS, extract_invoices
 
-
-INVOICE_EVIDENCE_FIELDS = [
-    "doc_id",
-    "sha256",
-    "source_path",
-    "file_name",
-    "exercice",
-    "fournisseur",
-    "siren_siret",
-    "numero_facture",
-    "date_facture",
-    "ht",
-    "tva",
-    "ttc",
-    "compte_propose",
-    "famille_charge",
-    "statut_controle",
-    "confidence",
-    "anomalies",
-    "extraction_method",
-]
 
 ACCOUNTING_ENTRY_FIELDS = [
     "entry_id",
@@ -118,6 +96,24 @@ SUPPLIER_ALIAS_SUGGESTION_FIELDS = [
     "example_statement_line_id",
     "example_statement_label",
     "reason",
+    "next_action",
+]
+
+SUPPLIER_DUE_DILIGENCE_FIELDS = [
+    "doc_id",
+    "exercice",
+    "fournisseur",
+    "siren_siret",
+    "numero_facture",
+    "date_facture",
+    "ttc",
+    "trigger_anomalies",
+    "coverage_status",
+    "diligence_liee",
+    "method_sources",
+    "existing_worklist_refs",
+    "existing_result_refs",
+    "controls_to_apply",
     "next_action",
 ]
 
@@ -305,6 +301,44 @@ def _configured_paths(instance: InstanceConfig, settings: dict[str, Any], *keys:
     return paths
 
 
+def _configured_paths_no_year(instance: InstanceConfig, settings: dict[str, Any], *keys: str) -> list[Path]:
+    paths: list[Path] = []
+    for key in keys:
+        for raw_value in _as_list(settings.get(key)):
+            resolved = instance.resolve_path(str(raw_value))
+            if resolved is not None:
+                paths.append(resolved)
+    return paths
+
+
+def _supplier_due_diligence_settings(instance: InstanceConfig) -> dict[str, Any]:
+    settings = instance.settings()
+    combined: dict[str, Any] = {}
+    global_settings = settings.get("supplier_due_diligence")
+    if isinstance(global_settings, dict):
+        combined.update(global_settings)
+    comptascope_settings = _comptascope_settings(instance).get("supplier_due_diligence")
+    if isinstance(comptascope_settings, dict):
+        combined.update(comptascope_settings)
+    return combined
+
+
+def _load_rows_with_source(paths: list[Path]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    seen_paths: set[Path] = set()
+    for path in paths:
+        resolved = path.resolve()
+        if resolved in seen_paths or not resolved.exists():
+            continue
+        seen_paths.add(resolved)
+        _, loaded = read_csv(resolved)
+        for row in loaded:
+            copied = dict(row)
+            copied["_source_file"] = path.name
+            rows.append(copied)
+    return rows
+
+
 def _load_supplier_aliases(instance: InstanceConfig) -> dict[str, set[str]]:
     settings = _comptascope_settings(instance)
     aliases: dict[str, set[str]] = {}
@@ -452,6 +486,205 @@ def _significant_supplier_tokens(value: str) -> set[str]:
         "societe",
     }
     return {token for token in re.split(r"[^a-z0-9]+", _normal(value)) if len(token) >= 3 and token not in stopwords}
+
+
+def _supplier_match_score(left: str, right: str) -> Decimal:
+    left_norm = _normal(left)
+    right_norm = _normal(right)
+    if not left_norm or not right_norm:
+        return Decimal("0")
+    if left_norm == right_norm:
+        return Decimal("1")
+    if left_norm in right_norm or right_norm in left_norm:
+        return Decimal("0.95")
+    left_tokens = _significant_supplier_tokens(left)
+    right_tokens = _significant_supplier_tokens(right)
+    if not left_tokens or not right_tokens:
+        return Decimal(str(SequenceMatcher(None, left_norm, right_norm).ratio()))
+    overlap = Decimal(len(left_tokens & right_tokens))
+    token_score = overlap / Decimal(max(len(left_tokens), len(right_tokens)))
+    sequence_score = Decimal(str(SequenceMatcher(None, left_norm, right_norm).ratio()))
+    return max(token_score, sequence_score)
+
+
+def _row_actor(row: dict[str, str]) -> str:
+    return (
+        row.get("acteur")
+        or row.get("cible")
+        or row.get("producteur_piece")
+        or row.get("supplier")
+        or row.get("fournisseur")
+        or ""
+    )
+
+
+def _row_reference(row: dict[str, str]) -> str:
+    identifier = (
+        row.get("resultat_id")
+        or row.get("controle_id")
+        or row.get("acteur")
+        or row.get("cible")
+        or row.get("producteur_piece")
+        or row.get("_source_file")
+        or ""
+    )
+    source = row.get("_source_file", "")
+    if source and source not in identifier:
+        return f"{identifier} ({source})"
+    return identifier
+
+
+def _matching_rows(supplier: str, rows: list[dict[str, str]], threshold: Decimal = Decimal("0.72")) -> list[dict[str, str]]:
+    matches: list[tuple[Decimal, dict[str, str]]] = []
+    for row in rows:
+        actor = _row_actor(row)
+        score = _supplier_match_score(supplier, actor)
+        if score >= threshold:
+            matches.append((score, row))
+    matches.sort(key=lambda item: item[0], reverse=True)
+    return [row for _, row in matches]
+
+
+def _invoice_is_supplier_due_diligence_trigger(row: dict[str, str]) -> bool:
+    anomalies = row.get("anomalies", "")
+    return any(token in anomalies for token in ("DILIGENCE_REQUISE", "DILIGENCE_A_EVALUER"))
+
+
+def _invoice_due_diligence_codes(row: dict[str, str]) -> list[str]:
+    supplier = row.get("fournisseur", "")
+    haystack = _normal(
+        " ".join(
+            [
+                supplier,
+                row.get("famille_charge", ""),
+                row.get("compte_propose", ""),
+                row.get("numero_facture", ""),
+                row.get("anomalies", ""),
+            ]
+        )
+    )
+    codes = ["DIL-DD-003"]
+    if "siren_siret_absent" in haystack:
+        codes.append("DIL-DD-003")
+    if any(token in haystack for token in ["ripert", "assur", "orias", "courtier"]):
+        codes.extend(["DIL-DD-007", "DIL-DD-009", "DIL-DD-011", "DIL-DD-016"])
+    if any(
+        token in haystack
+        for token in [
+            "travaux",
+            "plomberie",
+            "ascenseur",
+            "omega",
+            "vincentelli",
+            "services",
+            "elagage",
+            "maintenance",
+        ]
+    ):
+        codes.extend(["DIL-DD-005", "DIL-DD-009", "DIL-DD-015", "DIL-DD-017"])
+    return list(dict.fromkeys(codes))
+
+
+def _admin_controls_for_codes(admin_rows: list[dict[str, str]], codes: list[str]) -> list[dict[str, str]]:
+    wanted = set(codes)
+    selected: list[dict[str, str]] = []
+    for row in admin_rows:
+        linked = {item.strip() for item in re.split(r"[;|]", row.get("diligence_liee", "")) if item.strip()}
+        if wanted & linked:
+            selected.append(row)
+    selected.sort(key=lambda row: (row.get("priorite", "P9"), row.get("controle_id", "")))
+    return selected
+
+
+def _supplier_dd_action(row: dict[str, str], codes: list[str]) -> str:
+    supplier = _normal(row.get("fournisseur", ""))
+    if "ripert" in supplier or "assur" in supplier:
+        return (
+            "Rattacher contrat/police, RIB et paiement; verifier ORIAS/mandat si intermediation, "
+            "commissions/remunerations et information CS/AG."
+        )
+    if any(code in codes for code in ["DIL-DD-005", "DIL-DD-017"]):
+        return (
+            "Rattacher decision/devis ou urgence, consultation CS/mise en concurrence, service fait, "
+            "assurance/qualification, reception si applicable, RIB et paiement."
+        )
+    return "Verifier identite juridique, SIREN/SIRET, RNE/INPI, RIB, paiement et piece primaire fournisseur."
+
+
+def build_supplier_due_diligence_controls(
+    instance: InstanceConfig,
+    invoices: list[dict[str, str]],
+    year: int,
+) -> list[dict[str, str]]:
+    settings = _supplier_due_diligence_settings(instance)
+    method_paths = _configured_paths_no_year(instance, settings, "method_plan", "plan", "methodology")
+    worklist_rows = _load_rows_with_source(
+        _configured_paths_no_year(instance, settings, "worklist_csv", "worklists", "worklist")
+    )
+    result_rows = _load_rows_with_source(
+        _configured_paths_no_year(instance, settings, "result_csv", "result_csvs", "results")
+    )
+    admin_rows = _load_rows_with_source(
+        _configured_paths_no_year(instance, settings, "admin_controls_csv", "admin_controls", "control_matrix")
+    )
+
+    rows: list[dict[str, str]] = []
+    for invoice in invoices:
+        if not _invoice_is_supplier_due_diligence_trigger(invoice):
+            continue
+        supplier = invoice.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER"
+        codes = _invoice_due_diligence_codes(invoice)
+        matching_worklist = _matching_rows(supplier, worklist_rows)
+        matching_results = _matching_rows(supplier, result_rows)
+        controls = _admin_controls_for_codes(admin_rows, codes)
+        if matching_results:
+            coverage = "COUVERT_RECENT_A_RECOUPER"
+        elif matching_worklist:
+            coverage = "DANS_PLAN_EXISTANT_A_COMPLETER"
+        else:
+            coverage = "A_TRAITER_METHODO_EXISTANTE"
+
+        controls_summary = "; ".join(
+            f"{row.get('controle_id', '')}: {row.get('controle_a_produire', '')}".strip(": ")
+            for row in controls[:8]
+        )
+        if not controls_summary and codes:
+            controls_summary = "Appliquer les controles du plan existant lies a " + "; ".join(codes)
+        method_sources = "; ".join(path.name for path in method_paths if path.exists())
+        if admin_rows:
+            admin_sources = sorted({row.get("_source_file", "") for row in admin_rows if row.get("_source_file")})
+            if admin_sources:
+                method_sources = "; ".join([item for item in [method_sources, *admin_sources] if item])
+
+        rows.append(
+            {
+                "doc_id": invoice.get("doc_id", ""),
+                "exercice": str(year),
+                "fournisseur": supplier,
+                "siren_siret": invoice.get("siren_siret", ""),
+                "numero_facture": invoice.get("numero_facture", ""),
+                "date_facture": invoice.get("date_facture", ""),
+                "ttc": invoice.get("ttc", ""),
+                "trigger_anomalies": invoice.get("anomalies", ""),
+                "coverage_status": coverage,
+                "diligence_liee": "; ".join(codes),
+                "method_sources": method_sources,
+                "existing_worklist_refs": "; ".join(_row_reference(row) for row in matching_worklist[:5]),
+                "existing_result_refs": "; ".join(_row_reference(row) for row in matching_results[:5]),
+                "controls_to_apply": controls_summary,
+                "next_action": _supplier_dd_action(invoice, codes),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            {"COUVERT_RECENT_A_RECOUPER": 2, "DANS_PLAN_EXISTANT_A_COMPLETER": 1}.get(
+                row.get("coverage_status", ""), 0
+            ),
+            -(_decimal(row.get("ttc")) or Decimal("0")),
+            row.get("fournisseur", ""),
+        )
+    )
+    return rows
 
 
 def _line_text(line: dict[str, str]) -> str:
@@ -1277,11 +1510,14 @@ def _write_accounting_report(
     invoices: list[dict[str, str]],
     entries: list[dict[str, str]],
     controls: list[dict[str, str]],
+    invoice_anomalies: list[dict[str, str]],
     expense_lines: list[dict[str, str]],
     matches: list[dict[str, str]],
     alias_suggestions: list[dict[str, str]] | None = None,
+    supplier_due_diligence: list[dict[str, str]] | None = None,
 ) -> None:
     alias_suggestions = alias_suggestions or []
+    supplier_due_diligence = supplier_due_diligence or []
     total_ttc = sum((_decimal(row.get("ttc")) or Decimal("0")) for row in invoices)
     match_statuses = Counter(row.get("match_status", "") or "SANS_ETAT_DEPENSES" for row in matches)
     priority_counts = Counter(row.get("match_priority", _status_priority(row.get("match_status", ""))) for row in matches)
@@ -1291,7 +1527,11 @@ def _write_accounting_report(
         if row.get("match_priority") != "OK":
             supplier_open_totals[row.get("fournisseur", "") or "FOURNISSEUR_A_IDENTIFIER"] += _decimal(row.get("ttc")) or Decimal("0")
     control_severities = Counter(row.get("severity", "") for row in controls)
+    invoice_anomaly_severities = Counter(row.get("severity", "") for row in invoice_anomalies)
+    invoice_anomaly_types = Counter(row.get("anomaly", "") for row in invoice_anomalies)
+    evidence_levels = Counter(row.get("evidence_level", "") or "NON_RENSEIGNE" for row in invoices)
     alias_statuses = Counter(row.get("suggestion_status", "") for row in alias_suggestions)
+    supplier_due_statuses = Counter(row.get("coverage_status", "") for row in supplier_due_diligence)
     priority_items = [
         row for row in matches if row.get("match_status", "") and row.get("match_priority") != "OK"
     ]
@@ -1313,6 +1553,7 @@ def _write_accounting_report(
         "## Synthese",
         "",
         f"- Factures candidates: {len(invoices)}",
+        f"- Anomalies facture: {len(invoice_anomalies)}",
         f"- Ecritures candidates: {len(entries)}",
         f"- Total TTC facture: {_money(total_ttc)} EUR",
         f"- Lignes d'etat des depenses exploitees: {len(expense_lines)}",
@@ -1323,6 +1564,7 @@ def _write_accounting_report(
         f"- Controles comptables P0: {control_severities.get('P0', 0)}",
         f"- Controles comptables P1: {control_severities.get('P1', 0)}",
         f"- Controles comptables P2: {control_severities.get('P2', 0)}",
+        f"- Diligences fournisseur rattachees: {len(supplier_due_diligence)}",
         f"- Alias fournisseurs proposes: {len(alias_suggestions)}",
         f"- Alias auto-appliques: {alias_statuses.get('AUTO_APPLICABLE', 0)}",
         "",
@@ -1333,11 +1575,90 @@ def _write_accounting_report(
         "- `P1`: ComptaScope n'a pas assez d'indices locaux; il faut controler le grand livre, l'etat des depenses ou la piece.",
         "- Les statuts P2 ne sont pas des erreurs: ce sont des traitements locaux avances qui evitent de demander une interpretation IA.",
         "",
+        "## Entrees FactureOps",
+        "",
+        "FactureOps est la couche amont qui detecte les factures, extrait les champs utiles et signale les anomalies de piece. ComptaScope consomme ensuite ces factures candidates pour produire les ecritures et rapprochements.",
+        "",
+        "| Niveau d'intensite | Factures | Role |",
+        "| --- | ---: | --- |",
+    ]
+    level_labels = {
+        "L0_STRUCTURED_SOURCE": "Source structuree ou registre facture precharge",
+        "L1_NATIVE_TEXT": "Texte natif et parseurs deterministes",
+        "L2_LOCAL_OCR": "OCR local ou sidecar",
+        "L3_LOCAL_STRUCTURE_OR_VISUAL": "Structure/table/layout ou revue visuelle locale",
+        "L4_AI_OR_ONLINE_REVIEW": "IA ou vision externe, confirmation explicite requise",
+    }
+    if evidence_levels:
+        for level, count in evidence_levels.most_common():
+            lines.append(f"| {_md_cell(level)} | {count} | {_md_cell(level_labels.get(level, 'Niveau a documenter'))} |")
+    else:
+        lines.append("| - | 0 | Aucune facture source |")
+    lines.extend(
+        [
+        "",
+        "## Anomalies facture",
+        "",
+        "| Priorite | Anomalie | Nombre | Traitement attendu |",
+        "| --- | --- | ---: | --- |",
+    ])
+    if invoice_anomaly_types:
+        for anomaly, count in invoice_anomaly_types.most_common():
+            severity = next((row.get("severity", "") for row in invoice_anomalies if row.get("anomaly") == anomaly), "")
+            lines.append(f"| {_md_cell(severity)} | {_md_cell(anomaly)} | {count} | Verifier la piece et completer le registre FactureOps. |")
+    else:
+        lines.append("| - | Aucune anomalie facture | 0 | - |")
+    lines.extend(
+        [
+        "",
+        "## Controles comptables",
+        "",
+        f"- Controles comptables ouverts: {len(controls)}",
+        f"- Controles comptables P0: {control_severities.get('P0', 0)}",
+        f"- Controles comptables P1: {control_severities.get('P1', 0)}",
+        f"- Controles comptables P2: {control_severities.get('P2', 0)}",
+        f"- Anomalies facture P0: {invoice_anomaly_severities.get('P0', 0)}",
+        f"- Anomalies facture P1: {invoice_anomaly_severities.get('P1', 0)}",
+        "",
+        "## Diligences fournisseur",
+        "",
+        "ComptaScope ne relance pas une enquete fournisseur lorsqu'une diligence recente existe deja. Il rattache les factures marquees `DILIGENCE_REQUISE` au plan `DIL-DD-*`, aux worklists et aux resultats deja produits, puis limite les suites aux pieces manquantes ou aux recoupements prudents.",
+        "",
+        f"- Lignes de diligence facture: {len(supplier_due_diligence)}",
+        f"- Deja couvertes par un resultat recent a recouper: {supplier_due_statuses.get('COUVERT_RECENT_A_RECOUPER', 0)}",
+        f"- Deja dans une worklist existante: {supplier_due_statuses.get('DANS_PLAN_EXISTANT_A_COMPLETER', 0)}",
+        f"- A traiter selon la methodologie existante: {supplier_due_statuses.get('A_TRAITER_METHODO_EXISTANTE', 0)}",
+        "",
+        "| Statut | Fournisseur | Facture | TTC | Diligences | Couverture existante | Action |",
+        "| --- | --- | --- | ---: | --- | --- | --- |",
+    ])
+    if supplier_due_diligence:
+        for row in supplier_due_diligence[:20]:
+            coverage_refs = row.get("existing_result_refs") or row.get("existing_worklist_refs") or row.get("method_sources")
+            lines.append(
+                " | ".join(
+                    [
+                        "",
+                        _md_cell(row.get("coverage_status", "")),
+                        _md_cell(row.get("fournisseur", "")),
+                        _md_cell(row.get("numero_facture", "")),
+                        _md_cell(row.get("ttc", "")),
+                        _md_cell(row.get("diligence_liee", "")),
+                        _md_cell(coverage_refs),
+                        _md_cell(row.get("next_action", "")),
+                        "",
+                    ]
+                )
+            )
+    else:
+        lines.append("| - | - | - | 0.00 | - | Aucune facture marquee diligence | - |")
+    lines.extend([
+        "",
         "## Etat des rapprochements facture / etat des depenses",
         "",
         "| Statut | Libelle clair | Priorite | Nombre | Ce que cela veut dire | Traitement local applique | Confirmation attendue |",
         "| --- | --- | --- | ---: | --- | --- | --- |",
-    ]
+    ])
     ordered_statuses = sorted(
         match_statuses.items(),
         key=lambda item: (_priority_rank(_status_priority(item[0])), -item[1], item[0]),
@@ -1516,64 +1837,17 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     accounting_dir = instance.artifact("accounting_dir") / str(year)
     accounting_dir.mkdir(parents=True, exist_ok=True)
 
-    invoices: list[dict[str, str]] = []
     entries: list[dict[str, str]] = []
     controls: list[dict[str, str]] = []
-    seen_keys: Counter[str] = Counter()
-
-    preloaded_invoices = _load_configured_invoice_evidence(instance, year)
-    if preloaded_invoices:
-        for invoice_row in preloaded_invoices:
-            invoices.append(invoice_row)
-            controls.extend(_controls_for_invoice(invoice_row, year))
-            entry = _entry_for_invoice(invoice_row, year, len(entries) + 1)
-            if entry is not None:
-                entries.append(entry)
-    else:
-        for row in _candidate_source_rows(instance):
-            path = _resolve_source_path(instance, row)
-            if path is None or not path.is_file():
-                continue
-            text, method = _read_text(path)
-            if not _looks_like_invoice(row, path, text, year):
-                continue
-            extraction = extract_generic_invoice_from_evidence(
-                DocumentExtractionEvidence(file_name=path.name, native_text=text)
-            )
-            account, family = _account_for_invoice(text, extraction.fournisseur)
-            anomalies = list(extraction.anomalies)
-            if extraction.date_facture and str(year) not in extraction.date_facture:
-                anomalies.append("FACTURE_HORS_EXERCICE")
-            key = f"{extraction.fournisseur}|{extraction.numero_facture}|{extraction.ttc}"
-            seen_keys[key] += 1
-            if key.strip("|") and seen_keys[key] > 1:
-                anomalies.append("DOUBLON_POTENTIEL")
-
-            invoice_row = {
-                "doc_id": row.get("doc_id") or f"DOC-{len(invoices) + 1:04d}",
-                "sha256": row.get("sha256") or sha256_file(path),
-                "source_path": str(path),
-                "file_name": path.name,
-                "exercice": str(year),
-                "fournisseur": extraction.fournisseur,
-                "siren_siret": extraction.siren_siret,
-                "numero_facture": extraction.numero_facture,
-                "date_facture": extraction.date_facture,
-                "ht": extraction.ht,
-                "tva": extraction.tva,
-                "ttc": extraction.ttc,
-                "compte_propose": account,
-                "famille_charge": family,
-                "statut_controle": _status(anomalies, extraction.confidence),
-                "confidence": extraction.confidence,
-                "anomalies": "|".join(dict.fromkeys(anomalies)),
-                "extraction_method": method,
-            }
-            invoices.append(invoice_row)
-            controls.extend(_controls_for_invoice(invoice_row, year))
-            entry = _entry_for_invoice(invoice_row, year, len(entries) + 1)
-            if entry is not None:
-                entries.append(entry)
+    factureops_result = extract_invoices(instance, run, year)
+    invoice_path = Path(str(factureops_result["invoice_evidence"]))
+    invoice_anomalies_path = Path(str(factureops_result["invoice_anomalies"]))
+    _, invoices = read_csv(invoice_path)
+    _, invoice_anomalies = read_csv(invoice_anomalies_path)
+    for invoice_row in invoices:
+        entry = _entry_for_invoice(invoice_row, year, len(entries) + 1)
+        if entry is not None:
+            entries.append(entry)
 
     settings = _comptascope_settings(instance)
     configured_aliases = _load_supplier_aliases(instance)
@@ -1596,6 +1870,7 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
     expense_matches = reconcile_invoice_expenses(invoices, expense_lines, effective_aliases) if expense_lines else []
     for match in expense_matches:
         controls.extend(_controls_for_expense_match(match, year))
+    supplier_due_diligence = build_supplier_due_diligence_controls(instance, invoices, year)
 
     if not invoices:
         controls.append(
@@ -1611,20 +1886,20 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
             }
         )
 
-    invoice_path = accounting_dir / f"invoice_evidence_{year}.csv"
     entries_path = accounting_dir / f"ledger_reconstruction_{year}.csv"
     controls_path = accounting_dir / f"accounting_controls_{year}.csv"
     expense_lines_path = accounting_dir / f"expense_statement_lines_{year}.csv"
     expense_matches_path = accounting_dir / f"invoice_expense_matches_{year}.csv"
     non_matches_path = accounting_dir / f"non_rapproches_prioritaires_{year}.csv"
     alias_suggestions_path = accounting_dir / f"supplier_alias_suggestions_{year}.csv"
+    supplier_due_diligence_path = accounting_dir / f"supplier_due_diligence_controls_{year}.csv"
     report_path = accounting_dir / f"rapport_comptascope_{year}.md"
-    write_csv(invoice_path, INVOICE_EVIDENCE_FIELDS, invoices)
     write_csv(entries_path, ACCOUNTING_ENTRY_FIELDS, entries)
     write_csv(controls_path, ACCOUNTING_CONTROL_FIELDS, controls)
     write_csv(expense_lines_path, EXPENSE_STATEMENT_FIELDS, expense_lines)
     write_csv(expense_matches_path, INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
     write_csv(alias_suggestions_path, SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
+    write_csv(supplier_due_diligence_path, SUPPLIER_DUE_DILIGENCE_FIELDS, supplier_due_diligence)
     non_matches = [
         {
             "doc_id": row.get("doc_id", ""),
@@ -1648,20 +1923,27 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         invoices=invoices,
         entries=entries,
         controls=controls,
+        invoice_anomalies=invoice_anomalies,
         expense_lines=expense_lines,
         matches=expense_matches,
         alias_suggestions=alias_suggestions,
+        supplier_due_diligence=supplier_due_diligence,
     )
 
     duckdb_path = accounting_dir / f"coproscope_accounting_{year}.duckdb"
     duckdb_tables = {
             "invoice_evidence": (INVOICE_EVIDENCE_FIELDS, invoices),
+            "invoice_anomalies": (INVOICE_ANOMALY_FIELDS, invoice_anomalies),
             "ledger_reconstruction": (ACCOUNTING_ENTRY_FIELDS, entries),
             "accounting_controls": (ACCOUNTING_CONTROL_FIELDS, controls),
     }
     duckdb_tables["expense_statement_lines"] = (EXPENSE_STATEMENT_FIELDS, expense_lines)
     duckdb_tables["invoice_expense_matches"] = (INVOICE_EXPENSE_MATCH_FIELDS, expense_matches)
     duckdb_tables["supplier_alias_suggestions"] = (SUPPLIER_ALIAS_SUGGESTION_FIELDS, alias_suggestions)
+    duckdb_tables["supplier_due_diligence_controls"] = (
+        SUPPLIER_DUE_DILIGENCE_FIELDS,
+        supplier_due_diligence,
+    )
     duckdb_written = _write_duckdb(duckdb_path, duckdb_tables)
 
     summary = {
@@ -1670,17 +1952,24 @@ def reconstruct_accounting(instance: InstanceConfig, run: RunContext, year: int)
         "invoice_count": len(invoices),
         "entry_count": len(entries),
         "control_count": len(controls),
+        "invoice_anomaly_count": len(invoice_anomalies),
         "expense_statement_line_count": len(expense_lines),
         "expense_match_counts": dict(Counter(row.get("match_status", "") for row in expense_matches)),
         "supplier_alias_suggestion_count": len(alias_suggestions),
         "supplier_alias_auto_count": sum(1 for row in alias_suggestions if row.get("suggestion_status") == "AUTO_APPLICABLE"),
+        "supplier_due_diligence_count": len(supplier_due_diligence),
+        "supplier_due_diligence_status_counts": dict(
+            Counter(row.get("coverage_status", "") for row in supplier_due_diligence)
+        ),
         "invoice_evidence": str(invoice_path),
+        "invoice_anomalies": str(invoice_anomalies_path),
         "ledger_reconstruction": str(entries_path),
         "accounting_controls": str(controls_path),
         "expense_statement_lines": str(expense_lines_path),
         "invoice_expense_matches": str(expense_matches_path),
         "non_rapproches_prioritaires": str(non_matches_path),
         "supplier_alias_suggestions": str(alias_suggestions_path),
+        "supplier_due_diligence_controls": str(supplier_due_diligence_path),
         "report": str(report_path),
         "duckdb": str(duckdb_path) if duckdb_written else "",
         "generated_at": now_iso(),
@@ -1710,12 +1999,14 @@ def required_accounting_report_paths(instance: InstanceConfig, year: int) -> lis
     accounting_dir = instance.artifact("accounting_dir") / str(year)
     names = [
         f"invoice_evidence_{year}.csv",
+        f"invoice_anomalies_{year}.csv",
         f"ledger_reconstruction_{year}.csv",
         f"accounting_controls_{year}.csv",
         f"expense_statement_lines_{year}.csv",
         f"invoice_expense_matches_{year}.csv",
         f"non_rapproches_prioritaires_{year}.csv",
         f"supplier_alias_suggestions_{year}.csv",
+        f"supplier_due_diligence_controls_{year}.csv",
         f"rapport_comptascope_{year}.md",
         f"summary_{year}.json",
     ]
@@ -1741,12 +2032,14 @@ def copy_accounting_tables_for_dashboard(instance: InstanceConfig, year: int, ta
     copied: dict[str, str] = {}
     for name in [
         "invoice_evidence",
+        "invoice_anomalies",
         "ledger_reconstruction",
         "accounting_controls",
         "expense_statement_lines",
         "invoice_expense_matches",
         "non_rapproches_prioritaires",
         "supplier_alias_suggestions",
+        "supplier_due_diligence_controls",
     ]:
         source = accounting_dir / f"{name}_{year}.csv"
         if not source.exists() and name == "ledger_reconstruction":

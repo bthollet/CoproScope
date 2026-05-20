@@ -17,14 +17,16 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 - instance synthetique publique pour les tests ;
 - garde-fous de partage (`share-audit`, `share-export`) ;
 - outillage local installe/documente: Python 3.14, GitHub CLI, uv, DuckDB, PDF/OCR, Node/Evidence, Grist Desktop ;
-- ComptaScope v1 sur instance synthetique: factures, ecritures candidates, controles, rapprochements explicables facture/etat des depenses, suggestions d'alias fournisseurs, candidats locaux `P2` a confirmer, exports Grist/Evidence locaux ;
+- FactureOps v1 sur instance synthetique: factures candidates, anomalies facture et niveaux d'intensite `L0` a `L4` ;
+- ComptaScope v1 sur instance synthetique: ecritures candidates, controles comptables, rapprochements explicables facture/etat des depenses, suggestions d'alias fournisseurs, candidats locaux `P2` a confirmer, exports Grist/Evidence locaux ;
 - documentation publique structuree en francais.
 
 ## Ce qui est en cours
 
 - enrichir DocOps sur de vrais corpus ;
 - epaissir SyndicOps sur les relances et la tracabilite fine ;
-- fiabiliser ComptaScope sur factures, rapprochements explicables et controles comptables ;
+- fiabiliser FactureOps sur les extractions et anomalies facture ;
+- fiabiliser ComptaScope sur les rapprochements explicables et controles comptables ;
 - affiner AGOps sur les annexes, majorites et suites post-AG ;
 - outiller davantage Audit360 comme couche transverse de controles et diligences ;
 - pousser plus loin la francisation la ou elle apporte une vraie clarte sans casser les interfaces techniques.
@@ -45,7 +47,8 @@ L'enjeu n'est plus de prouver que le projet existe. L'enjeu est maintenant de le
 | DocOps | bon socle | deja utile, heuristiques a enrichir |
 | SyndicOps | embryon utile | base en place, workflows a epaissir |
 | AGOps | premiere version | signaux utiles, couverture encore partielle |
-| ComptaScope | amorce v1 | reconstruction candidate sur factures synthetiques, rapprochement explicable, alias deduits, similarites de noms, divisions/regroupements et priorites P1/P2 |
+| FactureOps | amorce v1 | extraction facture, anomalies separees et intensite L0-L4 |
+| ComptaScope | amorce v1 | reconstruction candidate depuis FactureOps, rapprochement explicable, alias deduits, similarites de noms, divisions/regroupements et priorites P1/P2 |
 | Audit360 | extraction publique amorcee | formes generiques visibles, outillage encore a epaissir |
 | Documentation produit | bon socle | suffisamment claire pour une vraie relecture |
 | Francophonie | en cours d'inscription | preference explicite, chantier encore ouvert |
@@ -70,7 +73,8 @@ La suite naturelle est de consolider les couches deja presentes plutot que d'ouv
 
 1. enrichir les regles et sorties DocOps ;
 2. densifier les chaines de preuve SyndicOps ;
-3. fiabiliser ComptaScope sur les rapprochements facture/depense ;
-4. fiabiliser AGOps sur de vrais cas de preparation ;
-5. epaissir Audit360 sur les controles, preuves attendues et diligences ;
-6. continuer a extraire vers le public uniquement ce qui est proprement genericisable.
+3. fiabiliser FactureOps sur les extractions et anomalies facture ;
+4. fiabiliser ComptaScope sur les rapprochements facture/depense ;
+5. fiabiliser AGOps sur de vrais cas de preparation ;
+6. epaissir Audit360 sur les controles, preuves attendues et diligences ;
+7. continuer a extraire vers le public uniquement ce qui est proprement genericisable.

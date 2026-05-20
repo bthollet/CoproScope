@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..core.common import InstanceConfig, RunContext
-from . import agscope, docuscope
+from . import agscope, docuscope, factureops
 from .accounting import accounting_controls, reconstruct_accounting
 from .evidenceops import build_evidence_report
 from .gristops import sync_grist
@@ -19,8 +19,10 @@ def run_workers(instance: InstanceConfig, run: RunContext, scope: str, year: int
     if scope in {"ag", "all"}:
         agscope.analyze(instance, run)
         actions.append({"worker": "ag_worker", "status": "ok"})
-    if scope in {"invoices", "accounting", "all"}:
-        actions.append({"worker": "invoice_worker", "result": reconstruct_accounting(instance, run, year)})
+    if scope in {"invoices", "all"}:
+        actions.append({"worker": "invoice_worker", "result": factureops.extract_invoices(instance, run, year)})
+    if scope in {"accounting", "all"}:
+        actions.append({"worker": "comptascope_worker", "result": reconstruct_accounting(instance, run, year)})
         actions.append({"worker": "reconciliation_worker", "result": accounting_controls(instance, run, year)})
     if scope in {"dashboards", "all"}:
         actions.append({"worker": "grist_sync_worker", "result": sync_grist(instance, run, "local", "demo", year)})
