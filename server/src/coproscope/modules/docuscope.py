@@ -4,7 +4,7 @@ import csv
 import re
 import shutil
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -68,6 +68,32 @@ PRESERVE_FIELDS = {
     "redaction_map_id",
     "notes",
 }
+COMPLETENESS_FIELDS = [
+    "proof_id",
+    "lot",
+    "expected_label",
+    "document_type",
+    "status",
+    "criticality",
+    "freshness_months",
+    "matched_doc_ids",
+    "evidence_paths",
+    "newest_date",
+    "reason",
+    "action",
+]
+DOCUMENT_REQUEST_FIELDS = [
+    "request_id",
+    "source_ref",
+    "priority",
+    "status",
+    "subject",
+    "expected_piece",
+    "reason",
+    "related_doc_ids",
+    "evidence_paths",
+    "suggested_diligence",
+]
 
 
 def _load_existing_by_digest(registry_path: Path) -> dict[str, dict[str, str]]:
@@ -515,6 +541,244 @@ def _load_proofs(instance) -> list[dict[str, str]]:
     return list(data.get("proofs", []))
 
 
+def _proof_value(proof: dict[str, str], *names: str) -> str:
+    aliases = {
+        "proof_id": ("proof_id", "preuve_id", "id"),
+        "lot": ("lot", "scope", "perimetre"),
+        "expected_label": ("expected_label", "libelle_attendu", "preuve_attendue", "document_attendu"),
+        "document_type": ("document_type", "type_document", "document_source"),
+        "criticality": ("criticality", "criticite", "priorite", "priority"),
+        "freshness_months": ("freshness_months", "validity_months", "max_age_months", "fraicheur_mois", "validite_mois"),
+    }
+    candidates: list[str] = []
+    for name in names:
+        candidates.extend(aliases.get(name, (name,)))
+    for candidate in candidates:
+        value = proof.get(candidate)
+        if value not in (None, ""):
+            return str(value)
+    return ""
+
+
+def _parse_partial_date(value: str) -> date | None:
+    match = re.search(r"(20\d{2})(?:[-_/ .]([01]\d)(?:[-_/ .]([0-3]\d))?)?", value or "")
+    if not match:
+        return None
+    year, month, day = match.groups()
+    try:
+        return date(int(year), int(month or "1"), int(day or "1"))
+    except ValueError:
+        return None
+
+
+def _months_between(older: date, newer: date) -> int:
+    months = (newer.year - older.year) * 12 + newer.month - older.month
+    if newer.day < older.day:
+        months -= 1
+    return max(0, months)
+
+
+def _freshness_months(proof: dict[str, str]) -> int | None:
+    raw = _proof_value(proof, "freshness_months")
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+def _tokenize_for_doubt(*values: str) -> set[str]:
+    ignored = {"doc", "document", "documents", "piece", "pieces", "attendu", "attendue", "dossier"}
+    tokens: set[str] = set()
+    for value in values:
+        normalized = re.sub(r"[^a-z0-9]+", " ", value.lower())
+        tokens.update(token for token in normalized.split() if len(token) >= 4 and token not in ignored)
+    return tokens
+
+
+def _classification_doubts(docs: list[dict[str, str]], lot: str, document_type: str, expected_label: str) -> list[dict[str, str]]:
+    tokens = _tokenize_for_doubt(lot, document_type, expected_label)
+    doubtful_statuses = {"", "PENDING", "A_CLASSER"}
+    candidates: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for doc in docs:
+        if doc.get("doc_id") in seen:
+            continue
+        same_lot = bool(lot and doc.get("lot") == lot)
+        haystack = " ".join([doc.get("file_name", ""), doc.get("original_path", ""), doc.get("notes", "")]).lower()
+        token_hit = bool(tokens and any(token in haystack for token in tokens))
+        uncertain = doc.get("classification_status", "") in doubtful_statuses or doc.get("document_type", "") in {"", "A_CLASSER"}
+        if (same_lot or token_hit) and uncertain:
+            candidates.append(doc)
+            seen.add(doc.get("doc_id", ""))
+    return candidates
+
+
+def _evidence_paths(matches: list[dict[str, str]]) -> str:
+    values: list[str] = []
+    for match in matches:
+        path = match.get("original_path") or match.get("text_path") or match.get("file_name", "")
+        if path:
+            values.append(f"{match.get('doc_id', '')}:{path}")
+    return "; ".join(values)
+
+
+def _matched_doc_ids(matches: list[dict[str, str]]) -> str:
+    return "; ".join(match.get("doc_id", "") for match in matches if match.get("doc_id"))
+
+
+def _md_cell(value: str) -> str:
+    return (value or "").replace("|", "\\|").replace("\n", " ")
+
+
+def _status_action(status: str, expected_label: str) -> tuple[str, str]:
+    if status == "PRESENT":
+        return "Preuve presente", "Aucune demande documentaire immediate."
+    if status == "OBSOLETE":
+        return (
+            f"Demander une version recente: {expected_label}",
+            "Demander au syndic une version recente, puis conserver l'ancienne comme preuve historique.",
+        )
+    if status == "A_CLASSER":
+        return (
+            f"Verifier le classement avant demande: {expected_label}",
+            "Verifier la piece candidate; si elle ne couvre pas l'attendu, demander la piece au syndic.",
+        )
+    return f"Demander au syndic: {expected_label}", "Demander la piece au syndic et rattacher sa reponse au registre."
+
+
+def _build_completeness_rows(docs: list[dict[str, str]], proofs: list[dict[str, str]]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    by_lot: dict[str, list[dict[str, str]]] = defaultdict(list)
+    by_type: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for doc in docs:
+        by_lot[doc.get("lot", "")].append(doc)
+        by_type[doc.get("document_type", "")].append(doc)
+
+    today = datetime.now(timezone.utc).date()
+    matrix_rows: list[dict[str, str]] = []
+    action_rows: list[dict[str, str]] = []
+    for index, proof in enumerate(proofs, start=1):
+        proof_id = _proof_value(proof, "proof_id") or f"PRV-{index:03d}"
+        lot = _proof_value(proof, "lot")
+        expected_label = _proof_value(proof, "expected_label") or proof_id
+        doc_type = _proof_value(proof, "document_type")
+        criticality = _proof_value(proof, "criticality") or "P2"
+        freshness = _freshness_months(proof)
+        matches = by_type.get(doc_type, []) if doc_type else by_lot.get(lot, [])
+        dated_matches = [(parsed, match) for match in matches if (parsed := _parse_partial_date(match.get("suspected_date", "")))]
+        newest_date = max((parsed for parsed, _ in dated_matches), default=None)
+
+        if matches:
+            if freshness and newest_date and _months_between(newest_date, today) > freshness:
+                status = "OBSOLETE"
+            else:
+                status = "PRESENT"
+            reason = ""
+            if status == "OBSOLETE":
+                reason = f"Derniere piece datee {newest_date.isoformat()} au-dela du seuil {freshness} mois."
+            else:
+                reason = "Piece presente dans le registre documentaire."
+        else:
+            doubt_matches = _classification_doubts(docs, lot, doc_type, expected_label)
+            if doubt_matches:
+                matches = doubt_matches
+                status = "A_CLASSER"
+                reason = "Piece candidate trouvee, mais classement documentaire insuffisant ou incertain."
+            else:
+                status = "ABSENT"
+                reason = "Aucune piece locale ne correspond au type attendu."
+
+        subject, action = _status_action(status, expected_label)
+        matrix_row = {
+            "proof_id": proof_id,
+            "lot": lot,
+            "expected_label": expected_label,
+            "document_type": doc_type,
+            "status": status,
+            "criticality": criticality,
+            "freshness_months": str(freshness or ""),
+            "matched_doc_ids": _matched_doc_ids(matches),
+            "evidence_paths": _evidence_paths(matches),
+            "newest_date": newest_date.isoformat() if newest_date else "",
+            "reason": reason,
+            "action": action,
+        }
+        matrix_rows.append(matrix_row)
+        if status != "PRESENT":
+            action_rows.append(
+                {
+                    "request_id": f"REQ-DOC-{proof_id}",
+                    "source_ref": proof_id,
+                    "priority": criticality,
+                    "status": status,
+                    "subject": subject,
+                    "expected_piece": expected_label,
+                    "reason": reason,
+                    "related_doc_ids": matrix_row["matched_doc_ids"],
+                    "evidence_paths": matrix_row["evidence_paths"],
+                    "suggested_diligence": action,
+                }
+            )
+    return matrix_rows, action_rows
+
+
+def _render_completeness_report(instance, docs: list[dict[str, str]], matrix_rows: list[dict[str, str]], action_rows: list[dict[str, str]]) -> str:
+    status_counts: dict[str, int] = defaultdict(int)
+    for row in matrix_rows:
+        status_counts[row["status"]] += 1
+
+    lines = [
+        "# Rapport de completude documentaire",
+        "",
+        f"- Instance: {instance.display_name}",
+        f"- Documents inventories: {len(docs)}",
+        f"- Pieces attendues: {len(matrix_rows)}",
+        f"- Pieces a traiter: {len(action_rows)}",
+        "",
+        "## Synthese",
+        "",
+        "| Statut | Nombre | Lecture CS |",
+        "|---|---:|---|",
+        f"| PRESENT | {status_counts['PRESENT']} | Piece locale suffisante. |",
+        f"| ABSENT | {status_counts['ABSENT']} | Piece a demander au syndic. |",
+        f"| OBSOLETE | {status_counts['OBSOLETE']} | Version recente a obtenir. |",
+        f"| A_CLASSER | {status_counts['A_CLASSER']} | Classement a verifier avant relance. |",
+        "",
+        "## Matrice actionnable",
+        "",
+        "| Statut | Priorite | Lot | Piece attendue | Type source | Preuves | Suite |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for row in matrix_rows:
+        evidence = row["evidence_paths"] or row["matched_doc_ids"]
+        lines.append(
+            f"| {_md_cell(row['status'])} | {_md_cell(row['criticality'])} | {_md_cell(row['lot'])} | "
+            f"{_md_cell(row['expected_label'])} | {_md_cell(row['document_type'])} | "
+            f"{_md_cell(evidence)} | {_md_cell(row['action'])} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Pieces a demander",
+            "",
+            "| Priorite | Statut | Piece | Pourquoi | Diligence proposee |",
+            "|---|---|---|---|---|",
+        ]
+    )
+    if action_rows:
+        for row in action_rows:
+            lines.append(
+                f"| {_md_cell(row['priority'])} | {_md_cell(row['status'])} | {_md_cell(row['expected_piece'])} | "
+                f"{_md_cell(row['reason'])} | {_md_cell(row['suggested_diligence'])} |"
+            )
+    else:
+        lines.append("| OK | PRESENT | Aucune | Toutes les pieces attendues sont couvertes. | Aucune relance. |")
+    return "\n".join(lines) + "\n"
+
+
 def missing_docs(instance, run: RunContext) -> Path:
     _, docs = read_csv(instance.register("documents"))
     proofs = _load_proofs(instance)
@@ -522,47 +786,25 @@ def missing_docs(instance, run: RunContext) -> Path:
     findings_path = instance.register("findings")
     _, existing_findings = read_csv(findings_path)
     report_path = reports_dir / "rapport_completude_documentaire.md"
-    by_lot: dict[str, list[dict[str, str]]] = defaultdict(list)
-    by_type: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for doc in docs:
-        by_lot[doc.get("lot", "")].append(doc)
-        by_type[doc.get("document_type", "")].append(doc)
-
-    lines = [
-        "# Rapport de completude documentaire",
-        "",
-        f"- Instance: {instance.display_name}",
-        f"- Documents inventories: {len(docs)}",
-        "",
-        "## Pieces attendues",
-        "",
-        "| Statut | Lot | Piece attendue | Type source | Documents trouves |",
-        "|---|---|---|---|---|",
-    ]
+    matrix_path = reports_dir / "matrice_completude_documentaire.csv"
+    requests_path = reports_dir / "pieces_a_demander.csv"
+    matrix_rows, action_rows = _build_completeness_rows(docs, proofs)
     finding_rows: list[dict[str, str]] = []
-    for proof in proofs:
-        lot = proof.get("lot", "")
-        doc_type = proof.get("document_type") or proof.get("document_source", "")
-        matches = by_type.get(doc_type, []) if doc_type else by_lot.get(lot, [])
-        names = "; ".join(match.get("doc_id", "") for match in matches[:5])
-        status = "OK" if matches else "MANQUANT"
-        lines.append(
-            f"| {status} | {lot} | {proof.get('expected_label') or proof.get('preuve_attendue', '')} | "
-            f"{doc_type} | {names} |"
-        )
-        if not matches:
+    for row in matrix_rows:
+        if row["status"] != "PRESENT":
             finding_rows.append(
                 {
-                    "finding_id": f"FDG-{proof.get('proof_id', 'MISS')}",
+                    "finding_id": f"FDG-{row['proof_id']}",
                     "category": "completeness",
-                    "severity": proof.get("criticality", "P1"),
-                    "source_ref": proof.get("proof_id", ""),
-                    "fact": f"Piece manquante: {proof.get('expected_label') or proof.get('preuve_attendue', '')}",
-                    "diligence": "Verifier le Drive, l'extranet, puis demander la piece au syndic si besoin.",
+                    "severity": row["criticality"],
+                    "source_ref": row["proof_id"],
+                    "fact": f"{row['status']}: {row['expected_label']}",
+                    "diligence": row["action"],
                     "status": "OPEN",
                 }
             )
 
+    lines = _render_completeness_report(instance, docs, matrix_rows, action_rows).splitlines()
     extranet_path = instance.matrix("extranet")
     if extranet_path and extranet_path.exists():
         _, extranet_rows = read_csv(extranet_path)
@@ -581,9 +823,13 @@ def missing_docs(instance, run: RunContext) -> Path:
                 f"{row.get('present_extranet', '') or 'A_VERIFIER'} | {row.get('qualification', '')} |"
             )
 
+    write_csv(matrix_path, COMPLETENESS_FIELDS, matrix_rows)
+    write_csv(requests_path, DOCUMENT_REQUEST_FIELDS, action_rows)
     write_text(report_path, "\n".join(lines) + "\n")
     merged = [row for row in existing_findings if row.get("category") != "completeness"] + finding_rows
     write_csv(findings_path, FINDING_FIELDS, merged)
+    run.log_action("write", matrix_path, f"document completeness rows={len(matrix_rows)}")
+    run.log_action("write", requests_path, f"document requests rows={len(action_rows)}")
     run.log_action("write", report_path, f"missing docs report rows={len(proofs)}")
     run.log_action("write", findings_path, f"findings merged={len(merged)}")
     return report_path
