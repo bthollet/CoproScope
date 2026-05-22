@@ -1,0 +1,28 @@
+{
+  "status": "ok",
+  "year": 2025,
+  "invoice_count": 1,
+  "entry_count": 1,
+  "control_count": 0,
+  "invoice_anomaly_count": 0,
+  "expense_statement_line_count": 1,
+  "expense_match_counts": {
+    "MATCH_AMOUNT_ALIAS": 1
+  },
+  "supplier_alias_suggestion_count": 0,
+  "supplier_alias_auto_count": 0,
+  "supplier_due_diligence_count": 0,
+  "supplier_due_diligence_status_counts": {},
+  "invoice_evidence": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\invoice_evidence_2025.csv",
+  "invoice_anomalies": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\invoice_anomalies_2025.csv",
+  "ledger_reconstruction": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\ledger_reconstruction_2025.csv",
+  "accounting_controls": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\accounting_controls_2025.csv",
+  "expense_statement_lines": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\expense_statement_lines_2025.csv",
+  "invoice_expense_matches": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\invoice_expense_matches_2025.csv",
+  "non_rapproches_prioritaires": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\non_rapproches_prioritaires_2025.csv",
+  "supplier_alias_suggestions": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\supplier_alias_suggestions_2025.csv",
+  "supplier_due_diligence_controls": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\supplier_due_diligence_controls_2025.csv",
+  "report": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\rapport_comptascope_2025.md",
+  "duckdb": "G:\\Mon Drive\\Communaut\u00e9 Beauvallon\\00 - Copropri\u00e9t\u00e9s\\021 - Beauvallon Pin\u00e8de - Copropri\u00e9taires\\coproscope\\examples\\synthetic_copro\\outputs\\accounting\\2025\\coproscope_accounting_2025.duckdb",
+  "generated_at": "2026-05-20T09:32:01+00:00"
+}

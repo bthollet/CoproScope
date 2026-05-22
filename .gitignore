@@ -15,8 +15,15 @@ server/.tmp-test/
 examples/synthetic_copro/.env.local
 examples/synthetic_copro/logs/
 examples/synthetic_copro/outputs/
-examples/synthetic_copro/registers/
-examples/synthetic_copro/staging/
+examples/synthetic_copro/registers/*
+!examples/synthetic_copro/registers/
+!examples/synthetic_copro/registers/*.csv
+examples/synthetic_copro/staging/*
+!examples/synthetic_copro/staging/
+!examples/synthetic_copro/staging/text/
+!examples/synthetic_copro/staging/text/*.native.txt
+!examples/synthetic_copro/staging/privacy_dir/
+!examples/synthetic_copro/staging/privacy_dir/*.csv
 examples/synthetic_copro/models/
 **/models/
 **/.cache/huggingface/

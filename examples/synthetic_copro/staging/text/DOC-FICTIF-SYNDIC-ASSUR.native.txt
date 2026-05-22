@@ -1,0 +1,4 @@
+FICTIF - reponse syndic de demonstration.
+
+Le syndic fictif indique que l'attestation multirisque immeuble 2026 est demandee a l'assureur et devrait etre transmise avant le 18 mai 2026.
+Suite attendue: rattacher la piece recue et verifier la periode de couverture.
