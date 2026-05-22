@@ -103,6 +103,25 @@ def _ascii_fold(value: str) -> str:
     return normalized.encode("ascii", "ignore").decode("ascii").casefold()
 
 
+def _search_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", _ascii_fold(value)).strip()
+
+
+def _keyword_matches(text: str, keyword: str) -> bool:
+    normalized = _search_text(keyword or "")
+    if not normalized:
+        return False
+    haystack = _search_text(text)
+    pattern = re.escape(normalized).replace(r"\ ", r"\s+")
+    if " " not in normalized and len(normalized) > 4 and not normalized.endswith("s"):
+        pattern = f"{pattern}s?"
+    return re.search(rf"(?<![a-z0-9]){pattern}(?![a-z0-9])", haystack, flags=re.IGNORECASE) is not None
+
+
+def _has_keyword(text: str, keywords: Iterable[str]) -> bool:
+    return any(_keyword_matches(text, keyword) for keyword in keywords)
+
+
 def _cell(value: str | None) -> str:
     return re.sub(r"\s+", " ", value or "").strip()
 
@@ -149,16 +168,16 @@ def _haystack(row: dict[str, str]) -> str:
 
 def _default_priority(row: dict[str, str]) -> str:
     haystack = _haystack(row)
-    if any(token in haystack for token in ["urgence", "securite", "sinistre", "degat", "fuite"]):
+    if _has_keyword(haystack, ["urgence", "securite", "sinistre", "degat", "fuite"]):
         return "P1"
     return "P2"
 
 
 def _default_expected_proof(row: dict[str, str]) -> str:
     haystack = _haystack(row)
-    if any(token in haystack for token in INSURANCE_KEYWORDS):
+    if _has_keyword(haystack, INSURANCE_KEYWORDS):
         return "Numero de dossier, courrier assureur ou accord de prise en charge."
-    if row.get("syndic_or_provider") or any(token in haystack for token in PROVIDER_KEYWORDS):
+    if row.get("syndic_or_provider") or _has_keyword(haystack, PROVIDER_KEYWORDS):
         return "Bon d'intervention, facture ou photo apres intervention."
     return "Photo apres resolution ou confirmation ecrite du syndic."
 
@@ -245,7 +264,7 @@ def _document_haystack(instance: InstanceConfig, row: dict[str, str]) -> str:
 
 
 def _looks_like_incident(text: str) -> bool:
-    return any(keyword in text for keyword in INCIDENT_KEYWORDS)
+    return _has_keyword(text, INCIDENT_KEYWORDS)
 
 
 def _extract_location(text: str) -> str:
@@ -268,7 +287,7 @@ def detect_incidents_from_documents(instance: InstanceConfig) -> list[dict[str, 
         doc_id = doc.get("doc_id", "")
         original_path = doc.get("original_path", "")
         file_name = doc.get("file_name", "")
-        insurance_ref = doc_id if any(keyword in haystack for keyword in INSURANCE_KEYWORDS) else ""
+        insurance_ref = doc_id if _has_keyword(haystack, INSURANCE_KEYWORDS) else ""
         date_signalement = doc.get("suspected_date") or detect_date(file_name) or detect_date(original_path)
         incidents.append(
             normalize_incident(

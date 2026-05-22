@@ -173,6 +173,194 @@ class CoproScopeVaultReconstructionTests(unittest.TestCase):
         self.assertEqual(result["status_observations"], 2)
         self.assertEqual(result["conflicts"], 0)
 
+    def test_rebuild_cache_exposes_business_tables_without_worker_branching(self) -> None:
+        db_path = self.local_root / "business.sqlite3"
+        events = [
+            self._event(
+                "evt_point",
+                "point_created",
+                "POINT-ASSURANCE",
+                {
+                    "point_id": "POINT-ASSURANCE",
+                    "title": "Attestation assurance absente",
+                    "category": "assurance",
+                    "severity": "P1",
+                    "proof_ids": ["PRF-ASSURANCE"],
+                },
+                sequence=1,
+            ),
+            self._event(
+                "evt_action",
+                "action_created",
+                "ACT-ASSURANCE",
+                {
+                    "action_id": "ACT-ASSURANCE",
+                    "title": "Demander l'attestation assurance 2026",
+                    "status": "open",
+                    "priority": "P1",
+                    "owner_ref": "syndic",
+                    "due_at": "2026-05-27",
+                    "related_point_ids": ["POINT-ASSURANCE"],
+                    "expected_piece_id": "PCE-ASSURANCE",
+                    "expected_piece_label": "Attestation assurance 2026",
+                    "holder_label": "Syndic",
+                },
+                sequence=2,
+            ),
+            self._event(
+                "evt_action_update",
+                "action_created",
+                "ACT-ASSURANCE",
+                {
+                    "action_id": "ACT-ASSURANCE",
+                    "status": "waiting",
+                    "next_step": "Relancer si aucune reponse avant echeance.",
+                },
+                sequence=3,
+            ),
+            self._event(
+                "evt_request",
+                "request_created",
+                "REQ-ASSURANCE",
+                {
+                    "request_id": "REQ-ASSURANCE",
+                    "subject": "Attestation assurance 2026",
+                    "channel": "portail_syndic",
+                    "status": "local_draft",
+                    "linked_action_id": "ACT-ASSURANCE",
+                    "linked_piece_id": "PCE-ASSURANCE",
+                },
+                sequence=4,
+            ),
+            self._event(
+                "evt_request_action",
+                "request_action_recorded",
+                "JRN-ASSURANCE-1",
+                {
+                    "journal_id": "JRN-ASSURANCE-1",
+                    "request_id": "REQ-ASSURANCE",
+                    "action_type": "copied_locally",
+                    "summary": "Relance preparee et copiee localement.",
+                    "status_after": "recorded_locally",
+                },
+                sequence=5,
+            ),
+            self._event(
+                "evt_export",
+                "passation_export_created",
+                "EXP-PASSATION",
+                {
+                    "export_id": "EXP-PASSATION",
+                    "format": "json",
+                    "profile": "conseil_syndical",
+                    "source_object_ids": ["ACT-ASSURANCE", "REQ-ASSURANCE"],
+                },
+                sequence=6,
+            ),
+        ]
+
+        result = reconstruction.rebuild_cache_from_events(events, db_path, vault_id="vault_test")
+
+        self.assertEqual(result["points"], 1)
+        self.assertEqual(result["actions"], 1)
+        self.assertEqual(result["expected_pieces"], 1)
+        self.assertEqual(result["requests"], 1)
+        self.assertGreaterEqual(result["object_links"], 4)
+
+        connection = sqlite3.connect(db_path)
+        try:
+            connection.row_factory = sqlite3.Row
+            tables = {
+                row["name"]
+                for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
+            }
+            self.assertIn("source_import_map", tables)
+            self.assertIn("object_event_sources", tables)
+            self.assertIn("object_links", tables)
+
+            action = connection.execute("SELECT * FROM actions WHERE action_id = 'ACT-ASSURANCE'").fetchone()
+            self.assertEqual(action["status"], "waiting")
+            self.assertEqual(json.loads(action["source_event_ids_json"]), ["evt_action", "evt_action_update"])
+
+            piece = connection.execute("SELECT * FROM expected_pieces WHERE piece_id = 'PCE-ASSURANCE'").fetchone()
+            self.assertEqual(piece["label"], "Attestation assurance 2026")
+            self.assertEqual(piece["linked_action_id"], "ACT-ASSURANCE")
+
+            request = connection.execute("SELECT * FROM requests WHERE request_id = 'REQ-ASSURANCE'").fetchone()
+            self.assertEqual(request["status"], "recorded_locally")
+
+            export = connection.execute("SELECT * FROM exports WHERE export_id = 'EXP-PASSATION'").fetchone()
+            self.assertEqual(export["source_of_truth"], 0)
+
+            target_indexes = {
+                row["name"] for row in connection.execute("PRAGMA index_list('object_links')").fetchall()
+            }
+            self.assertIn("idx_object_links_target", target_indexes)
+        finally:
+            connection.close()
+
+    def test_audit360_import_funnels_rows_into_business_tables_idempotently(self) -> None:
+        db_path = self.local_root / "audit360.sqlite3"
+        reconstruction.rebuild_cache_from_events([], db_path, vault_id="vault_test")
+        rows = [
+            {
+                "source_kind": "audit360_matrix",
+                "source_file": "matrice_preuves_attendues.csv",
+                "source_row_id": "row-17",
+                "control_id": "CTRL-ASSURANCE",
+                "point_de_controle": "Attestation assurance immeuble",
+                "constat": "La piece n'est pas visible dans le corpus transmis.",
+                "risque_concret": "Le conseil syndical ne peut pas verifier la couverture.",
+                "preuve_attendue": "Attestation assurance multirisque 2026",
+                "action_a_faire": "Demander l'attestation au syndic.",
+                "acteur_ou_entreprise": "Syndic",
+                "priorite": "P1",
+                "statut_action": "open",
+            }
+        ]
+
+        first = reconstruction.import_audit360_rows(
+            db_path,
+            rows,
+            import_run_id="run-a",
+            imported_at="2026-05-21T12:00:00+00:00",
+        )
+        second = reconstruction.import_audit360_rows(
+            db_path,
+            rows,
+            import_run_id="run-a",
+            imported_at="2026-05-21T12:00:00+00:00",
+        )
+
+        self.assertEqual(first["created"]["points"], 1)
+        self.assertEqual(first["created"]["actions"], 1)
+        self.assertEqual(first["created"]["expected_pieces"], 1)
+        self.assertEqual(first["source_import_map"], 3)
+        self.assertEqual(second["created"]["points"], 0)
+        self.assertEqual(second["created"]["actions"], 0)
+        self.assertEqual(second["created"]["expected_pieces"], 0)
+        self.assertEqual(second["created"]["source_import_map"], 0)
+
+        connection = sqlite3.connect(db_path)
+        try:
+            connection.row_factory = sqlite3.Row
+            action = connection.execute("SELECT * FROM actions").fetchone()
+            piece = connection.execute("SELECT * FROM expected_pieces").fetchone()
+            mappings = connection.execute("SELECT object_kind, object_id FROM source_import_map ORDER BY object_kind").fetchall()
+            links = connection.execute(
+                "SELECT source_kind, relation, target_kind FROM object_links ORDER BY source_kind, relation, target_kind"
+            ).fetchall()
+
+            self.assertEqual(action["title"], "Demander l'attestation au syndic.")
+            self.assertEqual(action["source_module"], "audit360")
+            self.assertEqual(piece["label"], "Attestation assurance multirisque 2026")
+            self.assertEqual(piece["linked_action_id"], action["action_id"])
+            self.assertEqual([row["object_kind"] for row in mappings], ["action", "expected_piece", "point"])
+            self.assertIn(("action", "expects", "expected_piece"), [tuple(row) for row in links])
+            self.assertIn(("action", "relates_to", "point"), [tuple(row) for row in links])
+        finally:
+            connection.close()
+
     def test_reconstruction_cache_path_must_stay_under_local_root(self) -> None:
         outside = self.root / "outside.sqlite3"
         with self.assertRaisesRegex(RuntimeError, "local root"):

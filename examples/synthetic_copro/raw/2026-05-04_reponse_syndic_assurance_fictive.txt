@@ -1,0 +1,15 @@
+FICTIF - REPONSE SYNDIC DE DEMONSTRATION - NE PAS UTILISER COMME DONNEE REELLE
+
+Canal: reponse syndic fictive
+Objet: attestation assurance immeuble 2026
+
+Le syndic fictif indique que l'attestation multirisque immeuble 2026 est demandee a l'assureur.
+La piece devrait etre transmise avant le 18 mai 2026.
+
+Point a verifier par le conseil syndical:
+- la piece recue devra mentionner la residence fictive Les Platanes ;
+- la periode de couverture doit inclure l'exercice 2026 ;
+- la version partagee aux coproprietaires doit etre relue avant diffusion.
+
+Note de confidentialite:
+Document prive fictif destine aux tests du conseiller syndical. Aucun tiers reel n'est cite.

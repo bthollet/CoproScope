@@ -170,9 +170,33 @@ def _resolution_lines(text: str, patterns: list[str]) -> list[str]:
         haystack = _normalize(line)
         if haystack in {"ordre du jour", "annexes jointes"}:
             continue
-        if any(pattern in haystack for pattern in patterns):
+        if _is_resolution_candidate(haystack, patterns):
             rows.append(line)
     return rows
+
+
+def _is_resolution_candidate(haystack: str, patterns: list[str]) -> bool:
+    if not any(pattern in haystack for pattern in patterns):
+        return False
+    generic_fragments = {
+        "une seule par resolution",
+        "prendre toutes resolutions necessaires",
+        "chacune des questions",
+        "ordre du jour et des documents",
+        "le proces-verbal comporte",
+        "projet de resolution soumis au vote",
+        "etablissement de l ordre du jour",
+        "elaboration et envoi de la convocation",
+    }
+    if any(fragment in haystack for fragment in generic_fragments):
+        return False
+    if re.search(r"\b(?:resolution|question|decision)\s*(?:n[o°]\s*)?\d", haystack):
+        return True
+    if re.search(r"\bvote de la resolution\s*(?:n[o°]\s*)?\d", haystack):
+        return True
+    if re.search(r"^\d+(?:\s*[.\-]\s*\d+)?\s*[-.]\s*(?:vote de la )?resolution", haystack):
+        return True
+    return "resolution" in haystack and "demande de" in haystack
 
 
 def _resolution_ref(line: str, index: int) -> str:
@@ -302,14 +326,16 @@ def _ag_candidate_docs(docs: list[dict[str, str]]) -> list[dict[str, str]]:
     return candidates
 
 
-def build_decision_register(instance, run: RunContext, ensure_ag: bool = True) -> dict[str, object]:
+def build_decision_register(instance, run: RunContext, ensure_ag: bool = True, doc_id: str | None = None) -> dict[str, object]:
     _, docs = read_csv(instance.register("documents"))
     ag_by_doc = _ag_rows_by_doc(instance, run, ensure_ag=ensure_ag)
     patterns = _resolution_patterns(instance)
     rows: list[dict[str, str]] = []
 
     for doc in _ag_candidate_docs(docs):
-        text = _read_text(instance, doc)
+        if doc_id and doc.get("doc_id") != doc_id:
+            continue
+        text = _read_text(instance, doc, max_chars=250000)
         lines = _resolution_lines(text, patterns)
         ag_row = ag_by_doc.get(doc.get("doc_id", ""))
         ag_id = (ag_row or {}).get("ag_id") or f"AG-{_row_date(ag_row, doc) or doc.get('doc_id', '')[-6:]}"
@@ -363,8 +389,11 @@ def build_decision_register(instance, run: RunContext, ensure_ag: bool = True) -
                 }
             )
 
-    rows.sort(key=lambda row: (row["ag_id"], row["resolution_ref"], row["decision_action_id"]))
     register_path = decision_register_path(instance)
+    if doc_id:
+        _, existing_rows = read_csv(register_path)
+        rows = [row for row in existing_rows if row.get("source_doc_id") != doc_id] + rows
+    rows.sort(key=lambda row: (row["ag_id"], row["resolution_ref"], row["decision_action_id"]))
     write_csv(register_path, DECISION_ACTION_FIELDS, rows)
     run.log_action("write", register_path, f"decision-action rows={len(rows)}")
 

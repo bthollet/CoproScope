@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Gouvernance, acces, pilotage</p>
+    <h2>Tableau de controle local</h2>
+    <p>Une lecture simple de qui decide, qui voit quoi, et quelles preuves restent dans quel coffre de donnees.</p>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ governance.syndicops.open_count }}</strong><span>demandes ouvertes</span></div>
+    <div><strong>{{ governance.access.roles|length }}</strong><span>profils d'acces</span></div>
+    <div><strong>{{ governance.vault.counts.reader_replicas or 0 }}</strong><span>copies de lecture</span></div>
+    <div><strong>{{ governance.indicators|length }}</strong><span>themes suivis</span></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>{{ governance.vaults.title }} <span class="help-dot" title="Un coffre est l'espace de donnees chiffre d'une copro: preuves, droits, cache local et cles.">?</span></h3>
+      <span>{{ governance.instance.id }}</span>
+    </div>
+    <div class="badge-row">
+      <span class="badge is-ok">{{ governance.instance.name }}</span>
+      <span class="badge is-public">Exercice {{ governance.instance.year }}</span>
+      <span class="badge is-review">{{ governance.instance.scope }}</span>
+    </div>
+    <p>{{ governance.vaults.summary }}</p>
+    <ul class="compact-list">
+      {% for rule in governance.vaults.rules %}
+      <li>{{ rule }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Survie de l'archive <span class="help-dot" title="Capacite a reconstruire les donnees autorisees meme si un appareil, un compte cloud ou un membre disparait.">?</span></h3>
+      <span>{{ governance.vault.status_label }}</span>
+    </div>
+    <p>{{ governance.vault.message }}</p>
+    <div class="badge-row">
+      {% for risk in governance.vault.risk_labels %}
+      <span class="badge is-risk">{{ risk }}</span>
+      {% else %}
+      <span class="badge is-ok">aucun risque bloquant lu</span>
+      {% endfor %}
+    </div>
+    <div class="metric-row vertical">
+      <a href="/depot{{ ui_token_query }}">Tester le depot local</a>
+      <a href="/pieces{{ ui_token_query }}">Ouvrir l'atelier pieces</a>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div>
+    <p class="eyebrow">Organisations imbriquees</p>
+    <h3>Syndicat primaire, secondaire, ASL, unions</h3>
+  </div>
+  <p>{{ governance.complexity.summary }}</p>
+</section>
+
+<section class="module-grid wide">
+  {% for organization in governance.complexity.organizations %}
+  <div class="module-card">
+    <strong>{{ organization.label }}</strong>
+    <span>{{ organization.plain }}</span>
+    <small>{{ organization.example }}</small>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Droits croises <span class="help-dot" title="Autorisation limitee qui permet de lire une piece d'un autre perimetre sans ouvrir tout son coffre.">?</span></h3>
+      <span>lecture precise</span>
+    </div>
+    <table>
+      <thead><tr><th>Cas concret</th><th>Regle simple</th></tr></thead>
+      <tbody>
+      {% for item in governance.complexity.cross_rights %}
+        <tr>
+          <td>{{ item.case }}</td>
+          <td>{{ item.rule }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Garde-fous anti-melange</h3>
+      <span>coffre source visible</span>
+    </div>
+    <ul class="compact-list">
+      {% for guardrail in governance.complexity.guardrails %}
+      <li>{{ guardrail }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Demandes au syndic <span class="help-dot" title="Suivi des demandes envoyees au syndic et des preuves attendues.">?</span></h3>
+      <span>{{ governance.syndicops.source_label }}</span>
+    </div>
+    <div class="badge-row">
+      {% for status in governance.syndicops.status_counts %}
+      <span class="badge {{ 'is-ok' if status.status == 'closed' else 'is-review' }}">{{ status.label }}: {{ status.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucune demande chargee</span>
+      {% endfor %}
+    </div>
+    <table>
+      <thead><tr><th>Urgence</th><th>Demande</th><th>Canal</th><th>Etat</th></tr></thead>
+      <tbody>
+      {% for row in governance.syndicops.rows %}
+        <tr>
+          <td>{{ row.priority }}</td>
+          <td>{{ row.subject or row.expected_piece }}<br><small>{{ row.expected_proof }}</small></td>
+          <td>{{ row.channel_label }}</td>
+          <td>{{ row.status_label }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">La boite de demandes est prete, le registre synthetique est vide.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Commissions et acces <span class="help-dot" title="Droits limites par role, mandat, theme et duree; une commission ne voit pas automatiquement tout le conseil syndical.">?</span></h3>
+      <span>droits limites</span>
+    </div>
+    <ul class="compact-list">
+      {% for role in governance.access.roles %}
+      <li><strong>{{ role.label }}</strong><br><small>{{ role.help }}</small></li>
+      {% endfor %}
+    </ul>
+    <table>
+      <thead><tr><th>Piece ou dossier</th><th>Personne</th><th>Decision</th></tr></thead>
+      <tbody>
+      {% for decision in governance.access.decisions %}
+        <tr>
+          <td>{{ decision.resource_label }}</td>
+          <td>{{ decision.member_label }}</td>
+          <td>
+            <span class="badge {{ 'is-ok' if decision.allowed else 'is-risk' }}">
+              {{ 'autorise' if decision.allowed else 'refuse' }}
+            </span>
+            <small>{{ decision.reason_label }}</small>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band">
+  <div>
+    <p class="eyebrow">Indicateurs centraux</p>
+    <h3>Pilotage oriente decision</h3>
+  </div>
+  <p>Chaque indicateur doit rester relie a une preuve, une periode, un perimetre et une action possible.</p>
+</section>
+
+<section class="module-grid wide">
+  {% for item in governance.indicators %}
+  <div class="module-card">
+    <strong>{{ item.theme }}</strong>
+    <span>{{ item.signal }}</span>
+    <small>{{ item.integration }}</small>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Raccourcis vers les preuves <span class="help-dot" title="Lien reconstruisible vers une preuve ou une action, sans copie physique du document.">?</span></h3>
+      <span>{{ governance.shortcuts.count }}</span>
+    </div>
+    <p>{{ governance.shortcuts.rule }}</p>
+    <table>
+      <thead><tr><th>Contexte</th><th>Preuve</th><th>Relie a</th></tr></thead>
+      <tbody>
+      {% for shortcut in governance.shortcuts.rows %}
+        <tr>
+          <td>{{ shortcut.context_label }}</td>
+          <td>{{ shortcut.source_label }}</td>
+          <td>{{ shortcut.target_label }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Archive complete</h3>
+      <span>anti-accaparement</span>
+    </div>
+    <p>Le produit cible permet a un coproprietaire de telecharger l'archive complete chiffree, de verifier qu'elle n'a pas ete alteree, et de reconstruire ce qui lui est ouvert sans dependance a un administrateur unique.</p>
+    <div class="badge-row">
+      <span class="badge is-ok">journal non modifiable</span>
+      <span class="badge is-ok">empreintes verifiables</span>
+      <span class="badge is-review">cles reparties entre plusieurs gardiens</span>
+      <span class="badge is-private">compartiments restreints</span>
+    </div>
+  </div>
+</section>
+{% endblock %}

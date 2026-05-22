@@ -5,6 +5,7 @@ import json
 import os
 import secrets
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .core.common import RunContext, load_instance
@@ -16,6 +17,7 @@ from .vault import core as vault_core
 from .modules import (
     accounting,
     agscope,
+    audit360,
     biffageops,
     demoops,
     docai,
@@ -53,6 +55,7 @@ COMMAND_ALIASES = {
     "signalements": "incidents",
     "strategie": "strategy",
     "coffre": "vault",
+    "audit": "audit360",
     "audit-partage": "share-audit",
     "export-partage": "share-export",
 }
@@ -79,8 +82,22 @@ SUBCOMMAND_ALIASES = {
     "demo_command": {"construire": "build"},
     "decisions_command": {"construire": "build"},
     "incidents_command": {"construire": "build"},
-    "vault_command": {"initialiser": "init", "importer": "import", "statut": "status", "verifier": "verify"},
+    "vault_command": {
+        "initialiser": "init",
+        "importer": "import",
+        "importer-audit360-lignes": "import-audit360-rows",
+        "statut": "status",
+        "verifier": "verify",
+    },
+    "audit360_command": {"preparer-anonymise": "prepare-anonymized"},
 }
+
+
+def _ui_open_test_notice() -> str:
+    return (
+        "Mode test visible AV-safe: serveur au premier plan, arret avec Ctrl+C.\n"
+        "Ne pas lancer de scan de ports, taskkill, Start-Process cache ou ouverture navigateur automatique."
+    )
 
 
 def _instance_parent() -> argparse.ArgumentParser:
@@ -217,6 +234,21 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Autoriser explicitement une ecoute hors loopback; protege par jeton local.",
     )
+    ui_open_test = ui_subparsers.add_parser(
+        "open-test",
+        aliases=["test-visible"],
+        parents=[instance_parent],
+        help="Lancer un serveur de test visible, au premier plan, sans process cache.",
+    )
+    ui_open_test.add_argument("--year", "--annee", dest="year", type=int, default=2025)
+    ui_open_test.add_argument("--host", default="127.0.0.1")
+    ui_open_test.add_argument("--port", type=int, default=8765)
+    ui_open_test.add_argument("--token", default="qa-2000-local", help="Jeton local affiche dans l'URL de test.")
+    ui_open_test.add_argument(
+        "--unsafe-lan",
+        action="store_true",
+        help="Autoriser explicitement une ecoute hors loopback; a eviter pour les tests.",
+    )
 
     demo_parser = subparsers.add_parser("demo", aliases=["demonstration"], help="Fabrique de copro demo fictive.")
     demo_subparsers = demo_parser.add_subparsers(dest="demo_command", required=True)
@@ -238,6 +270,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Construire le registre decisions-actions-preuves depuis AGOps et les preuves locales.",
     )
     decisions_build.add_argument("--no-ag-analyze", action="store_true", help="Ne pas relancer AGOps si le registre AG est vide.")
+    decisions_build.add_argument("--doc-id", help="Limiter la construction a un document AG.")
 
     incidents_parser = subparsers.add_parser("incidents", aliases=["signalements"], parents=[instance_parent], help="Registre IncidentOps.")
     incidents_subparsers = incidents_parser.add_subparsers(dest="incidents_command", required=True)
@@ -258,6 +291,17 @@ def build_parser() -> argparse.ArgumentParser:
     vault_subparsers.add_parser("init", aliases=["initialiser"], parents=[vault_parent], help="Initialiser un vault local et son dossier sync.")
     vault_import = vault_subparsers.add_parser("import", aliases=["importer"], parents=[vault_parent], help="Importer un fichier dans le vault.")
     vault_import.add_argument("--path", required=True, help="Fichier local a importer.")
+    vault_audit360 = vault_subparsers.add_parser(
+        "import-audit360-rows",
+        aliases=["importer-audit360-lignes"],
+        parents=[vault_parent],
+        help="Importer des lignes Audit360 fictives/publiques dans la reconstruction locale.",
+    )
+    vault_audit360.add_argument("--path", required=True, help="Fichier CSV, JSON ou JSONL Audit360 a importer.")
+    vault_audit360.add_argument("--db-path", help="Cache de reconstruction local; doit rester sous --local-root.")
+    vault_audit360.add_argument("--source-kind", default="audit360", help="Type source a inscrire dans la reconstruction.")
+    vault_audit360.add_argument("--import-run-id", default="manual-audit360-import", help="Identifiant local de reprise.")
+    vault_audit360.add_argument("--imported-at", help="Horodatage ISO de l'import; par defaut, maintenant en UTC.")
     vault_subparsers.add_parser("status", aliases=["statut"], parents=[vault_parent], help="Afficher le statut du vault.")
     vault_subparsers.add_parser("verify", aliases=["verifier"], parents=[vault_parent], help="Verifier les evenements, signatures et blobs.")
     vault_subparsers.add_parser("snapshot", parents=[vault_parent], help="Creer un snapshot chiffre de reconstruction rapide.")
@@ -279,6 +323,17 @@ def build_parser() -> argparse.ArgumentParser:
         parents=[instance_parent],
         help="Resumer les recherches publiques de diligence deja en cache.",
     )
+
+    audit360_parser = subparsers.add_parser("audit360", aliases=["audit"], parents=[instance_parent], help="Preparation Audit360 et frontiere anonymisee.")
+    audit360_subparsers = audit360_parser.add_subparsers(dest="audit360_command", required=True)
+    audit360_prepare = audit360_subparsers.add_parser(
+        "prepare-anonymized",
+        aliases=["preparer-anonymise"],
+        parents=[instance_parent],
+        help="Preparer un manifeste d'audit IA/cloud sans references aux pieces brutes.",
+    )
+    audit360_prepare.add_argument("--doc-id", help="Limiter la preparation a un document.")
+    audit360_prepare.add_argument("--all", action="store_true", help="Inclure tous les documents du registre.")
 
     pipeline = subparsers.add_parser("pipeline", aliases=["chaine"], parents=[instance_parent], help="Executer la chaine CoproScope v1.")
     pipeline_subparsers = pipeline.add_subparsers(dest="pipeline_command", required=True)
@@ -353,7 +408,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         print(json.dumps(result, indent=2, ensure_ascii=True))
         extractor_audit = result.get("generalizable_extractors") or {}
         private_violations = extractor_audit.get("private_violations") if isinstance(extractor_audit, dict) else []
-        return 0 if not private_violations else 1
+        content_violations = result.get("content_violations") or []
+        return 0 if not private_violations and not content_violations else 1
     if args.command == "share-export":
         repo_root = Path(args.repo_root).resolve()
         config_path = Path(args.config).resolve()
@@ -370,6 +426,17 @@ def _dispatch(args: argparse.Namespace) -> int:
             result = vault_core.vault_init(roots.local_root, roots.sync_root)
         elif args.vault_command == "import":
             result = vault_core.vault_import(roots.local_root, roots.sync_root, Path(args.path))
+        elif args.vault_command == "import-audit360-rows":
+            imported_at = args.imported_at or datetime.now(timezone.utc).isoformat()
+            result = audit360.import_audit360_file(
+                local_root=roots.local_root,
+                sync_root=roots.sync_root,
+                path=Path(args.path),
+                db_path=Path(args.db_path) if args.db_path else None,
+                source_kind=args.source_kind,
+                import_run_id=args.import_run_id,
+                imported_at=imported_at,
+            )
         elif args.vault_command == "status":
             result = vault_core.vault_status(roots.local_root, roots.sync_root)
         elif args.vault_command == "verify":
@@ -502,11 +569,15 @@ def _dispatch(args: argparse.Namespace) -> int:
             print(json.dumps(result, indent=2, ensure_ascii=True))
             run.finish("OK", "privacy redact-required complete")
             return 0
-        if args.command == "ui" and args.ui_command == "serve":
+        if args.command == "ui" and args.ui_command in {"serve", "open-test"}:
             from .web.app import serve
 
             run.log_action("ui_serve", instance.path, f"host={args.host}; port={args.port}; year={args.year}")
-            access_token = os.environ.get("COPROSCOPE_UI_TOKEN") or secrets.token_urlsafe(24)
+            if args.ui_command == "open-test":
+                access_token = args.token or os.environ.get("COPROSCOPE_UI_TOKEN") or secrets.token_urlsafe(24)
+                print(_ui_open_test_notice())
+            else:
+                access_token = os.environ.get("COPROSCOPE_UI_TOKEN") or secrets.token_urlsafe(24)
             serve(
                 instance,
                 year=args.year,
@@ -517,7 +588,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             )
             return 0
         if args.command == "decisions" and args.decisions_command == "build":
-            result = decisionops.build_decision_register(instance, run, ensure_ag=not args.no_ag_analyze)
+            result = decisionops.build_decision_register(instance, run, ensure_ag=not args.no_ag_analyze, doc_id=args.doc_id)
             print(json.dumps(result, indent=2, ensure_ascii=True))
             run.finish("OK", "decisions build complete")
             return 0
@@ -540,6 +611,16 @@ def _dispatch(args: argparse.Namespace) -> int:
             path = summarize_due_diligence(instance, run)
             print(path)
             run.finish("OK", "due-diligence summarize complete")
+            return 0
+        if args.command == "audit360" and args.audit360_command == "prepare-anonymized":
+            result = audit360.prepare_anonymized_audit_sources(
+                instance,
+                run,
+                doc_id=args.doc_id,
+                include_all=args.all,
+            )
+            print(json.dumps(result, indent=2, ensure_ascii=True))
+            run.finish("OK", "audit360 prepare-anonymized complete")
             return 0
         if args.command == "docai" and args.docai_command == "ocr":
             path = docai.run_ocr(instance, run, doc_id=args.doc_id, mode=args.mode, engine=args.engine)

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% set view = pilotage if pilotage is defined else model.pilotage %}
+{% block content %}
+<section class="band" aria-labelledby="pilotage-title">
+  <div>
+    <p class="eyebrow">Pilotage indicateurs</p>
+    <h2 id="pilotage-title">{{ view.title }}</h2>
+    <p>{{ view.intro }}</p>
+  </div>
+  <div class="kpi-grid" aria-label="Resume des indicateurs">
+    <div><strong>{{ view.summary.total }}</strong><span>cartes</span></div>
+    <div><strong>{{ view.summary.alerts }}</strong><span>prioritaires</span></div>
+    <div><strong>{{ view.summary.to_verify }}</strong><span>a verifier</span></div>
+    <div><strong>{{ view.summary.domains }}</strong><span>domaines</span></div>
+  </div>
+</section>
+
+{% if view.period_label or view.source_label %}
+<section class="panel" aria-label="Contexte de lecture">
+  <div class="badge-row">
+    {% if view.period_label %}
+    <span class="badge is-public">Periode {{ view.period_label }}</span>
+    {% endif %}
+    {% if view.source_label %}
+    <span class="badge is-review">Source {{ view.source_label }}</span>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if view.has_cards %}
+<section class="module-grid wide" aria-label="Cartes indicateurs">
+  {% for card in view.cards %}
+  <article class="module-card" id="{{ card.card_id }}" data-status="{{ card.status }}">
+    <div class="panel-head">
+      <strong>{{ card.title }}</strong>
+      <span class="badge {{ card.status_class }}" title="{{ card.status_help }}">{{ card.status_label }}</span>
+    </div>
+    <span>{{ card.novice_reading }}</span>
+    <dl class="compact-list">
+      <dt>Domaine</dt>
+      <dd>{{ card.domain_label }}</dd>
+      <dt>Periode</dt>
+      <dd>{{ card.period }}</dd>
+      <dt>Valeur</dt>
+      <dd>{{ card.value }}</dd>
+      <dt>Preuve ou source</dt>
+      <dd>{{ card.proof_source }}</dd>
+      <dt>Seuil</dt>
+      <dd>{{ card.threshold }}</dd>
+      <dt>Prochaine action</dt>
+      <dd>{{ card.next_action }}</dd>
+      <dt>Diffusion</dt>
+      <dd>{{ card.diffusion_label }}</dd>
+      <dt>Rattachement</dt>
+      <dd>{{ card.attachment_label }}</dd>
+    </dl>
+    {% if card.owner or card.due_at %}
+    <small>{{ card.owner }}{% if card.owner and card.due_at %} - {% endif %}{{ card.due_at }}</small>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="panel" role="status" aria-live="polite">
+  <div class="panel-head">
+    <h3>{{ view.empty_state.title }}</h3>
+    <span>a brancher</span>
+  </div>
+  <p>{{ view.empty_state.body }}</p>
+  <p><strong>Prochaine etape:</strong> {{ view.empty_state.next_step }}</p>
+</section>
+{% endif %}
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Domaines suivis</h3>
+      <span>{{ view.domain_counts|length }}</span>
+    </div>
+    <div class="badge-row">
+      {% for domain in view.domain_counts %}
+      <span class="badge is-review">{{ domain.label }}: {{ domain.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucun domaine alimente</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Lecture des statuts</h3>
+      <span>mots simples</span>
+    </div>
+    <ul class="compact-list">
+      {% for item in view.legend %}
+      <li><span class="badge {{ item.class }}">{{ item.label }}</span> {{ item.help }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

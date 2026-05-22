@@ -5,11 +5,18 @@ import tempfile
 import unittest
 from html import unescape
 from pathlib import Path
+from urllib.parse import unquote
 
-from coproscope.core.common import load_instance, write_csv
+from coproscope.core.common import DEFAULT_DOCUMENT_FIELDS, load_instance, write_csv
+from coproscope.modules.accounting import ACCOUNTING_CONTROL_FIELDS
 from coproscope.modules import decisionops, docuscope, incidentops
-from coproscope.web.app import create_app
 from coproscope.web.viewmodel import build_dashboard_model
+
+
+def _html_hrefs(html: str) -> list[str]:
+    import re
+
+    return re.findall(r"""href=["']([^"']+)["']""", html)
 
 
 class AtelierPieceUiTests(unittest.TestCase):
@@ -26,6 +33,32 @@ class AtelierPieceUiTests(unittest.TestCase):
 
     def _seed_workshop_outputs(self) -> None:
         reports_dir = self.instance.artifact("reports_dir")
+        write_csv(
+            self.instance.register("documents"),
+            DEFAULT_DOCUMENT_FIELDS,
+            [
+                {
+                    "doc_id": "DOC-AG",
+                    "filename": "pv_ag_2025.txt",
+                    "relative_path": "docs/pv_ag_2025.txt",
+                    "lot": "ag",
+                    "document_type": "PV_AG",
+                    "classification_status": "AUTO_CLASSIFIED",
+                    "policy_confidence": "high",
+                    "privacy_review_status": "DIFFUSABLE_BRUT",
+                },
+                {
+                    "doc_id": "DOC-OLD",
+                    "filename": "assurance_2023.txt",
+                    "relative_path": "docs/assurance_2023.txt",
+                    "lot": "assurance",
+                    "document_type": "Attestation_Assurance",
+                    "classification_status": "A_CLASSER",
+                    "policy_confidence": "medium",
+                    "privacy_review_status": "A_ARBITRER",
+                },
+            ],
+        )
         write_csv(
             reports_dir / "matrice_completude_documentaire.csv",
             docuscope.COMPLETENESS_FIELDS,
@@ -179,6 +212,7 @@ class AtelierPieceUiTests(unittest.TestCase):
 
         try:
             from fastapi.testclient import TestClient  # type: ignore
+            from coproscope.web.app import create_app
         except ImportError:
             self.skipTest("FastAPI test client unavailable")
 
@@ -192,6 +226,173 @@ class AtelierPieceUiTests(unittest.TestCase):
         self.assertIn("Point de rattachement", text)
         self.assertIn("R01", text)
         self.assertIn("Bon d'intervention ou photo apres resolution.", text)
+        self.assertIn('data-href="/documents"', text)
+        self.assertIn('data-href="/chantiers"', text)
+        self.assertIn("Action primaire", text)
+        self.assertIn("preuve manquante", text)
+        self.assertIn("preuve locale", text)
+        self.assertIn("signature attendue", text)
+        self.assertIn("confidentialite A_ARBITRER", text)
+        self.assertIn("confiance medium", text)
+        self.assertIn("Ouvrir", text)
+
+    def test_missing_pieces_view_renders_actionable_novice_cards(self) -> None:
+        self._seed_workshop_outputs()
+
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+            from coproscope.web.app import create_app
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+
+        client = TestClient(create_app(self.instance, 2025))
+        response = client.get("/pieces?proof=missing")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Pieces manquantes", text)
+        self.assertIn("Pieces attendues", text)
+        self.assertIn("Contrat syndic signe", text)
+        self.assertIn("Creer demandes syndic", text)
+        self.assertIn("Voir pieces privees", text)
+        self.assertIn("Pourquoi", text)
+        self.assertIn("Detenteur", text)
+        self.assertIn("Lien", text)
+        self.assertIn("Preuve attendue", text)
+        self.assertIn("Syndic ou detenteur a confirmer", text)
+        self.assertIn("Relancer syndic", text)
+        self.assertIn("Ajouter reponse recue", text)
+        self.assertIn("Question", text)
+        self.assertIn("Ouvrir action", text)
+        self.assertIn("Voir action", text)
+        self.assertIn('href="/demandes/relance?action_id=PRV-CONTRAT', text)
+        self.assertIn('href="/depot?intent=proof&amp;missing_for=PRV-CONTRAT', response.text)
+        self.assertIn("status=reponse-recue", response.text)
+        self.assertIn("return=pieces", response.text)
+        self.assertIn('href="/actions?selected=', text)
+        self.assertNotIn("Completude passation", text)
+        self.assertNotIn("Envoyer automatiquement", text)
+
+    def test_missing_pieces_view_falls_back_to_accounting_p1_when_piece_contract_is_empty(self) -> None:
+        for path in [
+            self.instance.register("documents"),
+            self.instance.artifact("reports_dir") / "matrice_completude_documentaire.csv",
+            self.instance.artifact("reports_dir") / "pieces_a_demander.csv",
+            decisionops.decision_register_path(self.instance),
+            incidentops.incident_register_path(self.instance),
+        ]:
+            path.unlink(missing_ok=True)
+
+        shutil.rmtree(self.instance.artifact("accounting_dir"), ignore_errors=True)
+        accounting_dir = self.instance.artifact("accounting_dir") / "2025"
+        accounting_dir.mkdir(parents=True, exist_ok=True)
+        write_csv(accounting_dir / "accounting_controls_2025.csv", ACCOUNTING_CONTROL_FIELDS, [])
+        write_csv(
+            accounting_dir / "controles_p1_2025.csv",
+            ACCOUNTING_CONTROL_FIELDS,
+            [
+                {
+                    "control_id": "CTRL-ASC",
+                    "exercice": "2025",
+                    "severity": "P1",
+                    "control": "Facture ascenseur sans justificatif",
+                    "status": "A_TRAITER",
+                    "doc_id": "DOC-ASC",
+                    "evidence": "Facture ascenseur T1 2025",
+                    "action": "Demander la facture et la ligne de charge au syndic.",
+                },
+                {
+                    "control_id": "CTRL-ENT",
+                    "exercice": "2025",
+                    "severity": "P1",
+                    "control": "Contrat entretien ascenseur a fournir",
+                    "status": "A_TRAITER",
+                    "doc_id": "DOC-CONTRAT-ASC",
+                    "evidence": "Contrat entretien ascenseur",
+                    "action": "Demander le contrat signe au syndic.",
+                },
+            ],
+        )
+
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+            from coproscope.web.app import create_app
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+
+        client = TestClient(create_app(self.instance, 2025))
+        comptes_text = unescape(client.get("/comptes").text)
+        pieces_text = unescape(client.get("/pieces?proof=missing").text)
+
+        self.assertIn("Pieces manquantes", comptes_text)
+        self.assertIn("<strong>2</strong>", client.get("/comptes").text)
+        self.assertIn("2 pieces concretes a traiter", pieces_text)
+        self.assertIn("Facture ascenseur sans justificatif", pieces_text)
+        self.assertIn("Contrat entretien ascenseur a fournir", pieces_text)
+        self.assertIn('href="/demandes/relance?', pieces_text)
+        self.assertIn('href="/depot?intent=proof', pieces_text)
+        self.assertIn('href="/comptes?', pieces_text)
+        self.assertIn("Ouvrir compte", pieces_text)
+        self.assertIn("Voir action", pieces_text)
+        self.assertNotIn("Aucune piece manquante detectee.", pieces_text)
+
+    def test_missing_pieces_view_tokenizes_all_local_ctas_without_private_leaks(self) -> None:
+        self._seed_workshop_outputs()
+
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+            from coproscope.web.app import create_app
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+
+        client = TestClient(create_app(self.instance, 2025, access_token="local-secret"))
+        response = client.get("/pieces?proof=missing&token=local-secret")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Ajouter reponse recue", text)
+        self.assertNotRegex(text, r"file://|raw[\\/]|restricted[\\/]|logs[\\/]|private[\\/]|C:\\Users")
+        for href in _html_hrefs(response.text):
+            decoded = unquote(unescape(href))
+            if decoded.startswith("http://testserver/static/") or decoded.startswith("#"):
+                continue
+            self.assertTrue(decoded.startswith("/"), decoded)
+            self.assertNotIn("\\", decoded)
+            self.assertIn("token=local-secret", decoded, decoded)
+
+    def test_piece_workshop_page_handles_empty_outputs(self) -> None:
+        for path in [
+            self.instance.register("documents"),
+            self.instance.artifact("reports_dir") / "matrice_completude_documentaire.csv",
+            self.instance.artifact("reports_dir") / "pieces_a_demander.csv",
+            decisionops.decision_register_path(self.instance),
+            incidentops.incident_register_path(self.instance),
+        ]:
+            path.unlink(missing_ok=True)
+        shutil.rmtree(self.instance.artifact("accounting_dir"), ignore_errors=True)
+
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+            from coproscope.web.app import create_app
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+
+        client = TestClient(create_app(self.instance, 2025))
+        response = client.get("/pieces")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Atelier pieces", text)
+        self.assertIn("Aucune piece exploitable dans les artefacts charges.", text)
+
+        missing_response = client.get("/pieces?proof=missing")
+        missing_text = unescape(missing_response.text)
+
+        self.assertEqual(missing_response.status_code, 200)
+        self.assertIn("Aucune piece a demander pour le moment", missing_text)
+        self.assertIn("Voir toutes les pieces", missing_text)
+        self.assertIn("Retour au cockpit", missing_text)
+        self.assertNotIn("Relancer le syndic", missing_text)
 
 
 if __name__ == "__main__":

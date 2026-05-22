@@ -65,6 +65,15 @@ REDACTION_QUEUE_FIELDS = [
 ]
 
 TEXT_EXTENSIONS = {"txt", "md", "csv", "tsv", "json", "yml", "yaml", "html", "htm"}
+LOCAL_REDACTION_EXTENSIONS = TEXT_EXTENSIONS | {"pdf", "docx"}
+
+
+def _redaction_extension(row: dict[str, str]) -> str:
+    return Path(row.get("original_path") or row.get("file_name", "")).suffix.lower().lstrip(".")
+
+
+def _supports_local_redaction(row: dict[str, str]) -> bool:
+    return _redaction_extension(row) in LOCAL_REDACTION_EXTENSIONS
 
 
 def _privacy_dir(instance: InstanceConfig) -> Path:
@@ -147,6 +156,13 @@ def _pdf_text(path: Path) -> str:
         finally:
             document.close()
     except Exception:  # noqa: BLE001
+        pass
+    try:
+        from pypdf import PdfReader  # type: ignore
+
+        reader = PdfReader(str(path))
+        return "\n".join(page.extract_text() or "" for page in reader.pages)
+    except Exception:  # noqa: BLE001
         return ""
 
 
@@ -178,6 +194,18 @@ def _source_text(path: Path) -> str:
     if ext == "docx":
         return _docx_text(path)
     return ""
+
+
+def _registered_text(instance: InstanceConfig, row: dict[str, str]) -> str:
+    text_path = row.get("text_path", "")
+    if not text_path:
+        return ""
+    path = Path(text_path)
+    if not path.is_absolute():
+        path = instance.root("workspace") / path
+    if not path.exists():
+        return ""
+    return _read_text(path)
 
 
 def _label_for(signal: PrivacySignal, mode: str, alias: str | None) -> str:
@@ -306,6 +334,21 @@ def _write_text_redaction(
     return out
 
 
+def _write_text_derivative_redaction(
+    instance: InstanceConfig,
+    row: dict[str, str],
+    text: str,
+    signals: list[PrivacySignal],
+    replacements: dict[str, str],
+    mode: str,
+) -> Path:
+    if mode == "redaction_irreversible":
+        replacements = {signal.value: _label_for(signal, mode, None) for signal in signals}
+    out = _redacted_dir(instance) / f"{row.get('doc_id', 'DOC')}.redacted.txt"
+    write_text(out, _replace_values(text, replacements))
+    return out
+
+
 def _write_pdf_redaction(
     instance: InstanceConfig,
     row: dict[str, str],
@@ -389,12 +432,21 @@ def _write_redacted(
     signals: list[PrivacySignal],
     replacements: dict[str, str],
     mode: str,
+    *,
+    fallback_text: str | None = None,
 ) -> Path:
     ext = source.suffix.lower().lstrip(".")
     if ext in TEXT_EXTENSIONS:
         return _write_text_redaction(instance, row, source, signals, replacements, mode)
     if ext == "pdf":
-        return _write_pdf_redaction(instance, row, source, signals, replacements, mode)
+        if fallback_text is not None and not _pdf_text(source).strip():
+            return _write_text_derivative_redaction(instance, row, fallback_text, signals, replacements, mode)
+        try:
+            return _write_pdf_redaction(instance, row, source, signals, replacements, mode)
+        except RuntimeError:
+            if fallback_text is not None:
+                return _write_text_derivative_redaction(instance, row, fallback_text, signals, replacements, mode)
+            raise
     if ext == "docx":
         return _write_docx_redaction(instance, row, source, signals, replacements, mode)
     raise RuntimeError(f"Unsupported redaction format: {ext or 'no_extension'}")
@@ -451,10 +503,55 @@ def redact_document(
         raise FileNotFoundError(source)
 
     text = _source_text(source)
+    if not text.strip():
+        text = _registered_text(instance, row)
     signals = redaction_signals(text)
     categories = sorted({signal.category for signal in signals})
     redaction_id = f"RED-{doc_id}-{now_iso().replace(':', '').replace('-', '')}"
     if not signals:
+        if row.get("personal_data_level") == "none" and text.strip():
+            out = _write_text_derivative_redaction(instance, row, text, [], {}, mode)
+            digest = sha256_file(out)
+            record = {
+                "redaction_id": redaction_id,
+                "created_at": now_iso(),
+                "doc_id": doc_id,
+                "source_path": row.get("original_path", ""),
+                "source_sha256": row.get("sha256", ""),
+                "redacted_path": relative_to(instance.root("workspace"), out),
+                "redacted_sha256": digest,
+                "mode": mode,
+                "target_college": target_college,
+                "status": "REDACTED",
+                "match_count": "0",
+                "categories": "",
+                "map_path": "",
+                "notes": "No identifiers detected; text derivative registered for anonymized audit boundary.",
+            }
+            _register_redaction(instance, record)
+            _update_document_row(
+                instance,
+                doc_id,
+                {
+                    "redaction_status": "REDACTED",
+                    "redaction_mode": mode,
+                    "redacted_path": record["redacted_path"],
+                    "redacted_sha256": digest,
+                    "redaction_map_id": "",
+                },
+            )
+            run.log_action("biffage_redact_no_matches", out, f"doc_id={doc_id}; matches=0; mode={mode}")
+            return {
+                "status": "ok",
+                "doc_id": doc_id,
+                "mode": mode,
+                "target_college": target_college,
+                "match_count": 0,
+                "categories": [],
+                "redacted_path": str(out),
+                "redacted_sha256": digest,
+                "map_path": "",
+            }
         record = {
             "redaction_id": redaction_id,
             "created_at": now_iso(),
@@ -482,7 +579,8 @@ def redact_document(
         replacements = {signal.value: _label_for(signal, mode, None) for signal in signals}
         map_path_value = ""
 
-    out = _write_redacted(instance, row, source, signals, replacements, mode)
+    fallback_text = text if source.suffix.lower().lstrip(".") == "pdf" else None
+    out = _write_redacted(instance, row, source, signals, replacements, mode, fallback_text=fallback_text)
     digest = sha256_file(out)
     record = {
         "redaction_id": redaction_id,
@@ -534,7 +632,13 @@ def build_redaction_queue(instance: InstanceConfig, run: RunContext) -> dict[str
         if "redaction" not in transformations and "aggregation" not in transformations and "metadata_only" not in transformations:
             continue
         publication_form = doc.get("publication_form", "")
-        if "redaction" in transformations:
+        if doc.get("redaction_status") == "REDACTED":
+            recommended_mode = doc.get("redaction_mode", "") or "redaction_irreversible"
+            status = "REDACTED"
+        elif "redaction" in transformations and not _supports_local_redaction(doc):
+            recommended_mode = "manual_redaction_or_aggregation"
+            status = "NEEDS_MANUAL_REDACTION"
+        elif "redaction" in transformations:
             recommended_mode = "redaction_irreversible"
             status = "READY_FOR_LOCAL_REDACTION"
         elif "aggregation" in transformations:
@@ -585,15 +689,49 @@ def redact_required_documents(
             continue
         if limit is not None and len(applied) >= limit:
             break
-        applied.append(
-            redact_document(
-                instance,
-                run,
-                doc_id=row.get("doc_id", ""),
-                mode=mode,
-                target_college=target_college,
+        try:
+            applied.append(
+                redact_document(
+                    instance,
+                    run,
+                    doc_id=row.get("doc_id", ""),
+                    mode=mode,
+                    target_college=target_college,
+                )
             )
-        )
+        except RuntimeError as exc:
+            if "Unsupported redaction format" not in str(exc):
+                raise
+            record = {
+                "redaction_id": f"redact-{row.get('doc_id', '')}-unsupported",
+                "created_at": now_iso(),
+                "doc_id": row.get("doc_id", ""),
+                "source_path": row.get("original_path", ""),
+                "source_sha256": "",
+                "redacted_path": "",
+                "redacted_sha256": "",
+                "mode": mode,
+                "target_college": target_college,
+                "status": "NEEDS_MANUAL_REDACTION",
+                "match_count": "0",
+                "categories": "",
+                "map_path": "",
+                "notes": f"Local redaction unsupported for .{_redaction_extension(row) or 'no_extension'}; produce an anonymized export or aggregate summary before cloud audit.",
+            }
+            _register_redaction(instance, record)
+            _update_document_row(
+                instance,
+                row.get("doc_id", ""),
+                {
+                    "redaction_status": "NEEDS_MANUAL_REDACTION",
+                    "redaction_mode": mode,
+                    "redacted_path": "",
+                    "redacted_sha256": "",
+                    "review_required": "YES",
+                },
+            )
+            run.log_action("biffage_manual_redaction_required", row.get("original_path", ""), f"doc_id={row.get('doc_id', '')}; reason=unsupported_format")
+            applied.append({"status": "NEEDS_MANUAL_REDACTION", "doc_id": row.get("doc_id", ""), "reason": str(exc)})
     return {
         "status": "ok",
         "queued_count": queue["queued_count"],

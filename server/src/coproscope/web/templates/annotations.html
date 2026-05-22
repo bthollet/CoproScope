@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% set view = annotations if annotations is defined else model.annotations %}
+{% block content %}
+<section class="band" aria-labelledby="annotations-title">
+  <div>
+    <p class="eyebrow">Annotations PDF et image</p>
+    <h2 id="annotations-title">{{ view.title }}</h2>
+    <p>{{ view.intro }}</p>
+    <div class="badge-row">
+      <span class="badge is-public">sidecar non destructif</span>
+      <span class="badge is-review">{{ view.safety.event_signature_status }}</span>
+      <span class="badge is-private">{{ view.safety.path_policy }}</span>
+    </div>
+  </div>
+  <div class="kpi-grid" aria-label="Resume annotations">
+    <div><strong>{{ view.summary.total }}</strong><span>annotations</span></div>
+    <div><strong>{{ view.summary.open }}</strong><span>ouvertes</span></div>
+    <div><strong>{{ view.summary.ready_events }}</strong><span>pretes a signer</span></div>
+    <div><strong>{{ view.summary.needs_review }}</strong><span>a corriger</span></div>
+  </div>
+</section>
+
+{% if view.document_label or view.source_label %}
+<section class="panel" aria-label="Contexte annotations">
+  <div class="badge-row">
+    {% if view.document_label %}
+    <span class="badge is-public">Document {{ view.document_label }}</span>
+    {% endif %}
+    {% if view.source_label %}
+    <span class="badge is-review">Source {{ view.source_label }}</span>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if view.has_annotations %}
+<section class="module-grid wide" aria-label="Annotations collaboratives">
+  {% for row in view.rows %}
+  <article class="module-card" id="{{ row.annotation_id }}" data-status="{{ row.status }}">
+    <div class="panel-head">
+      <strong>{{ row.annotation_id }}</strong>
+      <span class="badge {{ row.status_class }}">{{ row.status_label }}</span>
+    </div>
+    <p>{{ row.comment }}</p>
+    <dl class="compact-list">
+      <dt>Document</dt>
+      <dd><code>{{ row.document_ref }}</code><br><small>{{ row.target_kind_label }} - {{ row.document_hash }}</small></dd>
+      <dt>Page / zone</dt>
+      <dd><strong>{{ row.page_label }}</strong><br><small>{{ row.zone.label }}</small></dd>
+      <dt>Point / action / preuve</dt>
+      <dd>{{ row.chain_label }}</dd>
+      <dt>Confidentialite</dt>
+      <dd><span class="badge {{ row.confidentiality_class }}">{{ row.confidentiality_label }}</span><br><small>{{ row.diffusion_label }}</small></dd>
+      <dt>Evenement futur signe</dt>
+      <dd><code>{{ row.event.event_type }}</code><br><small>{{ row.event.signature_status }} - {{ row.event.readiness }}</small></dd>
+      <dt>Sidecar</dt>
+      <dd><code>{{ row.sidecar.sidecar_object_ref }}</code><br><small>source_write_allowed={{ row.sidecar.source_write_allowed }} - {{ row.sidecar.source_mutation }}</small></dd>
+    </dl>
+    {% if row.issues %}
+    <div class="status-block pending" role="status">
+      <span>a corriger avant signature</span>
+      {% for issue in row.issues[:3] %}
+      <small>{{ issue.field }}: {{ issue.reason }}</small>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="status-block">
+      <span>{{ row.event.signature_label }}</span>
+      <small>{{ row.event.write_policy }}</small>
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="panel" role="status" aria-live="polite">
+  <div class="panel-head">
+    <h3>{{ view.empty_state.title }}</h3>
+    <span>a brancher</span>
+  </div>
+  <p>{{ view.empty_state.body }}</p>
+  <p><strong>Prochaine etape:</strong> {{ view.empty_state.next_step }}</p>
+</section>
+{% endif %}
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Confidentialite</h3>
+      <span>{{ view.confidentiality_counts|length }}</span>
+    </div>
+    <div class="badge-row">
+      {% for item in view.confidentiality_counts %}
+      <span class="badge is-review">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucune annotation qualifiee</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Regle non destructive</h3>
+      <span>{{ view.safety.path_policy }}</span>
+    </div>
+    <dl class="compact-list">
+      <dt>Ecriture source</dt>
+      <dd>{{ view.safety.source_write_allowed }}</dd>
+      <dt>Mutation source</dt>
+      <dd>interdite</dd>
+      <dt>Signature</dt>
+      <dd>{{ view.safety.event_signature_status }}</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Lecture des statuts</h3>
+    <span>mots simples</span>
+  </div>
+  <ul class="compact-list">
+    {% for item in view.legend %}
+    <li><span class="badge {{ item.class }}">{{ item.label }}</span> {{ item.status }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

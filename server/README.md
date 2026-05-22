@@ -47,3 +47,19 @@ L'objectif est de partager la forme reutilisable des controles et diligences, pa
 .\.venv\Scripts\bandit.exe -r src -q
 pre-commit run gitleaks --all-files
 ```
+
+## CI publique
+
+Le workflow GitHub Actions `.github/workflows/ci.yml` installe le paquet serveur
+avec les extras publics necessaires, puis lance:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m pip_audit . --skip-editable --progress-spinner off
+.\.venv\Scripts\python.exe -m bandit -r src -q --severity-level high
+```
+
+La CI utilise `examples/synthetic_copro` via les tests publics. Les recettes
+locales privees, comme `instance_privee_test`, restent hors GitHub Actions. Les
+signaux Bandit bas/moyens restent a traiter en durcissement progressif, sans
+bloquer la premiere CI.

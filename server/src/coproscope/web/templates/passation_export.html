@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block topbar_title %}Apercu de passation{% endblock %}
+{% block content %}
+{% set ux = model.ux|default({}) %}
+{% set export = passation_export|default(ux.passation_export|default({})) %}
+{% set context = export.context|default({}) %}
+{% set summary = export.summary|default({}) %}
+{% set scope = export.scope|default({}) %}
+{% set audience = export.audience|default({}) %}
+{% set preview = export.preview|default({}) %}
+{% set included = export.included|default({}) %}
+{% set omitted = export.omitted|default({}) %}
+{% set restrictions = export.restrictions|default({}) %}
+{% set downloads = export.downloads|default({}) %}
+{% set audit = export.audit|default({}) %}
+{% set empty_states = export.empty_states|default({}) %}
+{% set blockers = export.blockers|default([]) %}
+{% set formats = export.formats|default([]) %}
+{% set can_export = summary.can_export|default(downloads.can_download|default(false)) %}
+{% set text_href = downloads.text_href|default('/exports/passation.txt') %}
+{% set json_href = downloads.json_href|default('/exports/passation.json') %}
+
+<section class="cs-passation-page" aria-labelledby="passation-export-title">
+  <header class="cs-passation-hero">
+    <div class="cs-passation-heading">
+      <p class="eyebrow">{{ context.as_of_label|default(summary.last_updated_label|default('Situation actuelle')) }}</p>
+      <h2 id="passation-export-title">{{ context.title|default('Apercu de passation') }}</h2>
+      <p>{{ context.subtitle|default('Verifiez ce qui sera transmis, ce qui est exclu et les restrictions avant de telecharger.') }}</p>
+    </div>
+    <div class="cs-passation-hero-actions" aria-label="Actions principales export passation">
+      <a class="cs-passation-secondary" href="{{ token_href('/chantiers') }}">Retour memoire</a>
+      <a class="cs-passation-secondary" href="{{ token_href('/actions') }}">Retour actions</a>
+      <a class="cs-passation-primary" href="{{ token_href(text_href) }}">Telecharger TXT</a>
+      <a class="cs-passation-primary" href="{{ token_href(json_href) }}">Telecharger JSON</a>
+    </div>
+  </header>
+
+  <section class="cs-passation-status" aria-label="Statut de l'export">
+    <div>
+      <strong>{{ summary.can_export_label|default('A verifier avant export') }}</strong>
+      <span>{{ context.watermark|default('Export derive, non source collaborative') }}</span>
+      <span>source_of_truth false</span>
+    </div>
+    <p>{{ audit.generated_from|default('Memoire, actions, preuves et decisions de diffusion') }}. Cet apercu ne remplace pas les preuves originales.</p>
+  </section>
+
+  {% if empty_states.no_content.is_visible|default(false) %}
+  <section class="cs-passation-empty" aria-labelledby="passation-empty-title">
+    <h3 id="passation-empty-title">Aucun contenu a exporter</h3>
+    <p>{{ empty_states.no_content.label|default('Ajoutez des evenements memoire ou des actions ouvertes avant de preparer une passation.') }}</p>
+    <a href="{{ token_href(empty_states.no_content.href|default('/chantiers')) }}">Revenir a la memoire</a>
+  </section>
+  {% endif %}
+
+  <section class="cs-passation-kpis" aria-label="Resume de l'apercu">
+    <div><strong>{{ summary.included_events_count|default(0) }}</strong><span>evenements inclus</span></div>
+    <div><strong>{{ summary.open_topics_count|default(0) }}</strong><span>sujets ouverts</span></div>
+    <div><strong>{{ summary.included_documents_count|default(0) }}</strong><span>documents cites</span></div>
+    <div><strong>{{ summary.diffusion_limited_count|default(0) }}</strong><span>restrictions a relire</span></div>
+    <div><strong>{{ summary.omitted_items_count|default(0) }}</strong><span>elements exclus ou masques</span></div>
+  </section>
+
+  <div class="cs-passation-layout">
+    <section class="cs-passation-preview" aria-labelledby="passation-preview-title">
+      <div class="cs-passation-section-head">
+        <div>
+          <p class="eyebrow">Apercu lisible</p>
+          <h3 id="passation-preview-title">{{ preview.title|default('Passation conseil syndical') }}</h3>
+        </div>
+        <span>{{ audience.selected_label|default('Conseil syndical') }}</span>
+      </div>
+      <p>{{ preview.intro|default('Synthese derivee des actions, evenements memoire et documents utiles.') }}</p>
+
+      <h4>Sections incluses</h4>
+      <div class="cs-passation-preview-sections">
+        {% for section in preview.sections|default([]) %}
+        <section>
+          <h4>{{ section.title|default('Section de passation') }}</h4>
+          <ul>
+            {% for item in section["items"]|default([]) %}
+            <li>{{ item }}</li>
+            {% else %}
+            <li>{{ section.empty_label|default('Aucun element dans cette section.') }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% else %}
+        <section>
+          <h4>Synthese</h4>
+          <ul>
+            <li>{{ summary.open_topics_count|default(0) }} sujets ouverts</li>
+            <li>{{ summary.missing_proofs_count|default(0) }} preuves manquantes</li>
+            <li>{{ summary.diffusion_limited_count|default(0) }} diffusions a verifier</li>
+          </ul>
+        </section>
+        {% endfor %}
+      </div>
+
+      <div class="cs-passation-included" aria-label="Ce qui est inclus">
+        <section>
+          <h4>Evenements memoire inclus</h4>
+          {% for event in included.events|default([]) %}
+          <a href="{{ token_href(event.href|default('/chantiers')) }}">
+            <strong>{{ event.title|default('Evenement memoire') }}</strong>
+            <span>{{ event.date_label|default('Date a confirmer') }} - {{ event.status_label|default('A verifier') }}</span>
+          </a>
+          {% else %}
+          <p>Aucun evenement memoire inclus dans ce perimetre.</p>
+          {% endfor %}
+        </section>
+        <section>
+          <h4>Actions ouvertes incluses</h4>
+          {% for action in included.actions|default([]) %}
+          <a href="{{ token_href(action.href|default('/actions')) }}">
+            <strong>{{ action.title|default(action.label|default('Action ouverte')) }}</strong>
+            <span>{{ action.next_step|default(action.detail|default('A reprendre en passation.')) }}</span>
+          </a>
+          {% else %}
+          <p>Aucune action ouverte incluse.</p>
+          {% endfor %}
+        </section>
+        <section>
+          <h4>Documents cites</h4>
+          {% for doc in included.documents|default([]) %}
+          <a href="{{ token_href(doc.href|default('/documents')) }}">
+            <strong>{{ doc.title|default('Document de passation') }}</strong>
+            <span>{{ doc.diffusion_label|default(doc.restriction_label|default('Diffusion a verifier')) }}</span>
+          </a>
+          {% else %}
+          <p>Aucun document cite dans cet apercu.</p>
+          {% endfor %}
+        </section>
+      </div>
+    </section>
+
+    <aside class="cs-passation-side" aria-label="Verification avant telechargement">
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Formats disponibles</h3>
+          <span>{{ 'pret' if can_export else 'a relire' }}</span>
+        </div>
+        {% if can_export %}
+        <p>Les formats restent derives et doivent etre relus avant partage.</p>
+        {% else %}
+        <p>{{ downloads.download_disabled_reason|default('Relisez cet apercu avant usage.') }}</p>
+        {% endif %}
+        <div class="cs-passation-downloads">
+          {% for item in formats %}
+          {% if item.id|default('') in ['txt', 'json'] %}
+          <a class="{{ 'is-disabled' if not item.enabled|default(can_export) else '' }}" href="{{ token_href(item.href|default('/exports/passation.' ~ item.id|default('txt'))) }}" aria-disabled="{{ 'true' if not item.enabled|default(can_export) else 'false' }}">
+            <strong>{{ item.label|default(item.id|upper) }}</strong>
+            <span>{{ item.description|default('Export derive a telecharger.') }}</span>
+          </a>
+          {% endif %}
+          {% else %}
+          <a href="{{ token_href(text_href) }}"><strong>TXT</strong><span>Synthese lisible et copiable.</span></a>
+          <a href="{{ token_href(json_href) }}"><strong>JSON</strong><span>Export structure pour audit ou reprise.</span></a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Restrictions</h3>
+          <span>{{ restrictions.label|default('Diffusion a relire') }}</span>
+        </div>
+        <p>{{ restrictions.reason|default('Relire les documents et les donnees sensibles avant partage externe.') }}</p>
+        <a class="cs-passation-inline-link" href="{{ token_href(restrictions.review_href|default('/confidentialite')) }}">Verifier la diffusion</a>
+      </section>
+
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Checklist</h3>
+          <span>{{ export.checklist|default([])|length }}</span>
+        </div>
+        <div class="cs-passation-checklist">
+          {% for item in export.checklist|default([]) %}
+          <a class="is-{{ item.status|default('todo') }}" href="{{ token_href(item.href|default('/exports/passation')) }}">
+            <strong>{{ item.label|default('Verification') }}</strong>
+            <span>{{ item.status_label|default('A verifier') }} - {{ item.detail|default('Point a relire.') }}</span>
+          </a>
+          {% else %}
+          <p>Checklist non disponible. Relisez au minimum la diffusion, les omissions et les preuves manquantes.</p>
+          {% endfor %}
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="cs-passation-omissions" aria-labelledby="passation-omissions-title">
+    <div class="cs-passation-section-head">
+      <div>
+        <p class="eyebrow">Exclusions et limites</p>
+        <h3 id="passation-omissions-title">Elements exclus ou bloques</h3>
+        <p>Ce qui n'est pas transmis tel quel.</p>
+      </div>
+      <span>{{ omitted.summary_label|default('Elements exclus, masques ou signales.') }}</span>
+    </div>
+    <div class="cs-passation-omission-list">
+      {% for item in omitted["items"]|default([]) %}
+      <a href="{{ token_href(item.review_href|default(item.href|default('/confidentialite'))) }}">
+        <strong>{{ item.label|default('Element exclu ou masque') }}</strong>
+        <span>{{ item.type_label|default('Element de passation') }} - {{ item.reason|default('Diffusion a verifier.') }}</span>
+      </a>
+      {% else %}
+      <p>Aucune omission prioritaire. Gardez quand meme le watermark derive dans l'export.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if blockers %}
+  <section class="cs-passation-blockers" aria-labelledby="passation-blockers-title">
+    <div class="cs-passation-section-head">
+      <h3 id="passation-blockers-title">A verifier avant partage</h3>
+      <span>{{ blockers|length }}</span>
+    </div>
+    <div class="cs-passation-blocker-list">
+      {% for blocker in blockers %}
+      <a href="{{ token_href(blocker.href|default('/actions')) }}">
+        <strong>{{ blocker.label|default('Point bloquant') }}</strong>
+        <span>{{ blocker.detail|default('A relire avant export.') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="cs-passation-audit" aria-label="Trace de generation">
+    <span>{{ context.watermark|default('Export derive, non source collaborative') }}</span>
+    <span>{{ audit.generated_at_label|default(summary.last_updated_label|default('Date a confirmer')) }}</span>
+    <span>{% if audit.source_of_truth|default(false) %}Source a verifier{% else %}Non source de verite{% endif %}</span>
+  </section>
+</section>
+{% endblock %}

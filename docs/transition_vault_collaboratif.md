@@ -55,6 +55,23 @@ flowchart LR
 - `coprocs vault verify`
 - `coprocs vault snapshot`
 
+## Controle transport et resilience
+
+La sync reste un transport non fiable, meme quand elle est locale et pratique.
+Le produit doit separer trois controles:
+
+- pre-vol profil sync: conflits provider, placeholders, fichiers partiels,
+  metadata de moteur sync, liens symboliques et collisions de casse;
+- verification cryptographique: signatures, hashes, chainage par appareil,
+  blobs references et snapshots;
+- survivability: quorum de recuperation, gardien coproprietaire, replique
+  lecteur, archive complete verifiable et absence de dependance exclusive au
+  conseil syndical.
+
+Un dossier peut donc etre "synchronise" mais non exploitable, ou verifiable
+cryptographiquement mais fragile en passation si les cles et les repliques ne
+sont pas assez distribuees.
+
 ## Regle de confidentialite
 
 Le dossier sync ne revele jamais:
@@ -73,6 +90,7 @@ Le dossier sync ne revele jamais:
 - Sprint 2: prototype `vault init/import/status/verify/snapshot`.
 - Sprint 3: reconstruction SQLite, identites et conflits.
 - Sprint 4: atelier piece, point, action, preuve.
-- Sprint 5: sync dossier cloud entre deux copies locales.
+- Sprint 5: sync dossier cloud entre deux copies locales, avec audit de
+  transport avant import et tests de conflit/placeholders/partiels.
 - Sprint 6: plugins officiels signes.
 - Sprint 7: packaging desktop et mises a jour signees.

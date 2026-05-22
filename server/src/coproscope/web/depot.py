@@ -8,7 +8,7 @@ import zipfile
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from ..core.common import InstanceConfig, RunContext, now_iso, read_csv, relative_to, safe_name
 from ..modules import accounting, agscope, biffageops, docai, docuscope, factureops, privacyops
@@ -48,6 +48,7 @@ SAFE_EXPORT_DIRS = {
     "outputs/accounting",
     "outputs/deposits",
 }
+SAFE_EXPORT_SUFFIXES = {".csv", ".json", ".md", ".txt", ".tsv"}
 BLOCKED_EXPORT_PARTS = {"raw", "restricted", "logs", ".git", "__pycache__", "private"}
 BLOCKED_EXPORT_MARKERS = (
     ".env",
@@ -55,6 +56,31 @@ BLOCKED_EXPORT_MARKERS = (
     "correspondance_biffage",
     "redaction_map",
     "mapping",
+)
+BLOCKED_EXPORT_CONTENT_PATTERNS = (
+    re.compile(rb"[A-Za-z]:[\\/]", re.IGNORECASE),
+    re.compile(rb"file://", re.IGNORECASE),
+    re.compile(rb"(?:^|[\\/\s\"'=,:])/(?:Users|home)[\\/]", re.IGNORECASE),
+    re.compile(rb"(?:^|[\\/\s\"'=,:])(?:raw|restricted|logs|private|system)[\\/]", re.IGNORECASE),
+)
+DEPOSIT_CONTEXT_KEYS = {
+    "intent",
+    "status",
+    "return",
+    "piece_detail",
+    "missing_for",
+    "request_id",
+    "action",
+    "source",
+    "piece_id",
+    "categorie",
+}
+BLOCKED_DEPOSIT_CONTEXT_PATTERNS = (
+    re.compile(r"[A-Za-z]:[\\/]", re.IGNORECASE),
+    re.compile(r"file://", re.IGNORECASE),
+    re.compile(r"\\\\"),
+    re.compile(r"(?:^|[\\/\s\"'=,:])/(?:Users|home)[\\/]", re.IGNORECASE),
+    re.compile(r"(?:^|[\\/\s\"'=,:])(?:raw|restricted|logs|private|system)[\\/]", re.IGNORECASE),
 )
 
 
@@ -215,7 +241,24 @@ def _write_upload_file(upload: Any, target: Path) -> tuple[int, str]:
     return size, digest.hexdigest()
 
 
-def create_deposit_from_uploads(instance: InstanceConfig, uploads: Iterable[Any]) -> dict[str, Any]:
+def _public_deposit_context(context: Mapping[str, object] | None) -> dict[str, str]:
+    if not context:
+        return {}
+    safe: dict[str, str] = {}
+    for key in DEPOSIT_CONTEXT_KEYS:
+        text = " ".join(str(context.get(key) or "").replace("\x00", " ").split())
+        if not text or any(pattern.search(text) for pattern in BLOCKED_DEPOSIT_CONTEXT_PATTERNS):
+            continue
+        safe[key] = text[:180]
+    return safe
+
+
+def create_deposit_from_uploads(
+    instance: InstanceConfig,
+    uploads: Iterable[Any],
+    *,
+    context: Mapping[str, object] | None = None,
+) -> dict[str, Any]:
     upload_list = [upload for upload in uploads if _upload_filename(upload)]
     if not upload_list:
         raise DepositError("Aucun fichier recu.", 400)
@@ -235,6 +278,9 @@ def create_deposit_from_uploads(instance: InstanceConfig, uploads: Iterable[Any]
         "steps": [],
         "status": "uploaded",
     }
+    safe_context = _public_deposit_context(context)
+    if safe_context:
+        manifest["context"] = safe_context
 
     total_size = 0
     try:
@@ -408,6 +454,8 @@ def export_catalog() -> list[dict[str, str]]:
 def _is_safe_export_path(instance: InstanceConfig, path: Path) -> bool:
     if not path.is_file():
         return False
+    if path.suffix.lower() not in SAFE_EXPORT_SUFFIXES:
+        return False
     try:
         relative = path.resolve().relative_to(instance.instance_root.resolve())
     except ValueError:
@@ -419,6 +467,17 @@ def _is_safe_export_path(instance: InstanceConfig, path: Path) -> bool:
     if any(marker in normalized for marker in BLOCKED_EXPORT_MARKERS):
         return False
     return any(normalized == safe_dir or normalized.startswith(f"{safe_dir}/") for safe_dir in SAFE_EXPORT_DIRS)
+
+
+def _export_content_is_safe(content: bytes) -> bool:
+    return not any(pattern.search(content) for pattern in BLOCKED_EXPORT_CONTENT_PATTERNS)
+
+
+def _sanitize_generated_export(content: str) -> str:
+    data = content.encode("utf-8", errors="ignore")
+    for pattern in BLOCKED_EXPORT_CONTENT_PATTERNS:
+        data = pattern.sub(b"[reference locale masquee]", data)
+    return data.decode("utf-8", errors="ignore")
 
 
 def _iter_safe_export_files(instance: InstanceConfig) -> list[Path]:
@@ -445,8 +504,9 @@ def build_local_export_zip(
         "created_at": now_iso(),
         "instance_id": instance.instance_id,
         "year": year,
-        "policy": "local_private_no_raw_restricted_logs_private_outputs_or_secret_mappings",
+        "policy": "local_no_sensitive_roots_or_secret_mappings",
         "files": [],
+        "skipped": [],
     }
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         generated = {
@@ -454,11 +514,26 @@ def build_local_export_zip(
             f"exports/coproscope_actions_{year}.md": actions_markdown,
         }
         for name, content in generated.items():
-            archive.writestr(name, content)
+            sanitized = _sanitize_generated_export(content)
+            if not _export_content_is_safe(sanitized.encode("utf-8", errors="ignore")):
+                manifest["skipped"].append({"path": name, "reason": "unsafe_content"})
+                continue
+            archive.writestr(name, sanitized)
             manifest["files"].append(name)
         for path in _iter_safe_export_files(instance):
             arcname = relative_to(instance.instance_root, path).replace("\\", "/")
-            archive.write(path, arcname)
+            try:
+                content = path.read_bytes()
+            except OSError:
+                manifest["skipped"].append({"path": arcname, "reason": "read_error"})
+                continue
+            if not _export_content_is_safe(content):
+                if arcname.startswith("outputs/deposits/"):
+                    content = _sanitize_generated_export(content.decode("utf-8", errors="ignore")).encode("utf-8")
+                if not _export_content_is_safe(content):
+                    manifest["skipped"].append({"path": arcname, "reason": "unsafe_content"})
+                    continue
+            archive.writestr(arcname, content)
             manifest["files"].append(arcname)
         archive.writestr("export_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=True) + "\n")
     return buffer.getvalue()

@@ -136,6 +136,8 @@ Regles V1:
 - les suppressions metier sont representees par des statuts (`archived`,
   `superseded`, `cancelled`, `dismissed`) plutot que par suppression physique
   de l'historique.
+- une recuperation de cle, un changement de quorum ou un export d'archive
+  complete sont eux-memes des evenements signes.
 
 Conflits a exposer:
 
@@ -157,6 +159,8 @@ L'interface doit afficher:
 - traitement plugin applique, version, entrees et hash de sortie;
 - export ou biffage produit;
 - conflit, evenement invalide ou evenement ignore.
+- etat de survivabilite: replicas connus, dernier snapshot, capacite de
+  reconstruction coproprietaire, quorum de recuperation des cles critiques.
 
 L'UI ne doit jamais masquer un probleme d'integrite derriere un etat courant
 apparemment propre. Un utilisateur peut choisir de masquer les warnings, mais

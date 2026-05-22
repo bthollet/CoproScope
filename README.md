@@ -6,6 +6,8 @@ CoproScope est un cockpit local-first pour conseils syndicaux. Il transforme un 
 
 Ce n'est pas un extranet de plus. Ce n'est pas un logiciel de syndic officiel. C'est une couche de **preuve + action + memoire** pour les equipes de conseil syndical qui veulent comprendre, verifier, relancer, transmettre et diffuser proprement.
 
+Promesse structurante : la memoire collective ne doit pas etre confisquable. A terme, chaque coproprietaire doit pouvoir telecharger l'archive complete, verifier son integrite, reconstruire ce qui lui est ouvert, et conserver la preuve que les compartiments sensibles existent sans pouvoir les lire sans les cles requises.
+
 ![Concept cockpit conseil syndical](./docs/assets/etude-utilisateurs/cockpit-conseil-syndical.png)
 
 ## Pourquoi CoproScope existe
@@ -16,6 +18,7 @@ Dans beaucoup de coproprietes, le probleme n'est pas seulement l'absence d'infor
 - difficile a relier a une decision, une depense, une demande ou une preuve ;
 - rarement transformee en action suivie ;
 - fragile lors des changements de membres du conseil syndical ;
+- parfois confisquee ou perdue quand une personne, un compte cloud ou un groupe detient seul la memoire ;
 - sensible a partager, parce qu'elle contient parfois des donnees personnelles, financieres ou contentieuses.
 
 L'etude utilisateurs 2026 confirme un point simple : les conseils syndicaux n'ont pas seulement besoin de "voir des documents". Ils ont besoin de savoir **quoi faire maintenant**, **avec quelle preuve**, **dans quel role**, **sans se surexposer**.
@@ -62,7 +65,7 @@ flowchart LR
 
 | Sujet | Etat clair |
 |---|---|
-| Application web locale | V0 livree : cockpit local `coprocs ui serve`, branche sur les artefacts existants et affiche les chantiers. |
+| Application web locale | V0 livree : cockpit local `coprocs ui open-test`, branche sur les artefacts existants et affiche les chantiers. |
 | Experience grand public complete | Pas encore. La priorite actuelle reste le conseil syndical implique. |
 | Registre decision -> action -> preuve | Amorce v1 livree ; reste a brancher dans l'interface et les workflows demandes/travaux. |
 | WorksOps travaux/devis/reception | Cible prioritaire, pas encore livre. |
@@ -137,9 +140,11 @@ Puis, a la racine du depot :
 .\server\.venv\Scripts\python.exe -m coproscope.cli demo build --source-instance-root .\examples\synthetic_copro --output-instance "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --mode fictive --year 2025
 .\server\.venv\Scripts\python.exe -m coproscope.cli decisions build --instance-root .\examples\synthetic_copro
 .\server\.venv\Scripts\python.exe -m coproscope.cli incidents build --instance-root .\examples\synthetic_copro
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui serve --instance-root "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --year 2025
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --year 2025 --port 8765
 .\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml
 ```
+
+`ui open-test` lance le serveur au premier plan dans le terminal visible, affiche l'URL tokenisee, et s'arrete avec `Ctrl+C`. C'est le chemin recommande pour une demonstration locale compatible antivirus. `ui serve` reste disponible comme commande bas niveau.
 
 Par defaut, `privacy screen-existing` scanne le brut, les zones restreintes et, sauf `--skip-generated`, les sorties/staging. Pour auditer aussi les dossiers metier deja classes (`100_`, `220_`, `230_`, etc.), utiliser explicitement `--scan-workspace-prefixes`. Pour nettoyer un registre qui avait ete trop large, ajouter `--prune-unseen`.
 

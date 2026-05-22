@@ -1,6 +1,12 @@
 # Plan d'implementation CoproScope v1
 
-Ce document ancre le contrat d'execution du produit. La priorisation produit detaillee vit dans la [Feuille de route](./feuille_de_route.md).
+> Statut gouvernail: `SOURCE_HISTORIQUE`.
+> La source de verite roadmap est `docs/roadmap_backlog_central.md`
+> (`RM-2026-0004`). Ne pas ajouter de chantier actif ici.
+
+Ce document ancre le contrat d'execution du produit. La priorisation active vit
+dans le [gouvernail roadmap](./roadmap_backlog_central.md); l'ancienne feuille
+de route reste une source historique.
 
 ## Resume
 

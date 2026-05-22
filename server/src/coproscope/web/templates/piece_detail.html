@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block topbar_title %}Detail piece/preuve{% endblock %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">{{ piece_detail.context.title }}</p>
+    <h2>{{ piece_detail.piece.label }}</h2>
+    <div class="badge-row">
+      <span class="badge">{{ piece_detail.piece.id }}</span>
+      <span class="badge">{{ piece_detail.piece.rubric_label }}</span>
+      <span class="badge">{{ piece_detail.piece.priority_label }}</span>
+      {% if piece_detail.piece.is_fictive %}
+      <span class="badge">Donnees fictives</span>
+      {% endif %}
+    </div>
+    <div class="button-row compact cs-flow-actions" aria-label="Actions principales piece/preuve">
+      {% for action in piece_detail.actions %}
+      {% if action.id in ["relance", "received"] %}
+      <a class="button-link {{ 'secondary' if action.kind != 'primary' else '' }}" href="{{ token_href(action.href) }}">{{ action.label }}</a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  <div class="status-block">
+    <span>{{ piece_detail.proof.state_label }}</span>
+    <span>{{ piece_detail.diffusion.state }}</span>
+    <small>{{ piece_detail.context.notice }}</small>
+  </div>
+</section>
+
+{% if piece_detail.state == "missing" %}
+<section class="panel warning">
+  <div class="panel-head">
+    <h3>Piece introuvable</h3>
+    <span>A verifier</span>
+  </div>
+  <p class="hint">{{ piece_detail.piece.why_it_matters }}</p>
+  <div class="button-row">
+    {% for action in piece_detail.actions %}
+    <a class="button-link {{ 'secondary' if action.kind != 'primary' else '' }}" href="{{ token_href(action.href) }}">{{ action.label }}</a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Pourquoi cette piece compte</h3>
+      <span>{{ piece_detail.piece.status_label }}</span>
+    </div>
+    <p>{{ piece_detail.piece.why_it_matters }}</p>
+    <table>
+      <tbody>
+        <tr>
+          <th>Preuve attendue</th>
+          <td>{{ piece_detail.proof.expected_label }}</td>
+        </tr>
+        <tr>
+          <th>Qui doit l'avoir</th>
+          <td>{{ piece_detail.piece.holder_label }}</td>
+        </tr>
+        <tr>
+          <th>Action suivante</th>
+          <td>{{ piece_detail.piece.next_step }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Piece candidate et preuve finale</h3>
+      <span>{{ piece_detail.proof.state_label }}</span>
+    </div>
+    <p class="hint">{{ piece_detail.proof.state_detail }}</p>
+    <table>
+      <tbody>
+      {% for state in piece_detail.proof.states %}
+        <tr>
+          <th>{{ loop.index }}</th>
+          <td>{{ state }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Point lie</h3>
+      <span>{{ piece_detail.linked.action.type_label }}</span>
+    </div>
+    <table>
+      <tbody>
+        <tr>
+          <th>Point</th>
+          <td><strong>{{ piece_detail.linked.action.label }}</strong><br><small>Retrouver le contexte precis avant de conclure.</small></td>
+        </tr>
+        <tr>
+          <th>Demande</th>
+          <td>{{ piece_detail.linked.request.label }}</td>
+        </tr>
+        <tr>
+          <th>Depot</th>
+          <td>{{ piece_detail.linked.deposit.label }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="button-row">
+      <a class="button-link secondary" href="{{ token_href(piece_detail.linked.action.href) }}">Voir le point lie</a>
+      <a class="button-link secondary" href="{{ token_href(piece_detail.linked.request.href) }}">Relancer syndic</a>
+      <a class="button-link secondary" href="{{ token_href(piece_detail.linked.deposit.href) }}">Ajouter reponse recue</a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Diffusion</h3>
+      <span>{{ piece_detail.diffusion.label }}</span>
+    </div>
+    <p>{{ piece_detail.diffusion.detail }}</p>
+    <p class="hint">Aucun envoi automatique. La diffusion se verifie avant export ou partage externe.</p>
+    <div class="button-row">
+      <a class="button-link secondary" href="{{ token_href(piece_detail.diffusion.review_href) }}">Verifier diffusion</a>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Documents lies</h3>
+      <span>{{ piece_detail.linked.documents|length }}</span>
+    </div>
+    {% if piece_detail.linked.documents %}
+    <table>
+      <thead><tr><th>Document</th><th>Etat</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for document in piece_detail.linked.documents %}
+        <tr>
+          <th>{{ document.label }}<br><small>{{ document.id }}</small></th>
+          <td>{{ document.status_label }}</td>
+          <td><a class="button-link secondary" href="{{ token_href(document.href) }}">Ouvrir</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Aucune piece candidate n'est rattachee pour le moment.</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Historique utile</h3>
+      <span>Trace novice</span>
+    </div>
+    {% if piece_detail.history %}
+    <table>
+      <thead><tr><th>Moment</th><th>Etat</th><th>Ce que cela veut dire</th></tr></thead>
+      <tbody>
+      {% for event in piece_detail.history %}
+        <tr>
+          <th>{{ event.label }}</th>
+          <td>{{ event.status }}</td>
+          <td>{{ event.note }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Aucun historique exploitable sur cette reference.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Que faire maintenant</h3>
+    <span>Sans envoi automatique</span>
+  </div>
+  <div class="button-row">
+    {% for action in piece_detail.actions %}
+    <a class="button-link {{ 'secondary' if action.kind != 'primary' else '' }}" href="{{ token_href(action.href) }}">{{ action.label }}</a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

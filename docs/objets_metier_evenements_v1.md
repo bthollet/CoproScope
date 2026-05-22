@@ -51,6 +51,8 @@ d'application metier tant que la dependance manque.
 | `ProofCapsule` | `proof_capsule` | preuve biffee, exportee ou partageable |
 | `PluginRun` | `plugin_run` | traitement officiel signe avec version, entrees, parametres et resultat |
 | `Member` | `member` | cle publique, role et revocation |
+| `KeyRecovery` | `key_recovery` | quorum, parts de secours, recuperation et rotation de cles |
+| `Replica` | `replica` | copie locale ou archive coproprietaire verifiable |
 | `Migration` | `migration` | changement de format ou import historique |
 | `Vault` | `vault` | politique initiale et parametres non sensibles du vault |
 
@@ -180,6 +182,12 @@ doit pas etre applique silencieusement.
 | `vault_initialized` | `vault` | `initial_policy`, `created_by_device_id` |
 | `member_invited` | `member` | `invited_author_key_id`, `public_key_algorithm`, `public_key`, `role`, `invited_by_event_id`, `valid_from_event_hash` |
 | `member_revoked` | `member` | `revoked_author_key_id`, `reason`, `effective_after` |
+| `recovery_key_registered` | `key_recovery` | `recovery_policy_id`, `key_compartment`, `threshold`, `share_count`, `guardian_roles`, `verification_due_at` |
+| `key_recovery_performed` | `key_recovery` | `recovery_policy_id`, `key_compartment`, `reason`, `quorum_proof_hash`, `new_wrapped_key_ids` |
+| `archive_downloaded` | `replica` | `archive_id`, `recipient_role`, `manifest_hash`, `includes_restricted_ciphertexts` |
+| `archive_integrity_verified` | `replica` | `archive_id`, `verified_at`, `event_count`, `blob_count`, `missing_items`, `restricted_count` |
+| `replica_registered` | `replica` | `replica_id`, `holder_role`, `scope`, `last_seen_at`, `policy` |
+| `replica_checked` | `replica` | `replica_id`, `checked_at`, `status`, `head_hashes`, `missing_items` |
 | `document_added` | `document` | `document_id`, `version_id`, `blob_id`, `original_name`, `mime_type`, `ciphertext_sha256` |
 | `document_version_added` | `document` | `document_id`, `version_id`, `supersedes_version_id`, `blob_id`, `reason` |
 | `ocr_completed` | `plugin_run` | `plugin_run_id`, `document_id`, `version_id`, `text_blob_id`, `confidence`, `engine` |

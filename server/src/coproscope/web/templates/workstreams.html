@@ -1,105 +1,637 @@
 {% extends "base.html" %}
+{% block topbar_title %}Memoire de copropriete{% endblock %}
 {% block content %}
-<section class="band">
-  <div>
-    <p class="eyebrow">Memoire de copropriete</p>
-    <h2>Decisions, incidents, travaux et passation</h2>
-  </div>
-  <div class="kpi-grid">
-    <div><strong>{{ model.decisions.summary.total }}</strong><span>decisions suivies</span></div>
-    <div><strong>{{ model.decisions.summary.missing_proofs }}</strong><span>preuves manquantes</span></div>
-    <div><strong>{{ model.incidents.summary.open }}</strong><span>incidents ouverts</span></div>
-    <div><strong>{{ model.documents.actionable.summary.to_request }}</strong><span>pieces a demander</span></div>
-  </div>
-</section>
+{% set memoire = model.ux.memoire|default({}) %}
+{% set context = memoire.context|default({}) %}
+{% set summary = memoire.summary|default({}) %}
+{% set toolbar = memoire.toolbar|default({}) %}
+{% set filters = memoire.filters|default({}) %}
+{% set passation = memoire.passation|default({}) %}
+{% set transmit = memoire.transmit|default({}) %}
+{% set pack = memoire.pack|default({}) %}
+{% set export_panel = memoire.export|default({}) %}
+{% set empty_states = memoire.empty_states|default({}) %}
+{% set timeline = memoire.timeline|default([]) %}
+{% set query_text = request.query_params.get('q', toolbar.query|default('')) %}
+{% set active_period = request.query_params.get('periode', toolbar.active_period|default(context.default_period|default('10ans'))) %}
+{% set active_category = request.query_params.get('categorie', '') %}
+{% set active_status = request.query_params.get('statut', '') %}
+{% set active_diffusion = request.query_params.get('diffusion', '') %}
+{% set selected_id = request.query_params.get('selected', '') %}
+{% set active_panel = request.query_params.get('panel', '') %}
+{% set add_mode = request.query_params.get('add', '') %}
+{% set event_missing = request.query_params.get('event_missing', '') %}
+{% set filter_total = (1 if active_category else 0) + (1 if active_status else 0) + (1 if active_diffusion else 0) + (1 if query_text else 0) %}
+{% set current_year = context.exercise|default(model.instance.year)|int %}
+{% set cutoff_year = current_year - (5 if active_period == '5ans' else 10) %}
+{% set visible = namespace(items=[], selected=None, selected_detail=None) %}
+{% set rich_event = memoire.event_detail|default(memoire.selected_event|default({})) %}
+{% set rich_event_id = rich_event.id|default('') %}
+{% for event in timeline %}
+  {% set event_year = event.year|default(current_year)|int %}
+  {% set searchable = (event.title|default('') ~ ' ' ~ event.subtitle|default('') ~ ' ' ~ event.category_label|default('') ~ ' ' ~ event.status_label|default('') ~ ' ' ~ event.restriction_label|default(''))|lower %}
+  {% set matches_query = (not query_text) or ((query_text|lower) in searchable) %}
+  {% set matches_period = active_period == 'tout' or event_year >= cutoff_year %}
+  {% set matches_category = (not active_category) or event.kind|default('') == active_category %}
+  {% set matches_status = (not active_status) or event.status|default('') == active_status %}
+  {% set matches_diffusion = (not active_diffusion) or event.restriction_level|default('') == active_diffusion %}
+  {% if matches_query and matches_period and matches_category and matches_status and matches_diffusion %}
+    {% set visible.items = visible.items + [event] %}
+  {% endif %}
+  {% if selected_id and event.id|default('') == selected_id %}
+    {% set visible.selected = event %}
+  {% endif %}
+{% endfor %}
 
-<section class="grid two">
-  <div class="panel">
-    <div class="panel-head">
-      <h3>DecisionOps - decisions AG</h3>
-      <span>{{ model.decisions.summary.open }} ouvertes</span>
+<section class="cs-memoire-page" aria-labelledby="memoire-title">
+  <header class="cs-memoire-header">
+    <div class="cs-memoire-heading">
+      <p class="eyebrow">{{ context.as_of_label|default('Situation actuelle') }}</p>
+      <h2 id="memoire-title">{{ context.title|default('Memoire de copropriete') }}</h2>
+      <p>{{ context.subtitle|default("L'historique utile de l'immeuble, les sujets ouverts et les preuves a transmettre.") }}</p>
     </div>
-    <table>
-      <thead><tr><th>Resolution</th><th>Statut</th><th>Echeance</th><th>Preuve attendue</th></tr></thead>
-      <tbody>
-      {% set decision_rows = model.decisions["items"] %}
-      {% for row in decision_rows[:12] %}
-        <tr>
-          <td><strong>{{ row.resolution_ref or row.decision_action_id }}</strong><br><small>{{ row.decision_text }}</small></td>
-          <td>{{ row.statut }}<br><small>{{ row.responsable }}</small></td>
-          <td>{{ row.echeance or "a fixer" }}</td>
-          <td>{{ row.preuve_attendue }}<br><code>{{ row.proof_doc_ids }}</code></td>
-        </tr>
+    <div class="cs-memoire-actions" aria-label="Actions memoire">
+      <details class="cs-memoire-menu">
+        <summary class="cs-memoire-secondary-action" aria-label="Exporter la passation">Exporter</summary>
+        <div class="cs-memoire-menu-panel" role="menu">
+          <p>{{ export_panel.watermark|default('export derive, non source collaborative') }}</p>
+          <a role="menuitem" href="{{ token_href('/exports/passation') }}">Apercu de passation</a>
+          {% for item in export_panel.formats|default([]) %}
+          {% if item.id|default('') != 'preview' %}
+          <a role="menuitem" href="{{ token_href(item.href) }}">{{ item.label }}</a>
+          {% endif %}
+          {% else %}
+          <a role="menuitem" href="{{ token_href('/exports/passation.json') }}">Passation JSON</a>
+          <a role="menuitem" href="{{ token_href('/exports/passation.txt') }}">Passation texte</a>
+          {% endfor %}
+        </div>
+      </details>
+      <div class="cs-memoire-split">
+        <a class="cs-memoire-primary-action" href="{{ token_href('/chantiers?add=event') }}">Ajouter un evenement</a>
+        <details class="cs-memoire-menu cs-memoire-menu-small">
+          <summary aria-label="Choisir un type d'ajout">v</summary>
+          <div class="cs-memoire-menu-panel" role="menu">
+            <a role="menuitem" href="{{ token_href('/chantiers?add=event') }}">Ajouter un evenement</a>
+            <a role="menuitem" href="{{ token_href('/documents/ajouter?intent=memory') }}">Rattacher un document</a>
+            <a role="menuitem" href="{{ token_href('/chantiers?add=open-topic') }}">Noter un sujet ouvert</a>
+            <a role="menuitem" href="{{ token_href('/chantiers?add=syndic-change') }}">Noter un changement de syndic</a>
+            <a role="menuitem" href="{{ token_href('/depot?intent=import-memory') }}">Importer depuis les registres</a>
+          </div>
+        </details>
+      </div>
+    </div>
+  </header>
+
+  <section class="cs-memoire-kpis" aria-label="Resume de la memoire">
+    <div>
+      <strong>{{ summary.event_count|default(timeline|length) }}</strong>
+      <span>evenements dans la memoire</span>
+    </div>
+    <div>
+      <strong>{{ summary.open_topics_count|default(passation.open_topics_count|default(0)) }}</strong>
+      <span>Sujets ouverts</span>
+    </div>
+    <div>
+      <strong>{{ summary.handover_completed_count|default(passation.completed_count|default(0)) }} / {{ summary.handover_total_count|default(passation.total_count|default(0)) }}</strong>
+      <span>Passation conseil syndical</span>
+    </div>
+    <div>
+      <strong>{{ summary.diffusion_limited_count|default(summary.restricted_count|default(0)) }}</strong>
+      <span>diffusions a verifier</span>
+    </div>
+    <div>
+      <strong>{{ summary.missing_proof_count|default(0) }}</strong>
+      <span>preuves a completer</span>
+    </div>
+  </section>
+
+  {% if event_missing %}
+  <section class="band notice-band" aria-labelledby="memoire-missing-title">
+    <div class="cs-notice-body">
+      <strong id="memoire-missing-title">Evenement introuvable</strong>
+      <p>La fiche memoire demandee n'est plus disponible avec ce lien. Rien n'a ete modifie: revenez a la memoire ou filtrez les sujets ouverts.</p>
+    </div>
+    <div class="cs-empty-actions" aria-label="Actions de repli memoire">
+      <a href="{{ token_href('/chantiers') }}">Revenir a la memoire</a>
+      <a href="{{ token_href('/chantiers?statut=ouvert') }}">Voir les sujets ouverts</a>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="cs-memoire-toolbar" aria-label="Recherche et filtres">
+    <form action="{{ token_href('/chantiers') }}" method="get" role="search">
+      {% if ui_token_param %}
+      <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+      {% endif %}
+      <input type="hidden" name="periode" value="{{ active_period }}">
+      {% if active_category %}<input type="hidden" name="categorie" value="{{ active_category }}">{% endif %}
+      {% if active_status %}<input type="hidden" name="statut" value="{{ active_status }}">{% endif %}
+      {% if active_diffusion %}<input type="hidden" name="diffusion" value="{{ active_diffusion }}">{% endif %}
+      <label class="sr-only" for="memoire-search">Rechercher dans la memoire</label>
+      <input id="memoire-search" name="q" type="search" value="{{ query_text }}" placeholder="{{ toolbar.search_placeholder|default('Rechercher un evenement, un contrat, un document...') }}">
+      <button class="cs-memoire-search-button" type="submit">Rechercher</button>
+    </form>
+    <details class="cs-memoire-filter-menu">
+      <summary>Filtres <span>{{ filter_total }}</span></summary>
+      <div class="cs-memoire-filter-panel">
+        <div>
+          <strong>Categorie</strong>
+          <div class="cs-memoire-chip-row">
+            {% for option in filters.categories|default([]) %}
+            <a class="{{ 'is-active' if active_category == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?categorie=' ~ option.id)) }}">{{ option.label }} <span>{{ option.count|default(0) }}</span></a>
+            {% else %}
+            <span>AG</span><span>Travaux</span><span>Sinistres</span><span>Contrats</span><span>Documents</span><span>Syndic</span><span>Comptes</span><span>Demandes</span><span>Contentieux</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <strong>Statut</strong>
+          <div class="cs-memoire-chip-row">
+            {% for option in filters.statuses|default([]) %}
+            <a class="{{ 'is-active' if active_status == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?statut=' ~ option.id)) }}">{{ option.label }} <span>{{ option.count|default(0) }}</span></a>
+            {% else %}
+            <span>Ouvert</span><span>Clos</span><span>A confirmer</span><span>Restreint</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <strong>Diffusion</strong>
+          <div class="cs-memoire-chip-row">
+            {% for option in filters.diffusion|default([]) %}
+            <a class="{{ 'is-active' if active_diffusion == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?diffusion=' ~ option.id)) }}">{{ option.label }} <span>{{ option.count|default(0) }}</span></a>
+            {% else %}
+            <span>Transmissible</span><span>Apres biffage</span><span>Conseil syndical</span><span>Confidentiel</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <strong>Preuve</strong>
+          <div class="cs-memoire-chip-row">
+            <a href="{{ token_href('/chantiers?preuve=avec') }}">Avec preuve</a>
+            <a href="{{ token_href('/chantiers?preuve=manquante') }}">Preuve manquante</a>
+            <a href="{{ token_href('/chantiers?preuve=restreinte') }}">Preuve restreinte</a>
+          </div>
+        </div>
+        <a class="cs-memoire-reset" href="{{ token_href(filters.reset_href|default('/chantiers')) }}">Reinitialiser</a>
+      </div>
+    </details>
+    <nav class="cs-memoire-periods" aria-label="Periode affichee">
+      {% for option in toolbar.period_options|default([]) %}
+      <a class="{{ 'is-active' if active_period == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?periode=' ~ option.id)) }}">{{ option.label }}</a>
       {% else %}
-        <tr><td colspan="4">Aucun registre DecisionOps charge pour cette instance.</td></tr>
+      <a class="{{ 'is-active' if active_period == '5ans' else '' }}" href="{{ token_href('/chantiers?periode=5ans') }}">5 ans</a>
+      <a class="{{ 'is-active' if active_period == '10ans' else '' }}" href="{{ token_href('/chantiers?periode=10ans') }}">10 ans</a>
+      <a class="{{ 'is-active' if active_period == 'tout' else '' }}" href="{{ token_href('/chantiers?periode=tout') }}">Tout</a>
       {% endfor %}
-      </tbody>
-    </table>
-    <div class="button-row">
-      <a class="button-link secondary" href="/actions?scope=decisions">Actions decisions</a>
-    </div>
-  </div>
+    </nav>
+  </section>
 
-  <div class="panel">
-    <div class="panel-head">
-      <h3>IncidentOps - incidents ouverts</h3>
-      <span>{{ model.incidents.summary.incomplete }} incomplets</span>
+  {% if add_mode %}
+  <section class="cs-memoire-drawer" aria-labelledby="memoire-add-title">
+    <div>
+      <p class="eyebrow">Nouvelle trace</p>
+      <h3 id="memoire-add-title">Ajouter un evenement</h3>
+      <p>Cette saisie prepare seulement une fiche a relire. Rien n'est ajoute sans validation.</p>
     </div>
-    <table>
-      <thead><tr><th>Incident</th><th>Statut</th><th>Prochaine action</th><th>Preuve de cloture</th></tr></thead>
-      <tbody>
-      {% for row in model.incidents.open_rows[:12] %}
-        <tr>
-          <td><strong>{{ row.lieu or row.incident_id }}</strong><br><small>{{ row.date_signalement }} - {{ row.description }}</small></td>
-          <td>{{ row.status }}<br><small>{{ row.priority }}</small></td>
-          <td>{{ row.next_action }}<br><small>{{ row.action_due_date }}</small></td>
-          <td>{{ row.expected_closure_proof }}</td>
-        </tr>
+    <form class="cs-memoire-add-form" action="{{ token_href('/chantiers') }}" method="get">
+      {% if ui_token_param %}
+      <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+      {% endif %}
+      <label>Type <select name="type"><option>Evenement</option><option>Document rattache</option><option>Sujet ouvert</option><option>Changement de syndic</option></select></label>
+      <label>Date <input name="date" type="date"></label>
+      <label>Titre <input name="titre" type="text" placeholder="Exemple: contrat ascenseur signe"></label>
+      <label>Resume <textarea name="resume" rows="3" placeholder="Ce qu'il faut retenir pour la passation"></textarea></label>
+      <label>Categorie <select name="categorie"><option>AG</option><option>Travaux</option><option>Sinistres</option><option>Contrats</option><option>Documents</option><option>Syndic</option><option>Comptes</option><option>Demandes</option><option>Contentieux</option></select></label>
+      <label>Documents rattaches <input name="documents" type="text" placeholder="Nom ou reference de document"></label>
+      <label>Statut passation <select name="statut"><option>A relire</option><option>Ouvert</option><option>Clos</option></select></label>
+      <label>Niveau de diffusion <select name="diffusion"><option>Conseil syndical</option><option>Transmissible</option><option>Apres biffage</option><option>Confidentiel</option></select></label>
+      <div class="cs-memoire-form-actions">
+        <button class="cs-memoire-primary-action" type="submit">Preparer la fiche</button>
+        <a class="cs-memoire-secondary-action" href="{{ token_href('/chantiers') }}">Annuler</a>
+      </div>
+    </form>
+  </section>
+  {% endif %}
+
+  <div class="cs-memoire-layout">
+    <section class="cs-memoire-timeline-panel" aria-labelledby="memoire-timeline-title">
+      <div class="cs-memoire-panel-head">
+        <div>
+          <p class="eyebrow">Ligne de vie</p>
+          <h3 id="memoire-timeline-title">Timeline memoire</h3>
+        </div>
+        <span>{{ visible.items|length }} affiches</span>
+      </div>
+
+      {% if visible.items %}
+      <div class="cs-memoire-timeline">
+        {% for event in visible.items %}
+        <a class="cs-memoire-event {{ 'is-selected' if (selected_id and selected_id == event.id|default('')) or ((not selected_id) and event.is_selected|default(false)) else '' }} {{ 'is-undated' if not event.date_iso|default('') else '' }}" href="{{ token_href('/chantiers/' ~ event.id|default('', true)) }}" aria-label="Ouvrir le detail: {{ event.title|default('Evenement memoire') }}" {% if (selected_id and selected_id == event.id|default('')) or ((not selected_id) and event.is_selected|default(false)) %}aria-current="true"{% endif %}>
+          <time>{{ event.date_label|default('Date a confirmer') }}</time>
+          <span class="cs-memoire-dot cs-memoire-tone-{{ event.dot_tone|default(event.category_tone|default('gray')) }}" aria-hidden="true"></span>
+          <span class="cs-memoire-event-icon" aria-hidden="true">{{ event.category_label|default('Memoire')|first }}</span>
+          <span class="cs-memoire-event-main">
+            <strong>{{ event.title|default('Evenement memoire') }}</strong>
+            <small>{{ event.subtitle|default('Point a relire pour la passation.') }}</small>
+            <span class="cs-memoire-event-meta">
+              <span>{{ event.status_label|default('A confirmer') }}</span>
+              <span>{{ event.restriction_label|default('Diffusion a verifier') }}</span>
+            </span>
+          </span>
+          <span class="cs-memoire-badge cs-memoire-tone-{{ event.category_tone|default('gray') }}">{{ event.category_label|default('Memoire') }}</span>
+          <span class="cs-memoire-chevron" aria-hidden="true">&gt;</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% if summary.event_count|default(visible.items|length)|int > visible.items|length %}
+      <a class="cs-memoire-load-more" href="{{ token_href('/chantiers?periode=tout') }}">Charger plus d'evenements</a>
+      {% endif %}
       {% else %}
-        <tr><td colspan="4">Aucun incident ouvert charge dans les sorties disponibles.</td></tr>
+      <div class="cs-memoire-empty">
+        <strong>{{ empty_states.no_event.label|default('Aucun evenement dans la memoire') }}</strong>
+        {% if query_text or active_category or active_status or active_diffusion %}
+        <p>Aucun resultat ne correspond aux filtres choisis.</p>
+        <a href="{{ token_href(filters.reset_href|default('/chantiers')) }}">Effacer la recherche</a>
+        {% else %}
+        <p>Importer les registres ou rattacher des preuves pour commencer.</p>
+        <a href="{{ token_href(empty_states.no_event.href|default('/depot')) }}">Preparer les preuves</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if rich_event and ((not selected_id) or rich_event_id == selected_id) %}
+      <section class="cs-memoire-detail cs-memoire-detail-rich" aria-labelledby="memoire-detail-title">
+        <div class="cs-memoire-panel-head">
+          <div>
+            <p class="eyebrow">{{ rich_event.date_label|default('Date a confirmer') }} - {{ rich_event.category_label|default('Memoire') }}</p>
+            <h3 id="memoire-detail-title">{{ rich_event.title|default('Detail evenement') }}</h3>
+          </div>
+          <span>{{ rich_event.status_label|default('A confirmer') }}</span>
+        </div>
+        <p>{{ rich_event.summary|default('Point a reprendre dans la memoire.') }}</p>
+        <div class="cs-memoire-detail-summary" aria-label="Statut de l'evenement">
+          <span>{{ rich_event.proof_state_label|default('Preuves a verifier') }}</span>
+          <span>{{ rich_event.restriction.label|default('Diffusion a verifier') }}</span>
+          <span>{{ rich_event.owner_label|default('Conseil syndical') }}</span>
+        </div>
+        <dl class="cs-memoire-detail-grid">
+          <div><dt>Pourquoi c'est garde</dt><dd>{{ rich_event.why_in_memory|default('Sujet utile pour comprendre la passation.') }}</dd></div>
+          <div><dt>Prochaine action</dt><dd>{{ rich_event.next_action|default('Verifier et rattacher les preuves utiles.') }}</dd></div>
+          <div><dt>Note de passation</dt><dd>{{ rich_event.passation.note|default(rich_event.passation_note|default('A reprendre lors de la transmission.')) }}</dd></div>
+          <div><dt>Restriction</dt><dd>{{ rich_event.restriction.reason|default('Verifier la diffusion avant partage.') }}</dd></div>
+        </dl>
+
+        <strong class="cs-memoire-section-title">Documents et preuves</strong>
+        <div class="cs-memoire-proof-columns" aria-label="Preuves rattachees">
+          <section>
+            <strong>Preuves validees</strong>
+            {% for proof in rich_event.proofs.verified|default([]) %}
+            <a class="cs-memoire-proof-row is-verified" href="{{ token_href(proof.href|default('/documents')) }}">
+              <span>{{ proof.label|default(proof.id|default('Preuve')) }}</span>
+              <small>{{ proof.status_label|default(proof.why_linked|default('Preuve validee')) }}</small>
+            </a>
+            {% else %}
+            <span>Aucune preuve validee</span>
+            {% endfor %}
+          </section>
+          <section>
+            <strong>Pieces candidates</strong>
+            {% for proof in rich_event.proofs.candidates|default([]) %}
+            <a class="cs-memoire-proof-row is-candidate" href="{{ token_href(proof.href|default('/documents')) }}">
+              <span>{{ proof.label|default(proof.id|default('Piece candidate')) }}</span>
+              <small>{{ proof.status_label|default(proof.why_linked|default('A verifier')) }}</small>
+            </a>
+            {% else %}
+            <span>Aucune piece candidate</span>
+            {% endfor %}
+          </section>
+          <section>
+            <strong>Preuves manquantes</strong>
+            {% for proof in rich_event.proofs.missing|default([]) %}
+            <a class="cs-memoire-proof-row is-missing" href="{{ token_href(proof.request_href|default('/actions')) }}">
+              <span>{{ proof.label|default(proof.id|default('Preuve attendue')) }}</span>
+              <small>{{ proof.why_needed|default('A demander') }}</small>
+            </a>
+            {% else %}
+            <span>Aucune preuve manquante signalee</span>
+            {% endfor %}
+          </section>
+        </div>
+
+        <div class="cs-memoire-linked-grid">
+          <section class="cs-memoire-linked-list">
+            <strong>Documents lies</strong>
+            {% for doc in rich_event.linked_documents|default(rich_event.documents|default([])) %}
+            <a href="{{ token_href(doc.href|default('/documents')) }}">
+              <span>{{ doc.label|default(doc.id|default('Document')) }}</span>
+              <small>{{ doc.why_linked|default(doc.status_label|default('Piece rattachee')) }}</small>
+            </a>
+            {% else %}
+            <span>Aucun document rattache</span>
+            {% endfor %}
+          </section>
+          <section class="cs-memoire-linked-list">
+            <strong>Actions liees</strong>
+            {% for action in rich_event.linked_actions|default([]) %}
+            <a href="{{ token_href(action.href|default('/actions')) }}">
+              <span>{{ action.label|default(action.id|default('Action')) }}</span>
+              <small>{{ action.next_step|default('A suivre') }}</small>
+            </a>
+            {% else %}
+            <span>Aucune action liee</span>
+            {% endfor %}
+          </section>
+        </div>
+
+        {% if rich_event.history|default([]) %}
+        <ol class="cs-memoire-history" aria-label="Historique de l'evenement">
+          {% for step in rich_event.history|default([]) %}
+          <li>
+            <time>{{ step.date_label|default('Date a confirmer') }}</time>
+            <strong>{{ step.label|default('Mise a jour') }}</strong>
+            <span>{{ step.detail|default('Trace projetee depuis les donnees locales.') }}</span>
+          </li>
+          {% endfor %}
+        </ol>
+        {% endif %}
+
+        <div class="cs-memoire-detail-actions">
+          {% if rich_event.actions.primary %}
+          <a href="{{ token_href(rich_event.actions.primary.href|default('/documents')) }}">{{ rich_event.actions.primary.label|default('Ouvrir les documents') }}</a>
+          {% endif %}
+          {% for action in rich_event.actions.secondary|default([]) %}
+          <a href="{{ token_href(action.href|default('/actions')) }}">{{ action.label|default("Voir l'action liee") }}</a>
+          {% endfor %}
+          <a href="{{ token_href('/chantiers?add=note&selected=' ~ rich_event_id) }}">Ajouter une note de passation</a>
+          {% if rich_event.actions.export %}
+            {% if rich_event.actions.export.disabled %}
+            <span class="cs-memoire-disabled-action">{{ rich_event.actions.export.disabled_reason|default('Diffusion a verifier avant export.') }}</span>
+            {% else %}
+            <a href="{{ token_href('/exports/passation?scope=event&selected=' ~ rich_event_id) }}">{{ rich_event.actions.export.label|default('Exporter cette fiche') }}</a>
+            {% endif %}
+          {% endif %}
+        </div>
+      </section>
+      {% elif selected_id %}
+        {% if visible.selected %}
+        <section class="cs-memoire-detail" aria-labelledby="memoire-detail-title">
+          <div class="cs-memoire-panel-head">
+            <div>
+              <p class="eyebrow">{{ visible.selected.date_label|default('Date a confirmer') }} - {{ visible.selected.category_label|default('Memoire') }}</p>
+              <h3 id="memoire-detail-title">{{ visible.selected.title|default('Detail evenement') }}</h3>
+            </div>
+            <span>{{ visible.selected.status_label|default('A confirmer') }}</span>
+          </div>
+          <p>{{ visible.selected.subtitle|default('Point a reprendre dans la memoire.') }}</p>
+          <dl class="cs-memoire-detail-grid">
+            <div><dt>Pourquoi c'est garde</dt><dd>{{ visible.selected.passation_note|default('A conserver pour que le prochain conseil sache quoi reprendre.') }}</dd></div>
+            <div><dt>Prochaine action</dt><dd>{{ visible.selected.next_action|default('Verifier le point et rattacher les preuves utiles.') }}</dd></div>
+            <div><dt>Diffusion</dt><dd>{{ visible.selected.restriction_label|default('Diffusion a verifier') }}</dd></div>
+          </dl>
+          <div class="cs-memoire-proof-list">
+            <strong>Documents et preuves</strong>
+            {% for ref in visible.selected.document_refs|default([]) %}
+            <a href="{{ token_href('/documents?doc_id=' ~ ref) }}">{{ ref }}</a>
+            {% else %}
+            <span>Preuve a rattacher</span>
+            {% endfor %}
+          </div>
+          <div class="cs-memoire-detail-actions">
+            <a href="{{ token_href('/documents') }}">Ouvrir les documents</a>
+            <a href="{{ token_href('/actions') }}">Voir l'action liee</a>
+            <a href="{{ token_href('/chantiers?add=note&selected=' ~ visible.selected.id) }}">Ajouter une note de passation</a>
+            {% if visible.selected.can_export %}
+            <a href="{{ token_href('/exports/passation?scope=event&selected=' ~ visible.selected.id) }}">Exporter cette fiche</a>
+            {% endif %}
+          </div>
+        </section>
+        {% else %}
+        <section class="cs-memoire-detail cs-memoire-empty" aria-labelledby="memoire-detail-title">
+          <h3 id="memoire-detail-title">Evenement introuvable</h3>
+          <p>{{ empty_states.event_not_found.label|default('Evenement introuvable dans la projection courante.') }}</p>
+          <a href="{{ token_href(empty_states.event_not_found.href|default('/chantiers')) }}">Revenir a la memoire</a>
+        </section>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    <aside class="cs-memoire-side" aria-label="Passation et documents">
+      <section class="cs-memoire-side-panel">
+        <div class="cs-memoire-panel-head">
+          <div>
+            <p class="eyebrow">Prochaine passation</p>
+            <h3>{{ passation.title|default('Passation CS') }}</h3>
+          </div>
+          <span>{{ passation.open_topics_count|default(summary.open_topics_count|default(0)) }}</span>
+        </div>
+        <p>{{ passation.description|default('Preparez la transmission des informations aux nouveaux membres du conseil syndical.') }}</p>
+        <div class="cs-memoire-progress" aria-label="Progression passation">
+          <div><strong>{{ passation.completed_count|default(summary.handover_completed_count|default(0)) }} / {{ passation.total_count|default(summary.handover_total_count|default(0)) }}</strong><span>elements completes</span></div>
+          <progress value="{{ passation.progress_pct|default(summary.handover_progress_pct|default(0)) }}" max="100">{{ passation.progress_pct|default(summary.handover_progress_pct|default(0)) }}%</progress>
+        </div>
+        <div class="cs-memoire-counter-links" aria-label="Reprises utiles">
+          <a href="{{ token_href('/actions?scope=decisions') }}"><strong>{{ model.decisions.summary.missing_proofs|default(0) }}</strong><span>preuves de decisions a obtenir</span></a>
+          <a href="{{ token_href('/actions?scope=documents') }}"><strong>{{ model.documents.actionable.summary.to_request|default(0) }}</strong><span>pieces essentielles a demander</span></a>
+          <a href="{{ token_href('/actions?scope=incidents') }}"><strong>{{ model.incidents.summary.incomplete|default(0) }}</strong><span>incidents a completer</span></a>
+          <a href="{{ token_href('/confidentialite') }}"><strong>{{ model.kpis.privacy_reviews|default(0) }}</strong><span>arbitrages diffusion</span></a>
+        </div>
+        <div class="cs-memoire-open-topics">
+          <div class="cs-memoire-mini-title"><strong>Sujets ouverts</strong><span>{{ passation.open_topics_count|default(0) }}</span></div>
+          {% for topic in passation.open_topics|default([]) %}
+          <a href="{{ token_href(topic.href|default('/chantiers')) }}"><strong>{{ topic.title }}</strong><small>{{ topic.next_step }}</small></a>
+          {% else %}
+          <p>Aucun sujet ouvert charge pour cette instance.</p>
+          {% endfor %}
+        </div>
+        <div class="cs-memoire-checklist" aria-label="Checklist passation">
+          {% for item in passation.checklist|default([]) %}
+          <a class="{{ 'is-done' if item.is_done else 'needs-attention' }}" href="{{ token_href(item.href|default('/chantiers')) }}">
+            <span aria-hidden="true">{{ 'OK' if item.is_done else '!' }}</span>
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.alert_label|default('A verifier') }}</small>
+          </a>
+          {% else %}
+          <p>Passation a preparer.</p>
+          {% endfor %}
+        </div>
+        <a class="cs-memoire-panel-link" href="{{ token_href(passation.detail_href|default('/chantiers?panel=passation')) }}">Voir le detail de la passation &gt;</a>
+      </section>
+
+      <section class="cs-memoire-side-panel">
+        <div class="cs-memoire-panel-head">
+          <h3>{{ transmit.title|default('A transmettre') }}</h3>
+          <span>{{ transmit.count|default(transmit["items"]|default([])|length) }}</span>
+        </div>
+        <div class="cs-memoire-document-list">
+          {% for doc in transmit["items"]|default([]) %}
+          <div>
+            <span class="cs-memoire-doc-icon" aria-hidden="true">{{ doc.file_type|default('DOC') }}</span>
+            <div>
+              <strong>{{ doc.title|default('Document de passation') }}</strong>
+              <small>{{ doc.file_type|default('DOC') }} - {{ doc.updated_label|default('date a confirmer') }}</small>
+              <small>{{ doc.diffusion_label|default('Diffusion a verifier') }}</small>
+            </div>
+            {% if doc.can_download and doc.download_href %}
+            <a aria-label="Telecharger {{ doc.title }}" href="{{ token_href(doc.download_href) }}">Telecharger</a>
+            {% else %}
+            <a aria-label="Verifier la diffusion de {{ doc.title }}" href="{{ token_href(doc.href|default('/documents')) }}">Verifier</a>
+            {% endif %}
+          </div>
+          {% else %}
+          <p>Aucun document transmissible</p>
+          {% endfor %}
+        </div>
+        <a class="cs-memoire-panel-link" href="{{ token_href(transmit.all_href|default('/chantiers?panel=documents')) }}">Voir tous les documents &gt;</a>
+      </section>
+    </aside>
+  </div>
+
+  <section class="cs-memoire-support-grid" aria-label="Preuves, restrictions et reprises">
+    <section class="cs-memoire-support-panel">
+      <div class="cs-memoire-panel-head">
+        <h3>Decisions non cloturees</h3>
+        <span>{{ model.decisions.summary.open|default(0) }}</span>
+      </div>
+      {% for row in model.decisions.open_rows[:4] %}
+      <article>
+        <strong>{{ row.decision_text }}</strong>
+        <small>{{ row.responsable }} - {{ row.preuve_attendue }}</small>
+      </article>
+      {% else %}
+      <p>Aucune decision non cloturee chargee.</p>
       {% endfor %}
-      </tbody>
-    </table>
-    <div class="button-row">
-      <a class="button-link secondary" href="/actions?scope=incidents">Actions incidents</a>
-    </div>
-  </div>
-</section>
+    </section>
 
-<section class="grid two">
-  <div class="panel warning">
-    <div class="panel-head">
-      <h3>WorksOps</h3>
-      <span>a lancer</span>
-    </div>
-    <p>Les travaux restent volontiers marques comme a lancer: on rattache d'abord les decisions AG, devis et preuves attendues, puis on ouvre un suivi travaux dedie.</p>
-    <div class="metric-row vertical">
-      <a href="/actions?scope=decisions"><strong>{{ model.decisions.summary.missing_proofs }}</strong><span>preuves travaux possibles</span></a>
-      <a href="/documents"><strong>{{ model.documents.actionable.summary.to_request }}</strong><span>pieces a demander</span></a>
-    </div>
-  </div>
+    <section class="cs-memoire-support-panel">
+      <div class="cs-memoire-panel-head">
+        <h3>Contrats et travaux</h3>
+        <span>preuves</span>
+      </div>
+      {% for row in model.documents.actionable.to_request[:4] %}
+      <article>
+        <strong>{{ row.expected_piece or row.expected_label or row.subject }}</strong>
+        <small>{{ row.reason }} - {{ row.suggested_diligence or row.action }}</small>
+      </article>
+      {% else %}
+      <p>Aucune piece prioritaire a demander.</p>
+      {% endfor %}
+    </section>
 
-  <div class="panel">
-    <div class="panel-head">
-      <h3>Passation CS</h3>
-      <span>memoire</span>
-    </div>
-    <p>La passation future pourra etre composee depuis les decisions ouvertes, incidents, demandes syndic, controles comptes et arbitrages confidentialite.</p>
-    <div class="metric-row vertical">
-      <a href="/actions"><strong>{{ model.action_summary.total }}</strong><span>actions ouvertes</span></a>
-      <a href="/confidentialite"><strong>{{ model.kpis.privacy_reviews }}</strong><span>revues diffusion</span></a>
-    </div>
-  </div>
-</section>
+    <section class="cs-memoire-support-panel">
+      <div class="cs-memoire-panel-head">
+        <h3>Preuves essentielles</h3>
+        <span>{{ model.piece_workshop.summary.total|default(0) }}</span>
+      </div>
+      {% for item in model.piece_workshop["items"][:4] %}
+      <article>
+        <strong>{{ item.piece }}</strong>
+        <small>{{ item.next_step }}</small>
+      </article>
+      {% else %}
+      <p>Aucune preuve essentielle chargee.</p>
+      {% endfor %}
+    </section>
 
-<section class="module-grid wide">
-  {% for stream in model.workstreams %}
-  <article class="module-card status-{{ stream.status|replace(' ', '-') }}">
-    <span>{{ stream.status }}</span>
-    <strong>{{ stream.label }}</strong>
-    <small>{{ stream.detail }}</small>
-    <em>{{ stream.next }}</em>
-  </article>
-  {% endfor %}
+    <section class="cs-memoire-support-panel">
+      <div class="cs-memoire-panel-head">
+        <h3>Diffusion et restreint</h3>
+        <span>{{ model.privacy.review_rows|length }}</span>
+      </div>
+      {% for row in model.privacy.review_rows[:4] %}
+      <article>
+        <strong>{{ row.file_name or row.doc_id }}</strong>
+        <small>{{ row.privacy_review_status or row.review_status_recommendation or row.recommended_action }}</small>
+      </article>
+      {% else %}
+      <p>Aucune restriction de diffusion prioritaire chargee.</p>
+      {% endfor %}
+    </section>
+  </section>
+
+  {% if active_panel == 'passation' %}
+  <section class="cs-memoire-secondary-panel" aria-labelledby="memoire-pack-title">
+    <div class="cs-memoire-panel-head">
+      <div>
+        <p class="eyebrow">{{ pack.status_label|default('A relire') }}</p>
+        <h3 id="memoire-pack-title">{{ pack.title|default('Pack passation') }}</h3>
+      </div>
+      <span>{{ pack.generated_at_label|default('Genere depuis les donnees locales') }}</span>
+    </div>
+    <p>{{ pack.scope|default('Memoire de copropriete, sujets ouverts, preuves essentielles et restrictions') }}</p>
+    <p>{{ pack.watermark|default('export derive, non source collaborative') }}</p>
+    <div class="cs-memoire-pack-grid">
+      <div><strong>Perimetre</strong><span>{{ pack.included_sections|default([])|join(', ') }}</span></div>
+      <div><strong>Restrictions</strong><span>{{ summary.diffusion_limited_count|default(0) }} a verifier</span></div>
+      <div><strong>Prochaines actions</strong><span>{{ summary.open_topics_count|default(0) }} sujets ouverts</span></div>
+    </div>
+    <div class="cs-memoire-omissions">
+      <strong>Documents omis ou a arbitrer</strong>
+      {% for item in pack.omissions|default([]) %}
+      <a href="{{ token_href(item.href|default('/chantiers')) }}">{{ item.label }} - {{ item.reason }}</a>
+      {% else %}
+      <span>Aucune omission prioritaire.</span>
+      {% endfor %}
+    </div>
+    <div class="cs-memoire-detail-actions">
+      <a href="{{ token_href(pack.latest_export.json_href|default('/exports/passation.json')) }}">Passation JSON</a>
+      <a href="{{ token_href(pack.latest_export.text_href|default('/exports/passation.txt')) }}">Passation texte</a>
+      <a href="{{ token_href('/exports/passation') }}">Apercu de passation</a>
+    </div>
+  </section>
+  {% elif active_panel == 'export' %}
+  <section class="cs-memoire-secondary-panel" aria-labelledby="memoire-export-title">
+    <div class="cs-memoire-panel-head">
+      <div>
+        <p class="eyebrow">{{ export_panel.status|default('a relire') }}</p>
+        <h3 id="memoire-export-title">{{ export_panel.title|default('Exporter la passation') }}</h3>
+      </div>
+      <span>{{ export_panel.watermark|default('export derive, non source collaborative') }}</span>
+    </div>
+    {% if export_panel.disabled %}
+    <p>{{ export_panel.disabled_reason|default("Verifier la diffusion avant d'exporter.") }}</p>
+    {% else %}
+    <p>Export prudent pret a relire. Le pack reste derive et ne remplace pas les preuves.</p>
+    {% endif %}
+    <div class="cs-memoire-export-options">
+      {% for item in export_panel.formats|default([]) %}
+      <a href="{{ token_href(item.href) }}">{{ item.label }}</a>
+      {% else %}
+      <a href="{{ token_href('/exports/passation.json') }}">Passation JSON</a>
+      <a href="{{ token_href('/exports/passation.txt') }}">Passation texte</a>
+      <a href="{{ token_href('/exports/passation') }}">Apercu de passation</a>
+      {% endfor %}
+    </div>
+    <div class="cs-memoire-omissions">
+      <strong>Omissions et restrictions</strong>
+      {% for item in export_panel.omissions|default([]) %}
+      <a href="{{ token_href(item.href|default('/chantiers')) }}">{{ item.label }} - {{ item.reason }}</a>
+      {% else %}
+      <span>Aucune omission prioritaire.</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% elif active_panel == 'documents' %}
+  <section class="cs-memoire-secondary-panel" aria-labelledby="memoire-documents-title">
+    <div class="cs-memoire-panel-head">
+      <h3 id="memoire-documents-title">Documents et preuves a transmettre</h3>
+      <span>{{ transmit.count|default(0) }}</span>
+    </div>
+    <p>Chaque document doit garder son niveau de diffusion. Un document a verifier ne se telecharge pas directement.</p>
+    <div class="cs-memoire-document-list is-wide">
+      {% for doc in transmit["items"]|default([]) %}
+      <div>
+        <span class="cs-memoire-doc-icon" aria-hidden="true">{{ doc.file_type|default('DOC') }}</span>
+        <div>
+          <strong>{{ doc.title }}</strong>
+          <small>{{ doc.updated_label }} - {{ doc.diffusion_label }}</small>
+        </div>
+        <a href="{{ token_href(doc.href|default('/documents')) }}">Ouvrir</a>
+      </div>
+      {% else %}
+      <p>{{ empty_states.transmit_empty.label|default('Aucun document transmissible') }}</p>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </section>
 {% endblock %}

@@ -30,8 +30,27 @@ from .coprolink import request_metrics
 
 TEXT_EXTENSIONS = {"txt", "md", "csv", "tsv", "json"}
 HTML_EXTENSIONS = {"html", "htm"}
-SKIP_DIRS = {".git", "__pycache__", ".secrets"}
-SKIP_FILENAMES = {"desktop.ini", "thumbs.db"}
+SKIP_DIRS = {
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".secrets",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".cache",
+    "node_modules",
+    "coproscope",
+    "server",
+    "docs",
+    "_archives",
+    "_instance_docs",
+    "_transition_reports",
+    "_worktrees",
+    "900_systeme_audit",
+    "990_archives",
+}
+SKIP_FILENAMES = {"desktop.ini", "thumbs.db", "passation_coproscope_local.md"}
 PRESERVE_FIELDS = {
     "lot",
     "document_type",
@@ -109,7 +128,11 @@ def _iter_files(root: Path):
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
-        if any(part in SKIP_DIRS for part in path.parts):
+        try:
+            relative_parts = path.relative_to(root).parts
+        except ValueError:
+            relative_parts = path.parts
+        if any(part.lower() in SKIP_DIRS for part in relative_parts):
             continue
         if path.name.lower() in SKIP_FILENAMES:
             continue
@@ -131,7 +154,9 @@ def _classify_sensitivity(relative_path: str, instance) -> tuple[str, str]:
 
 
 def inventory(instance, run: RunContext) -> Path:
-    raw_root = instance.root("raw")
+    raw_roots = instance.root_list("raw")
+    if not raw_roots:
+        raw_roots = [instance.root("raw")]
     workspace_root = instance.root("workspace")
     registry_path = instance.register("documents")
     duplicates_path = instance.register("duplicates")
@@ -141,39 +166,43 @@ def inventory(instance, run: RunContext) -> Path:
     rows: list[dict[str, str]] = []
     by_digest: dict[str, list[dict[str, str]]] = defaultdict(list)
 
-    for path in _iter_files(raw_root):
-        digest = sha256_file(path)
-        previous = existing.get(digest, {})
-        stat = path.stat()
-        relative_path = relative_to(workspace_root, path)
-        sensitivity, scope = _classify_sensitivity(relative_path, instance)
-        row = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
-        row.update(
-            {
-                "doc_id": previous.get("doc_id") or _doc_id_for(digest),
-                "instance_id": instance.instance_id,
-                "entity_id": instance.entity_id,
-                "scope": previous.get("scope") or scope,
-                "sha256": digest,
-                "original_path": relative_path,
-                "file_name": path.name,
-                "extension": path.suffix.lower().lstrip("."),
-                "size_bytes": str(stat.st_size),
-                "last_modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).replace(microsecond=0).isoformat(),
-                "first_seen": previous.get("first_seen") or seen_at,
-                "source_zone": "RAW",
-                "source_kind": "raw",
-                "status_ocr": previous.get("status_ocr") or "PENDING",
-                "classification_status": previous.get("classification_status") or "PENDING",
-                "sensitivity": previous.get("sensitivity") or sensitivity,
-            }
-        )
-        for field in PRESERVE_FIELDS:
-            if previous.get(field):
-                row[field] = previous[field]
-        apply_access_policy(row, instance=instance)
-        rows.append(row)
-        by_digest[digest].append(row)
+    for raw_root in raw_roots:
+        if not raw_root.exists():
+            run.log_error(f"inventory source missing: {raw_root}")
+            continue
+        for path in _iter_files(raw_root):
+            digest = sha256_file(path)
+            previous = existing.get(digest, {})
+            stat = path.stat()
+            relative_path = relative_to(workspace_root, path)
+            sensitivity, scope = _classify_sensitivity(relative_path, instance)
+            row = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
+            row.update(
+                {
+                    "doc_id": previous.get("doc_id") or _doc_id_for(digest),
+                    "instance_id": instance.instance_id,
+                    "entity_id": instance.entity_id,
+                    "scope": previous.get("scope") or scope,
+                    "sha256": digest,
+                    "original_path": relative_path,
+                    "file_name": path.name,
+                    "extension": path.suffix.lower().lstrip("."),
+                    "size_bytes": str(stat.st_size),
+                    "last_modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).replace(microsecond=0).isoformat(),
+                    "first_seen": previous.get("first_seen") or seen_at,
+                    "source_zone": "RAW",
+                    "source_kind": "raw",
+                    "status_ocr": previous.get("status_ocr") or "PENDING",
+                    "classification_status": previous.get("classification_status") or "PENDING",
+                    "sensitivity": previous.get("sensitivity") or sensitivity,
+                }
+            )
+            for field in PRESERVE_FIELDS:
+                if previous.get(field):
+                    row[field] = previous[field]
+            apply_access_policy(row, instance=instance)
+            rows.append(row)
+            by_digest[digest].append(row)
 
     rows.sort(key=lambda item: (item["file_name"].lower(), item["doc_id"]))
     write_csv(registry_path, ensure_policy_fields(list(DEFAULT_DOCUMENT_FIELDS)), rows)
@@ -482,15 +511,15 @@ def _classify(sample: str, file_name: str, original_path: str, rules: list[dict]
         keyword_weight = int(rule.get("keyword_weight", rule.get("poids_mot_cle", 5)))
         document_type = str(rule.get("document_type", rule.get("type_document", "A_CLASSER")))
         for pattern in filename_patterns:
-            if re.search(pattern, file_text, flags=re.IGNORECASE):
+            if _pattern_matches(pattern, file_text):
                 matched = True
                 score += filename_weight
         for pattern in path_patterns:
-            if re.search(pattern, path_text, flags=re.IGNORECASE):
+            if _pattern_matches(pattern, path_text):
                 matched = True
                 score += path_weight
         for keyword in keywords:
-            if keyword.lower() in sample:
+            if _keyword_matches(sample, str(keyword)):
                 matched = True
                 score += keyword_weight
         if matched:
@@ -498,6 +527,31 @@ def _classify(sample: str, file_name: str, original_path: str, rules: list[dict]
         if score > best[2]:
             best = (str(rule["lot"]), document_type, score)
     return best
+
+
+def _normalized_search_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (value or "").lower()).strip()
+
+
+def _keyword_matches(text: str, keyword: str) -> bool:
+    normalized = _normalized_search_text(keyword or "")
+    if not normalized:
+        return False
+    haystack = _normalized_search_text(text)
+    parts = [re.escape(part) for part in normalized.split() if part]
+    if not parts:
+        return False
+    pattern = r"(?<![a-z0-9])" + r"\s+".join(parts) + r"(?![a-z0-9])"
+    return re.search(pattern, haystack, flags=re.IGNORECASE) is not None
+
+
+def _pattern_matches(pattern: object, text: str) -> bool:
+    raw = str(pattern or "").strip()
+    if not raw:
+        return False
+    if re.fullmatch(r"[A-Za-z0-9]{1,3}", raw):
+        return _keyword_matches(text, raw)
+    return re.search(raw, text, flags=re.IGNORECASE) is not None
 
 
 def classify(instance, run: RunContext, copy_files: bool = True) -> Path:

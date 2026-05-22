@@ -232,9 +232,10 @@ class UiAndDemoTests(unittest.TestCase):
         client = TestClient(create_app(demo, 2025))
         chantiers = client.get("/chantiers")
         self.assertEqual(chantiers.status_code, 200)
-        self.assertIn("DecisionOps", chantiers.text)
-        self.assertIn("IncidentOps", chantiers.text)
-        self.assertIn("PREUVE_A_DEMANDER", chantiers.text)
+        self.assertIn("Memoire de copropriete", chantiers.text)
+        self.assertIn("Resolution 1 - travaux toiture votes.", chantiers.text)
+        self.assertIn("Hall - INC-001", chantiers.text)
+        self.assertIn("Preuves essentielles", chantiers.text)
         actions_csv = client.get("/exports/actions.csv")
         self.assertIn("decisions", actions_csv.text)
         self.assertIn("incidents", actions_csv.text)
@@ -339,8 +340,11 @@ class UiAndDemoTests(unittest.TestCase):
         self.assertEqual(export.status_code, 200)
         with zipfile.ZipFile(BytesIO(export.content)) as archive:
             names = archive.namelist()
+            deposit_manifest = archive.read(f"outputs/deposits/{deposit_id}.json").decode("utf-8")
         self.assertIn("exports/coproscope_actions_2025.csv", names)
         self.assertIn(f"outputs/deposits/{deposit_id}.json", names)
+        self.assertIn("[reference locale masquee]", deposit_manifest)
+        self.assertNotIn("raw/_depot_ui", deposit_manifest)
         self.assertFalse(any(name.startswith("raw/") for name in names))
         self.assertFalse(any(name.startswith("restricted/") for name in names))
         self.assertFalse(any(name.startswith("logs/") for name in names))
@@ -411,6 +415,38 @@ class UiAndDemoTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             serve(demo, 2025, host="0.0.0.0", port=8765, access_token="local-secret")
+
+    def test_ui_open_test_uses_visible_foreground_server_options(self) -> None:
+        _, demo = self._build_demo()
+        from coproscope.cli import _dispatch, build_parser
+
+        args = build_parser().parse_args(
+            [
+                "ui",
+                "open-test",
+                "--instance-root",
+                str(demo.instance_root),
+                "--year",
+                "2025",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8769",
+                "--token",
+                "qa-2000-local",
+            ]
+        )
+        with patch("coproscope.web.app.serve") as mocked_serve:
+            result = _dispatch(args)
+
+        self.assertEqual(result, 0)
+        mocked_serve.assert_called_once()
+        _, kwargs = mocked_serve.call_args
+        self.assertEqual(kwargs["year"], 2025)
+        self.assertEqual(kwargs["host"], "127.0.0.1")
+        self.assertEqual(kwargs["port"], 8769)
+        self.assertEqual(kwargs["access_token"], "qa-2000-local")
+        self.assertFalse(kwargs["unsafe_lan"])
 
 
 if __name__ == "__main__":

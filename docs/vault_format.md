@@ -12,6 +12,10 @@ Invariants V1:
 - un fichier deja reference par hash est immuable;
 - un evenement valide est append-only et ne peut pas etre reecrit;
 - aucune donnee metier sensible n'apparait en clair dans le dossier sync;
+- un coproprietaire peut telecharger une archive complete du vault sans obtenir
+  automatiquement le droit de dechiffrer les compartiments restreints;
+- les suppressions, retraits et restrictions sont des evenements auditables,
+  pas des effacements silencieux;
 - toute modification manuelle d'un evenement, d'un blob reference ou d'une cle
   publique referencee doit etre detectee par `vault verify`;
 - les snapshots et indexes accelerent la lecture mais ne remplacent jamais les
@@ -41,6 +45,32 @@ indexes/
 Seules ces entrees sont autorisees a la racine du vault V1. Les repertoires
 vides peuvent etre crees par `vault init`. Un client doit ignorer les fichiers
 temporaires qu'il cree hors vault; il ne doit pas les synchroniser.
+
+## Profils sync et transport non fiable
+
+La sync n'est jamais une source de verite. Elle transporte des octets que le
+client doit revalider localement avant usage. Un profil sync decrit donc les
+risques connus du transport, pas une garantie de disponibilite ou de
+confidentialite.
+
+Avant de declarer un dossier utilisable, l'audit de profil doit signaler au
+minimum:
+
+- copies de conflit produites par le provider ou par un pair;
+- fichiers pointeurs qui ne contiennent pas les octets hydrates du vault
+  (`.gdoc`, `.gsheet`, `.gslides`, placeholders equivalents);
+- fichiers temporaires, partiels, verrous Office ou uploads en cours
+  (`.tmp`, `.partial`, `.part`, `.download`, `.crdownload`, `~$*`);
+- metadata d'hote ou de moteur sync (`desktop.ini`, `Thumbs.db`, `.DS_Store`,
+  `.stfolder`, `.stignore`, `.dropbox.cache`, `.sync_journal.db`);
+- liens symboliques, entrees non regulieres et collisions de casse qui peuvent
+  etre interpretees differemment selon le systeme de fichiers.
+
+Ces diagnostics ne remplacent pas `vault verify`: ils empechent de faire
+confiance a un transport manifestement instable avant la verification
+cryptographique. Les metadata de moteur sync peuvent etre inevitables dans
+certains dossiers; elles restent alors des avertissements de transport et ne
+font jamais partie de l'archive complete verifiable.
 
 ## Conventions communes
 
@@ -180,6 +210,70 @@ Un fichier de cle publique est lui-meme non sensible mais doit etre canonique:
 `author_key_id`, `algorithm`, `public_key`, `created_at`, `status`. Son contenu
 doit correspondre aux evenements `member_invited` et `member_revoked`.
 
+### Compartiments et recuperation
+
+Le modele de cles V1 doit distinguer le droit de telecharger l'archive complete
+et le droit de dechiffrer un compartiment.
+
+Compartiments cibles:
+
+- corpus coproprietaires;
+- conseil syndical;
+- contentieux;
+- comptes individuels;
+- commission thematique;
+- exports/biffage.
+
+Les enveloppes de cles doivent permettre:
+
+- rotation apres changement de role;
+- revocation sans effacement de l'historique deja replique;
+- recuperation par quorum pour les cles critiques;
+- diagnostic si le conseil syndical est le seul groupe capable de recuperer
+  une cle collective.
+
+Politique minimale de survivability V1 pour les cles critiques:
+
+- quorum declare d'au moins `2` parts pour une cle collective recuperable;
+- nombre de detenteurs distincts superieur ou egal au quorum;
+- au moins un gardien coproprietaire hors dependance exclusive au conseil
+  syndical;
+- aucune part de recuperation stockee comme secret en clair dans le dossier
+  sync;
+- rotation ou invalidation auditable apres passation, perte de terminal,
+  changement de role ou soupcon de compromission.
+
+Les parts de recuperation ne sont jamais suffisantes seules. Une recuperation
+doit produire un evenement signe et auditable.
+
+## Archive complete coproprietaire
+
+Un client V1 doit pouvoir produire une archive complete du dossier sync. Cette
+archive contient tous les fichiers necessaires pour verifier le vault, y
+compris les blobs et evenements que le coproprietaire ne peut pas dechiffrer.
+
+Le client coproprietaire peut:
+
+- verifier `vault.json`, evenements, blobs, snapshots et cles publiques;
+- reconstruire les objets dont les payloads sont decryptables pour son role;
+- lister les objets restreints sous forme de presence/hash/decision de
+  restriction quand cette metadata ne revele pas le contenu sensible;
+- detecter les trous, suppressions manuelles, blobs manquants et chaines
+  rompues.
+
+Le client coproprietaire ne peut pas:
+
+- contourner un compartiment chiffre;
+- lire un payload restreint sans enveloppe de cle autorisee;
+- transformer une preuve de presence en droit de diffusion.
+
+Un audit de survivability doit rendre explicites les risques residuels:
+absence de snapshot, historique observe sur un seul appareil, blob manquant,
+entree interdite dans la sync, absence de cle de recuperation, quorum non
+satisfait, dependance exclusive au conseil syndical, absence de replique
+lecteur. Une archive complete peut etre verifiable sans etre entierement
+dechiffrable par le lecteur.
+
 ## Snapshots et indexes
 
 Les snapshots sont des accelerateurs signes et chiffres. Ils peuvent contenir
@@ -204,6 +298,10 @@ valide invalide.
 - signature Ed25519 et statut de la cle;
 - chainage par appareil, sequences contigues et absence de forks silencieux;
 - presence, chemin et hash des blobs references par des evenements valides;
+- possibilite de reconstruire une archive complete et de verifier les parties
+  non dechiffrables par hash;
+- presence de filets de secours pour les cles critiques quand la politique du
+  vault les exige;
 - compatibilite des versions de schema, payload, snapshot et plugin;
 - absence de metadata metier en clair dans `vault.json`, les noms de fichiers
   et les indexes lisibles.

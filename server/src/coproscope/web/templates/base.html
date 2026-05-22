@@ -3,38 +3,157 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CoproScope - {{ model.instance.name }}</title>
+  <title>CoproScope - {{ model.instance.name|default('CoproScope') if model.instance is defined else 'CoproScope' }}</title>
   <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
 </head>
-<body>
-  <header class="topbar">
-    <div>
-      <p class="eyebrow">CoproScope local</p>
-      <h1>{{ model.instance.name }}</h1>
+<body class="cs-shell">
+  {% set ux = model.ux if model.ux is defined else {} %}
+  {% set shell = ux.shell if ux.shell is defined else {} %}
+  {% set instance = model.instance if model.instance is defined else {} %}
+  {% set kpis = model.kpis if model.kpis is defined else {} %}
+  {% set action_summary = model.action_summary if model.action_summary is defined else {} %}
+  {% set scope_counts = action_summary.scope_counts|default({}) %}
+  {% macro token_href(href) -%}
+    {%- set raw_href = href|default('#') -%}
+    {%- if ui_token_param and raw_href != '#' -%}
+      {{- raw_href -}}{{- '&' if '?' in raw_href else '?' -}}{{- ui_token_param -}}
+    {%- else -%}
+      {{- raw_href -}}
+    {%- endif -%}
+  {%- endmacro %}
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+  <div class="cs-app-shell">
+    <aside class="cs-sidebar" aria-label="Navigation CoproScope">
+      <div class="cs-sidebar-brand">
+        <span class="cs-brand-mark" aria-hidden="true">CS</span>
+        <strong>Cockpit Conseil Syndical</strong>
+      </div>
+
+      <p id="navigation-aide" class="sr-only">
+        Navigation principale: accueil des priorites, actions, comptes, documents, ajout de document, pieces, demandes novice, AG contentieux passation, indicateurs a surveiller, droits, confidentialite, chantiers et depot local.
+      </p>
+      <nav class="nav cs-sidebar-nav" aria-label="Navigation principale" aria-describedby="navigation-aide">
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Activites</span>
+          <a class="{{ 'active' if page == 'overview' else '' }}" href="{{ token_href('/') }}" aria-label="Tableau de bord, accueil des priorites"{% if page == 'overview' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">01</span>
+            <span>Tableau de bord</span>
+          </a>
+          <a class="{{ 'active' if page == 'actions' else '' }}" href="{{ token_href('/actions') }}" aria-label="A traiter, actions a suivre"{% if page == 'actions' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">02</span>
+            <span>A traiter</span>
+            <span class="cs-nav-count">{{ action_summary.total|default(kpis.actions|default('')) }}</span>
+          </a>
+          <a class="{{ 'active' if page == 'pieces' else '' }}" href="{{ token_href('/pieces?proof=missing') }}" aria-label="Atelier pieces, relier piece, point, action et preuve"{% if page == 'pieces' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">03</span>
+            <span>Pieces manquantes</span>
+            <span class="cs-nav-count">{{ kpis.doc_requests|default('') }}</span>
+          </a>
+          <a class="{{ 'active' if page == 'requests' else '' }}" href="{{ token_href('/demandes') }}" aria-label="Demandes syndic et coproprietaires"{% if page == 'requests' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">04</span>
+            <span>Demandes syndic</span>
+            <span class="cs-nav-count">{{ scope_counts.syndic|default('') }}</span>
+          </a>
+          <a class="{{ 'active' if page == 'agcontentieux' else '' }}" href="{{ token_href('/ag-contentieux') }}" aria-label="AG, contentieux et passation, lecture novice"{% if page == 'agcontentieux' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">05</span>
+            <span>AG</span>
+            <span class="cs-nav-count">{{ kpis.decisions|default('') }}</span>
+          </a>
+          <a class="{{ 'active' if page == 'accounting' else '' }}" href="{{ token_href('/comptes') }}" aria-label="Comptes et controles"{% if page == 'accounting' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">06</span>
+            <span>Controle comptes</span>
+            <span class="cs-nav-count">{{ action_summary.accounting|default('') }}</span>
+          </a>
+        </div>
+
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Documents</span>
+          <a class="{{ 'active' if page == 'documents' else '' }}" href="{{ token_href('/documents') }}" aria-label="Documents, pieces et preuves"{% if page == 'documents' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">07</span>
+            <span>Documents</span>
+          </a>
+          <a class="{{ 'active' if page == 'document_intake' else '' }}" href="{{ token_href('/documents/ajouter') }}" aria-label="Ajouter un document, preparation novice sans upload reel"{% if page == 'document_intake' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">08</span>
+            <span>Ajouter un document</span>
+          </a>
+          {% if pilotage_route_enabled is defined and pilotage_route_enabled %}
+          <a class="{{ 'active' if page == 'pilotage' else '' }}" href="{{ token_href('/pilotage') }}" aria-label="Indicateurs, quoi surveiller en priorite"{% if page == 'pilotage' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">09</span>A surveiller</a>
+          {% endif %}
+          <a class="{{ 'active' if page == 'workstreams' else '' }}" href="{{ token_href('/chantiers') }}" aria-label="Memoire de copropriete et passation"{% if page == 'workstreams' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">10</span>
+            <span>{{ 'Memoire copropriete' if page == 'workstreams' else 'Chantiers' }}</span>
+          </a>
+          <a class="{{ 'active' if page == 'depot' else '' }}" href="{{ token_href('/depot') }}" aria-label="Depot local et exports prepares"{% if page == 'depot' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">11</span>
+            <span>Depot local</span>
+          </a>
+        </div>
+
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Parametres</span>
+          <a class="{{ 'active' if page == 'governance' else '' }}" href="{{ token_href('/gouvernance') }}" aria-label="Droits, roles et gouvernance"{% if page == 'governance' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">12</span>
+            <span>Droits et roles</span>
+          </a>
+          <a class="{{ 'active' if page == 'privacy' else '' }}" href="{{ token_href('/confidentialite') }}" aria-label="Confidentialite, diffusion et masquage"{% if page == 'privacy' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">13</span>
+            <span>Diffusion et masquage</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="cs-share-card" aria-label="Contexte local">
+        <span>Mode de partage</span>
+        <strong>{{ shell.sharing_mode_label|default('Prive local') }}</strong>
+        <small>{{ shell.sharing_mode_status|default('Aucune synchronisation externe lancee') }}</small>
+      </div>
+    </aside>
+
+    <div class="cs-workspace">
+      <header class="topbar cs-topbar">
+        <div class="cs-topbar-title">
+          <p class="eyebrow">CoproScope local</p>
+          <h1>{% block topbar_title %}{{ shell.page_title|default(instance.name|default('CoproScope')) }}{% endblock %}</h1>
+        </div>
+        <form class="cs-search" action="{{ token_href('/documents') }}" method="get" role="search">
+          {% if ui_token_param %}
+          <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+          {% endif %}
+          <label class="sr-only" for="cs-global-search">Rechercher</label>
+          <input id="cs-global-search" name="q" type="search" placeholder="{{ shell.search_placeholder|default('Rechercher documents, actions...') }}">
+        </form>
+        <div class="instance-meta" aria-label="Contexte du coffre local">
+          <span>Exercice {{ instance.year|default('2025') }}</span>
+          <span>Coffre {{ instance.id|default('local') }}</span>
+        </div>
+        <a class="button-link cs-top-action" href="{{ token_href('/demandes') }}"><span aria-hidden="true">+</span> Nouvelle demande</a>
+      </header>
+
+      {% if context_banner is defined and context_banner %}
+      {% include "_context_banner.html" %}
+      {% endif %}
+
+      <section class="quick-help" aria-label="Aide rapide">
+        <details>
+          <summary>Aide rapide</summary>
+          <ul>
+            <li>Au clavier: utilisez Tab pour parcourir les liens et Entree pour ouvrir l'element selectionne.</li>
+            <li>Sur ecran tactile: touchez une carte ou un bouton, puis revenez a Actions pour savoir quoi faire ensuite.</li>
+            <li>Les tableaux doivent etre lus avec leur titre ou leur texte d'introduction; les statuts ne reposent pas seulement sur la couleur.</li>
+          </ul>
+        </details>
+      </section>
+
+      <main id="contenu" tabindex="-1" class="cs-main" aria-describedby="navigation-aide">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="cs-footer">
+        Interface locale en lecture prioritaire. Les bruts, secrets, cartes de correspondance et dossiers restreints ne sont pas servis par l'application.
+      </footer>
     </div>
-    <div class="instance-meta">
-      <span>Exercice {{ model.instance.year }}</span>
-      <span>{{ model.instance.id }}</span>
-    </div>
-  </header>
-
-  <nav class="nav" aria-label="Navigation principale">
-    <a class="{{ 'active' if page == 'overview' else '' }}" href="/{{ ui_token_query }}">Cockpit</a>
-    <a class="{{ 'active' if page == 'actions' else '' }}" href="/actions{{ ui_token_query }}">Actions</a>
-    <a class="{{ 'active' if page == 'accounting' else '' }}" href="/comptes{{ ui_token_query }}">Comptes</a>
-    <a class="{{ 'active' if page == 'documents' else '' }}" href="/documents{{ ui_token_query }}">Documents</a>
-    <a class="{{ 'active' if page == 'pieces' else '' }}" href="/pieces{{ ui_token_query }}">Atelier pieces</a>
-    <a class="{{ 'active' if page == 'privacy' else '' }}" href="/confidentialite{{ ui_token_query }}">Confidentialite</a>
-    <a class="{{ 'active' if page == 'workstreams' else '' }}" href="/chantiers{{ ui_token_query }}">Chantiers</a>
-    <a class="{{ 'active' if page == 'depot' else '' }}" href="/depot{{ ui_token_query }}">Depot & exports</a>
-  </nav>
-
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer>
-    Interface locale en lecture prioritaire. Les bruts, secrets, cartes de correspondance et dossiers restreints ne sont pas servis par l'application.
-  </footer>
+  </div>
 </body>
 </html>

@@ -10,19 +10,32 @@ Cette documentation est ecrite pour etre lisible par trois publics :
 
 | Temps | Lire | Pourquoi |
 |---|---|---|
-| 5 min | [Etude utilisateurs](./etude_utilisateurs.md) + [Etat du developpement](./etat_du_developpement.md) | Comprendre le besoin, ce qui existe et ce qui manque. |
-| 15 min | Ajouter [Concept et philosophie](./concept_et_philosophie.md), [Fonctions cibles](./fonctions_cibles.md), [Feuille de route](./feuille_de_route.md) | Comprendre le produit et les priorites. |
+| 5 min | [Gouvernail roadmap](./roadmap_backlog_central.md) + [Etude utilisateurs](./etude_utilisateurs.md) + [Etat du developpement](./etat_du_developpement.md) | Comprendre la source de verite, le besoin, ce qui existe et ce qui manque. |
+| 15 min | Ajouter [Concept et philosophie](./concept_et_philosophie.md), [Fonctions cibles](./fonctions_cibles.md), [Feuille de route](./feuille_de_route.md), [Plan directeur local + vault](./plan_directeur_coproscope_local_vault.md) | Comprendre le produit; les priorites actives restent dans le gouvernail. |
 | 30 min | Ajouter [Architecture et flux](./architecture_et_flux.md), [Confidentialite et biffage](./confidentialite_et_biffage.md), [Audit360](./audit360.md) | Comprendre les choix structurants. |
-| Contribution | Ajouter [Plan d'implementation](./implementation_plan.md), [Orchestration multi-agents](./orchestration_agents.md), [Politique de partage GitHub](./github_sharing.md), [Outillage](./outillage_open_source.md) | Contribuer seul ou a plusieurs sans casser les garde-fous. |
+| Contribution | Ajouter [Plan d'implementation](./implementation_plan.md), [Cycles refonte UX](./refonte_ux_cycles_image_dev_test.md), [Orchestration multi-agents](./orchestration_agents.md), [Politique de partage GitHub](./github_sharing.md), [Outillage](./outillage_open_source.md) | Contribuer seul ou a plusieurs sans casser les garde-fous. |
 
 ## Carte de la doc
 
 | Document | Role |
 |---|---|
+| [Gouvernail roadmap](./roadmap_backlog_central.md) | Source de verite unique des priorites, du backlog officiel et des rattachements aux anciens plans. |
 | [Etude utilisateurs](./etude_utilisateurs.md) | Synthese accessible de l'enquete UX/SHS et de ses conclusions produit. |
 | [Concept et philosophie](./concept_et_philosophie.md) | Promesse, principes et limites de CoproScope. |
 | [Fonctions cibles](./fonctions_cibles.md) | Tous les blocs fonctionnels, avec statut clair. |
-| [Feuille de route](./feuille_de_route.md) | Priorites P0/P1/P2/P3 en francais, issues de l'etude. |
+| [Feuille de route](./feuille_de_route.md) | Source historique P0/P1/P2/P3 issue de l'etude; non canonique pour les priorites actives. |
+| [Plan directeur local + vault](./plan_directeur_coproscope_local_vault.md) | Source historique d'architecture local + vault; ne pilote plus les sprints directement. |
+| [Roadmap produit fini depuis les visuels](./roadmap_produit_fini_visuels_enquete.md) | Source historique de vision UX; les suites actives sont importees dans le gouvernail. |
+| [Cycles refonte UX Image -> Dev -> Test](./refonte_ux_cycles_image_dev_test.md) | Cadence operationnelle pour enqueter sur les images, commander les devs, tester les routes livrees et garder les flux en parallele. |
+| [Registre cycles refonte UX](./registre_cycles_refonte_ux.md) | Trace de flux et journal des points de coordination; les nouvelles vagues passent par le gouvernail. |
+| [Prompts agents refonte UX](./prompts_agents_refonte_ux.md) | Prompts par role pour designer, utilisateur novice, front, back/viewmodel, QA et integrateur-scribe. |
+| [Indicateurs centraux de pilotage copro](./indicateurs_pilotage_copro.md) | Themes de gestion, objets noyau, preuves, seuils et actions pour le cockpit. |
+| [Accessibilite et registre de langage](./accessibilite_registre_langage.md) | Publics cibles, vocabulaire stable, infobulles et test novice 10 minutes. |
+| [Veille open source et integration](./veille_open_source_integration.md) | Radar des briques OSS, gates d'adoption, noyau/plugin/export/transport. |
+| [Strategie Obsidian-like depuis l'enquete](./strategie_obsidian_like_enquete_utilisateur.md) | Horizons produit, lecons Obsidian et strategie plugins/vault centree utilisateur. |
+| [Resilience anti-accaparement](./resilience_anti_accaparement.md) | Archive complete coproprietaire, compartiments chiffres, quorum de secours et gouvernance des cles. |
+| [Livraison test 20h](./livraison_test_2000.md) | Protocole de test novice, commandes Windows et criteres Go/No-go. |
+| [Audit UX atelier pieces](./ux_review_atelier_piece.md) | Revue UX/UI de la bascule locale/vault et de l'atelier piece -> point -> action -> preuve. |
 | [Etat du developpement](./etat_du_developpement.md) | Ce qui est livre, en cours, prevu, pas prioritaire. |
 | [Architecture et flux](./architecture_et_flux.md) | Separation depot public / instances privees / artefacts locaux. |
 | [Documentation noyau vs instance](./documentation_noyau_vs_instance.md) | Frontiere entre docs produit genericisables et docs d'instance sensibles. |

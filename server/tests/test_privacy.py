@@ -393,6 +393,84 @@ class PrivacyOpsTests(unittest.TestCase):
         self.assertNotIn("jean.dupont@example.com", text)
         self.assertNotIn("Monsieur Jean Dupont", text)
 
+        queue = biffageops.build_redaction_queue(self.instance, run)
+        _, queue_rows = read_csv(Path(str(queue["queue"])))
+        queued = next(item for item in queue_rows if item["doc_id"] == row["doc_id"])
+        self.assertEqual(queued["queue_status"], "REDACTED")
+
+    def test_pdf_redaction_can_fall_back_to_registered_text_derivative(self) -> None:
+        source = self.example_root / "raw" / "scan_demande_a_biffer.pdf"
+        source.write_bytes(b"not a real pdf")
+
+        run = RunContext(self.instance, "privacy pdf text derivative")
+        docuscope.inventory(self.instance, run)
+        fields, rows = read_csv(self.instance.register("documents"))
+        row = self._row_for_file("scan_demande_a_biffer.pdf")
+        text_path = self.example_root / "staging" / "text" / f"{row['doc_id']}.ocr.txt"
+        text_path.parent.mkdir(parents=True, exist_ok=True)
+        text_path.write_text(
+            "Demande nominative: Monsieur Jean Dupont, lot A12, jean.dupont@example.com.\n",
+            encoding="utf-8",
+        )
+        for item in rows:
+            if item.get("doc_id") == row["doc_id"]:
+                item["text_path"] = relative_to(self.example_root, text_path)
+                item["status_ocr"] = "OCR_DONE"
+        write_csv(self.instance.register("documents"), fields, rows)
+        privacyops.screen_existing(self.instance, run, include_generated=False)
+        row = self._row_for_file("scan_demande_a_biffer.pdf")
+
+        result = biffageops.redact_document(
+            self.instance,
+            run,
+            doc_id=row["doc_id"],
+            mode="redaction_irreversible",
+            target_college="C2_Coproprietaires",
+        )
+
+        redacted = Path(str(result["redacted_path"]))
+        self.assertEqual(redacted.suffix, ".txt")
+        content = redacted.read_text(encoding="utf-8")
+        self.assertNotIn("Jean Dupont", content)
+        self.assertNotIn("jean.dupont@example.com", content)
+        self.assertIn("[BIFFE_PERSON_NAME]", content)
+        self.assertIn("[BIFFE_EMAIL]", content)
+
+    def test_redaction_required_without_identifiers_registers_text_derivative(self) -> None:
+        source = self.example_root / "raw" / "carte_professionnelle.pdf"
+        source.write_bytes(b"not a real pdf")
+
+        run = RunContext(self.instance, "privacy no identifiers derivative")
+        docuscope.inventory(self.instance, run)
+        fields, rows = read_csv(self.instance.register("documents"))
+        row = self._row_for_file("carte_professionnelle.pdf")
+        text_path = self.example_root / "staging" / "text" / f"{row['doc_id']}.native.txt"
+        text_path.parent.mkdir(parents=True, exist_ok=True)
+        text_path.write_text("Carte professionnelle valide jusqu'au 23/03/2026.\n", encoding="utf-8")
+        for item in rows:
+            if item.get("doc_id") == row["doc_id"]:
+                item["text_path"] = relative_to(self.example_root, text_path)
+                item["status_ocr"] = "TEXT_EXTRACTED"
+                item["publication_form"] = "redaction_required"
+                item["personal_data_level"] = "none"
+        write_csv(self.instance.register("documents"), fields, rows)
+
+        result = biffageops.redact_document(
+            self.instance,
+            run,
+            doc_id=row["doc_id"],
+            mode="redaction_irreversible",
+            target_college="C2_Coproprietaires",
+        )
+
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["match_count"], 0)
+        redacted = Path(str(result["redacted_path"]))
+        self.assertEqual(redacted.suffix, ".txt")
+        self.assertIn("Carte professionnelle", redacted.read_text(encoding="utf-8"))
+        refreshed = self._row_for_file("carte_professionnelle.pdf")
+        self.assertEqual(refreshed["redaction_status"], "REDACTED")
+
     def test_docx_redaction_sanitizes_package_parts_and_hidden_values(self) -> None:
         try:
             from docx import Document  # type: ignore

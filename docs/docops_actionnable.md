@@ -30,6 +30,10 @@ Champs utiles :
 
 Les seuils de fraicheur restent optionnels. Sans seuil, une piece presente n'est pas marquee obsolete.
 
+## Communications et emails
+
+DocOps peut classer une trace locale de mail, email, e-mail ou courriel dans le lot `Communication`. Cette trace reste un document importe ou resume dans l'espace local: DocOps n'envoie pas de message, ne synchronise pas de boite mail et ne recupere aucun contenu distant.
+
 ## Integration UI
 
 La future vue documents peut consommer `matrice_completude_documentaire.csv` pour afficher "ce qu'on a" et `pieces_a_demander.csv` pour la liste priorisee des demandes au syndic.

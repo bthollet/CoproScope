@@ -36,6 +36,15 @@ SKIP_DIR_NAMES = {
     ".ruff_cache",
     ".secrets",
     "node_modules",
+    "coproscope",
+    "server",
+    "docs",
+    "_archives",
+    "_instance_docs",
+    "_transition_reports",
+    "_worktrees",
+    "900_systeme_audit",
+    "990_archives",
     "models",
     "huggingface",
     "privacy_dir",
@@ -44,7 +53,7 @@ SKIP_DIR_NAMES = {
     "dossier_biffages",
     "biffageops",
 }
-SKIP_FILE_NAMES = {"desktop.ini", "thumbs.db"}
+SKIP_FILE_NAMES = {"desktop.ini", "thumbs.db", "passation_coproscope_local.md"}
 SKIP_FILE_MARKERS = {
     "table_correspondance",
     "c8_table_correspondance_biffage",
@@ -261,7 +270,11 @@ def _iter_files(roots: Iterable[Path]):
                 continue
             if any(marker in path.name.lower() for marker in SKIP_FILE_MARKERS):
                 continue
-            if any(part.lower() in SKIP_DIR_NAMES for part in path.parts):
+            try:
+                relative_parts = path.relative_to(root).parts
+            except ValueError:
+                relative_parts = path.parts
+            if any(part.lower() in SKIP_DIR_NAMES for part in relative_parts):
                 continue
             yield path
 

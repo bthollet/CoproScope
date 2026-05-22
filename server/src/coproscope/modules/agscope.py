@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from ..core.common import AG_FIELDS, FINDING_FIELDS, RunContext, detect_date, load_structured_file, read_csv, write_csv, write_text
 
@@ -15,22 +16,36 @@ def _read_text(instance, row: dict[str, str]) -> str:
     return path.read_text(encoding="utf-8", errors="ignore")
 
 
+def _normalize(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value or "")
+    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
+    return re.sub(r"\s+", " ", normalized.lower()).strip()
+
+
+def _rule_values(rules: dict, *keys: str) -> list[str]:
+    for key in keys:
+        values = rules.get(key)
+        if values:
+            return [_normalize(str(value)) for value in values if str(value).strip()]
+    return []
+
+
 def analyze(instance, run: RunContext) -> None:
     _, docs = read_csv(instance.register("documents"))
     ag_rules = load_structured_file(instance.ag_rules_path())
-    patterns = [pattern.lower() for pattern in ag_rules.get("resolution_patterns", [])]
-    majority_terms = [term.lower() for term in ag_rules.get("majority_terms", [])]
-    annex_keywords = [term.lower() for term in ag_rules.get("annex_keywords", [])]
+    patterns = _rule_values(ag_rules, "resolution_patterns", "motifs_resolution")
+    majority_terms = _rule_values(ag_rules, "majority_terms", "termes_majorite")
+    annex_keywords = _rule_values(ag_rules, "annex_keywords", "mots_cles_annexes")
     rows: list[dict[str, str]] = []
     findings: list[dict[str, str]] = []
 
     for doc in docs:
         doc_type = doc.get("document_type", "")
         text = _read_text(instance, doc)
-        haystack = f"{doc.get('file_name', '')}\n{text}".lower()
+        haystack = _normalize(f"{doc.get('file_name', '')}\n{text}")
         if doc_type not in {"Convocation_AG", "PV_AG", "Annexe_AG"} and "assemblee generale" not in haystack and "convocation" not in haystack:
             continue
-        resolution_count = sum(1 for line in text.splitlines() if any(token in line.lower() for token in patterns))
+        resolution_count = sum(1 for line in text.splitlines() if any(token in _normalize(line) for token in patterns))
         annex_hits = sum(1 for token in annex_keywords if token in haystack)
         matched_majorities = sorted({term for term in majority_terms if term in haystack})
         detected_date = detect_date(doc.get("file_name", "")) or detect_date(doc.get("original_path", "")) or ""

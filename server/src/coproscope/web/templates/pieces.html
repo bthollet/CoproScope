@@ -1,6 +1,255 @@
 {% extends "base.html" %}
+{% block topbar_title %}
+  {%- if request.query_params.get('proof') == 'missing' -%}Pieces manquantes{%- else -%}Atelier pieces{%- endif -%}
+{% endblock %}
 {% block content %}
+{% macro safe_text(value, fallback='A preciser') -%}
+  {%- set text = value|default('', true)|string|trim -%}
+  {%- set low = text|lower -%}
+  {%- if not text
+      or '://' in low
+      or '\\' in text
+      or '/users/' in low
+      or '/home/' in low
+      or 'file://' in low
+      or 'raw' in low
+      or 'restricted' in low
+      or 'logs' in low
+      or 'private' in low -%}
+    {{- fallback -}}
+  {%- else -%}
+    {{- text -}}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro relaunch_target(item) -%}
+  {%- set label = item.owner_label|default(item.relaunch_target|default(item.source_label|default('', true), true), true)|string|trim -%}
+  {%- if label in ['DocOps', 'DecisionOps', 'IncidentOps', 'ComptaScope', 'Controle comptable', 'Rapprochement facture', 'Anomalie facture', 'Syndic ou source a confirmer'] -%}
+    Syndic ou detenteur a confirmer
+  {%- else -%}
+    {{- safe_text(label, 'Syndic ou detenteur a confirmer') -}}
+  {%- endif -%}
+{%- endmacro %}
+
 {% set workshop = model.piece_workshop %}
+{% set priority_views = model.ux.priority_views if model.ux is defined and model.ux.priority_views is defined else {} %}
+{% set missing_view = priority_views.missing_pieces|default({}, true) %}
+{% set missing_summary = missing_view.summary|default({}, true) %}
+{% set missing_items = missing_view["items"]|default([], true) %}
+{% set missing_groups = missing_view.groups|default([], true) %}
+{% set accounting_guide = model.accounting.guide if model.accounting is defined and model.accounting.guide is defined else {} %}
+{% set accounting_missing_items = accounting_guide.p1|default([], true) %}
+{% set accounting_fallback_active = not missing_items and accounting_missing_items %}
+{% set display_missing_items = missing_items if missing_items else accounting_missing_items %}
+{% set selected_missing = missing_view.selected|default(display_missing_items[0]|default({}, true), true) %}
+{% set missing_total = missing_summary.total|default(display_missing_items|length, true) %}
+{% set missing_to_request = missing_summary.to_request_count|default(display_missing_items|length, true) %}
+{% set missing_candidate_count = missing_summary.candidate_count|default(workshop.to_verify|length, true) %}
+{% set missing_critical_count = missing_summary.critical_count|default(accounting_missing_items|length if accounting_fallback_active else 0, true) %}
+{% set show_missing_view = request.query_params.get('proof') == 'missing' %}
+
+{% if show_missing_view %}
+{# Commande back N+1: exposer owner_label, proof_expected_label, action_href et action_label sur missing_pieces.items; ces fallbacks gardent la vue lisible sans modifier viewmodel.py. #}
+<section class="cs-reprise-page" aria-labelledby="cs-reprise-pieces-title">
+  <header class="cs-reprise-hero">
+    <div>
+      <p class="eyebrow">Boite de reprise</p>
+      <h2 id="cs-reprise-pieces-title">Pieces manquantes</h2>
+      <p>Je comprends quelle piece manque, pourquoi elle compte et comment la demander.</p>
+    </div>
+    <div class="cs-reprise-actions" aria-label="Actions pieces manquantes">
+      {% if display_missing_items %}
+      <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance?scope=pieces') }}">Creer demandes syndic</a>
+      <a class="cs-reprise-secondary" href="{{ token_href('/pieces?proof=missing&diffusion=prive-fictif') }}">Voir pieces privees</a>
+      {% else %}
+      <a class="cs-reprise-secondary" href="{{ token_href('/pieces') }}">Voir toutes les pieces</a>
+      {% endif %}
+      <a class="cs-reprise-secondary" href="{{ token_href('/depot?intent=proof&return=pieces') }}">Ajouter depuis le depot</a>
+    </div>
+  </header>
+
+  {% if accounting_fallback_active %}
+  <p class="cs-reprise-warning">Liste alignee sur Controle des comptes: les pieces P1 attendues y sont reprises ici.</p>
+  {% endif %}
+
+  <div class="cs-reprise-summary" aria-label="Synthese pieces manquantes">
+    <a class="cs-reprise-card {{ 'cs-reprise-tone-danger' if missing_total else 'cs-reprise-tone-ok' }}" href="{{ token_href('/pieces?proof=missing') }}">
+      <span>Pieces manquantes</span>
+      <strong>{{ missing_total }}</strong>
+      <small>{{ missing_total }} {{ 'piece concrete a traiter' if missing_total == 1 else 'pieces concretes a traiter' }}.</small>
+    </a>
+    <a class="cs-reprise-card {{ 'cs-reprise-tone-danger' if missing_to_request else 'cs-reprise-tone-ok' }}" href="{{ token_href('/demandes/relance') }}">
+      <span>A relancer</span>
+      <strong>{{ missing_to_request }}</strong>
+      <small>Demandes a preparer sans envoi automatique.</small>
+    </a>
+    <a class="cs-reprise-card {{ 'cs-reprise-tone-warn' if missing_candidate_count else 'cs-reprise-tone-info' }}" href="{{ token_href('/pieces?proof=candidate') }}">
+      <span>Candidates a verifier</span>
+      <strong>{{ missing_candidate_count }}</strong>
+      <small>Une candidate n'est pas encore une preuve validee.</small>
+    </a>
+    <a class="cs-reprise-card {{ 'cs-reprise-tone-danger' if missing_critical_count else 'cs-reprise-tone-info' }}" href="{{ token_href('/pieces?proof=missing&critical=P1') }}">
+      <span>Bloquantes</span>
+      <strong>{{ missing_critical_count }}</strong>
+      <small>Ne pas transmettre tant que la preuve manque.</small>
+    </a>
+  </div>
+
+  {% if missing_groups or display_missing_items %}
+  <nav class="cs-reprise-groups" aria-label="Rubriques avec pieces manquantes">
+    <span>Rubriques</span>
+    {% if accounting_fallback_active %}
+    <a href="{{ token_href('/pieces?proof=missing&group=comptes') }}">Comptes et factures <span>{{ accounting_missing_items|length }}</span></a>
+    {% else %}
+    {% for group in missing_groups %}
+    <a href="{{ token_href('/pieces?proof=missing&group=' ~ group.id|default(loop.index, true)) }}">{{ safe_text(group.label|default('Rubrique', true), 'Rubrique') }} <span>{{ group.count|default(0, true) }}</span></a>
+    {% else %}
+    <a href="{{ token_href('/pieces?proof=missing&group=ag') }}">AG</a>
+    <a href="{{ token_href('/pieces?proof=missing&group=contrats') }}">Contrats</a>
+    <a href="{{ token_href('/pieces?proof=missing&group=travaux') }}">Travaux</a>
+    <a href="{{ token_href('/pieces?proof=missing&group=comptes') }}">Comptes et factures</a>
+    <a href="{{ token_href('/pieces?proof=missing&group=sinistres') }}">Sinistres</a>
+    <a href="{{ token_href('/pieces?proof=missing&group=contentieux') }}">Contentieux</a>
+    <a href="{{ token_href('/pieces?proof=missing&group=passation') }}">Passation</a>
+    {% endfor %}
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% if display_missing_items %}
+  <div class="cs-reprise-layout">
+    <section class="cs-reprise-list" aria-labelledby="cs-reprise-missing-list-title">
+      <div class="cs-reprise-panel-head">
+        <h3 id="cs-reprise-missing-list-title">Pieces attendues</h3>
+        <span>{{ display_missing_items|length }} {{ 'piece' if display_missing_items|length == 1 else 'pieces' }}</span>
+      </div>
+      {% for item in display_missing_items[:14] %}
+      {% set item_id = item.id|default(loop.index|string, true)|string %}
+      {% set related_action_id = item.related_action_id|default(item_id, true)|string %}
+      {% set fallback_action_href = '/comptes?status=p1' if accounting_fallback_active else '/actions?selected=' ~ related_action_id %}
+      {% set fallback_request_href = '/demandes/relance?scope=comptes' if accounting_fallback_active else '/demandes/relance?action_id=' ~ related_action_id %}
+      {% set fallback_deposit_href = '/depot?intent=proof&scope=comptes' if accounting_fallback_active else '/depot?intent=proof&missing_for=' ~ item_id %}
+      {% set item_expected_piece = item.expected_piece|default(item.title|default(item.evidence|default('Piece attendue', true), true), true) %}
+      {% set item_reason = item.reason|default(item.next_step|default(item.question|default('Cette piece manque pour prouver le sujet rattache.', true), true), true) %}
+      {% set item_status_label = item.status_label|default(item.status|default('A demander', true), true) %}
+      {% set item_rubric_label = item.rubric_label|default(item.source|default('Piece attendue', true), true) %}
+      {% set item_criticality_label = item.criticality_label|default(item.priority|default('Priorite a confirmer', true), true) %}
+      {% set item_action_label = item.action_label|default(item.question|default(related_action_id, true), true) %}
+      {% set raw_action_href = item.action_href|default('', true)|string %}
+      {% set action_href = raw_action_href if raw_action_href and not raw_action_href.startswith('/pieces') else item.followup_href|default(fallback_action_href, true) %}
+      {% set action_link_label = 'Ouvrir compte' if accounting_fallback_active or action_href.startswith('/comptes') or 'scope=comptes' in action_href else 'Ouvrir action' %}
+      {% set request_href = item.request_href|default(fallback_request_href, true) %}
+      {% set deposit_href = item.deposit_href|default(fallback_deposit_href, true) %}
+      {% set received_href = deposit_href ~ ('&' if '?' in deposit_href else '?') ~ 'status=reponse-recue&return=pieces' %}
+      {% set question_href = '/demandes?intent=question&piece=' ~ item_id %}
+      {% set proof_label = item.proof_expected_label|default(item.proof_purpose|default(item.evidence|default(item_expected_piece, true), true), true) %}
+      <article class="cs-reprise-item cs-missing-card {{ 'cs-reprise-tone-warn' if item.candidate_docs|default([])|length else 'cs-reprise-tone-danger' }}">
+        <div class="cs-missing-card-head">
+          <div>
+            <span>{{ safe_text(item_rubric_label, 'Piece attendue') }} - {{ safe_text(item_status_label, 'A demander') }}</span>
+            <h3>{{ safe_text(item_expected_piece, 'Piece attendue') }}</h3>
+          </div>
+          <strong>{{ safe_text(item_criticality_label, 'Priorite a confirmer') }}</strong>
+        </div>
+        <p>{{ safe_text(item_reason, 'Cette piece manque pour prouver le sujet rattache.') }}</p>
+        <dl class="cs-reprise-kv cs-missing-kv">
+          <div>
+            <dt>Pourquoi</dt>
+            <dd>{{ safe_text(item_reason, 'Aucune piece validee ne prouve encore ce point.') }}</dd>
+          </div>
+          <div>
+            <dt>Detenteur</dt>
+            <dd>{{ relaunch_target(item) }}</dd>
+          </div>
+          <div>
+            <dt>Preuve attendue</dt>
+            <dd>{{ safe_text(proof_label, 'Preuve attendue a preciser') }}</dd>
+          </div>
+          <div>
+            <dt>Lien</dt>
+            <dd>{{ safe_text(item_action_label, 'Action a ouvrir') }}</dd>
+          </div>
+          <div>
+            <dt>Diffusion</dt>
+            <dd>{{ safe_text(item.diffusion_label|default('Conseil syndical uniquement', true), 'Conseil syndical uniquement') }}</dd>
+          </div>
+          <div>
+            <dt>Piece candidate</dt>
+            <dd>{{ item.candidate_docs|default([])|length }} {{ 'candidate a verifier' if item.candidate_docs|default([])|length == 1 else 'candidates a verifier' }}</dd>
+          </div>
+        </dl>
+        <div class="cs-reprise-actions">
+          <a class="cs-reprise-secondary" href="{{ token_href('/pieces/' ~ item_id) }}">Detail piece/preuve</a>
+          <a class="cs-reprise-primary" href="{{ token_href(request_href) }}">Relancer syndic</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(received_href) }}">Ajouter reponse recue</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(action_href) }}">{{ action_link_label }}<span class="sr-only">Voir action</span></a>
+          <a class="cs-reprise-secondary" href="{{ token_href(question_href) }}">Question</a>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+
+    {% set selected_related_action_id = selected_missing.related_action_id|default(selected_missing.id|default('', true), true)|string %}
+    {% set selected_fallback_action_href = '/comptes?status=p1' if accounting_fallback_active else '/actions?selected=' ~ selected_related_action_id %}
+    {% set selected_fallback_request_href = '/demandes/relance?scope=comptes' if accounting_fallback_active else '/demandes/relance?action_id=' ~ selected_related_action_id %}
+    {% set selected_fallback_deposit_href = '/depot?intent=proof&scope=comptes' if accounting_fallback_active else '/depot?intent=proof&missing_for=' ~ selected_related_action_id %}
+    {% set selected_expected_piece = selected_missing.expected_piece|default(selected_missing.title|default(selected_missing.evidence|default('Piece attendue', true), true), true) %}
+    {% set selected_reason = selected_missing.reason|default(selected_missing.next_step|default(selected_missing.question|default('Aucune piece validee ne prouve encore ce point.', true), true), true) %}
+    {% set selected_raw_action_href = selected_missing.action_href|default('', true)|string %}
+    {% set selected_action_href = selected_raw_action_href if selected_raw_action_href and not selected_raw_action_href.startswith('/pieces') else selected_missing.followup_href|default(selected_fallback_action_href, true) %}
+    {% set selected_action_link_label = 'Ouvrir compte' if accounting_fallback_active or selected_action_href.startswith('/comptes') or 'scope=comptes' in selected_action_href else 'Ouvrir action' %}
+    {% set selected_request_href = selected_missing.request_href|default(selected_fallback_request_href, true) %}
+    {% set selected_deposit_href = selected_missing.deposit_href|default(selected_fallback_deposit_href, true) %}
+    {% set selected_received_href = selected_deposit_href ~ ('&' if '?' in selected_deposit_href else '?') ~ 'status=reponse-recue&return=pieces' %}
+    {% set selected_question_href = '/demandes?intent=question&piece=' ~ selected_related_action_id %}
+    {% set selected_proof_label = selected_missing.proof_expected_label|default(selected_missing.proof_purpose|default(selected_missing.evidence|default(selected_expected_piece, true), true), true) %}
+    <aside class="cs-reprise-detail" aria-labelledby="cs-reprise-missing-detail-title">
+      <p class="eyebrow">Detail du manque</p>
+      <h3 id="cs-reprise-missing-detail-title">{{ safe_text(selected_expected_piece, 'Piece attendue') }}</h3>
+      <dl class="cs-reprise-kv">
+        <div>
+          <dt>Pourquoi</dt>
+          <dd>{{ safe_text(selected_reason, 'Aucune piece validee ne prouve encore ce point.') }}</dd>
+        </div>
+        <div>
+          <dt>Detenteur</dt>
+          <dd>{{ relaunch_target(selected_missing) }}</dd>
+        </div>
+        <div>
+          <dt>Preuve attendue</dt>
+          <dd>{{ safe_text(selected_proof_label, 'Preuve attendue a preciser') }}</dd>
+        </div>
+        <div>
+          <dt>Candidate ou preuve</dt>
+          <dd>Piece candidate a verifier; preuve validee seulement apres controle explicite du conseil syndical.</dd>
+        </div>
+        <div>
+          <dt>Restriction</dt>
+          <dd>Aucun document restreint n'est telecharge directement depuis cette vue; verifier avant partage.</dd>
+        </div>
+      </dl>
+      <div class="cs-reprise-actions">
+        <a class="cs-reprise-secondary" href="{{ token_href('/pieces/' ~ selected_missing.id|default(selected_related_action_id, true)) }}">Detail piece/preuve</a>
+        <a class="cs-reprise-primary" href="{{ token_href(selected_request_href) }}">Relancer syndic</a>
+        <a class="cs-reprise-secondary" href="{{ token_href(selected_received_href) }}">Ajouter reponse recue</a>
+        <a class="cs-reprise-secondary" href="{{ token_href(selected_action_href) }}">{{ selected_action_link_label }}<span class="sr-only">Voir action</span></a>
+        <a class="cs-reprise-secondary" href="{{ token_href(selected_question_href) }}">Question</a>
+      </div>
+    </aside>
+  </div>
+  {% else %}
+  <div class="cs-reprise-empty cs-reprise-empty-wide">
+    <strong>Aucune piece a demander pour le moment</strong>
+    <p>Les sorties chargees ne signalent aucun manque prioritaire. Vous pouvez relire toutes les pieces ou revenir au cockpit.</p>
+    <div class="cs-reprise-actions">
+      <a class="cs-reprise-secondary" href="{{ token_href('/pieces') }}">Voir toutes les pieces</a>
+      <a class="cs-reprise-primary" href="{{ token_href('/') }}">Retour au cockpit</a>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
 <section class="band">
   <div>
     <p class="eyebrow">Sprint 4</p>
@@ -21,14 +270,19 @@
       <span>{{ workshop.to_request|length }}</span>
     </div>
     <table>
-      <thead><tr><th>Priorite</th><th>Piece</th><th>Point</th><th>Prochaine etape</th></tr></thead>
+      <thead><tr><th>Priorite</th><th>Piece</th><th>Point</th><th>Action primaire</th></tr></thead>
       <tbody>
       {% for item in workshop.to_request[:12] %}
-        <tr>
+        <tr data-href="{{ item.href }}{{ ui_token_query }}" onclick="window.location=this.dataset.href" tabindex="0" onkeydown="if(event.key==='Enter'){window.location=this.dataset.href}">
           <td><span class="pill severity-{{ item.tone }}">{{ item.priority }}</span><br><small>{{ item.status }}</small></td>
-          <td>{{ item.piece }}<br><small>{{ item.source }}</small></td>
+          <td>
+            <a href="{{ item.href }}{{ ui_token_query }}"><strong>{{ item.piece }}</strong></a><br>
+            <small>{{ item.source }}{% if item.request_id %} - {{ item.request_id }}{% endif %}</small>
+            <br><span class="pill severity-{{ 'p2' if item.has_local_proof else item.tone }}">{{ item.proof_badge }}</span>
+            {% if item.signature_badge %}<span class="pill severity-p2">{{ item.signature_badge }}</span>{% endif %}
+          </td>
           <td>{{ item.point_type }}<br><small>{{ item.point }}</small></td>
-          <td>{{ item.next_step }}</td>
+          <td><a class="button-link" href="{{ item.href }}{{ ui_token_query }}">{{ item.primary_action }}</a></td>
         </tr>
       {% else %}
         <tr><td colspan="4">Aucune piece a demander dans les sorties disponibles.</td></tr>
@@ -43,14 +297,19 @@
       <span>{{ workshop.to_verify|length }}</span>
     </div>
     <table>
-      <thead><tr><th>Statut</th><th>Piece</th><th>Preuve locale</th><th>Point</th></tr></thead>
+      <thead><tr><th>Statut</th><th>Piece</th><th>Preuve locale</th><th>Action primaire</th></tr></thead>
       <tbody>
       {% for item in workshop.to_verify[:12] %}
-        <tr>
+        <tr data-href="{{ item.href }}{{ ui_token_query }}" onclick="window.location=this.dataset.href" tabindex="0" onkeydown="if(event.key==='Enter'){window.location=this.dataset.href}">
           <td><span class="pill severity-{{ item.tone }}">{{ item.priority }}</span><br><small>{{ item.status }}</small></td>
-          <td>{{ item.piece }}<br><small>{{ item.source }}</small></td>
-          <td><code>{{ item.proof_ref }}</code></td>
-          <td>{{ item.point_type }}<br><small>{{ item.point }}</small></td>
+          <td>
+            <a href="{{ item.href }}{{ ui_token_query }}"><strong>{{ item.piece }}</strong></a><br>
+            <small>{{ item.source }}</small>
+            {% if item.privacy_badge %}<br><span class="pill severity-p2">confidentialite {{ item.privacy_badge }}</span>{% endif %}
+            {% if item.confidence_badge %}<span class="pill severity-ok">confiance {{ item.confidence_badge }}</span>{% endif %}
+          </td>
+          <td><span class="pill severity-ok">{{ item.proof_badge }}</span><br><code>{{ item.proof_ref }}</code></td>
+          <td><a class="button-link" href="{{ item.href }}{{ ui_token_query }}">{{ item.primary_action }}</a></td>
         </tr>
       {% else %}
         <tr><td colspan="4">Aucune preuve locale a verifier dans les sorties disponibles.</td></tr>
@@ -73,23 +332,29 @@
         <th>Point de rattachement</th>
         <th>Action attendue</th>
         <th>Prochaine etape</th>
+        <th>Ouvrir</th>
       </tr>
     </thead>
     <tbody>
     {% for item in workshop["items"] %}
-      <tr>
+      <tr data-href="{{ item.href }}{{ ui_token_query }}" onclick="window.location=this.dataset.href" tabindex="0" onkeydown="if(event.key==='Enter'){window.location=this.dataset.href}">
         <td><span class="pill severity-{{ item.tone }}">{{ item.priority }}</span><br><small>{{ item.status }}</small></td>
         <td>
-          <strong>{{ item.piece }}</strong><br>
+          <a href="{{ item.href }}{{ ui_token_query }}"><strong>{{ item.piece }}</strong></a><br>
           <small>{{ item.source }}{% if item.request_id %} - {{ item.request_id }}{% endif %}</small>
+          <br><span class="pill severity-{{ 'ok' if item.has_local_proof else item.tone }}">{{ item.proof_badge }}</span>
+          {% if item.signature_badge %}<span class="pill severity-p2">{{ item.signature_badge }}</span>{% endif %}
+          {% if item.privacy_badge %}<span class="pill severity-p2">confidentialite {{ item.privacy_badge }}</span>{% endif %}
+          {% if item.confidence_badge %}<span class="pill severity-ok">confiance {{ item.confidence_badge }}</span>{% endif %}
           {% if item.proof_ref %}<br><code>{{ item.proof_ref }}</code>{% endif %}
         </td>
         <td>{{ item.point_type }}<br><small>{{ item.point }}</small></td>
         <td>{{ item.action }}</td>
-        <td>{{ item.next_step }}</td>
+        <td><strong>{{ item.primary_action }}</strong></td>
+        <td><a class="button-link" href="{{ item.href }}{{ ui_token_query }}">Ouvrir</a></td>
       </tr>
     {% else %}
-      <tr><td colspan="5">Aucune piece exploitable dans les artefacts charges.</td></tr>
+      <tr><td colspan="6">Aucune piece exploitable dans les artefacts charges.</td></tr>
     {% endfor %}
     </tbody>
   </table>

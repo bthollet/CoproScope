@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block topbar_title %}Detail blocage export{% endblock %}
+{% block content %}
+{% set detail = passation_blocker|default(passation_blocker_detail|default(model.ux.passation_export_blocker_detail|default({}))) %}
+{% set context = detail.context|default({}) %}
+{% set summary = detail.summary|default({}) %}
+{% set blocker = detail.blocker|default({}) %}
+{% set actions = detail.actions|default({}) %}
+{% set back_preview = actions.back_preview|default({'href': '/exports/passation', 'label': "Retour a l'apercu"}) %}
+{% set view_action = actions.view_action|default({'href': '/actions', 'label': 'Voir action'}) %}
+{% set record_external_send = actions.record_external_send|default(none) %}
+{% set record_external_send_with_action = actions.record_external_send_with_action|default(none) %}
+{% set exclude_from_pack = actions.exclude_from_pack|default(none) %}
+{% set download = actions.download|default({}) %}
+
+<section class="cs-passation-page cs-passation-blocker-page" aria-labelledby="passation-blocker-title" data-testid="passation-blocker-detail-shell">
+  <header class="cs-passation-hero">
+    <div class="cs-passation-heading">
+      <p class="eyebrow">{{ context.watermark|default('export derive, non source de verite') }}</p>
+      <h2 id="passation-blocker-title">{{ context.title|default('Detail blocage export') }}</h2>
+      <p>Je comprends pourquoi un element ne sort pas du coffre avant passation.</p>
+    </div>
+    <div class="cs-passation-hero-actions" data-testid="passation-blocker-actions">
+      <a class="cs-passation-secondary" data-short-label="Retour apercu" href="{{ token_href(back_preview.href|default('/exports/passation')) }}">{{ back_preview.label|default("Retour a l'apercu") }}</a>
+      <a class="cs-passation-secondary" href="{{ token_href(view_action.href|default('/actions')) }}">{{ view_action.label|default('Voir action') }}</a>
+      {% if record_external_send %}
+      <a class="cs-passation-primary" href="{{ token_href(record_external_send.href|default('/demandes/relance')) }}">{{ record_external_send.label|default("Noter l'envoi hors CoproScope") }}</a>
+      {% endif %}
+      {% if record_external_send_with_action %}
+      <a class="cs-passation-secondary" href="{{ token_href(record_external_send_with_action.href|default('/demandes/relance')) }}">{{ record_external_send_with_action.label|default("Noter depuis l'action") }}</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <section class="cs-passation-kpis" aria-label="Resume du blocage export" data-testid="passation-blocker-status-grid">
+    <div><strong>{{ summary.included_count|default(0) }}</strong><span>Inclus</span></div>
+    <div><strong>{{ summary.review_count|default(0) }}</strong><span>A verifier</span></div>
+    <div><strong>{{ summary.blocked_count|default(0) }}</strong><span>Bloques</span></div>
+    <div><strong>{{ summary.formats_count|default(0) }}</strong><span>Formats</span></div>
+    <div><strong>{% if summary.watermark_visible|default(false) %}100%{% else %}0%{% endif %}</strong><span>Watermark</span></div>
+  </section>
+
+  <div class="cs-passation-blocker-layout">
+    <section class="cs-passation-preview" data-testid="passation-blocker-summary">
+      <nav class="cs-passation-breadcrumb" aria-label="Fil d'Ariane blocage" data-testid="passation-blocker-breadcrumb">
+        <a href="{{ token_href(back_preview.href|default('/exports/passation')) }}">Apercu de passation</a>
+        <span>Restrictions et blocages</span>
+        <span>{{ blocker.title|default('Blocage') }}</span>
+      </nav>
+
+      <h3>Pourquoi ce n'est pas exporte</h3>
+      <div class="cs-passation-blocker-alert">
+        <div aria-hidden="true">!</div>
+        <div>
+          <h3>{{ blocker.title|default('Blocage introuvable') }}</h3>
+          <p>{{ blocker.user_reason|default("Ce blocage n'est pas disponible dans l'apercu.") }}</p>
+        </div>
+        <span>{{ blocker.status_label|default('A verifier') }}</span>
+      </div>
+
+      <div class="cs-passation-mini-grid">
+        <div><span>Public vise</span><strong>{{ blocker.audience|default('Conseil syndical') }}</strong></div>
+        <div><span>Risque</span><strong>{{ blocker.risk_label|default('Aucune donnee affichee') }}</strong></div>
+        <div><span>Action utile</span><strong>{{ blocker.safe_action|default('Revenir a l_apercu') }}</strong></div>
+      </div>
+
+      <section data-testid="passation-blocker-excluded-items">
+        <h3>Ce qui serait exclu du pack</h3>
+        <div class="cs-passation-omission-list">
+          {% for item in detail.excluded_items|default([]) %}
+          <article>
+            <strong>{{ item.label|default('Element exclu') }}</strong>
+            <span>{{ item.reason|default('Hors perimetre de cet export.') }}</span>
+            <em>{{ item.status_label|default('Exclu') }}</em>
+          </article>
+          {% else %}
+          <p>Aucun element exclu n'est affiche pour ce blocage.</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section data-testid="passation-blocker-decision-timeline">
+        <h3>Fil de decision attendu</h3>
+        <div class="cs-passation-mini-grid">
+          {% for step in detail.decision_steps|default([]) %}
+          <div><strong>{{ loop.index }}. {{ step.label|default('Etape') }}</strong><span>{{ step.detail|default('A verifier.') }}</span></div>
+          {% else %}
+          <div><strong>1. Retour a l'apercu</strong><span>Reprendre depuis les blocages visibles.</span></div>
+          {% endfor %}
+        </div>
+      </section>
+    </section>
+
+    <section class="cs-passation-side" data-testid="passation-blocker-confidentiality-checks">
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Controle confidentialite</h3>
+          <span>source_of_truth false</span>
+        </div>
+        {% for item in detail.confidentiality_checks|default([]) %}
+        <div class="cs-passation-check-row is-{{ item.status|default('OK')|lower }}">
+          <strong>{{ item.status|default('OK') }}</strong>
+          <span>{{ item.label|default('Controle') }}</span>
+          <small>{{ item.detail|default('Controle a relire.') }}</small>
+        </div>
+        {% else %}
+        <p>Aucun controle confidentiel a afficher.</p>
+        {% endfor %}
+      </section>
+
+      <section class="cs-passation-side-section" data-testid="passation-blocker-required-proof">
+        <div class="cs-passation-section-head">
+          <h3>Preuves attendues</h3>
+          <span>{{ detail.required_proofs|default([])|length }}</span>
+        </div>
+        {% for proof in detail.required_proofs|default([]) %}
+        <div class="cs-passation-proof-row is-{{ proof.status|default('missing') }}">
+          <strong>{{ proof.label|default('Preuve') }}</strong>
+          <span>{{ proof.detail|default('A completer avant export.') }}</span>
+        </div>
+        {% else %}
+        <p>Aucune preuve supplementaire requise.</p>
+        {% endfor %}
+      </section>
+    </section>
+
+    <aside class="cs-passation-side" data-testid="passation-blocker-decision-panel">
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Decision avant export</h3>
+          <span>{{ blocker.status_label|default('A verifier') }}</span>
+        </div>
+        <p>Le conseiller choisit entre corriger le blocage, exclure proprement l'element, ou revenir a l'apercu. Aucun telechargement final ne part avec une relance ambigue.</p>
+        <div class="cs-passation-blocked-box">
+          <strong>Element bloque</strong>
+          <span>{{ blocker.linked_action_id|default(blocker.id|default('Reference fictive')) }}</span>
+          <span>{{ blocker.title|default('Blocage introuvable') }}</span>
+          <span>Statut: {{ blocker.status_label|default('A verifier') }}</span>
+        </div>
+      </section>
+
+      <section class="cs-passation-side-section" data-testid="passation-blocker-format-impact">
+        <div class="cs-passation-section-head">
+          <h3>Formats impactes</h3>
+          <span>{{ detail.format_impact|default([])|length }}</span>
+        </div>
+        <div class="cs-passation-format-grid">
+          {% for format in detail.format_impact|default([]) %}
+          <span class="{{ 'is-enabled' if format.enabled|default(false) else 'is-locked' }}">{{ format.label|default(format.id|upper) }}</span>
+          {% else %}
+          <span>Aucun format disponible.</span>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="cs-passation-side-section">
+        <button class="cs-passation-lock-button" type="button" disabled aria-disabled="true">
+          {{ download.label|default('Telecharger export derive - verrouille') }}
+        </button>
+        <p>{{ download.disabled_reason|default('Blocage export actif.') }}</p>
+        {% if record_external_send %}
+        <a class="cs-passation-primary" href="{{ token_href(record_external_send.href) }}">{{ record_external_send.label }}</a>
+        {% endif %}
+        {% if exclude_from_pack %}
+        <a class="cs-passation-secondary" href="{{ token_href(exclude_from_pack.href) }}">{{ exclude_from_pack.label }}</a>
+        {% endif %}
+        <div class="cs-passation-two-actions">
+          <a class="cs-passation-secondary" data-short-label="Retour apercu" href="{{ token_href(back_preview.href|default('/exports/passation')) }}">{{ back_preview.label|default("Retour a l'apercu") }}</a>
+          <a class="cs-passation-secondary" href="{{ token_href(view_action.href|default('/actions')) }}">{{ view_action.label|default('Voir action') }}</a>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="cs-passation-audit" aria-label="Trace de generation">
+    <span>{{ context.watermark|default('export derive, non source collaborative') }}</span>
+    <span>source_of_truth false</span>
+    <span>Non source de verite</span>
+    <span>Donnees FICTIVES de test</span>
+  </section>
+</section>
+{% endblock %}

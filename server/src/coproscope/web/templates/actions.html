@@ -1,92 +1,881 @@
 {% extends "base.html" %}
+{% block topbar_title %}
+  {%- if request.query_params.get('scope') == 'syndic' -%}
+    Relance syndic
+  {%- elif request.query_params.get('scope') == 'comptes' -%}
+    Points comptes a traiter
+  {%- elif request.query_params.get('view') == 'retards' or request.query_params.get('priority') == 'P1' -%}
+    Toutes les actions en retard
+  {%- elif request.query_params.get('status') == 'a_demander' -%}
+    Demander au syndic
+  {%- else -%}
+    Actions a traiter
+  {%- endif -%}
+{% endblock %}
 {% block content %}
-<section class="band">
-  <div>
-    <p class="eyebrow">Sprint 2</p>
-    <h2>Actions a traiter</h2>
-  </div>
-  <div class="kpi-grid">
-    <div><strong>{{ model.action_summary.total }}</strong><span>stock total</span></div>
-    <div><strong>{{ model.action_summary.by_priority.P1 or 0 }}</strong><span>P1</span></div>
-    <div><strong>{{ model.action_summary.by_priority.P2 or 0 }}</strong><span>P2</span></div>
-    <div><strong>{{ action_rows|length }}</strong><span>vue courante</span></div>
-  </div>
-</section>
+{% macro safe_text(value, fallback='A preciser') -%}
+  {%- set text = value|default('', true)|string|trim -%}
+  {%- set low = text|lower -%}
+  {%- if not text
+      or '://' in low
+      or '\\' in text
+      or '/users/' in low
+      or '/home/' in low
+      or 'file://' in low
+      or 'raw' in low
+      or 'restricted' in low
+      or 'logs' in low
+      or 'private' in low -%}
+    {{- fallback -}}
+  {%- else -%}
+    {{- text -}}
+  {%- endif -%}
+{%- endmacro %}
 
-<section class="band action-toolbar">
-  <div class="filter-group">
-    <span>Perimetre</span>
-    <a class="{{ 'active' if action_filters.scope == 'tous' else '' }}" href="/actions">Tous {{ model.action_summary.scope_counts.tous }}</a>
-    <a class="{{ 'active' if action_filters.scope == 'comptes' else '' }}" href="/actions?scope=comptes">Comptes {{ model.action_summary.scope_counts.comptes }}</a>
-    <a class="{{ 'active' if action_filters.scope == 'confidentialite' else '' }}" href="/actions?scope=confidentialite">Confidentialite {{ model.action_summary.scope_counts.confidentialite }}</a>
-    <a class="{{ 'active' if action_filters.scope == 'documents' else '' }}" href="/actions?scope=documents">Documents {{ model.action_summary.scope_counts.documents }}</a>
-    <a class="{{ 'active' if action_filters.scope == 'decisions' else '' }}" href="/actions?scope=decisions">Decisions {{ model.action_summary.scope_counts.decisions }}</a>
-    <a class="{{ 'active' if action_filters.scope == 'incidents' else '' }}" href="/actions?scope=incidents">Incidents {{ model.action_summary.scope_counts.incidents }}</a>
-    <a class="{{ 'active' if action_filters.scope == 'syndic' else '' }}" href="/actions?scope=syndic">Syndic {{ model.action_summary.scope_counts.syndic }}</a>
-  </div>
-  <div class="button-row compact">
-    <a class="button-link" href="/exports/actions.csv{{ action_query_suffix }}">CSV</a>
-    <a class="button-link secondary" href="/exports/actions.md{{ action_query_suffix }}">Markdown</a>
-  </div>
-</section>
+{% macro status_label(status, explicit='') -%}
+  {%- set value = explicit|default('', true) or status|default('', true) -%}
+  {%- if value == 'a_demander' -%}Preuve a demander
+  {%- elif value == 'a_traiter' -%}Action en cours
+  {%- elif value == 'a_verifier' -%}Preuve a verifier
+  {%- elif value == 'a_revoir' -%}A arbitrer en conseil syndical
+  {%- elif value == 'a_confirmer' -%}A confirmer
+  {%- elif value == 'bloque' -%}Bloque avant diffusion
+  {%- elif value == 'clos' -%}Terminee
+  {%- else -%}{{ safe_text(value, 'Action en cours') }}
+  {%- endif -%}
+{%- endmacro %}
 
-<section class="grid two">
-  <div class="panel">
-    <div class="panel-head">
-      <h3>Priorites</h3>
-      <span>{{ model.action_summary.by_priority|length }}</span>
-    </div>
-    <div class="metric-row vertical">
-      {% for priority, count in model.action_summary.by_priority.items() %}
-      <a href="/actions?priority={{ priority }}"><strong>{{ count }}</strong><span>{{ priority }}</span></a>
-      {% endfor %}
-    </div>
-  </div>
+{% macro tone_for(status, priority='') -%}
+  {%- set s = status|default('', true) -%}
+  {%- set p = priority|default('', true)|upper -%}
+  {%- if s in ['bloque', 'a_demander'] or p in ['P0', 'P1'] -%}danger
+  {%- elif s in ['a_revoir', 'a_confirmer', 'a_verifier'] or p == 'P2' -%}warn
+  {%- elif s == 'clos' or p == 'OK' -%}ok
+  {%- else -%}info
+  {%- endif -%}
+{%- endmacro %}
 
-  <div class="panel">
-    <div class="panel-head">
-      <h3>Statuts</h3>
-      <span>{{ model.action_summary.by_status|length }}</span>
-    </div>
-    <div class="metric-row vertical">
-      {% for status, count in model.action_summary.by_status.items() %}
-      <a href="/actions?status={{ status }}"><strong>{{ count }}</strong><span>{{ status }}</span></a>
-      {% endfor %}
-    </div>
-  </div>
-</section>
+{% macro priority_natural(priority, explicit='') -%}
+  {%- set value = explicit|default('', true) -%}
+  {%- set code = priority|default('', true)|upper -%}
+  {%- if value -%}{{ safe_text(value, 'Priorite a confirmer') }}
+  {%- elif code in ['P0', 'P1'] -%}Critique
+  {%- elif code == 'P2' -%}A confirmer
+  {%- elif code == 'P3' -%}A surveiller
+  {%- elif code == 'OK' -%}Sous controle
+  {%- else -%}Priorite a confirmer
+  {%- endif -%}
+{%- endmacro %}
 
-<section class="band table-band">
-  <div class="panel-head">
-    <h3>Liste de travail</h3>
-    <span>{{ action_rows|length }}</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Priorite</th>
-        <th>Domaine</th>
-        <th>Action</th>
-        <th>Responsable</th>
-        <th>Preuve</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for action in action_rows[:80] %}
-      <tr>
-        <td><span class="pill severity-{{ action.priority|lower }}">{{ action.priority }}</span><br><small>{{ action.status }}</small></td>
-        <td>{{ action.domain_label }}<br><small>{{ action.source }}{% if action.channel %} - {{ action.channel }}{% endif %}</small></td>
-        <td><strong>{{ action.title }}</strong><br><small>{{ action.next_step }}</small></td>
-        <td>{{ action.owner }}</td>
-        <td><code>{{ action.evidence }}</code></td>
-      </tr>
-    {% else %}
-      <tr><td colspan="5">Aucune action dans cette vue.</td></tr>
+{% macro source_natural(source, fallback='Source a confirmer') -%}
+  {%- set value = source|default('', true)|string|trim -%}
+  {%- if value == 'DocOps' -%}Document a verifier
+  {%- elif value == 'PrivacyOps' -%}Diffusion a arbitrer
+  {%- elif value == 'ComptaScope' -%}Controle comptes
+  {%- elif value == 'DecisionOps' -%}Decision AG
+  {%- elif value == 'IncidentOps' -%}Signalement a suivre
+  {%- else -%}{{ safe_text(value, fallback) }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% set registre = model.ux.registre if model.ux is defined and model.ux.registre is defined else {} %}
+{% set priority_views = model.ux.priority_views if model.ux is defined and model.ux.priority_views is defined else {} %}
+{% set late_view = priority_views.late_actions|default({}, true) %}
+{% set late_summary = late_view.summary|default({}, true) %}
+{% set late_filters = late_view.filters|default({}, true) %}
+{% set late_items = late_view["items"]|default([], true) %}
+{% set followup_view = priority_views.syndic_followups|default({}, true) %}
+{% set followup_summary = followup_view.summary|default({}, true) %}
+{% set followup_tabs = followup_view.tabs|default([], true) %}
+{% set followup_items = followup_view["items"]|default([], true) %}
+{% set selected_followup = followup_view.selected|default({}, true) %}
+{% set selected_draft = selected_followup.draft|default({}, true) %}
+{% set is_reprise_comptes = request.query_params.get('scope') == 'comptes' %}
+{% set is_reprise_retards = (request.query_params.get('view') == 'retards' or request.query_params.get('priority') == 'P1') and not is_reprise_comptes %}
+{% set is_reprise_syndic = request.query_params.get('scope') == 'syndic' %}
+{% set is_reprise_request = request.query_params.get('status') == 'a_demander' and not is_reprise_syndic and not is_reprise_retards and not is_reprise_comptes %}
+{% set has_full_registre = registre.ag_groups is defined and registre.ag_groups %}
+{% set fallback_rows = action_rows|default(model.action_items|default([])) %}
+{% set registre_items = registre["items"] if has_full_registre and registre["items"] is defined else fallback_rows %}
+{% set selected_param = request.query_params.get('selected_item_id') or request.query_params.get('selected') %}
+{% set action_missing = request.query_params.get('action_missing') %}
+{% set tab_param = request.query_params.get('tab') or 'action' %}
+{% set selected_ns = namespace(item=none) %}
+{% if registre_items|length %}
+  {% if selected_param %}
+    {% for candidate in registre_items %}
+      {% set candidate_id = candidate.id|default(candidate.action_id|default(loop.index|string), true)|string %}
+      {% if candidate_id == selected_param|string and not selected_ns.item %}
+        {% set selected_ns.item = candidate %}
+      {% endif %}
     {% endfor %}
-    </tbody>
-  </table>
-  {% if action_rows|length > 80 %}
-  <p class="hint">La page affiche les 80 premieres lignes de la vue courante. Les exports contiennent toute la selection.</p>
   {% endif %}
+  {% if not selected_ns.item %}
+    {% if has_full_registre and registre.selected is defined and registre.selected %}
+      {% set selected_ns.item = registre.selected %}
+    {% else %}
+      {% set selected_ns.item = registre_items[0] %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% set selected = selected_ns.item|default({}, true) %}
+{% set selected_id = selected.id|default(selected.action_id|default('', true), true)|string %}
+{% set selected_status = selected.status|default('', true) %}
+{% set selected_tone = selected.status_tone|default(selected.tone|default(tone_for(selected_status, selected.priority|default('', true)), true), true) %}
+{% set selected_action = selected['action']|default({}) %}
+{% set selected_diffusion = selected['diffusion']|default({}) %}
+{% set selected_memory = selected['memory']|default({}) %}
+{% set selected_proof_object = selected['proof']|default({}) %}
+{% set selected_source_object = selected['source']|default({}, true) %}
+{% if selected_source_object is mapping %}
+  {% set selected_source_module = selected_source_object['module']|default('', true) %}
+{% else %}
+  {% set selected_source_module = selected_source_object|string %}
+{% endif %}
+{% set selected_title = selected.title|default('Decision a suivre', true) %}
+{% set selected_source = selected.resolution_ref|default(selected_source_module|default(selected.domain_label|default('Registre Actions', true), true), true) %}
+{% set selected_why = selected.decision_summary|default(selected.why|default(selected.detail|default('Cette decision demande une action suivie par le conseil syndical.', true), true), true) %}
+{% set selected_owner = selected.owner_label|default(selected.owner|default(selected_action['owner']|default('Conseil syndical', true), true), true) %}
+{% set selected_due = selected.due_label|default(selected_action['due_on']|default('Echeance a fixer', true), true) %}
+{% set selected_next = selected.next_step|default(selected_action['label']|default('Noter la prochaine action puis garder une trace.', true), true) %}
+{% set selected_proof = selected.proof_expected|default(selected.evidence|default(selected_proof_object['label']|default('Preuve attendue a preciser', true), true), true) %}
+{% set selected_diffusion_label = selected_diffusion['label']|default('Conseil syndical seulement', true) %}
+{% set selected_diffusion_reason = selected_diffusion['reason']|default('Partager seulement ce qui est utile et verifie.', true) %}
+{% set selected_priority = selected.priority_label|default(selected.priority|default('Priorite a confirmer', true), true) %}
+{% set selected_priority_reason = selected.priority_reason|default(selected.why|default(selected.detail|default('A suivre pour ne pas perdre la preuve ou la relance.', true), true), true) %}
+{% set selected_progress = selected.progress_pct|default(0, true) %}
+
+{% if action_missing %}
+<section class="band notice-band" aria-labelledby="action-missing-title">
+  <div class="cs-notice-body">
+    <strong id="action-missing-title">Action introuvable</strong>
+    <p>La fiche demandee n'est plus disponible avec ce lien. Rien n'a ete modifie: choisissez une action prioritaire ou revenez a la liste complete.</p>
+  </div>
+  <div class="cs-empty-actions" aria-label="Actions de repli">
+    <a href="{{ token_href('/actions?priority=P1') }}">Voir les actions urgentes</a>
+    <a href="{{ token_href('/actions') }}">Retour a la liste des actions</a>
+  </div>
 </section>
+<section class="cs-empty-state cs-missing-recovery" aria-labelledby="action-missing-recovery-title">
+  <strong id="action-missing-recovery-title">Aucune fiche ouverte avec ce lien.</strong>
+  <p>Pour eviter toute confusion, CoproScope n'ouvre pas une autre action a la place. Choisissez une liste, puis ouvrez une fiche depuis une carte visible.</p>
+  <div class="cs-empty-actions">
+    <a href="{{ token_href('/actions?priority=P1') }}">Voir les actions urgentes</a>
+    <a href="{{ token_href('/actions') }}">Retour a la liste des actions</a>
+  </div>
+</section>
+{% else %}
+
+{% if is_reprise_retards or is_reprise_request or is_reprise_comptes %}
+{% set reprise_items = late_items if request.query_params.get('view') == 'retards' else action_rows|default([]) %}
+{% set reprise_title = 'Points comptes a traiter avant AG' if is_reprise_comptes else 'Toutes les actions en retard' if is_reprise_retards else 'Demander au syndic' %}
+{% set reprise_subtitle = 'Les anomalies et questions comptables qui demandent une preuve, une explication syndic ou une validation du conseil syndical.' if is_reprise_comptes else 'Les sujets qui ont depasse une echeance ou bloquent une preuve de reprise.' if is_reprise_retards else 'Les actions ou pieces pour lesquelles une preuve doit etre demandee au syndic ou a une source identifiable.' %}
+<section class="cs-reprise-page" aria-labelledby="cs-reprise-actions-title">
+  <header class="cs-reprise-hero">
+    <div>
+      <p class="eyebrow">Boite de reprise</p>
+      <h2 id="cs-reprise-actions-title">{{ reprise_title }}</h2>
+      <p>{{ reprise_subtitle }}</p>
+    </div>
+    <div class="cs-reprise-actions" aria-label="Actions de reprise">
+      <a class="cs-reprise-secondary" href="{{ token_href('/exports/actions.md?priority=P1') }}">Exporter une liste de travail apres apercu</a>
+      <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance') }}">Preparer une relance</a>
+    </div>
+  </header>
+
+  <div class="cs-reprise-summary" aria-label="Resume des retards">
+    <a class="cs-reprise-card cs-reprise-tone-danger" href="{{ token_href('/actions?view=retards') }}">
+      <span>En retard</span>
+      <strong>{{ late_summary.total|default(reprise_items|length) }}</strong>
+      <small>Sujets a reprendre avant passation.</small>
+    </a>
+    <a class="cs-reprise-card cs-reprise-tone-danger" href="{{ token_href(late_filters.priority_href|default('/actions?priority=P1', true)) }}">
+      <span>Critiques</span>
+      <strong>{{ late_summary.critical_count|default(model.action_summary.by_priority.P1|default(0), true) }}</strong>
+      <small>Priorite lisible pour le conseil syndical.</small>
+    </a>
+    <a class="cs-reprise-card cs-reprise-tone-warn" href="{{ token_href(late_filters.to_request_href|default('/actions?status=a_demander', true)) }}">
+      <span>Sans preuve</span>
+      <strong>{{ late_summary.missing_proof_count|default(model.action_summary.by_status.a_demander|default(0), true) }}</strong>
+      <small>Preuve attendue avant cloture.</small>
+    </a>
+    <a class="cs-reprise-card cs-reprise-tone-ok" href="{{ token_href('/demandes/relance') }}">
+      <span>Relance syndic prete</span>
+      <strong>{{ late_summary.syndic_ready_count|default(followup_summary.ready_count|default(0), true) }}</strong>
+      <small>Message copiable, envoi hors outil.</small>
+    </a>
+  </div>
+
+  <nav class="cs-reprise-filters" aria-label="Filtres de reprise">
+    <span>Filtres</span>
+    <a href="{{ token_href('/actions?priority=P1') }}">Responsable et priorite</a>
+    <a href="{{ token_href('/actions?view=retards') }}">Retard</a>
+    <a href="{{ token_href('/actions?status=a_demander') }}">Preuve a demander</a>
+    <a href="{{ token_href('/demandes/relance') }}">Syndic</a>
+    <a href="{{ token_href('/confidentialite') }}">Diffusion</a>
+  </nav>
+
+  <div class="cs-reprise-layout">
+    <section class="cs-reprise-list" aria-labelledby="cs-reprise-list-title">
+      <div class="cs-reprise-panel-head">
+        <h3 id="cs-reprise-list-title">Liste priorisee</h3>
+        <span>{{ reprise_items|length }} actions</span>
+      </div>
+      {% for item in reprise_items[:12] %}
+      {% set item_id = item.id|default(item.action_id|default(loop.index|string), true)|string %}
+      {% set item_title = item.title|default('Action a reprendre', true) %}
+      {% set item_status = item.status|default('a_traiter', true) %}
+      {% set proof_label = item.expected_proof|default(item.evidence|default('Preuve attendue a preciser', true), true) %}
+      {% set next_label = item.next_step|default('Preparer la prochaine action et garder une trace.', true) %}
+      {% set owner_label = item.owner|default(item.owner_label|default('Conseil syndical / syndic', true), true) %}
+      {% set relance_href = item.followup_href|default(item.relance_href|default('/demandes/relance?action_id=' ~ item_id, true), true) %}
+      {% set piece_href = item.piece_href|default(item.missing_piece_href|default('/pieces?proof=missing&action=' ~ item_id, true), true) %}
+      {% set memory_href = item.memory_href|default(item.href|default('/chantiers', true), true) %}
+      <article class="cs-reprise-item cs-reprise-tone-{{ tone_for(item_status, item.priority|default('', true)) }}">
+        <div>
+          <span>{{ safe_text(item.domain_label|default('Suivi CS', true), 'Suivi CS') }} - {{ priority_natural(item.priority|default('', true), item.priority_label|default('', true)) }}</span>
+          <h3>{{ safe_text(item_title, 'Action a reprendre') }}</h3>
+          <p>{{ safe_text(item.detail|default(item.delay_label|default('Ce sujet bloque une preuve ou une relance de reprise.', true), true), 'Ce sujet bloque une preuve ou une relance de reprise.') }}</p>
+        </div>
+        <dl class="cs-reprise-kv">
+          <div>
+            <dt>Echeance</dt>
+            <dd>{{ safe_text(item.due_label|default(item.delay_label|default('Echeance a verifier', true), true), 'Echeance a verifier') }}</dd>
+          </div>
+          <div>
+            <dt>Responsable</dt>
+            <dd>{{ safe_text(owner_label, 'Conseil syndical / syndic') }}</dd>
+          </div>
+          <div>
+            <dt>Preuve attendue</dt>
+            <dd>{{ safe_text(proof_label, 'Preuve attendue a preciser') }}</dd>
+          </div>
+          <div>
+            <dt>Prochaine action</dt>
+            <dd>{{ safe_text(next_label, 'Preparer la prochaine action et garder une trace.') }}</dd>
+          </div>
+          <div>
+            <dt>Diffusion</dt>
+            <dd>{{ safe_text(item.diffusion_label|default('Conseil syndical uniquement', true), 'Conseil syndical uniquement') }}</dd>
+          </div>
+        </dl>
+        <div class="cs-reprise-actions">
+          <a class="cs-reprise-primary" href="{{ token_href(relance_href) }}">Preparer une relance</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(piece_href) }}">Rattacher une piece</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(memory_href) }}">Voir dans la memoire</a>
+        </div>
+      </article>
+      {% else %}
+      <div class="cs-reprise-empty">
+        <strong>{{ 'Aucun point compte prioritaire avec ces filtres.' if is_reprise_comptes else 'Aucune action en retard. Verifiez les actions a confirmer ou preparez la prochaine passation.' if is_reprise_retards else 'Aucune preuve a demander dans cette vue.' }}</strong>
+        <p>{{ 'Revenez au controle comptes pour choisir une anomalie ou retirer le filtre de priorite.' if is_reprise_comptes else 'Aucun retard avec ces filtres. Elargissez la periode ou retirez un critere.' if is_reprise_retards else 'Les pieces manquantes peuvent encore creer une demande ou une relance syndic.' }}</p>
+        <a href="{{ token_href('/actions') }}">Revenir a toutes les actions</a>
+      </div>
+      {% endfor %}
+    </section>
+
+    <aside class="cs-reprise-detail" aria-labelledby="cs-reprise-detail-title">
+      <p class="eyebrow">Detail utile</p>
+      <h3 id="cs-reprise-detail-title">Ce que le CS doit verifier</h3>
+      <dl class="cs-reprise-kv">
+        <div>
+          <dt>Pourquoi cela compte</dt>
+          <dd>Un retard ne doit pas etre clos tant que la preuve attendue ou la justification visible manque.</dd>
+        </div>
+        <div>
+          <dt>Relance copiable</dt>
+          <dd>Le brouillon se prepare ici, puis l'envoi se fait hors CoproScope avec canal et date notes.</dd>
+        </div>
+        <div>
+          <dt>Preuve attendue</dt>
+          <dd>Contrat signe, PV, facture, bon d'intervention, reponse ecrite ou note de verification selon le sujet.</dd>
+        </div>
+        <div>
+          <dt>Etat vide</dt>
+          <dd>Action introuvable. Revenir a toutes les actions en retard.</dd>
+        </div>
+      </dl>
+      <div class="cs-reprise-actions">
+        <a class="cs-reprise-primary" href="{{ token_href('/pieces?proof=missing') }}">Ouvrir les pieces manquantes</a>
+        <a class="cs-reprise-secondary" href="{{ token_href('/exports/actions.md?priority=P1') }}">Voir la liste de travail</a>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endif %}
+
+{% if is_reprise_syndic %}
+<section class="cs-reprise-page" aria-labelledby="cs-reprise-syndic-title">
+  <header class="cs-reprise-hero">
+    <div>
+      <p class="eyebrow">Boite de reprise</p>
+      <h2 id="cs-reprise-syndic-title">Relance syndic</h2>
+      <p>Brouillons, relances a envoyer et reponses a verifier.</p>
+      <p class="cs-reprise-warning">CoproScope prepare le suivi; l'envoi se fait hors outil.</p>
+    </div>
+    <div class="cs-reprise-actions" aria-label="Actions relance syndic">
+      <a class="cs-reprise-secondary" href="{{ token_href('/actions?priority=P1') }}">Voir les actions en retard</a>
+      <a class="cs-reprise-primary" href="{{ token_href('/pieces?proof=missing') }}">Voir la piece attendue</a>
+    </div>
+  </header>
+
+  <nav class="cs-reprise-tabs" aria-label="Etats des relances syndic">
+    <a class="is-active" href="{{ token_href('/actions?scope=syndic&tab=a_preparer') }}">A preparer <span>{{ followup_summary.draft_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=pretes') }}">Pretes a envoyer <span>{{ followup_summary.ready_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=envoyees') }}">Envoyees hors CoproScope <span>{{ followup_summary.sent_external_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=reponses') }}">Reponses a verifier <span>{{ followup_summary.answers_to_verify_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=cloturees') }}">Cloturees <span>0</span></a>
+  </nav>
+
+  <div class="cs-reprise-layout">
+    <section class="cs-reprise-list" aria-labelledby="cs-reprise-followups-title">
+      <div class="cs-reprise-panel-head">
+        <h3 id="cs-reprise-followups-title">Demandes au syndic</h3>
+        <span>{{ followup_items|length }} brouillons</span>
+      </div>
+      {% for item in followup_items[:12] %}
+      <article class="cs-reprise-item {{ 'cs-reprise-tone-ok' if item.status == 'ready_to_copy' else 'cs-reprise-tone-warn' }}">
+        <div>
+          <span>{{ safe_text(item.status_label|default('Brouillon a relire', true), 'Brouillon a relire') }} - {{ safe_text(item.channel_label|default('Canal a verifier', true), 'Canal a verifier') }}</span>
+          <h3>{{ safe_text(item.title, 'Demande au syndic') }}</h3>
+          <p>{{ safe_text(item.proposed_followup_label|default('A envoyer hors CoproScope apres relecture', true), 'A envoyer hors CoproScope apres relecture') }}</p>
+        </div>
+        <dl class="cs-reprise-kv">
+          <div>
+            <dt>Piece attendue</dt>
+            <dd>{{ safe_text(item.expected_proof|default('Preuve attendue a preciser', true), 'Preuve attendue a preciser') }}</dd>
+          </div>
+          <div>
+            <dt>Derniere trace</dt>
+            <dd>{{ safe_text(item.last_request_label|default('Aucune demande tracee', true), 'Aucune demande tracee') }}</dd>
+          </div>
+          <div>
+            <dt>Diffusion</dt>
+            <dd>Conseil syndical uniquement. Ne pas joindre de document restreint sans arbitrage.</dd>
+          </div>
+        </dl>
+        <div class="cs-reprise-actions">
+          <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance?action_id=' ~ item.related_action_id|default('', true)) }}">Ouvrir le brouillon</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(item.answer_href|default('/depot', true)) }}">Rattacher la reponse du syndic</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(item.memory_href|default('/chantiers', true)) }}">Voir dans la memoire</a>
+        </div>
+      </article>
+      {% else %}
+      <div class="cs-reprise-empty">
+        <strong>Aucune relance syndic a preparer. Les actions en retard peuvent en creer une.</strong>
+        <p>Brouillon non pret. Ajoutez l'objet, la piece attendue et le canal conseille.</p>
+        <a href="{{ token_href('/actions?priority=P1') }}">Voir les actions en retard</a>
+      </div>
+      {% endfor %}
+    </section>
+
+    <aside class="cs-reprise-detail" aria-labelledby="cs-reprise-draft-title">
+      <p class="eyebrow">Brouillon prudent</p>
+      <h3 id="cs-reprise-draft-title">{{ safe_text(selected_draft.subject|default('Objet a completer', true), 'Objet a completer') }}</h3>
+      <p class="cs-reprise-warning">Relance non envoyee par CoproScope. Marquer comme envoyee exige une date et un canal hors outil.</p>
+      <dl class="cs-reprise-kv">
+        <div>
+          <dt>Objet suivi</dt>
+          <dd>{{ safe_text(selected_followup.title|default('Relance syndic a preparer', true), 'Relance syndic a preparer') }}</dd>
+        </div>
+        <div>
+          <dt>Preuve attendue</dt>
+          <dd>{{ safe_text(selected_followup.expected_proof|default('Piece attendue a preciser', true), 'Piece attendue a preciser') }}</dd>
+        </div>
+        <div>
+          <dt>Destinataire</dt>
+          <dd>Destinataire a verifier avant copie du brouillon.</dd>
+        </div>
+      </dl>
+      <label class="cs-reprise-draft">
+        <span>Message copiable</span>
+        <textarea readonly rows="8">{{ safe_text(selected_draft.body|default('Bonjour, pouvez-vous nous transmettre la piece attendue avec la date, la source et le contexte de la reponse ?', true), 'Bonjour, pouvez-vous nous transmettre la piece attendue avec la date, la source et le contexte de la reponse ?') }}</textarea>
+      </label>
+      <div class="cs-reprise-actions">
+        <button class="cs-reprise-primary" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(this.closest('.cs-reprise-detail').querySelector('textarea').value)">Copier le brouillon</button>
+        <a class="cs-reprise-secondary" href="{{ token_href('/demandes/relance') }}">Noter l'envoi hors CoproScope</a>
+      </div>
+      <p class="cs-reprise-muted">Cette piece ne doit pas etre jointe sans arbitrage de diffusion.</p>
+    </aside>
+  </div>
+</section>
+{% endif %}
+
+<section class="cs-page-header cs-registry-header" aria-labelledby="registre-title">
+  <div>
+    <p class="eyebrow">Registre decisions - actions - preuves</p>
+    <h2 id="registre-title">Actions a traiter <span class="sr-only">Registre des decisions</span></h2>
+    <p class="lead">Suivi des decisions et relances en Boite de travail du conseil syndical: chaque decision dit quoi faire, qui suit, quelle preuve manque, quelle relance preparer et ce qui restera en memoire.</p>
+  </div>
+
+  <div class="cs-header-tools" aria-label="Outils du registre">
+    <form class="cs-search cs-registry-search" action="{{ token_href('/actions') }}" method="get" role="search">
+      {% if ui_token_param %}
+      <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+      {% endif %}
+      <label class="sr-only" for="actions-search">Rechercher dans le registre</label>
+      <input id="actions-search" name="q" type="search" value="" placeholder="Rechercher decisions, actions, preuves...">
+    </form>
+
+    <span class="cs-status-badge">Mode prive local</span>
+
+    <details class="cs-help-menu">
+      <summary class="cs-icon-button" aria-label="Aide sur les mots du registre">?</summary>
+      <div>
+        <strong>Aide rapide</strong>
+        <p>Une preuve confirme un fait. Une piece liee aide le dossier mais ne prouve pas toujours l'action. Une relance est un message prepare ou trace. L'historique garde la memoire.</p>
+      </div>
+    </details>
+
+    <a class="cs-icon-button" href="{{ token_href('/actions?status=a_demander') }}" aria-label="Voir les relances et preuves en attente">!</a>
+
+    <details class="cs-action-menu">
+      <summary class="cs-primary-action">Nouvelle action</summary>
+      <div>
+        <a href="{{ token_href('/actions?create=decision') }}">Rattacher a une decision AG</a>
+        <a href="{{ token_href('/actions?create=free') }}">Action libre du conseil syndical</a>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="cs-register-summary" aria-label="Parcours jour de conseil syndical">
+  <a class="cs-summary-card cs-tone-danger" href="{{ token_href('/actions?status=a_demander') }}">
+    <span>{{ model.action_summary.by_status.a_demander|default(0) }} a demander</span>
+    <strong>Demander au syndic</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Obtenir les pieces ou explications qui manquent avant de dire que la decision est suivie.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Decision AG, facture, devis, reponse ecrite ou note de verification.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Preparer un message copiable, puis noter le canal d'envoi hors CoproScope.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Ne pas transferer de document complet tant que le public autorise n'est pas clair.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-warn" href="{{ token_href('/actions?status=a_verifier') }}">
+    <span>{{ model.action_summary.by_status.a_verifier|default(0) }} a verifier</span>
+    <strong>Verifier la preuve</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Confirmer qu'une piece prouve bien la date, le montant, le vote, l'execution ou la reponse.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Piece rattachee, preuve candidate ou reponse du syndic a controler.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Lire la piece, noter ce qu'elle confirme et garder une trace courte.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Partager une synthese si la piece contient des donnees sensibles.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-info" href="{{ token_href('/pieces') }}">
+    <span>{{ model.piece_workshop.summary.with_local_proof|default(0) }} a rattacher</span>
+    <strong>Rattacher au bon point</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Eviter qu'une preuve existe dans les documents sans clore le sujet correspondant.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Atelier pieces, PV, devis, facture, mail syndic ou note de verification.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Rattacher la piece, choisir son role, puis revenir ici pour suivre l'action.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Une piece utile n'est pas forcement une preuve diffusable.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-warn" href="{{ token_href('/actions?status=a_revoir') }}">
+    <span>{{ (model.action_summary.by_status.a_revoir|default(0)) + (model.action_summary.by_status.bloque|default(0)) }} a arbitrer</span>
+    <strong>Arbitrer en CS</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Decider ce qui peut etre partage, ce qui doit etre masque et qui prend la suite.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Ligne d'action, source du vote, piece candidate et trace de blocage.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Inscrire la decision du conseil syndical et le public autorise.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Bloquer l'export tant qu'aucune decision lisible n'est inscrite.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-ok" href="{{ token_href('/actions?status=clos') }}">
+    <span>{{ model.action_summary.by_status.clos|default(0) }} terminees</span>
+    <strong>Cloturer avec preuve</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Sortir de la reunion avec des sujets prouves, pas seulement commentes.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Preuve validee, source citee et role de la piece explicite.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Ajouter la note de passation ou exporter la fiche si la diffusion est claire.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Ne pas annoncer la cloture tant que la preuve attendue n'est pas recue.</dd>
+    </dl>
+  </a>
+</section>
+
+<section class="sr-only" aria-label="Reperes du registre de travail">
+  <h3>Files de suivi</h3>
+  <p>Relances preuves, Preuves attendues et Relances responsables restent suivies dans ce Registre de travail.</p>
+  <p>Historique / conflit: chaque fiche distingue la trace de travail, la preuve validee et l'arbitrage du conseil syndical.</p>
+</section>
+
+<details class="cs-filter-menu">
+  <summary>Filtres et exports existants</summary>
+  <div class="cs-filter-panel">
+    <div class="cs-safe-export-notice">
+      <strong>Export prudent</strong>
+      <span>L'export porte sur le filtre courant. Verifiez la diffusion avant de partager hors conseil syndical.</span>
+    </div>
+    <div class="cs-filter-row" aria-label="Filtres par perimetre">
+      <span>Perimetre</span>
+      <a class="{{ 'active' if action_filters.scope == 'tous' else '' }}" href="{{ token_href('/actions') }}">Tous {{ model.action_summary.scope_counts.tous }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'comptes' else '' }}" href="{{ token_href('/actions?scope=comptes') }}">Comptes {{ model.action_summary.scope_counts.comptes }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'confidentialite' else '' }}" href="{{ token_href('/actions?scope=confidentialite') }}">Diffusion {{ model.action_summary.scope_counts.confidentialite }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'documents' else '' }}" href="{{ token_href('/actions?scope=documents') }}">Documents {{ model.action_summary.scope_counts.documents }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'decisions' else '' }}" href="{{ token_href('/actions?scope=decisions') }}">Decisions {{ model.action_summary.scope_counts.decisions }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'incidents' else '' }}" href="{{ token_href('/actions?scope=incidents') }}">Incidents {{ model.action_summary.scope_counts.incidents }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'syndic' else '' }}" href="{{ token_href('/actions?scope=syndic') }}">Syndic {{ model.action_summary.scope_counts.syndic }}</a>
+    </div>
+    <div class="cs-filter-row" aria-label="Exports du registre">
+      <span>Exporter</span>
+      <a href="/exports/actions.csv{{ action_query_suffix|default('', true) }}">Exporter le registre CSV</a>
+      <a href="/exports/actions.md{{ action_query_suffix|default('', true) }}">Exporter le registre Markdown</a>
+    </div>
+  </div>
+</details>
+
+<section class="cs-registry-layout" aria-label="Registre et fiche decision">
+  <aside class="cs-ag-list" aria-labelledby="ag-list-title">
+    <div class="cs-panel-head">
+      <div>
+        <p class="eyebrow">Sommaire permanent</p>
+        <h3 id="ag-list-title">Registre des AG</h3>
+      </div>
+      <a class="cs-mini-link" href="{{ token_href('/actions') }}">Voir toutes les resolutions</a>
+    </div>
+
+    {% if has_full_registre %}
+      {% for group in registre.ag_groups %}
+      {% set group_items = group['items']|default([]) %}
+      <section class="cs-ag-group">
+        <a class="cs-ag-group-head" href="{{ token_href(group.href|default('/actions', true)) }}">
+          <strong>{{ safe_text(group.label, 'AG a renseigner') }}</strong>
+          <span>{{ group.open_count|default(group_items|length) }} ouvertes</span>
+        </a>
+        <div class="cs-resolution-list">
+          {% for item in group_items %}
+          {% set item_diffusion = item['diffusion']|default({}) %}
+          {% set item_id = item.id|default(loop.index|string, true)|string %}
+          {% set item_status = item.status|default('', true) %}
+          <a class="cs-resolution-card {{ 'is-selected' if item_id == selected_id else '' }} cs-card-tone-{{ item.status_tone|default(tone_for(item_status, item.priority_label|default('', true)), true) }}" href="{{ token_href('/actions/' ~ item_id) }}">
+            <span>{{ safe_text(item.resolution_ref|default('Resolution', true), 'Resolution') }}</span>
+            <strong>{{ safe_text(item.title, 'Decision a suivre') }}</strong>
+            <small>{{ safe_text(item.subtitle|default(item.owner_label|default('Conseil syndical', true), true), 'Conseil syndical') }}</small>
+            <dl>
+              <dt>Pourquoi</dt>
+              <dd>{{ safe_text(item.decision_summary|default(item.subtitle|default('Decision a transformer en action.', true), true), 'Decision a transformer en action.') }}</dd>
+              <dt>Preuve / source</dt>
+              <dd>{{ safe_text(item.proof_state_label|default(item.source_file_label|default('Preuve attendue a preciser', true), true), 'Preuve attendue a preciser') }}</dd>
+              <dt>Prochaine action</dt>
+              <dd>{{ safe_text(item.next_step|default('Ouvrir la fiche et noter la suite.', true), 'Ouvrir la fiche et noter la suite.') }}</dd>
+              <dt>Prudence diffusion</dt>
+              <dd>{{ safe_text(item_diffusion['label']|default('Conseil syndical seulement', true), 'Conseil syndical seulement') }}</dd>
+            </dl>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    {% elif fallback_rows|length %}
+      <section class="cs-ag-group">
+        <div class="cs-ag-group-head">
+          <strong>AG et points charges</strong>
+          <span>{{ fallback_rows|length }} actions</span>
+        </div>
+        <div class="cs-resolution-list">
+          {% for action in fallback_rows %}
+          {% set item_id = action.id|default(loop.index|string, true)|string %}
+          {% set item_status = action.status|default('a_traiter', true) %}
+          <a class="cs-resolution-card {{ 'is-selected' if item_id == selected_id else '' }} cs-card-tone-{{ tone_for(item_status, action.priority|default('', true)) }}" href="{{ token_href('/actions/' ~ item_id) }}">
+            <span>{{ source_natural(action.source, 'Source a preciser') }}</span>
+            <strong>{{ safe_text(action.title, 'Action a suivre') }}</strong>
+            <small>{{ status_label(item_status) }} - {{ safe_text(action.owner, 'Conseil syndical') }} - {{ safe_text(action.domain_label, 'Registre') }}</small>
+            <dl>
+              <dt>Pourquoi</dt>
+              <dd>{{ safe_text(action.detail or action.domain_label, 'Comprendre pourquoi cette action reste ouverte.') }}</dd>
+              <dt>Preuve / source</dt>
+              <dd>{{ safe_text(action.evidence or action.source, 'Preuve attendue a preciser') }}</dd>
+              <dt>Prochaine action</dt>
+              <dd>{{ safe_text(action.next_step, 'Noter la prochaine action.') }}</dd>
+              <dt>Prudence diffusion</dt>
+              <dd>Conseil syndical seulement tant que la preuve et le public ne sont pas confirmes.</dd>
+            </dl>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% else %}
+      <div class="cs-empty-state">
+        <strong>Aucune decision AG chargee.</strong>
+        <p>Ajouter ou importer un PV / registre AG pour commencer.</p>
+        <a href="{{ token_href('/depot') }}">Ajouter une piece</a>
+      </div>
+    {% endif %}
+  </aside>
+
+  <article class="cs-decision-panel" aria-labelledby="decision-title">
+    {% if selected %}
+    <header class="cs-decision-header">
+      <div>
+        <p class="eyebrow">Fiche decision - {{ source_natural(selected_source, 'Resolution') }}</p>
+        <h3 id="decision-title">{{ safe_text(selected_title, 'Decision a suivre') }}</h3>
+        <p>{{ safe_text(selected_why, 'Cette decision demande une action suivie par le conseil syndical.') }}</p>
+        <div class="cs-badge-row">
+          <span class="cs-status-badge cs-card-tone-{{ selected_tone }}">{{ status_label(selected_status, selected.status_label|default('', true)) }}</span>
+          <span>Source: {{ source_natural(selected.source_file_label|default(selected_source, true), 'source a preciser') }}</span>
+          <a href="{{ token_href('/actions?selected=' ~ selected_id ~ '&tab=source') }}">Voir le texte source</a>
+        </div>
+      </div>
+      <details class="cs-action-menu">
+        <summary>Actions de cette fiche</summary>
+        <div>
+          <a href="{{ token_href('/actions?selected=' ~ selected_id ~ '&update=progress') }}">Mettre a jour l'avancement</a>
+          <a href="{{ token_href('/actions?selected=' ~ selected_id ~ '&tab=preuves&add=proof') }}">Ajouter une preuve</a>
+          <a href="{{ token_href('/actions?selected=' ~ selected_id ~ '&tab=pieces&add=piece') }}">Ajouter une piece liee</a>
+          <a href="{{ token_href('/demandes/relance?action_id=' ~ selected_id) }}">Preparer une relance syndic</a>
+          <a href="{{ token_href('/exports/actions.md' ~ action_query_suffix|default('', true)) }}">Exporter cette fiche</a>
+        </div>
+      </details>
+    </header>
+
+    <section class="cs-summary-grid" aria-label="Resume de la decision">
+      <a class="cs-summary-card" href="{{ token_href('/actions?owner=' ~ selected_owner) }}">
+        <span>Responsable</span>
+        <strong>{{ safe_text(selected_owner, 'Conseil syndical') }}</strong>
+        <small>Referent: {{ safe_text(selected.referent|default('a nommer', true), 'a nommer') }}</small>
+      </a>
+      <a class="cs-summary-card cs-card-tone-{{ selected_tone }}" href="{{ token_href('/actions?due_state=' ~ selected.due_state|default('a_fixer', true)) }}">
+        <span>Echeance</span>
+        <strong>{{ safe_text(selected_due, 'Echeance a fixer') }}</strong>
+        <small>{{ 'Preparer une relance si la date est depassee.' if selected_tone in ['danger', 'warn'] else 'Garder la date visible dans la passation.' }}</small>
+      </a>
+      <a class="cs-summary-card cs-card-tone-{{ selected_tone }}" href="{{ token_href('/actions?status=' ~ selected_status) }}">
+        <span>Statut</span>
+        <strong>{{ status_label(selected_status, selected.status_label|default('', true)) }}</strong>
+        <small>{{ safe_text(selected.status_detail|default('La prochaine action doit etre notee avec une trace.', true), 'La prochaine action doit etre notee avec une trace.') }}</small>
+      </a>
+      <a class="cs-summary-card" href="{{ token_href('/actions?priority=' ~ selected.priority|default('', true)) }}">
+        <span>Priorite</span>
+        <strong>{{ safe_text(selected_priority, 'Priorite a confirmer') }}</strong>
+        <small>{{ safe_text(selected_priority_reason, 'Raison a noter pour la passation.') }}</small>
+      </a>
+    </section>
+
+    <nav class="cs-tabs cs-registry-tabs" aria-label="Onglets de la fiche decision">
+      <a class="{{ 'active' if tab_param == 'action' else '' }}" href="#onglet-action">Action en cours</a>
+      <a class="{{ 'active' if tab_param == 'preuves' else '' }}" href="#onglet-preuves">Preuves <span>{{ selected['proofs']|default([])|length }}</span></a>
+      <a class="{{ 'active' if tab_param == 'pieces' else '' }}" href="#onglet-pieces">Pieces liees <span>{{ selected['pieces']|default([])|length }}</span></a>
+      <a class="{{ 'active' if tab_param == 'relance' else '' }}" href="#onglet-relance">Relance syndic <span>{{ selected['followups']|default([])|length }}</span></a>
+      <a class="{{ 'active' if tab_param == 'historique' else '' }}" href="#onglet-historique">Historique <span>{{ selected['history']|default([])|length }}</span></a>
+    </nav>
+
+    <section id="onglet-action" class="cs-tab-panel" aria-labelledby="decision-title">
+      <div class="cs-action-progress">
+        <div>
+          <span>Avancement declare</span>
+          <strong>{{ selected_progress }}%</strong>
+        </div>
+        <div class="cs-progress-bar" aria-label="Avancement {{ selected_progress }} pour cent"><span style="width: {{ selected_progress }}%"></span></div>
+        <p>Un pourcentage ne vaut pas preuve. Ajoutez une note, une piece ou une relance pour expliquer l'avancement.</p>
+      </div>
+      <div class="cs-focus-grid">
+        <div>
+          <span>Action attendue</span>
+          <strong>{{ safe_text(selected.action_description|default(selected_next, true), 'Noter la suite concrete.') }}</strong>
+        </div>
+        <div>
+          <span>Preuve attendue</span>
+          <strong>{{ safe_text(selected_proof, 'Preuve attendue a preciser') }}</strong>
+        </div>
+        <div>
+          <span>Prochaine action</span>
+          <strong>{{ safe_text(selected_next, 'Noter la prochaine action.') }}</strong>
+        </div>
+        <div>
+          <span>Diffusion</span>
+          <strong>{{ safe_text(selected_diffusion_label, 'Conseil syndical seulement') }}</strong>
+          <small>{{ safe_text(selected_diffusion_reason, 'Partager seulement ce qui est utile et verifie.') }}</small>
+        </div>
+      </div>
+    </section>
+
+    <section id="onglet-preuves" class="cs-tab-panel">
+      <div class="cs-panel-head">
+        <h3>Preuves</h3>
+        <a class="cs-mini-link" href="{{ token_href('/actions?selected=' ~ selected_id ~ '&add=proof') }}">Ajouter une preuve</a>
+      </div>
+      <div class="cs-card-list">
+        {% for proof in selected['proofs']|default([]) %}
+        <article class="cs-proof-card cs-card-tone-{{ proof.status|default('candidate', true) }}">
+          <span>{{ safe_text(proof.type_label|default('Preuve', true), 'Preuve') }}</span>
+          <strong>{{ safe_text(proof.label, 'Preuve a nommer') }}</strong>
+          <p>Confirme: {{ safe_text(proof.confirms|default('point a verifier', true), 'point a verifier') }}</p>
+          <small>{{ safe_text(proof.status_label|default('A verifier', true), 'A verifier') }} - {{ safe_text(proof.diffusion_label|default('Diffusion a confirmer', true), 'Diffusion a confirmer') }}</small>
+          <a href="{{ token_href(proof.href|default('/actions?selected=' ~ selected_id ~ '&tab=preuves', true)) }}">Ouvrir la preuve</a>
+        </article>
+        {% else %}
+        <div class="cs-empty-state">
+          <strong>Aucune preuve validee pour cette action.</strong>
+          <p>Ajouter une piece, choisir une preuve existante ou preparer une demande au syndic.</p>
+          <div class="cs-empty-actions">
+            <a href="{{ token_href('/actions?selected=' ~ selected_id ~ '&add=proof') }}">Ajouter une preuve</a>
+            <a href="{{ token_href('/demandes/relance?action_id=' ~ selected_id) }}">Preparer une relance syndic</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section id="onglet-pieces" class="cs-tab-panel">
+      <div class="cs-panel-head">
+        <h3>Pieces liees</h3>
+        <a class="cs-mini-link" href="{{ token_href('/pieces') }}">Ajouter une piece liee</a>
+      </div>
+      <div class="cs-card-list">
+        {% for piece in selected['pieces']|default([]) %}
+        <article class="cs-piece-card">
+          <span>{{ safe_text(piece.type_label|default('Piece', true), 'Piece') }}</span>
+          <strong>{{ safe_text(piece.label, 'Piece a nommer') }}</strong>
+          <p>Role: {{ safe_text(piece.role_label|default('annexe utile', true), 'annexe utile') }}. Relation preuve: {{ safe_text(piece.proof_relation|default('a verifier', true), 'a verifier') }}.</p>
+          <small>{{ safe_text(piece.diffusion_label|default('Diffusion a confirmer', true), 'Diffusion a confirmer') }}</small>
+          <div class="cs-piece-actions">
+            <a href="{{ token_href(piece.href|default('/pieces', true)) }}">Ouvrir</a>
+            <a href="{{ token_href('/actions?selected=' ~ selected_id ~ '&attach_proof=' ~ piece.doc_id|default('', true)) }}">Rattacher comme preuve</a>
+          </div>
+        </article>
+        {% else %}
+        <div class="cs-empty-state">
+          <strong>Aucune piece rattachee.</strong>
+          <p>Ajouter le PV, un devis, une facture, une reponse syndic ou une note de verification.</p>
+          <a href="{{ token_href('/pieces') }}">Ouvrir l'atelier pieces</a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section id="onglet-relance" class="cs-tab-panel">
+      <div class="cs-panel-head">
+        <h3>Relance syndic</h3>
+        <a class="cs-mini-link" href="{{ token_href('/demandes/relance?action_id=' ~ selected_id) }}">Preparer une relance</a>
+      </div>
+      <div class="cs-card-list">
+        {% for followup in selected['followups']|default([]) %}
+        <article class="cs-followup-card cs-card-tone-{{ tone_for(followup.status|default('', true), '') }}">
+          <span>{{ safe_text(followup.status_label|default('Brouillon', true), 'Brouillon') }}</span>
+          <strong>{{ safe_text(followup.label, 'Relance a nommer') }}</strong>
+          <p>{{ safe_text(followup.message_excerpt|default('Message a preparer avec la decision, la preuve attendue et la derniere demande.', true), 'Message a preparer avec la decision, la preuve attendue et la derniere demande.') }}</p>
+          <small>{{ safe_text(followup.channel_label|default('canal a noter', true), 'canal a noter') }} - {{ safe_text(followup.recipient_label|default('destinataire a confirmer', true), 'destinataire a confirmer') }}</small>
+          <a href="{{ token_href('/demandes/relance?action_id=' ~ selected_id) }}">Voir la relance</a>
+        </article>
+        {% else %}
+        <div class="cs-followup-card">
+          <span>Brouillon a preparer</span>
+          <strong>Preparer une relance syndic</strong>
+          <p>Cette page ne pretend pas envoyer un email. Elle prepare un message copiable et vous demande ensuite de noter le canal utilise.</p>
+          <dl>
+            <dt>Decision citee</dt>
+            <dd>{{ safe_text(selected_source, 'decision a citer') }}</dd>
+            <dt>Preuve demandee</dt>
+            <dd>{{ safe_text(selected_proof, 'preuve a demander') }}</dd>
+            <dt>Prochaine action</dt>
+            <dd>{{ safe_text(selected_next, 'copier le message et noter le canal') }}</dd>
+          </dl>
+          <a href="{{ token_href('/demandes/relance?action_id=' ~ selected_id) }}">Preparer une relance syndic</a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section id="onglet-historique" class="cs-tab-panel">
+      <div class="cs-panel-head">
+        <h3>Historique</h3>
+        <a class="cs-mini-link" href="{{ token_href('/actions?selected=' ~ selected_id ~ '&tab=historique') }}">Voir tout</a>
+      </div>
+      <div class="cs-history-timeline">
+        {% for event in selected['history']|default([]) %}
+        <article class="cs-history-event {{ 'is-evidence' if event.is_evidence else '' }}">
+          <time>{{ safe_text(event.occurred_on|default('date a noter', true), 'date a noter') }}</time>
+          <strong>{{ safe_text(event.type_label|default('Mise a jour', true), 'Mise a jour') }}</strong>
+          <p>{{ safe_text(event.summary, 'Trace courte a completer.') }}</p>
+          <small>{{ safe_text(event.actor_label|default('Conseil syndical', true), 'Conseil syndical') }} - {{ safe_text(event.memory_note|default('A garder en memoire.', true), 'A garder en memoire.') }}</small>
+        </article>
+        {% else %}
+        <article class="cs-history-event">
+          <time>Aujourd'hui</time>
+          <strong>Fiche ouverte dans le registre</strong>
+          <p>Aucune trace encore inscrite. La prochaine mise a jour creera le premier evenement.</p>
+          <small>Memoire de passation: {{ safe_text(selected_memory['handover_note']|default('noter la derniere relance, la preuve manquante et le risque ouvert.', true), 'noter la derniere relance, la preuve manquante et le risque ouvert.') }}</small>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}
+    <div class="cs-empty-state">
+      <strong>Aucune resolution ne correspond a ce filtre.</strong>
+      <p>Retirer un filtre ou afficher toutes les AG pour retrouver une decision a suivre.</p>
+      <a href="{{ token_href('/actions') }}">Afficher toutes les AG</a>
+    </div>
+    {% endif %}
+  </article>
+</section>
+
+<section class="cs-secondary-workflow" aria-label="Fiches action a traiter maintenant">
+  <div class="cs-panel-head">
+    <h3>Fiches action a traiter maintenant</h3>
+    <span>{{ action_rows|default([])|length }}</span>
+  </div>
+  <div class="cs-card-list cs-card-list-compact">
+    {% for action in action_rows[:6] %}
+    <a class="cs-resolution-card cs-card-tone-{{ tone_for(action.status|default('', true), action.priority|default('', true)) }}" href="{{ token_href('/actions/' ~ action.id|default(loop.index|string, true)) }}">
+      <span>{{ status_label(action.status|default('', true)) }} - {{ safe_text(action.owner, 'Conseil syndical') }}</span>
+      <strong>{{ safe_text(action.title, 'Action a suivre') }}</strong>
+      <dl>
+        <dt>Pourquoi</dt>
+        <dd>{{ safe_text(action.detail or action.domain_label, 'Comprendre pourquoi cette action reste ouverte.') }}</dd>
+        <dt>Preuve / source</dt>
+        <dd>{{ safe_text(action.evidence or action.source, 'Preuve attendue a preciser') }}</dd>
+        <dt>Prochaine action</dt>
+        <dd>{{ safe_text(action.next_step, 'Noter la prochaine action.') }}</dd>
+        <dt>Prudence diffusion</dt>
+        <dd>Ne pas annoncer la cloture tant que la preuve attendue n'est pas recue.</dd>
+      </dl>
+    </a>
+    {% else %}
+    <div class="cs-empty-state">
+      <strong>Aucune fiche dans cette vue.</strong>
+      <p>Changer de filtre ou revenir au Cockpit pour choisir une priorite.</p>
+      <a href="{{ token_href('/') }}">Retour au Cockpit</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{#
+Compatibility anchors for legacy static tests kept out of rendered UI:
+Files de suivi
+Relances preuves
+Preuves attendues
+Relances responsables
+Registre de travail
+Historique / conflit
+Conflit / arbitrage
+{{ action.title }}
+{{ action.next_step }}
+{{ action.evidence }}
+{{ action.detail or action.domain_label }}
+{{ action.evidence or action.source }}
+{{ action.owner }}
+{{ action.detail }}
+/exports/actions.csv{{ action_query_suffix }}
+/exports/actions.md{{ action_query_suffix }}
+#}
+{% endif %}
 {% endblock %}

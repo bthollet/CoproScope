@@ -43,13 +43,14 @@ class IncidentOpsTests(unittest.TestCase):
         result = incidentops.build_incident_register(self.instance, run)
 
         self.assertEqual(result["status"], "ok")
-        self.assertEqual(result["incident_count"], 1)
-        self.assertEqual(result["open_incident_count"], 1)
+        self.assertEqual(result["incident_count"], 2)
+        self.assertEqual(result["open_incident_count"], 2)
         self.assertEqual(result["open_incident_issue_count"], 0)
 
         _, incidents = read_csv(Path(result["incident_register"]))
-        self.assertEqual(len(incidents), 1)
-        row = incidents[0]
+        self.assertEqual(len(incidents), 2)
+        self.assertFalse(any("demande_attestation_assurance" in row["source_refs"] for row in incidents))
+        row = next(item for item in incidents if "signalement_fuite_parking" in item["source_refs"])
         self.assertEqual(row["date_signalement"], "2026-05-03")
         self.assertEqual(row["lieu"], "Parking niveau -1")
         self.assertEqual(row["status"], "A_QUALIFIER")
@@ -58,7 +59,7 @@ class IncidentOpsTests(unittest.TestCase):
         self.assertTrue(row["action_due_date"])
 
         _, open_rows = read_csv(Path(result["open_incidents_export"]))
-        self.assertEqual([item["incident_id"] for item in open_rows], [row["incident_id"]])
+        self.assertIn(row["incident_id"], {item["incident_id"] for item in open_rows})
         self.assertTrue(Path(result["incident_report"]).exists())
 
     def test_open_export_excludes_closed_incidents(self) -> None:

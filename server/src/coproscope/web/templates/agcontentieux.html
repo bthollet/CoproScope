@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block content %}
+{% set agctx = agcontentieux %}
+<section class="band">
+  <div>
+    <p class="eyebrow">AG, contentieux, passation</p>
+    <h2>{{ agctx.novice.title }}</h2>
+    <p class="hint">{{ agctx.novice.summary }}</p>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ agctx.summary.questions }}</strong><span>questions AG</span></div>
+    <div><strong>{{ agctx.summary.pieces }}</strong><span>pieces de convocation</span></div>
+    <div><strong>{{ agctx.summary.contentieux }}</strong><span>dossiers contentieux</span></div>
+    <div><strong>{{ agctx.summary.evidence }}</strong><span>preuves / sources</span></div>
+  </div>
+</section>
+
+{% if agctx.summary.is_empty %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Etat vide</p>
+    <h3>{{ agctx.novice.empty_title }}</h3>
+  </div>
+  <p>{{ agctx.novice.empty_body }}</p>
+</section>
+{% endif %}
+
+<section class="next-action-grid" aria-label="Parcours AG contentieux passation">
+  <a class="next-action-card severity-{{ 'p1' if agctx.summary.questions else 'ok' }}" href="#questions-ag">
+    <div class="card-head">
+      <span>{{ agctx.summary.questions }} a cadrer</span>
+      <strong>Question AG</strong>
+    </div>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Transformer une convocation ou une decision en question claire pour le conseil syndical.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Convocation, PV, annexe ou registre decision-action-preuve.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Relire la source, nommer la question, puis rattacher la preuve attendue.</dd>
+      <dt>Restriction / diffusion</dt>
+      <dd>Travail interne tant que les pieces et le public destinataire ne sont pas confirmes.</dd>
+    </dl>
+  </a>
+
+  <a class="next-action-card severity-{{ 'p2' if agctx.summary.pieces else 'ok' }}" href="#pieces-convocation">
+    <div class="card-head">
+      <span>{{ agctx.summary.pieces }} a verifier</span>
+      <strong>Piece de convocation</strong>
+    </div>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Savoir quelle piece justifie le point AG et si elle peut etre jointe ou seulement citee.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Document local classe comme convocation, PV ou annexe AG.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Controler version, date et niveau de diffusion avant partage.</dd>
+      <dt>Restriction / diffusion</dt>
+      <dd>Partager la version utile, pas le dossier brut complet.</dd>
+    </dl>
+  </a>
+
+  <a class="next-action-card severity-{{ 'p1' if agctx.summary.contentieux else 'ok' }}" href="#dossier-contentieux">
+    <div class="card-head">
+      <span>{{ agctx.summary.contentieux }} restreint</span>
+      <strong>Dossier contentieux</strong>
+    </div>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Garder une chronologie factuelle avec pieces, echeances et actions ouvertes.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Piece source, reference de preuve et trace de collecte.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Completer les faits dates sans produire d'avis juridique automatique.</dd>
+      <dt>Restriction / diffusion</dt>
+      <dd>Confidentiel par defaut, conseil syndical seulement.</dd>
+    </dl>
+  </a>
+
+  <a class="next-action-card severity-{{ 'p2' if agctx.summary.risk_notes else 'ok' }}" href="#notes-risque">
+    <div class="card-head">
+      <span>{{ agctx.summary.risk_notes }} a relire</span>
+      <strong>Note de risque non juridique</strong>
+    </div>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Separarer constats, signaux de vigilance et pieces a verifier.</dd>
+      <dt>Preuve / source</dt>
+      <dd>{{ agctx.novice.legal_notice }}</dd>
+      <dt>Prochaine action</dt>
+      <dd>Faire relire la note avant toute sortie sensible.</dd>
+      <dt>Restriction / diffusion</dt>
+      <dd>Ne pas diffuser comme avis juridique.</dd>
+    </dl>
+  </a>
+
+  <a class="next-action-card severity-{{ 'p2' if agctx.summary.packs else 'ok' }}" href="#pack-passation">
+    <div class="card-head">
+      <span>{{ agctx.summary.open_due }} echeances</span>
+      <strong>Pack passation</strong>
+    </div>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Transmettre ce qui reste ouvert sans perdre les sources ni les limites de diffusion.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Questions, pieces, dossiers sensibles et preuves referencees.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Completer les points ouverts puis transmettre au public autorise.</dd>
+      <dt>Restriction / diffusion</dt>
+      <dd>La restriction la plus forte gagne pour le pack.</dd>
+    </dl>
+  </a>
+</section>
+
+<section class="grid two">
+  <div class="panel" id="questions-ag">
+    <div class="panel-head">
+      <h3>Questions AG</h3>
+      <span>{{ agctx.ag.questions|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Question</th><th>Preuve / source</th><th>Statut</th><th>Echeance</th></tr></thead>
+      <tbody>
+      {% for question in agctx.ag.questions %}
+        <tr>
+          <td><strong>{{ question.title }}</strong><br><small>{{ question.objective }}</small></td>
+          <td><code>{{ question.source_ref or "source a rattacher" }}</code><br><small>{{ question.proof_ref or "preuve a nommer" }}</small></td>
+          <td><span class="badge is-review">{{ question.status_label }}</span><br><small>{{ question.next_action }}</small></td>
+          <td>{{ question.due_on or "a definir" }}<br><small>{{ question.restriction_label }} - {{ question.diffusion_label }}</small></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune question AG chargee. Ajoutez une convocation ou une decision a suivre.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="pieces-convocation">
+    <div class="panel-head">
+      <h3>Pieces de convocation</h3>
+      <span>{{ agctx.ag.pieces|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Piece</th><th>Preuve / source</th><th>Restriction / diffusion</th><th>Prochaine action</th></tr></thead>
+      <tbody>
+      {% for piece in agctx.ag.pieces %}
+        <tr>
+          <td><strong>{{ piece.title }}</strong><br><small>{{ piece.status_label }}</small></td>
+          <td><code>{{ piece.source_ref }}</code><br><small>{{ piece.proof_ref or "empreinte a confirmer" }}</small></td>
+          <td>{{ piece.restriction_label }}<br><small>{{ piece.diffusion_label }}</small></td>
+          <td>{{ piece.next_action }}<br><small>{{ piece.due_on or "echeance a definir" }}</small></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune piece de convocation reperee pour l'instant.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel" id="dossier-contentieux">
+    <div class="panel-head">
+      <h3>Dossiers contentieux</h3>
+      <span>{{ agctx.contentieux.cases|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Dossier</th><th>Preuve / source</th><th>Restriction / diffusion</th><th>Suite</th></tr></thead>
+      <tbody>
+      {% for case in agctx.contentieux.cases %}
+        <tr>
+          <td><strong>{{ case.title }}</strong><br><small>{{ case.matter }}</small></td>
+          <td><code>{{ case.source_ref }}</code><br><small>{{ case.proof_ref }}</small></td>
+          <td><span class="badge is-private">{{ case.restriction_label }}</span><br><small>{{ case.diffusion_label }}</small></td>
+          <td>{{ case.next_action }}<br><small>{{ case.status_label }} - {{ case.due_on or "a definir" }}</small></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucun dossier contentieux charge. Les dossiers sensibles resteront separes et restreints.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="notes-risque">
+    <div class="panel-head">
+      <h3>Notes de risque non juridiques</h3>
+      <span>{{ agctx.contentieux.risk_notes|length }}</span>
+    </div>
+    <p class="hint">{{ agctx.novice.legal_notice }}</p>
+    <table>
+      <thead><tr><th>Note</th><th>Signaux</th><th>Preuve / source</th><th>Statut</th></tr></thead>
+      <tbody>
+      {% for note in agctx.contentieux.risk_notes %}
+        <tr>
+          <td><strong>{{ note.title }}</strong><br><small>{{ note.next_action }}</small></td>
+          <td>{% for signal in note.risk_signals %}{{ signal }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+          <td><code>{{ note.source_ref }}</code><br><small>{{ note.proof_ref }}</small></td>
+          <td>{{ note.status_label }}<br><small>{{ note.restriction_label }} - {{ note.diffusion_label }}</small></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune note de risque. Quand un dossier sensible existe, la note reste factuelle et non juridique.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>Preuves et sources</h3>
+    <span>{{ agctx.evidence["items"]|length }}</span>
+  </div>
+  <table>
+    <thead><tr><th>Preuve</th><th>Source</th><th>Restriction / diffusion</th><th>Prochaine action</th><th>Statut</th></tr></thead>
+    <tbody>
+    {% for proof in agctx.evidence["items"] %}
+      <tr>
+        <td><strong>{{ proof.title }}</strong><br><small>{{ proof.id }}</small></td>
+        <td><code>{{ proof.source_ref }}</code><br><small>{{ proof.source_kind }} - {{ proof.source_hash or "empreinte absente" }}</small></td>
+        <td>{{ proof.restriction_label }}<br><small>{{ proof.diffusion_label }}</small></td>
+        <td>{{ proof.next_action }}<br><small>{{ proof.due_on or "a definir" }}</small></td>
+        <td>{{ proof.status_label }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Aucune preuve source chargee dans le modele AG/contentieux/passation.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="grid two" id="pack-passation">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>{{ agctx.passation.pack.title }}</h3>
+      <span>{{ agctx.passation.pack.status_label }}</span>
+    </div>
+    <p>{{ agctx.passation.pack.handover_scope }}</p>
+    <div class="badge-row">
+      <span class="badge is-private">{{ agctx.passation.pack.restriction_label }}</span>
+      <span class="badge is-review">{{ agctx.passation.pack.diffusion_label }}</span>
+      <span class="badge is-ok">{{ agctx.passation.pack.due_on }}</span>
+    </div>
+    <ul class="compact-list">
+      {% for point in agctx.passation.pack.open_points %}
+      <li>{{ point }}</li>
+      {% endfor %}
+    </ul>
+    <p class="hint">{{ agctx.passation.pack.next_action }}</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Checklist de passation</h3>
+      <span>{{ agctx.passation.checklist|length }}</span>
+    </div>
+    <ul class="compact-list">
+      {% for item in agctx.passation.checklist %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

@@ -27,6 +27,29 @@ class DocOpsCompletenessTests(unittest.TestCase):
         docuscope.extract_text(self.instance, run)
         docuscope.classify(self.instance, run, copy_files=False)
 
+    def test_email_trace_is_classified_as_communication_document(self) -> None:
+        raw_email = self.example_root / "raw" / "2026-05-13_echange_syndic.txt"
+        raw_email.write_text(
+            "\n".join(
+                [
+                    "Sujet: pieces de copropriete",
+                    "Email recu du syndic concernant les pieces attendues.",
+                    "Le conseil syndical conserve cette trace locale comme preuve de suivi.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        self._prepare_classified_documents()
+
+        _, rows = read_csv(self.instance.register("documents"))
+        email_rows = [row for row in rows if row.get("file_name") == raw_email.name]
+
+        self.assertEqual(len(email_rows), 1)
+        self.assertEqual(email_rows[0]["lot"], "Communication")
+        self.assertEqual(email_rows[0]["document_type"], "Communication")
+        self.assertEqual(email_rows[0]["classification_status"], "AUTO_CLASSIFIED")
+
     def test_actionable_matrix_distinguishes_present_missing_stale_and_classification_doubt(self) -> None:
         self._prepare_classified_documents()
         proofs_path = self.instance.matrix("proofs")

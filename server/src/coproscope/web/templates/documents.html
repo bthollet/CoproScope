@@ -29,6 +29,39 @@
   </div>
 </section>
 
+<section class="band">
+  <div>
+    <p class="eyebrow">Atelier documentaire</p>
+    <h3>Pieces recentes consultables</h3>
+  </div>
+  <div class="button-row compact">
+    <a class="button-link secondary" href="/pieces{{ ui_token_query }}">Atelier pieces</a>
+    <a class="button-link secondary" href="/depot{{ ui_token_query }}">Ajouter une piece</a>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Ouvrir une fiche document</h3>
+    <span>{{ model.documents.documents.rows[:12]|length }}</span>
+  </div>
+  <table>
+    <thead><tr><th>Document</th><th>Type</th><th>Confidentialite</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for row in model.documents.documents.rows[:12] %}
+      <tr>
+        <td>{{ row.file_name or row.doc_id }}<br><small>{{ row.doc_id }}</small></td>
+        <td>{{ row.document_type or row.extension }}</td>
+        <td>{{ row.derivative_max_college or row.raw_max_college or row.sensitivity }}</td>
+        <td><a class="button-link secondary" href="/documents/{{ row.doc_id }}{{ ui_token_query }}">Ouvrir</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">Aucun document charge.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
 <section class="grid two">
   <div class="panel">
     <div class="panel-head">

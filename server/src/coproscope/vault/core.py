@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import re
 import secrets
 import shutil
 import uuid
@@ -28,6 +29,8 @@ FORBIDDEN_SYNC_NAMES = {
 FORBIDDEN_SYNC_PREFIXES = {
     "coproscope-agent-",
 }
+SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
+SAFE_SYNC_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 
 
 def _now_iso() -> str:
@@ -187,7 +190,7 @@ def _vault_json(vault_id: str) -> dict[str, Any]:
 
 
 def _write_public_key(sync_root: Path, state: dict[str, Any]) -> Path:
-    key_path = sync_root / "keys" / f"{state['author_key_id']}.json"
+    key_path = _public_key_path(sync_root, str(state["author_key_id"]))
     payload = {
         "schema_version": VAULT_SCHEMA_VERSION,
         "key_type": "ed25519-public",
@@ -206,7 +209,7 @@ def _private_key_from_state(state: dict[str, Any]) -> Any:
 
 def _public_key_from_file(sync_root: Path, author_key_id: str) -> Any:
     crypto = _require_crypto()
-    key_path = sync_root / "keys" / f"{author_key_id}.json"
+    key_path = _public_key_path(sync_root, author_key_id)
     if not key_path.exists():
         raise RuntimeError(f"Missing public key: {key_path}")
     payload = _read_json(key_path)
@@ -253,6 +256,13 @@ def _all_event_files(sync_root: Path) -> list[Path]:
     if not event_root.exists():
         return []
     return sorted(path for path in event_root.glob("*/*.json") if path.is_file())
+
+
+def _all_snapshot_files(sync_root: Path) -> list[Path]:
+    snapshot_root = sync_root / "snapshots"
+    if not snapshot_root.exists():
+        return []
+    return sorted(path for path in snapshot_root.glob("*.snapshot") if path.is_file())
 
 
 def _file_event_hash(path: Path) -> str:
@@ -376,7 +386,39 @@ def vault_init(local_root: Path, sync_root: Path) -> dict[str, Any]:
 
 
 def _blob_path(sync_root: Path, blob_id: str) -> Path:
-    return sync_root / "blobs" / blob_id[:2] / f"{blob_id}.blob"
+    if not _is_sha256_hex(blob_id):
+        raise RuntimeError(f"Invalid blob id: {blob_id}")
+    return _safe_sync_path(sync_root, "blobs", blob_id[:2], f"{blob_id}.blob")
+
+
+def _public_key_path(sync_root: Path, author_key_id: str) -> Path:
+    if not _is_safe_sync_id(author_key_id):
+        raise RuntimeError(f"Invalid author_key_id: {author_key_id}")
+    return _safe_sync_path(sync_root, "keys", f"{author_key_id}.json")
+
+
+def _is_sha256_hex(value: str) -> bool:
+    return bool(SHA256_HEX_RE.fullmatch(value))
+
+
+def _is_safe_sync_id(value: str) -> bool:
+    return bool(SAFE_SYNC_ID_RE.fullmatch(value))
+
+
+def _safe_sync_path(sync_root: Path, *parts: str) -> Path:
+    root = Path(sync_root).expanduser().resolve()
+    path = root.joinpath(*parts).resolve()
+    if not _is_relative_to(path, root):
+        raise RuntimeError(f"Vault sync path escaped sync_root: {path}")
+    return path
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
 
 
 def vault_import(local_root: Path, sync_root: Path, source_path: Path) -> dict[str, Any]:
@@ -460,14 +502,30 @@ def vault_verify(local_root: Path, sync_root: Path) -> dict[str, Any]:
     roots = VaultRoots(local_root=local_root.resolve(), sync_root=sync_root.resolve())
     errors: list[str] = []
     state: dict[str, Any] | None = None
+    state_vault_id = ""
     try:
         state = _load_state(roots.local_root)
+        state_vault_id = str(state.get("vault_id", ""))
     except Exception as exc:  # noqa: BLE001
         errors.append(str(exc))
 
     vault_file = roots.sync_root / "vault.json"
+    vault_id = ""
     if not vault_file.exists():
         errors.append(f"Missing vault.json: {vault_file}")
+    else:
+        try:
+            vault_payload = _read_json(vault_file)
+            if not isinstance(vault_payload, dict):
+                raise RuntimeError("Invalid vault.json payload")
+            vault_id = str(vault_payload.get("vault_id", ""))
+            if not vault_id:
+                errors.append(f"{vault_file}: missing vault_id")
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{vault_file}: {exc}")
+    expected_vault_id = vault_id or state_vault_id
+    if vault_id and state_vault_id and vault_id != state_vault_id:
+        errors.append(f"{vault_file}: vault_id does not match local state")
     for forbidden in _forbidden_sync_entries(roots.sync_root):
         errors.append(f"Forbidden development/runtime entry in sync root: {forbidden}")
 
@@ -511,6 +569,31 @@ def vault_verify(local_root: Path, sync_root: Path) -> dict[str, Any]:
                 expected_sequence += 1
             except Exception as exc:  # noqa: BLE001
                 errors.append(f"{path}: {exc}")
+
+    snapshot_count = 0
+    for path in _all_snapshot_files(roots.sync_root):
+        snapshot_count += 1
+        try:
+            raw = path.read_bytes()
+            file_hash = _sha256_bytes(raw)
+            expected_file_hash = _expected_hash_from_filename(path)
+            if expected_file_hash and file_hash != expected_file_hash:
+                errors.append(f"{path}: snapshot hash does not match filename")
+            snapshot = json.loads(raw.decode("utf-8"))
+            if not isinstance(snapshot, dict):
+                raise RuntimeError("Invalid snapshot JSON payload")
+            if expected_vault_id and snapshot.get("vault_id") != expected_vault_id:
+                errors.append(f"{path}: vault_id does not match vault")
+            ciphertext = _unb64(str(snapshot.get("encrypted_payload", "")))
+            if _sha256_bytes(ciphertext) != snapshot.get("encrypted_payload_hash"):
+                errors.append(f"{path}: invalid encrypted payload hash")
+            if state is not None:
+                try:
+                    _decrypt_payload(state, snapshot)
+                except Exception as exc:  # noqa: BLE001
+                    raise RuntimeError("snapshot encrypted payload is not decryptable") from exc
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{path}: {exc}")
     return {
         "ok": not errors,
         "valid": not errors,
@@ -518,6 +601,7 @@ def vault_verify(local_root: Path, sync_root: Path) -> dict[str, Any]:
         "local_root": str(roots.local_root),
         "sync_root": str(roots.sync_root),
         "events": event_count,
+        "snapshots": snapshot_count,
         "errors": errors,
     }
 
