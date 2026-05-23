@@ -1,0 +1,500 @@
+from __future__ import annotations
+
+import html
+import os
+import re
+import secrets
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+from urllib.parse import quote, urlencode
+
+from ..core.common import InstanceConfig, RunContext
+from ..vault.public_read_models import (
+    PublicReadModelUnavailable,
+    build_empty_public_missing_pieces_model,
+    build_public_missing_pieces_model,
+    public_reconstruction_db_path,
+)
+from .depot import (
+    DepositError,
+    DEPOSIT_CONTEXT_KEYS,
+    build_local_export_zip,
+    create_deposit_from_uploads,
+    latest_deposit_manifest,
+    read_deposit_manifest,
+    run_accounting_pipeline,
+    run_all_non_heavy_pipeline,
+    run_docai_pipeline,
+    run_docops_pipeline,
+    run_light_pipeline,
+)
+from .context_banner import build_context_banner
+from .memory_event_view import DEMO_MEMORY_EVENT_ID, build_memory_event_detail, public_memory_event_id
+from .passation_blocker_view import build_passation_blocker_detail, enrich_passation_preview_blocker_links
+from .viewmodel import actions_to_csv, actions_to_markdown, build_dashboard_model, filter_action_items
+
+try:  # Optional dependency: create_app raises a clearer error when it is absent.
+    from fastapi import Request as FastAPIRequest  # type: ignore
+except ImportError:  # pragma: no cover - depends on optional extra
+    FastAPIRequest = Any  # type: ignore
+
+
+PACKAGE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = PACKAGE_DIR / "templates"
+STATIC_DIR = PACKAGE_DIR / "static"
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+TOKEN_COOKIE_NAME = "coproscope_ui_token"
+PUBLIC_PATH_PREFIXES = ("/static/",)
+PUBLIC_PATHS = {"/health"}
+FORBIDDEN_WEB_ROOTS = {
+    ".env",
+    ".git",
+    "logs",
+    "private",
+    "raw",
+    "restricted",
+}
+FORBIDDEN_EXPORT_PARTS = {
+    ".env",
+    ".git",
+    "logs",
+    "private",
+    "raw",
+    "restricted",
+}
+PASSATION_EXPORT_WATERMARK = "export dérivé, non source collaborative"
+PASSATION_EXPORT_FORBIDDEN_PATTERNS = (
+    re.compile(r"\braw\b", re.IGNORECASE),
+    re.compile(r"\brestricted\b", re.IGNORECASE),
+    re.compile(r"\blogs\b", re.IGNORECASE),
+    re.compile(r"file://", re.IGNORECASE),
+    re.compile(r"[A-Za-z]:\\"),
+    re.compile(r"\\\\"),
+    re.compile(r"(?:^|[\\/\s\"'])/(?:Users|home)/", re.IGNORECASE),
+    re.compile(r"(?:^|[\\/\s\"'])(?:raw|restricted|logs|private)[\\/]", re.IGNORECASE),
+)
+PRIVATE_FORM_PATTERNS = (
+    re.compile(r"[A-Za-z]:\\"),
+    re.compile(r"\\\\"),
+    re.compile(r"file://", re.IGNORECASE),
+    re.compile(r"(?:^|[\\/\s\"'=])/(?:Users|home)/", re.IGNORECASE),
+    re.compile(r"(?:^|[\\/\s\"'=])(?:raw|restricted|logs|private|system)[\\/]", re.IGNORECASE),
+)
+CONTEXT_BANNER_PAGES = {
+    "overview",
+    "actions",
+    "documents",
+    "document_intake",
+    "pieces",
+    "requests",
+    "governance",
+    "pilotage",
+    "depot",
+}
+ACTION_ROUTE_MISSING_ID = "reference-locale-masquee"
+ACTION_ROUTE_PRIVATE_TOKENS = {"raw", "restricted", "logs", "private", "system"}
+ACTION_ROUTE_PRIVATE_ROOTS = {"users", "home", "var", "tmp", "etc", "opt", "root", "mnt", "volumes"}
+PASSATION_PREVIEW_QUERY_KEYS = {"scope", "selected", "audience"}
+
+
+def _shell_model(instance: InstanceConfig, year: int) -> dict[str, object]:
+    return {
+        "instance": {
+            "id": instance.instance_id,
+            "name": instance.display_name,
+            "root": "",
+            "year": year,
+        },
+        "ux": {
+            "shell": {
+                "app_title": "CoproScope",
+                "page_title": "Cockpit Conseil Syndical",
+                "active_page": "overview",
+                "search_placeholder": "Rechercher document, action, decision, fournisseur...",
+                "notification_count": 0,
+                "sharing_mode_label": "Mode prive local",
+                "sharing_mode_status": "Aucune synchronisation externe lancee",
+                "top_actions": [{"label": "Nouvelle demande", "href": "/demandes", "kind": "primary", "icon": "+"}],
+            }
+        },
+        "action_summary": {
+            "total": "",
+            "accounting": "",
+            "scope_counts": {},
+        },
+        "kpis": {
+            "actions": "",
+            "doc_requests": "",
+            "decisions": "",
+            "privacy_reviews": "",
+        },
+    }
+
+
+def _route_public_tokens(value: str) -> list[str]:
+    normalized = value.replace("\\", "/").lower()
+    tokenized = "".join(char if char.isalnum() else " " for char in normalized)
+    return tokenized.split()
+
+
+def _contains_private_route_reference(value: object) -> bool:
+    normalized = str(value or "").replace("\\", "/").strip().lower()
+    if not normalized:
+        return False
+    tokens = _route_public_tokens(normalized)
+    first_token = tokens[0] if tokens else ""
+    has_private_path_marker = (
+        "file://" in normalized
+        or "://" in normalized
+        or (len(normalized) > 2 and normalized[1:3] == ":/")
+        or normalized.startswith("//")
+        or normalized.startswith("/")
+        or first_token in ACTION_ROUTE_PRIVATE_ROOTS
+    )
+    return has_private_path_marker or any(token in ACTION_ROUTE_PRIVATE_TOKENS for token in tokens)
+
+
+def _public_action_route_id(action_id: object) -> str:
+    text = " ".join(str(action_id or "").strip().split())[:140]
+    if not text or _contains_private_route_reference(text):
+        return ACTION_ROUTE_MISSING_ID
+    return text
+
+
+def _collect_action_ids_from_rows(rows: object) -> set[str]:
+    action_ids: set[str] = set()
+    if not isinstance(rows, list):
+        return action_ids
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for key in ("id", "action_id"):
+            action_id = _public_action_route_id(row.get(key))
+            if action_id != ACTION_ROUTE_MISSING_ID:
+                action_ids.add(action_id)
+    return action_ids
+
+
+def _known_action_route_ids(model: dict[str, object]) -> set[str]:
+    action_ids = _collect_action_ids_from_rows(model.get("action_items"))
+    action_ids.update(_collect_action_ids_from_rows(model.get("actions")))
+    ux = model.get("ux") if isinstance(model.get("ux"), dict) else {}
+    registre = ux.get("registre") if isinstance(ux, dict) and isinstance(ux.get("registre"), dict) else {}
+    if isinstance(registre, dict):
+        action_ids.update(_collect_action_ids_from_rows(registre.get("items")))
+        selected = registre.get("selected")
+        if isinstance(selected, dict):
+            selected_id = _public_action_route_id(selected.get("id") or selected.get("action_id"))
+            if selected_id != ACTION_ROUTE_MISSING_ID:
+                action_ids.add(selected_id)
+        groups = registre.get("ag_groups")
+        if isinstance(groups, list):
+            for group in groups:
+                if isinstance(group, dict):
+                    action_ids.update(_collect_action_ids_from_rows(group.get("items")))
+    return action_ids
+
+
+def _known_memoire_event_route_ids(model: dict[str, object]) -> set[str]:
+    event_ids: set[str] = set()
+    ux = model.get("ux") if isinstance(model.get("ux"), dict) else {}
+    memoire = ux.get("memoire") if isinstance(ux, dict) and isinstance(ux.get("memoire"), dict) else {}
+    if isinstance(memoire, dict):
+        for event in memoire.get("timeline", []):
+            if isinstance(event, dict):
+                event_id = _public_action_route_id(event.get("id"))
+                if event_id != ACTION_ROUTE_MISSING_ID:
+                    event_ids.add(event_id)
+        for key in ("selected_event", "event_detail"):
+            detail = memoire.get(key)
+            if isinstance(detail, dict):
+                event_id = _public_action_route_id(detail.get("id"))
+                if event_id != ACTION_ROUTE_MISSING_ID:
+                    event_ids.add(event_id)
+    event_detail = ux.get("event_detail") if isinstance(ux, dict) and isinstance(ux.get("event_detail"), dict) else {}
+    if isinstance(event_detail, dict):
+        event_id = _public_action_route_id(event_detail.get("id"))
+        if event_id != ACTION_ROUTE_MISSING_ID:
+            event_ids.add(event_id)
+    return event_ids
+
+
+def _document_intake_preparation_rows(year: int) -> list[dict[str, object]]:
+    return [
+        {
+            "doc_id": f"DOC-PREP-PV-{year}",
+            "display_name": f"PV assemblee generale {year}",
+            "local_reference": f"depot-local/DOC-PREP-PV-{year}",
+            "sha256": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+            "file_format": "pdf",
+            "size_bytes": "245760",
+            "document_type": "PV_AG",
+            "domain": "gouvernance",
+            "period": str(year),
+            "classification_status": "ACCEPTED",
+            "privacy_status": "RESERVE_CS",
+            "privacy_rationale": "Lecture limitee avant validation de la version diffusable.",
+            "attachments": [
+                {
+                    "piece_label": f"PV AG {year}",
+                    "point_id": f"AG-{year}-PREP",
+                    "point_label": "Point AG a confirmer",
+                    "point_kind": "ag",
+                    "action_kind": "verifier",
+                    "action_label": "Verifier que le point et la decision cible sont corrects.",
+                    "proof_intent": "decision",
+                    "proof_label": "Decision votee ou a confirmer.",
+                }
+            ],
+        },
+        {
+            "doc_id": f"DOC-PREP-FACTURE-{year}",
+            "display_name": f"Facture entretien {year}",
+            "local_reference": f"depot-local/DOC-PREP-FACTURE-{year}",
+            "sha256": "abcdef1234567890abcdef1234567890",
+            "file_format": "pdf",
+            "size_bytes": "98304",
+            "document_type": "Facture",
+            "domain": "comptes",
+            "period": str(year),
+            "classification_status": "PROPOSED",
+            "privacy_status": "A_ARBITRER",
+            "privacy_rationale": "A confirmer avant tout partage hors instance locale.",
+        },
+        {
+            "doc_id": f"DOC-PREP-BIFFAGE-{year}",
+            "display_name": "Devis travaux a biffer",
+            "local_reference": f"depot-local/DOC-PREP-BIFFAGE-{year}",
+            "sha256": "0123456789abcdef0123456789abcdef",
+            "file_format": "pdf",
+            "size_bytes": "372736",
+            "document_type": "Devis",
+            "domain": "travaux",
+            "period": str(year),
+            "classification_status": "ACCEPTED",
+            "privacy_status": "A_BIFFER",
+            "privacy_rationale": "Une version diffusable doit masquer les donnees non partageables.",
+            "required_derivative": f"derivees/DOC-PREP-BIFFAGE-{year}-biffe",
+            "attachments": [
+                {
+                    "piece_label": "Devis travaux",
+                    "point_label": "Travaux a preparer",
+                    "point_kind": "chantier",
+                    "action_kind": "biffer",
+                    "action_label": "Preparer la version diffusable.",
+                    "proof_intent": "presence",
+                    "proof_label": "Version biffee disponible.",
+                }
+            ],
+        },
+    ]
+
+
+def _require_web_stack():
+    try:
+        from fastapi import FastAPI, HTTPException, Request  # type: ignore
+        from fastapi.responses import HTMLResponse, RedirectResponse, Response  # type: ignore
+        from fastapi.staticfiles import StaticFiles  # type: ignore
+        from fastapi.templating import Jinja2Templates  # type: ignore
+    except ImportError as exc:  # pragma: no cover - depends on optional extra
+        raise RuntimeError(
+            "UI dependencies are missing. Install them with: python -m pip install -e .[ui]"
+        ) from exc
+    return FastAPI, HTTPException, Request, HTMLResponse, RedirectResponse, Response, StaticFiles, Jinja2Templates
+
+
+def _refs(*values: object) -> list[str]:
+    refs: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value in ("", None):
+            continue
+        items = value if isinstance(value, (list, tuple, set)) else [value]
+        for item in items:
+            text = str(item).strip()
+            if not text or text in seen:
+                continue
+            seen.add(text)
+            refs.append(text)
+    return refs
+
+
+def _list_of_dicts(value: object) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _passation_display_text(value: object, fallback: str = "") -> str:
+    text = " ".join(str(value or fallback).replace("_", " ").split())
+    return re.sub(r"\b(20\d{2})-(\d{2})-(\d{2})\b", r"\3/\2/\1", text)
+
+
+def _memoire_passation_projection(
+    instance: InstanceConfig,
+    year: int,
+    *,
+    dashboard_model: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    try:
+        model = dashboard_model if dashboard_model is not None else build_dashboard_model(instance, year)
+    except Exception:
+        return {"open_points": [], "timeline_entries": [], "document_bundle": None}
+    ux = model.get("ux") if isinstance(model.get("ux"), dict) else {}
+    memoire = ux.get("memoire") if isinstance(ux.get("memoire"), dict) else {}
+    passation = memoire.get("passation") if isinstance(memoire.get("passation"), dict) else {}
+    transmit = memoire.get("transmit") if isinstance(memoire.get("transmit"), dict) else {}
+
+    open_points = []
+    for topic in _list_of_dicts(passation.get("open_topics"))[:12]:
+        title = _passation_display_text(topic.get("title"), "Sujet ouvert")
+        next_step = _passation_display_text(topic.get("next_step"))
+        open_points.append(f"{title}: {next_step}" if next_step else title)
+
+    timeline_entries = []
+    for event in _list_of_dicts(memoire.get("timeline"))[:30]:
+        event_id = str(event.get("id") or "").strip()
+        document_refs = _refs(event.get("document_refs"))
+        title = _passation_display_text(event.get("title"), "Evenement memoire")
+        subtitle = _passation_display_text(event.get("subtitle"))
+        summary = " - ".join(part for part in (title, subtitle) if part)
+        timeline_entries.append(
+            {
+                "timeline_id": event_id,
+                "object_id": event_id,
+                "source": "memoire_copropriete",
+                "source_id": event_id,
+                "occurred_at": event.get("date_label") or event.get("date_iso") or "",
+                "event_type": event.get("kind") or event.get("category_label") or "memoire",
+                "status": event.get("status", ""),
+                "proof_ref": document_refs[0] if document_refs else "",
+                "summary": summary,
+                "comment": _passation_display_text(event.get("passation_note") or event.get("next_action")),
+            }
+        )
+
+    evidence_refs = []
+    for document in _list_of_dicts(transmit.get("items"))[:30]:
+        document_id = str(document.get("id") or "").strip()
+        if not document_id:
+            continue
+        can_download = bool(document.get("can_download"))
+        evidence_refs.append(
+            {
+                "evidence_id": document_id,
+                "source_ref": document_id,
+                "title": _passation_display_text(document.get("title"), document_id),
+                "source_kind": "document_memoire",
+                "restriction": "internal" if can_download else "confidential",
+                "diffusion": "coproprietaires" if can_download else "cs",
+                "status": "pret" if can_download else "a_verifier",
+                "next_action": "Verifier la diffusion avant transmission." if not can_download else "",
+            }
+        )
+    document_bundle = None
+    if evidence_refs:
+        document_bundle = {
+            "bundle_id": f"documents-memoire-passation-{year}",
+            "title": f"Documents memoire passation {year}",
+            "purpose": "Documents publics de la memoire utiles au relais du conseil syndical.",
+            "evidence_refs": evidence_refs,
+            "source_refs": [item["source_ref"] for item in evidence_refs],
+            "proof_refs": [item["evidence_id"] for item in evidence_refs],
+        }
+    return {
+        "open_points": open_points,
+        "timeline_entries": timeline_entries,
+        "document_bundle": document_bundle,
+    }
+
+
+def _passation_export_document(
+    instance: InstanceConfig,
+    year: int,
+    *,
+    scope: str = "",
+    selected: str = "",
+    dashboard_model: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    from ..modules.passation_exports import build_passation_derived_export
+    from ..modules.requestops import read_request_register
+    from .agcontentieux_view import build_agcontentieux_passation_view
+
+    view = build_agcontentieux_passation_view(instance, year)
+    memoire_projection = _memoire_passation_projection(instance, year, dashboard_model=dashboard_model)
+    dossiers = [
+        {
+            "dossier_id": item.get("id", ""),
+            "title": item.get("title", ""),
+            "ag_date": item.get("ag_date", ""),
+            "questions": [
+                {
+                    "question_id": question.get("id", ""),
+                    "dossier_ag_id": question.get("dossier_id", ""),
+                    "title": question.get("title", ""),
+                    "objective": question.get("objective", ""),
+                    "source_refs": _refs(question.get("source_ref"), question.get("source_refs")),
+                    "proof_refs": _refs(question.get("proof_ref"), question.get("proof_refs")),
+                    "restriction": question.get("restriction", ""),
+                    "diffusion": question.get("diffusion", ""),
+                    "status": question.get("status", ""),
+                    "next_action": question.get("next_action", ""),
+                    "due_on": question.get("due_on", ""),
+                }
+                for question in item.get("questions", [])
+            ],
+            "pieces": [
+                {
+                    "piece_id": piece.get("id", ""),
+                    "dossier_ag_id": piece.get("dossier_id", ""),
+                    "label": piece.get("title", ""),
+                    "source_refs": _refs(piece.get("source_ref"), piece.get("source_refs")),
+                    "proof_refs": _refs(piece.get("proof_ref"), piece.get("proof_refs")),
+                    "restriction": piece.get("restriction", ""),
+                    "diffusion": piece.get("diffusion", ""),
+                    "status": piece.get("status", ""),
+                    "next_action": piece.get("next_action", ""),
+                    "due_on": piece.get("due_on", ""),
+                }
+                for piece in item.get("pieces", [])
+            ],
+            "source_refs": _refs(item.get("source_ref"), item.get("source_refs")),
+            "proof_refs": _refs(item.get("proof_ref"), item.get("proof_refs")),
+            "restriction": item.get("restriction", ""),
+            "diffusion": item.get("diffusion", ""),
+            "status": item.get("status", ""),
+            "next_action": item.get("next_action", ""),
+            "due_on": item.get("due_on", ""),
+        }
+        for item in view["ag"]["dossiers"]
+    ]
+    contentieux_cases = [
+        {
+            "case_id": item.get("id", ""),
+            "title": item.get("title", ""),
+            "matter": item.get("matter", ""),
+            "source_refs": _refs(item.get("source_ref"), item.get("source_refs")),
+            "proof_refs": _refs(item.get("proof_ref"), item.get("proof_refs")),
+            "restriction": item.get("restriction", ""),
+            "diffusion": item.get("diffusion", ""),
+            "status": item.get("status", ""),
+            "next_action": item.get("next_action", ""),
+            "due_on": item.get("due_on", ""),
+        }
+        for item in view["contentieux"]["cases"]
+    ]
+    legal_risk_notes = [
+        {
+            "note_id": item.get("id", ""),
+            "subject": item.get("title", ""),
+            "observations": item.get("observations", []),
+            "risk_signals": item.get("risk_signals", []),
+            "scope_notice": item.get("scope_notice", ""),
+            "source_refs": _refs(item.get("source_ref"), item.get("source_refs")),
+            "proof_refs": _refs(item.get("proof_ref"), item.get("proof_refs")),
+            "restriction": item.get("restriction", ""),
+            "diffusion": item.get("diffusion", ""),
+            "status": item.get("status", ""),
+            "next_action": item.get("next_action", ""),
+            "due_on": item.get("due_on", ""),

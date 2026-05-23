@@ -28,3 +28,11 @@ examples/synthetic_copro/models/
 **/models/
 **/.cache/huggingface/
 **/huggingface/
+
+# Local OAuth / cloud credentials. Never commit user tokens or app secrets.
+credentials.json
+client_secret*.json
+token.json
+**/oauth/*.json
+**/.oauth/
+**/.secrets/

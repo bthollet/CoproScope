@@ -303,6 +303,25 @@ class UiPassationExportRouteTests(unittest.TestCase):
         self.assertIn("MEM-DOC-7D412766", text_response.text)
         self.assertNotIn("MEM-DOC-816608C5", text_response.text)
 
+    def test_passation_event_scope_with_private_selected_does_not_broaden_to_global_export(self) -> None:
+        client = self._client(access_token="local-secret")
+        private_selected = "C:%5CUsers%5CExampleUser%5Craw%5Csecret.pdf"
+
+        response = client.get(f"/exports/passation.json?token=local-secret&scope=event&selected={private_selected}")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        serialized = json.dumps(payload, ensure_ascii=False)
+        self.assertEqual(payload["scope"]["kind"], "passation_event")
+        self.assertEqual(payload["scope"]["selected"], "reference-locale-masquee")
+        self.assertEqual(payload["sections"]["chronologie"], [])
+        self.assertEqual(payload["source_refs"], [])
+        self.assertEqual(payload["proof_refs"], [])
+        self.assertNotIn("MEM-DOC-7D412766", serialized)
+        self.assertNotIn("C:\\Users", serialized)
+        self.assertNotIn("secret.pdf", serialized)
+        self.assertNotRegex(serialized, r"\braw\b")
+
     def test_passation_blocker_detail_route_is_actionable_and_token_safe(self) -> None:
         client = self._client(access_token="local-secret")
 

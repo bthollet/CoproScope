@@ -24,6 +24,99 @@ La parallelisation ne doit pas servir a faire travailler plusieurs agents sur le
 
 Un agent ne doit pas supposer qu'il est seul. Il ne revert pas le travail des autres, ne deplace pas une responsabilite sans accord, et ne modifie pas les donnees privees.
 
+## Chemin critique et side-quests
+
+Dans une conversation orientee vers un but principal, par exemple un audit, une
+recette ou une livraison, le coordinateur protege le chemin critique: il continue
+a faire avancer le resultat attendu et ne se disperse pas dans les demandes
+laterales.
+
+Quand une orientation ponctuelle demande de generaliser une regle, clarifier une
+doctrine, explorer un sujet transverse ou produire une note annexe, le travail
+est confie a un sub-agent si le nombre de threads/conversations le permet. Le
+lot delegue doit etre borne: objectif, fichiers autorises, fichiers evites,
+trace attendue, verification et critere de fin.
+
+Si aucun thread n'est disponible, le coordinateur enregistre la side-quest comme
+reprise ulterieure ou demande d'arbitrage et garde la piste principale. Il ne la
+traite lui-meme que si elle bloque directement le but en cours. Un sub-agent de
+generalisation ne modifie pas le code applicatif sans ownership explicite; par
+defaut, il produit une doctrine, une note ou une proposition d'integration.
+
+## Methode equipe agile
+
+Quand Brice demande une "equipe agile", une equipe multi-agents, ou un
+fonctionnement UX/dev/QA par iterations rapides, utiliser
+[`protocole_equipe_agile_agents.md`](./protocole_equipe_agile_agents.md).
+
+Le noyau d'equipe est:
+
+- coordinateur-scribe;
+- designer service / facilitateur;
+- utilisateur novice ou representant metier;
+- dev front;
+- dev back / viewmodel;
+- QA securite / regression.
+
+Le coordinateur garde les roles en flux decale:
+
+- `N-1`: QA et utilisateur novice testent une route ou un artefact livre;
+- `N`: front/back developpent une commande validee;
+- `N+1`: designer et utilisateur preparent l'image, le blueprint et la
+  commande suivante.
+
+Un agent idle est relance sur QA, preparation, documentation, coherence ou
+integration, selon son ownership declare. Les devs ne codent pas tant qu'il n'y
+a pas commande dev validee et owner unique sur les fichiers sensibles.
+
+## Regle zero interconversations
+
+Tout agent doit appliquer
+[`consignes_bots_interconversations.md`](./consignes_bots_interconversations.md)
+avant de travailler. S'il ne peut pas declarer son role, son ownership, sa
+passerelle de trace et le dernier point lu, il reste en lecture seule.
+
+Les passerelles sont separees:
+
+- UX ecrit vers DB dans `passerelle_ux_vers_db_2026-05-21.md`;
+- DB repond vers UX dans `passerelle_db_vers_ux_2026-05-21.md`;
+- le coordinateur consolide dans `coordination_interconversations_2026-05-21.md`
+  et le point live;
+- QA/novice publient des go/no-go sur routes reelles dans le journal ou le
+  registre de cycle.
+
+Le coordinateur doit traiter comme risque de collision tout bot qui modifie un
+fichier sensible sans owner declare.
+
+Les demandes et chantiers vivants sont suivis dans deux registres transverses:
+
+- `roadmap_backlog_central.md` comme gouvernail unique pour les intentions `RM-*`;
+- `presence_agents.md` pour les chantiers `CH-*`, conversations `CONV-*`,
+  ownerships, worktrees, heartbeats et fins de mission.
+
+Les anciennes feuilles de route, backlogs et journaux de cycles sont des sources
+rattachees. Un agent ne les utilise pour demarrer un chantier que si le
+gouvernail pointe vers un `RM-*` correspondant.
+
+## Flux refonte UX Canva
+
+Pour la refonte UX depuis les visuels d'enquete, utiliser le protocole
+[`refonte_ux_cycles_image_dev_test.md`](./refonte_ux_cycles_image_dev_test.md)
+avant de lancer les devs. Le flux impose:
+
+- enquete sur image ou visuel recree par le designer;
+- commande dev validee;
+- developpement front/back;
+- test de la route livree;
+- correction ou cloture.
+
+Le registre de suivi est
+[`registre_cycles_refonte_ux.md`](./registre_cycles_refonte_ux.md). Les prompts
+par role sont dans [`prompts_agents_refonte_ux.md`](./prompts_agents_refonte_ux.md).
+
+Regle specifique: aucun dev ne demarre une vue manquante sans blueprint
+designer, et aucun testeur ne valide une intention abstraite sans route livree.
+
 ## Preparation avant lancement
 
 1. Stabiliser le depot principal : commit ou stash explicite des changements en cours.
@@ -31,7 +124,11 @@ Un agent ne doit pas supposer qu'il est seul. Il ne revert pas le travail des au
 3. Creer un worktree par agent.
 4. Donner a chaque agent un contrat avec ownership fichiers.
 5. Reserver un port local par agent si une interface est lancee.
-6. Noter les agents actifs dans le registre de suivi.
+6. Noter ou creer l'item `RM-*` dans le gouvernail `roadmap_backlog_central.md`.
+7. Noter les agents actifs dans `presence_agents.md` avec `CH-*`, `CONV-*`,
+   lease et prochaine action.
+8. Verifier que chaque agent a lu le dernier point de coordination et declare
+   sa passerelle de trace.
 
 Commandes types :
 
@@ -56,6 +153,10 @@ git worktree add ..\coproscope-agent-sprint2-actions codex/sprint2-actions
 ```text
 Mission: Sprint <numero> - <nom court>
 Objectif: <resultat visible attendu>
+Role/filiere: <UX | DB | QA | front | back | docs | coordinateur>
+Roadmap: RM-YYYY-NNNN
+Chantier: CH-YYYY-NNNN
+Conversation: CONV-YYYY-NNNN
 Branche: codex/<sprint>-<scope>
 Worktree: <chemin absolu ou relatif>
 
@@ -68,10 +169,20 @@ Ownership modifiable:
 Hors perimetre:
 - <dossier/fichier a ne pas toucher>
 
+Passerelle/registre de trace:
+- <fichier markdown ou registre>
+
+Dernier point coordination lu:
+- <fichier + heure>
+
+Lease ownership:
+- <expiration + fuseau, par defaut 2h pour edition>
+
 Donnees:
 - Ne jamais ajouter de donnees reelles dans Git.
-- Utiliser `examples/synthetic_copro` pour les tests publics.
-- Utiliser l'instance privee seulement en lecture locale si explicitement demande.
+- Utiliser `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test` comme environnement de test local par defaut.
+- Utiliser `examples/synthetic_copro` seulement pour les tests publics/CI et les exemples partageables.
+- Utiliser toute autre instance privee seulement en lecture locale si explicitement demande.
 - La copro demo publiable reste hors Drive, dans `Documents/CoproScope/instances/...`.
 
 Verification:
@@ -81,8 +192,10 @@ Verification:
 
 Livrable final:
 - fichiers modifies ;
+- fichiers volontairement evites ;
 - tests lances ;
 - limites connues ;
+- questions ouvertes ;
 - proposition d'integration.
 ```
 
@@ -124,23 +237,53 @@ Voir les briefs detailles : [Lots paralleles approfondis](./lots_paralleles.md).
 Exemple :
 
 ```powershell
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui serve --instance-root ..\coproscope-instances\beauvallon --year 2025 --port 8766
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
+
+Regle compatible antivirus : lancer le serveur dans un terminal PowerShell visible, au premier plan ou minimise par l'utilisateur, puis l'arreter avec `Ctrl+C`. Ne pas utiliser de fenetre cachee, de `Start-Process` cache, de scan de ports/processus, de `taskkill`, ni d'ouverture navigateur automatique. Si une page ne repond pas, lire le terminal serveur visible plutot que chercher et tuer un PID.
 
 ## Registre de suivi multi-agents
 
-Ajouter une section dans le registre courant quand plusieurs agents tournent :
+Le registre courant des agents est `presence_agents.md`. Ajouter ou mettre a
+jour une ligne quand plusieurs agents tournent :
 
-| Agent | Branche | Worktree | Ownership | Statut | Tests | Notes integration |
-|---|---|---|---|---|---|---|
-| UI/actions | `codex/sprint2-actions` | `..\coproscope-agent-sprint2-actions` | web UI/actions | EN_COURS | a venir | Ne touche pas privacy. |
-| Compta | `codex/sprint3-compta` | `..\coproscope-agent-sprint3-compta` | vue comptes | EN_COURS | a venir | Ne touche pas CLI. |
+| Conversation | Roadmap | Chantier | Branche/worktree | Ownership | Statut | Expire | Prochain geste |
+|---|---|---|---|---|---|---|---|
+| `CONV-YYYY-NNNN` | `RM-YYYY-NNNN` | `CH-YYYY-NNNN` | `codex/...` / `...\_worktrees\...` | fichiers reserves | EN_COURS | date + fuseau | action concrete |
 
-Statuts conseilles : `A_LANCER`, `EN_COURS`, `PRET_A_INTEGRER`, `INTEGRE`, `BLOQUE`.
+Statuts conseilles : `A_LANCER`, `EN_COURS`, `EN_ATTENTE_USER`, `BLOQUE`,
+`PRET_A_INTEGRER`, `INTEGRE`, `EXPIRE`, `ABANDONNE`, `CLOTURE`.
+
+## Vague active 21h15
+
+La coordination exploitable pour le jalon du 2026-05-20 a 21h15 est tenue dans
+[`orchestration_2115.md`](./orchestration_2115.md). Elle couvre:
+
+- l'etat des chantiers comptes, sync alertes, atelier piece, cockpit et UX tester;
+- les dependances entre lots;
+- les criteres d'integration et de passage 21h15;
+- la prochaine vague d'agents a lancer avec ownerships separes;
+- les risques Git/worktree observes.
+
+Regle de cette vague: si un agent doit toucher `server/src/coproscope/web/viewmodel.py`, il doit etre declare owner unique de ce fichier avant lancement. Les autres agents UI travaillent sur templates/tests ou rendent une note d'integration.
+
+Les nouveaux worktrees doivent etre crees sous `C:\Users\brice\CoproScope\_worktrees`. Ne pas lancer de nouveau travail dans les anciens worktrees situes sous `G:/Mon Drive/...`; certains sont marques `prunable` et tous sont contraires au garde-fou actuel sur les dossiers synchronises.
 
 ## Verification minimale d'integration
 
-Depuis `server/` :
+Avant de rendre un lot court, depuis la racine du depot :
+
+```powershell
+.\tools\agent-check.cmd
+```
+
+Si le lot touche l'interface :
+
+```powershell
+.\tools\agent-check.cmd -Ui
+```
+
+Pour une integration coordinateur, depuis `server/` :
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
@@ -148,17 +291,13 @@ Depuis `server/` :
 
 Checks UI depuis la racine :
 
-```powershell
-Invoke-WebRequest -Uri http://127.0.0.1:8765/health -UseBasicParsing
-Invoke-WebRequest -Uri http://127.0.0.1:8765/ -UseBasicParsing
-Invoke-WebRequest -Uri http://127.0.0.1:8765/comptes -UseBasicParsing
-Invoke-WebRequest -Uri http://127.0.0.1:8765/confidentialite -UseBasicParsing
-```
+Ouvrir manuellement l'URL tokenisee affichee par `ui open-test`, puis verifier les onglets `Cockpit`, `Actions`, `Comptes`, `Documents`, `Atelier pieces`, `Confidentialite`, `Chantiers` et `Depot`. Pour les agents, preferer les tests unitaires et les clients FastAPI internes plutot que des boucles `Invoke-WebRequest`.
 
 ## Garde-fous donnees
 
 - Ne jamais commiter `coproscope-instances/`, `raw`, `restricted`, `.env.local`, tables de correspondance ou exports prives.
 - Ne pas publier une instance seulement pseudonymisee.
 - Ne pas melanger copro demo et instance privee dans le cockpit.
+- La recette live locale par defaut se fait sur `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
 - Les tests publics doivent passer sur `examples/synthetic_copro` ou sur une demo fictive.
 - Toute sortie diffusable doit passer par PrivacyOps/BiffageOps ou par une transformation fictive robuste.

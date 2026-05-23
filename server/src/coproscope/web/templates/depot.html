@@ -5,6 +5,26 @@
     <p class="eyebrow">Flux local</p>
     <h2>Depot guide & exports locaux</h2>
     <p class="lead">Ajoutez des pieces depuis ce poste: CoproScope les copie dans l'instance locale, lance le traitement local, puis produit des traces et demandes de preuves sans publier les bruts.</p>
+    {% if depot_prefill and depot_prefill.is_visible %}
+    <dl class="cs-relance-quick" aria-label="Resume novice depot">
+      <div>
+        <dt>Piece concernee</dt>
+        <dd>{{ depot_prefill.piece_label }}</dd>
+      </div>
+      <div>
+        <dt>Pourquoi</dt>
+        <dd>{{ depot_prefill.notice }}</dd>
+      </div>
+      <div>
+        <dt>Action suivante</dt>
+        <dd>Deposer la reponse recue comme piece candidate.</dd>
+      </div>
+      <div>
+        <dt>Prudence diffusion</dt>
+        <dd>{{ depot_prefill.diffusion_label }}</dd>
+      </div>
+    </dl>
+    {% endif %}
   </div>
   {% if depot_prefill and depot_prefill.is_visible %}
   <div class="status-block pending cs-depot-prefill-top" aria-label="Contexte reponse recue">
@@ -176,9 +196,6 @@
       </div>
     </div>
     <div class="button-row">
-      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/docai{{ ui_token_query }}">
-        <button class="button-link secondary" type="submit">DocAI local-heavy</button>
-      </form>
       <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/docops{{ ui_token_query }}">
         <button class="button-link secondary" type="submit">DocOps</button>
       </form>
@@ -186,7 +203,7 @@
         <button class="button-link secondary" type="submit">Compta</button>
       </form>
       <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/all{{ ui_token_query }}">
-        <button class="button-link" type="submit">Tout hors DocAI</button>
+        <button class="button-link" type="submit">Traitements locaux</button>
       </form>
     </div>
     {% else %}

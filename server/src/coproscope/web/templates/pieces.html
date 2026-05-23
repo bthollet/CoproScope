@@ -121,12 +121,14 @@
     <section class="cs-reprise-list" aria-labelledby="cs-reprise-missing-list-title">
       <div class="cs-reprise-panel-head">
         <h3 id="cs-reprise-missing-list-title">Pieces attendues</h3>
+        <span>Pieces a demander</span>
         <span>{{ display_missing_items|length }} {{ 'piece' if display_missing_items|length == 1 else 'pieces' }}</span>
       </div>
       {% for item in display_missing_items[:14] %}
       {% set item_id = item.id|default(loop.index|string, true)|string %}
-      {% set related_action_id = item.related_action_id|default(item_id, true)|string %}
-      {% set fallback_action_href = '/comptes?status=p1' if accounting_fallback_active else '/actions?selected=' ~ related_action_id %}
+      {% set related_action_id = item.related_action_id|default('', true)|string %}
+      {% set has_related_action = related_action_id|trim %}
+      {% set fallback_action_href = '/comptes?status=p1' if accounting_fallback_active else ('/actions?selected=' ~ related_action_id if has_related_action else '/pieces/' ~ item_id) %}
       {% set fallback_request_href = '/demandes/relance?scope=comptes' if accounting_fallback_active else '/demandes/relance?action_id=' ~ related_action_id %}
       {% set fallback_deposit_href = '/depot?intent=proof&scope=comptes' if accounting_fallback_active else '/depot?intent=proof&missing_for=' ~ item_id %}
       {% set item_expected_piece = item.expected_piece|default(item.title|default(item.evidence|default('Piece attendue', true), true), true) %}
@@ -137,13 +139,14 @@
       {% set item_action_label = item.action_label|default(item.question|default(related_action_id, true), true) %}
       {% set raw_action_href = item.action_href|default('', true)|string %}
       {% set action_href = raw_action_href if raw_action_href and not raw_action_href.startswith('/pieces') else item.followup_href|default(fallback_action_href, true) %}
-      {% set action_link_label = 'Ouvrir compte' if accounting_fallback_active or action_href.startswith('/comptes') or 'scope=comptes' in action_href else 'Ouvrir action' %}
+      {% set action_link_label = 'Ouvrir compte' if accounting_fallback_active or action_href.startswith('/comptes') or 'scope=comptes' in action_href else ('Ouvrir action' if has_related_action else 'Voir piece') %}
       {% set request_href = item.request_href|default(fallback_request_href, true) %}
       {% set deposit_href = item.deposit_href|default(fallback_deposit_href, true) %}
       {% set received_href = deposit_href ~ ('&' if '?' in deposit_href else '?') ~ 'status=reponse-recue&return=pieces' %}
       {% set question_href = '/demandes?intent=question&piece=' ~ item_id %}
       {% set proof_label = item.proof_expected_label|default(item.proof_purpose|default(item.evidence|default(item_expected_piece, true), true), true) %}
-      <article class="cs-reprise-item cs-missing-card {{ 'cs-reprise-tone-warn' if item.candidate_docs|default([])|length else 'cs-reprise-tone-danger' }}">
+      {% set item_candidate_count = item.candidate_count|default(item.candidate_docs|default([])|length, true)|int %}
+      <article class="cs-reprise-item cs-missing-card {{ 'cs-reprise-tone-warn' if item_candidate_count else 'cs-reprise-tone-danger' }}">
         <div class="cs-missing-card-head">
           <div>
             <span>{{ safe_text(item_rubric_label, 'Piece attendue') }} - {{ safe_text(item_status_label, 'A demander') }}</span>
@@ -175,7 +178,7 @@
           </div>
           <div>
             <dt>Piece candidate</dt>
-            <dd>{{ item.candidate_docs|default([])|length }} {{ 'candidate a verifier' if item.candidate_docs|default([])|length == 1 else 'candidates a verifier' }}</dd>
+            <dd>{{ item_candidate_count }} {{ 'candidate a verifier' if item_candidate_count == 1 else 'candidates a verifier' }}</dd>
           </div>
         </dl>
         <div class="cs-reprise-actions">
@@ -189,15 +192,17 @@
       {% endfor %}
     </section>
 
-    {% set selected_related_action_id = selected_missing.related_action_id|default(selected_missing.id|default('', true), true)|string %}
-    {% set selected_fallback_action_href = '/comptes?status=p1' if accounting_fallback_active else '/actions?selected=' ~ selected_related_action_id %}
+    {% set selected_related_action_id = selected_missing.related_action_id|default('', true)|string %}
+    {% set selected_item_id = selected_missing.id|default(selected_missing.item_id|default('', true), true)|string %}
+    {% set selected_has_related_action = selected_related_action_id|trim %}
+    {% set selected_fallback_action_href = '/comptes?status=p1' if accounting_fallback_active else ('/actions?selected=' ~ selected_related_action_id if selected_has_related_action else '/pieces/' ~ selected_item_id) %}
     {% set selected_fallback_request_href = '/demandes/relance?scope=comptes' if accounting_fallback_active else '/demandes/relance?action_id=' ~ selected_related_action_id %}
     {% set selected_fallback_deposit_href = '/depot?intent=proof&scope=comptes' if accounting_fallback_active else '/depot?intent=proof&missing_for=' ~ selected_related_action_id %}
     {% set selected_expected_piece = selected_missing.expected_piece|default(selected_missing.title|default(selected_missing.evidence|default('Piece attendue', true), true), true) %}
     {% set selected_reason = selected_missing.reason|default(selected_missing.next_step|default(selected_missing.question|default('Aucune piece validee ne prouve encore ce point.', true), true), true) %}
     {% set selected_raw_action_href = selected_missing.action_href|default('', true)|string %}
     {% set selected_action_href = selected_raw_action_href if selected_raw_action_href and not selected_raw_action_href.startswith('/pieces') else selected_missing.followup_href|default(selected_fallback_action_href, true) %}
-    {% set selected_action_link_label = 'Ouvrir compte' if accounting_fallback_active or selected_action_href.startswith('/comptes') or 'scope=comptes' in selected_action_href else 'Ouvrir action' %}
+    {% set selected_action_link_label = 'Ouvrir compte' if accounting_fallback_active or selected_action_href.startswith('/comptes') or 'scope=comptes' in selected_action_href else ('Ouvrir action' if selected_has_related_action else 'Voir piece') %}
     {% set selected_request_href = selected_missing.request_href|default(selected_fallback_request_href, true) %}
     {% set selected_deposit_href = selected_missing.deposit_href|default(selected_fallback_deposit_href, true) %}
     {% set selected_received_href = selected_deposit_href ~ ('&' if '?' in selected_deposit_href else '?') ~ 'status=reponse-recue&return=pieces' %}
@@ -240,7 +245,8 @@
   {% else %}
   <div class="cs-reprise-empty cs-reprise-empty-wide">
     <strong>Aucune piece a demander pour le moment</strong>
-    <p>Les sorties chargees ne signalent aucun manque prioritaire. Vous pouvez relire toutes les pieces ou revenir au cockpit.</p>
+    <span class="sr-only">Aucune piece manquante affichee pour le moment</span>
+    <p>La projection locale ne remonte pas encore de piece a demander. Vous pouvez relire toutes les pieces ou revenir au cockpit.</p>
     <div class="cs-reprise-actions">
       <a class="cs-reprise-secondary" href="{{ token_href('/pieces') }}">Voir toutes les pieces</a>
       <a class="cs-reprise-primary" href="{{ token_href('/') }}">Retour au cockpit</a>
@@ -250,6 +256,7 @@
 </section>
 {% endif %}
 
+{% if not show_missing_view %}
 <section class="band">
   <div>
     <p class="eyebrow">Sprint 4</p>
@@ -388,4 +395,5 @@
     </div>
   </div>
 </section>
+{% endif %}
 {% endblock %}

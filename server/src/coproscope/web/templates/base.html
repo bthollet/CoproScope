@@ -57,7 +57,7 @@
           </a>
           <a class="{{ 'active' if page == 'agcontentieux' else '' }}" href="{{ token_href('/ag-contentieux') }}" aria-label="AG, contentieux et passation, lecture novice"{% if page == 'agcontentieux' %} aria-current="page"{% endif %}>
             <span class="cs-nav-icon" aria-hidden="true">05</span>
-            <span>AG</span>
+            <span>AG / contentieux</span>
             <span class="cs-nav-count">{{ kpis.decisions|default('') }}</span>
           </a>
           <a class="{{ 'active' if page == 'accounting' else '' }}" href="{{ token_href('/comptes') }}" aria-label="Comptes et controles"{% if page == 'accounting' %} aria-current="page"{% endif %}>

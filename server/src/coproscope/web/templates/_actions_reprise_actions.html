@@ -1,0 +1,137 @@
+{% if is_reprise_retards or is_reprise_request or is_reprise_comptes %}
+{% set reprise_items = late_items if request.query_params.get('view') == 'retards' else action_rows|default([]) %}
+{% set reprise_title = 'Points comptes a traiter avant AG' if is_reprise_comptes else 'Toutes les actions en retard' if is_reprise_retards else 'Demander au syndic' %}
+{% set reprise_subtitle = 'Les anomalies et questions comptables qui demandent une preuve, une explication syndic ou une validation du conseil syndical.' if is_reprise_comptes else 'Les sujets qui ont depasse une echeance ou bloquent une preuve de reprise.' if is_reprise_retards else 'Les actions ou pieces pour lesquelles une preuve doit etre demandee au syndic ou a une source identifiable.' %}
+<section class="cs-reprise-page" aria-labelledby="cs-reprise-actions-title">
+  <header class="cs-reprise-hero">
+    <div>
+      <p class="eyebrow">Boite de reprise</p>
+      <h2 id="cs-reprise-actions-title">{{ reprise_title }}</h2>
+      <p>{{ reprise_subtitle }}</p>
+    </div>
+    <div class="cs-reprise-actions" aria-label="Actions de reprise">
+      <a class="cs-reprise-secondary" href="{{ token_href('/exports/actions.md?priority=P1') }}">Exporter une liste de travail apres apercu</a>
+      <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance') }}">Preparer une relance</a>
+    </div>
+  </header>
+
+  <div class="cs-reprise-summary" aria-label="Resume des retards">
+    <a class="cs-reprise-card cs-reprise-tone-danger" href="{{ token_href('/actions?view=retards') }}">
+      <span>En retard</span>
+      <strong>{{ late_summary.total|default(reprise_items|length) }}</strong>
+      <small>Sujets a reprendre avant passation.</small>
+    </a>
+    <a class="cs-reprise-card cs-reprise-tone-danger" href="{{ token_href(late_filters.priority_href|default('/actions?priority=P1', true)) }}">
+      <span>Critiques</span>
+      <strong>{{ late_summary.critical_count|default(model.action_summary.by_priority.P1|default(0), true) }}</strong>
+      <small>Priorite lisible pour le conseil syndical.</small>
+    </a>
+    <a class="cs-reprise-card cs-reprise-tone-warn" href="{{ token_href(late_filters.to_request_href|default('/actions?status=a_demander', true)) }}">
+      <span>Sans preuve</span>
+      <strong>{{ late_summary.missing_proof_count|default(model.action_summary.by_status.a_demander|default(0), true) }}</strong>
+      <small>Preuve attendue avant cloture.</small>
+    </a>
+    <a class="cs-reprise-card cs-reprise-tone-ok" href="{{ token_href('/demandes/relance') }}">
+      <span>Relance syndic prete</span>
+      <strong>{{ late_summary.syndic_ready_count|default(followup_summary.ready_count|default(0), true) }}</strong>
+      <small>Message copiable, envoi hors outil.</small>
+    </a>
+  </div>
+
+  <nav class="cs-reprise-filters" aria-label="Filtres de reprise">
+    <span>Filtres</span>
+    <a href="{{ token_href('/actions?priority=P1') }}">Responsable et priorite</a>
+    <a href="{{ token_href('/actions?view=retards') }}">Retard</a>
+    <a href="{{ token_href('/actions?status=a_demander') }}">Preuve a demander</a>
+    <a href="{{ token_href('/demandes/relance') }}">Syndic</a>
+    <a href="{{ token_href('/confidentialite') }}">Diffusion</a>
+  </nav>
+
+  <div class="cs-reprise-layout">
+    <section class="cs-reprise-list" aria-labelledby="cs-reprise-list-title">
+      <div class="cs-reprise-panel-head">
+        <h3 id="cs-reprise-list-title">Liste priorisee</h3>
+        <span>{{ reprise_items|length }} actions</span>
+      </div>
+      {% for item in reprise_items[:12] %}
+      {% set item_id = item.id|default(item.action_id|default(loop.index|string), true)|string %}
+      {% set item_title = item.title|default('Action a reprendre', true) %}
+      {% set item_status = item.status|default('a_traiter', true) %}
+      {% set proof_label = item.expected_proof|default(item.evidence|default('Preuve attendue a preciser', true), true) %}
+      {% set next_label = item.next_step|default('Preparer la prochaine action et garder une trace.', true) %}
+      {% set owner_label = item.owner|default(item.owner_label|default('Conseil syndical / syndic', true), true) %}
+      {% set relance_href = item.followup_href|default(item.relance_href|default('/demandes/relance?action_id=' ~ item_id, true), true) %}
+      {% set piece_href = item.piece_href|default(item.missing_piece_href|default('/pieces?proof=missing&action=' ~ item_id, true), true) %}
+      {% set memory_href = item.memory_href|default(item.href|default('/chantiers', true), true) %}
+      <article class="cs-reprise-item cs-reprise-tone-{{ tone_for(item_status, item.priority|default('', true)) }}">
+        <div>
+          <span>{{ safe_text(item.domain_label|default('Suivi CS', true), 'Suivi CS') }} - {{ priority_natural(item.priority|default('', true), item.priority_label|default('', true)) }}</span>
+          <h3>{{ safe_text(item_title, 'Action a reprendre') }}</h3>
+          <p>{{ safe_text(item.detail|default(item.delay_label|default('Ce sujet bloque une preuve ou une relance de reprise.', true), true), 'Ce sujet bloque une preuve ou une relance de reprise.') }}</p>
+        </div>
+        <dl class="cs-reprise-kv">
+          <div>
+            <dt>Echeance</dt>
+            <dd>{{ safe_text(item.due_label|default(item.delay_label|default('Echeance a verifier', true), true), 'Echeance a verifier') }}</dd>
+          </div>
+          <div>
+            <dt>Responsable</dt>
+            <dd>{{ safe_text(owner_label, 'Conseil syndical / syndic') }}</dd>
+          </div>
+          <div>
+            <dt>Preuve attendue</dt>
+            <dd>{{ safe_text(proof_label, 'Preuve attendue a preciser') }}</dd>
+          </div>
+          <div>
+            <dt>Prochaine action</dt>
+            <dd>{{ safe_text(next_label, 'Preparer la prochaine action et garder une trace.') }}</dd>
+          </div>
+          <div>
+            <dt>Diffusion</dt>
+            <dd>{{ safe_text(item.diffusion_label|default('Conseil syndical uniquement', true), 'Conseil syndical uniquement') }}</dd>
+          </div>
+        </dl>
+        <div class="cs-reprise-actions">
+          <a class="cs-reprise-primary" href="{{ token_href(relance_href) }}">Preparer une relance</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(piece_href) }}">Rattacher une piece</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(memory_href) }}">Voir dans la memoire</a>
+        </div>
+      </article>
+      {% else %}
+      <div class="cs-reprise-empty">
+        <strong>{{ 'Aucun point compte prioritaire avec ces filtres.' if is_reprise_comptes else 'Aucune action en retard. Verifiez les actions a confirmer ou preparez la prochaine passation.' if is_reprise_retards else 'Aucune preuve a demander dans cette vue.' }}</strong>
+        <p>{{ 'Revenez au controle comptes pour choisir une anomalie ou retirer le filtre de priorite.' if is_reprise_comptes else 'Aucun retard avec ces filtres. Elargissez la periode ou retirez un critere.' if is_reprise_retards else 'Les pieces manquantes peuvent encore creer une demande ou une relance syndic.' }}</p>
+        <a href="{{ token_href('/actions') }}">Revenir a toutes les actions</a>
+      </div>
+      {% endfor %}
+    </section>
+
+    <aside class="cs-reprise-detail" aria-labelledby="cs-reprise-detail-title">
+      <p class="eyebrow">Detail utile</p>
+      <h3 id="cs-reprise-detail-title">Ce que le CS doit verifier</h3>
+      <dl class="cs-reprise-kv">
+        <div>
+          <dt>Pourquoi cela compte</dt>
+          <dd>Un retard ne doit pas etre clos tant que la preuve attendue ou la justification visible manque.</dd>
+        </div>
+        <div>
+          <dt>Relance copiable</dt>
+          <dd>Le brouillon se prepare ici, puis l'envoi se fait hors CoproScope avec canal et date notes.</dd>
+        </div>
+        <div>
+          <dt>Preuve attendue</dt>
+          <dd>Contrat signe, PV, facture, bon d'intervention, reponse ecrite ou note de verification selon le sujet.</dd>
+        </div>
+        <div>
+          <dt>Etat vide</dt>
+          <dd>Action introuvable. Revenir a toutes les actions en retard.</dd>
+        </div>
+      </dl>
+      <div class="cs-reprise-actions">
+        <a class="cs-reprise-primary" href="{{ token_href('/pieces?proof=missing') }}">Ouvrir les pieces manquantes</a>
+        <a class="cs-reprise-secondary" href="{{ token_href('/exports/actions.md?priority=P1') }}">Voir la liste de travail</a>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endif %}

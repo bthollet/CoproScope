@@ -29,6 +29,19 @@ FORBIDDEN_MARKERS = (
     "private/",
     "private\\",
 )
+TAG_RE = re.compile(r"<[^>]+>")
+MAIN_RE = re.compile(r"<main\b[^>]*id=[\"']contenu[\"'][^>]*>(?P<body>[\s\S]*?)</main>", re.IGNORECASE)
+
+
+def _visible_text(html: str) -> str:
+    return re.sub(r"\s+", " ", TAG_RE.sub(" ", html)).strip()
+
+
+def _main_text(html: str) -> str:
+    match = MAIN_RE.search(html)
+    if not match:
+        raise AssertionError("Missing main#contenu")
+    return _visible_text(match.group("body"))
 
 
 class PieceDetailRouteTests(unittest.TestCase):
@@ -79,6 +92,12 @@ class PieceDetailRouteTests(unittest.TestCase):
         self.assertIn("Relancer syndic", body)
         self.assertIn("Ajouter reponse recue", body)
         self.assertIn('aria-label="Actions principales piece/preuve"', body)
+        first_viewport = _main_text(body)[:1800]
+        self.assertIn("Piece concernee", first_viewport)
+        self.assertIn("Pourquoi", first_viewport)
+        self.assertIn("Action suivante", first_viewport)
+        self.assertIn("Prudence diffusion", first_viewport)
+        self.assertNotIn("Donnees fictives", first_viewport)
         self.assertIn("Voir le point lie", body)
         self.assertIn("Aucun envoi automatique", body)
         self.assertNoPrivateLeak(body)
@@ -173,6 +192,7 @@ class PieceDetailRouteTests(unittest.TestCase):
         self.assertEqual(unsafe.status_code, 200)
         self.assertIn("Piece introuvable", unsafe_body)
         self.assertIn(MASKED_REFERENCE, unsafe_body)
+        self.assertNotIn("fictif", unsafe_body.lower())
         self.assertNotIn("C:\\Users", unsafe_body)
         self.assertNotIn("secret.txt", unsafe_body)
         self.assertNoPrivateLeak(unsafe_body)

@@ -1,0 +1,520 @@
+
+.cs-action-progress {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.cs-action-progress > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cs-action-progress strong {
+  font-size: 24px;
+}
+
+.cs-progress-bar {
+  overflow: hidden;
+  height: 9px;
+  border-radius: 999px;
+  background: #e4eaf2;
+}
+
+.cs-progress-bar span {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  border-radius: inherit;
+  background: #31aa75;
+}
+
+.cs-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cs-focus-grid > div {
+  display: grid;
+  gap: 5px;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.cs-proof-card a,
+.cs-piece-card a,
+.cs-followup-card a,
+.cs-empty-state a {
+  color: #1d5fd8;
+  font-weight: 760;
+}
+
+.cs-history-timeline {
+  display: grid;
+  gap: 0;
+}
+
+.cs-history-event {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  border-left: 2px solid #dce3ec;
+  padding: 0 0 14px 16px;
+}
+
+.cs-history-event::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 3px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #1d5fd8;
+}
+
+.cs-history-event.is-evidence::before {
+  background: #31aa75;
+}
+
+.cs-history-event time {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-empty-state {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed #cfd8e5;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcff;
+}
+
+.cs-empty-state p {
+  color: #475467;
+}
+
+.cs-secondary-workflow {
+  padding: 14px;
+}
+
+.cs-card-list-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cs-card-tone-danger,
+.cs-tone-danger {
+  border-left-color: #df2f24;
+  background: #fff1f0;
+}
+
+.cs-card-tone-warn,
+.cs-tone-warn {
+  border-left-color: #f28705;
+  background: #fff7ed;
+}
+
+.cs-card-tone-ok,
+.cs-tone-ok {
+  border-left-color: #13976b;
+  background: #edfdf7;
+}
+
+.cs-card-tone-info,
+.cs-tone-info {
+  border-left-color: #1d5fd8;
+  background: #eef4ff;
+}
+
+.cs-card-tone-blocked,
+.cs-card-tone-missing,
+.cs-card-tone-rejected {
+  border-left-color: #df2f24;
+  background: #fff1f0;
+}
+
+.cs-card-tone-candidate,
+.cs-card-tone-local,
+.cs-card-tone-draft,
+.cs-card-tone-to_send,
+.cs-card-tone-sent_waiting,
+.cs-card-tone-answered_to_check {
+  border-left-color: #f28705;
+  background: #fff7ed;
+}
+
+.cs-card-tone-verified,
+.cs-card-tone-closed {
+  border-left-color: #13976b;
+  background: #edfdf7;
+}
+
+/* Cycle 3 FRONT - controle comptes */
+.cs-comptes-page {
+  display: grid;
+  gap: 12px;
+}
+
+.cs-comptes-header {
+  margin-bottom: 0;
+}
+
+.cs-comptes-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cs-comptes-kpi,
+.cs-comptes-panel,
+.cs-comptes-categories,
+.cs-comptes-detail,
+.cs-comptes-next,
+.cs-comptes-filters {
+  min-width: 0;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+.cs-comptes-kpi {
+  display: grid;
+  gap: 7px;
+  border-left: 4px solid #1d5fd8;
+  padding: 12px;
+}
+
+.cs-comptes-kpi.cs-tone-danger,
+.cs-comptes-category.cs-card-tone-danger {
+  border-left-color: #df2f24;
+  background: #fff1f0;
+}
+
+.cs-comptes-kpi.cs-tone-warn,
+.cs-comptes-category.cs-card-tone-warn {
+  border-left-color: #f28705;
+  background: #fff7ed;
+}
+
+.cs-comptes-kpi.cs-tone-ok,
+.cs-comptes-category.cs-card-tone-ok {
+  border-left-color: #13976b;
+  background: #edfdf7;
+}
+
+.cs-comptes-kpi span,
+.cs-comptes-kpi small,
+.cs-comptes-category-status,
+.cs-comptes-category dt,
+.cs-comptes-detail-list dt,
+.cs-comptes-mini-grid span,
+.cs-comptes-supplier-list span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-comptes-kpi strong {
+  color: #101828;
+  font-size: 26px;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.cs-comptes-filters {
+  padding: 12px;
+}
+
+.cs-comptes-filters form {
+  display: grid;
+  grid-template-columns: minmax(130px, 170px) minmax(150px, 190px) minmax(190px, 1fr) minmax(210px, auto) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.cs-comptes-filters label {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.cs-comptes-check {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  padding-bottom: 7px;
+}
+
+.cs-comptes-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-left: 4px solid #1d5fd8;
+  padding: 12px 14px;
+}
+
+.cs-comptes-next strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.cs-comptes-next-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cs-comptes-next-actions a,
+.cs-comptes-tabs a {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #ffffff;
+  color: #1d5fd8;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-comptes-guide {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cs-comptes-guide div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fbfcff;
+}
+
+.cs-comptes-guide span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.cs-comptes-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.cs-comptes-categories,
+.cs-comptes-detail,
+.cs-comptes-panel {
+  padding: 14px;
+}
+
+.cs-comptes-category-list,
+.cs-comptes-grid,
+.cs-comptes-card-list {
+  display: grid;
+  gap: 10px;
+}
+
+.cs-comptes-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cs-comptes-category {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  border: 1px solid #dce3ec;
+  border-left: 4px solid #1d5fd8;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcff;
+}
+
+.cs-comptes-category.is-selected,
+.cs-comptes-category:hover,
+.cs-comptes-category:focus-visible {
+  border-color: #8fb4ff;
+  box-shadow: 0 8px 22px rgba(16, 24, 40, .07);
+}
+
+.cs-comptes-category strong,
+.cs-comptes-detail h3,
+.cs-comptes-panel strong {
+  overflow-wrap: anywhere;
+}
+
+.cs-comptes-category dl,
+.cs-comptes-detail-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.cs-comptes-category dl div,
+.cs-comptes-detail-list div,
+.cs-comptes-supplier-list div {
+  display: grid;
+  grid-template-columns: minmax(95px, .45fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.cs-comptes-category dd,
+.cs-comptes-detail-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cs-comptes-detail {
+  position: sticky;
+  top: 78px;
+  display: grid;
+  gap: 12px;
+}
+
+.cs-comptes-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cs-comptes-tabs a.active,
+.cs-comptes-tabs a:hover {
+  border-color: #8fb4ff;
+  background: #eef4ff;
+}
+
+.cs-comptes-tabs a span {
+  min-width: 22px;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: rgba(29, 95, 216, .1);
+  text-align: center;
+}
+
+.cs-comptes-tab-panel {
+  gap: 10px;
+}
+
+.cs-comptes-detail .cs-followup-card p {
+  margin: 0;
+  color: #475467;
+}
+
+.cs-comptes-report-summary {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcff;
+}
+
+.cs-comptes-report-summary p {
+  margin: 0;
+  color: #475467;
+}
+
+.cs-comptes-report-summary div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cs-comptes-report-summary span {
+  border: 1px solid #cfd8e5;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #475467;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-comptes-table-scroll {
+  overflow-x: auto;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+}
+
+.cs-comptes-table {
+  min-width: 780px;
+  table-layout: auto;
+  background: #ffffff;
+}
+
+.cs-comptes-table th {
+  background: #f8fafc;
+  color: #475467;
+}
+
+.cs-comptes-table th,
+.cs-comptes-table td {
+  padding: 9px 11px;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.cs-comptes-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cs-comptes-mini-grid a {
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfcff;
+}
+
+.cs-comptes-mini-grid strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.cs-comptes-supplier-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cs-comptes-supplier-list > div:not(.cs-panel-head) {
+  border-bottom: 1px solid #edf1f6;
+  padding-bottom: 7px;
+}
+
+@media (max-width: 1320px) {
+  .cs-comptes-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cs-register-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cs-summary-grid,
+  .cs-focus-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

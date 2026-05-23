@@ -46,7 +46,23 @@ CONTENT_LEAK_PATTERNS = (
     ),
     (
         "secret_assignment",
-        re.compile(r"\b(?:OPENAI|GEMINI|GOOGLE|PISTE)_[A-Z0-9_]*KEY\s*[:=]\s*['\"]?[A-Za-z0-9._~+-]{8,}", re.IGNORECASE),
+        re.compile(r"\b(?:OPENAI|GEMINI|GOOGLE|PISTE)_[A-Z0-9_]*KEY\b['\"]?\s*[:=]\s*['\"]?[A-Za-z0-9._~+-]{8,}", re.IGNORECASE),
+    ),
+    (
+        "oauth_client_secret",
+        re.compile(r"\bclient_secret\b['\"]?\s*[:=]\s*['\"]?[A-Za-z0-9._~+\-/]{8,}", re.IGNORECASE),
+    ),
+    (
+        "oauth_refresh_token",
+        re.compile(r"\brefresh_token\b['\"]?\s*[:=]\s*['\"]?[A-Za-z0-9._~+\-/]{8,}", re.IGNORECASE),
+    ),
+    (
+        "openai_secret_key",
+        re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9][A-Za-z0-9_-]{20,}\b", re.IGNORECASE),
+    ),
+    (
+        "bearer_token",
+        re.compile(r"\bBearer\s+[A-Za-z0-9._~+\-/=]{20,}", re.IGNORECASE),
     ),
 )
 

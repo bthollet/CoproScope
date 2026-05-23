@@ -6,7 +6,7 @@
     <p class="eyebrow">Relance syndic</p>
     <h2 id="relance-title">{{ relance.context.title }}</h2>
     <p>{{ relance.context.subtitle }}</p>
-    <div class="cs-relance-tags" aria-label="Contexte de demonstration">
+    <div class="cs-relance-tags" aria-label="Contexte local">
       <span>{{ relance.context.role_label }}</span>
       <span>{{ relance.context.demo_label }}</span>
       <span>{{ relance.summary.delivery_status }}</span>
@@ -25,6 +25,18 @@
       <div>
         <dt>A qui demander / qui doit l'avoir</dt>
         <dd>{{ relance.draft.recipient }}</dd>
+      </div>
+      <div>
+        <dt>Pourquoi</dt>
+        <dd>{{ relance.selected.summary }}</dd>
+      </div>
+      <div>
+        <dt>Action suivante</dt>
+        <dd>{{ relance.selected.next_action_label }}</dd>
+      </div>
+      <div>
+        <dt>Prudence diffusion</dt>
+        <dd>{{ relance.selected.diffusion_warning or relance.selected.visibility_label }}</dd>
       </div>
     </dl>
     {% endif %}
@@ -45,7 +57,7 @@
 {% if relance.summary.sent %}
 <section class="band notice-band">
   <strong>{{ relance.summary.sent_label }}</strong>
-  <span>Le message reste fictif: l'envoi reel se fait hors CoproScope.</span>
+  <span>Le message n'est pas envoye par CoproScope: l'envoi reel reste externe.</span>
   {% if relance.summary.sent_details %}
   <span>{{ relance.summary.sent_details }}</span>
   {% endif %}
@@ -56,7 +68,13 @@
 <section class="band">
   <h3>{{ relance.empty_state.title }}</h3>
   <p class="lead">{{ relance.empty_state.body }}</p>
-  <a class="button-link" href="{{ token_href('/demandes') }}">Ouvrir les demandes</a>
+  <div class="cs-relance-actions">
+    <a class="cs-reprise-primary" href="{{ token_href('/demandes#nouvelle-demande') }}">Noter l'envoi fait hors CoproScope</a>
+    <a class="cs-reprise-secondary" href="{{ token_href('/demandes#nouvelle-demande') }}">Choisir ou creer une demande</a>
+    <a class="cs-reprise-secondary" aria-label="Rattacher la reponse du syndic au depot local" href="{{ token_href(relance.actions.depot_href) }}">Rattacher la reponse du syndic</a>
+    <a class="cs-reprise-secondary" href="{{ token_href('/demandes') }}">Ouvrir les demandes</a>
+  </div>
+  <p class="hint">Selectionnez ou creez d'abord une demande: CoproScope ne note aucun envoi reel et garde seulement une trace locale rattachee.</p>
 </section>
 {% else %}
 <section class="cs-relance-grid">
@@ -100,7 +118,7 @@
     <form class="cs-relance-confirm-form" method="post" action="/demandes/relance{{ ui_token_query }}" aria-labelledby="relance-confirm-title">
       <div class="cs-relance-confirm-head">
         <strong id="relance-confirm-title">Noter un envoi fait hors CoproScope</strong>
-        <span>CoproScope garde seulement une trace fictive de test; l'envoi reel reste externe.</span>
+        <span>CoproScope garde seulement une trace locale; l'envoi reel reste externe.</span>
       </div>
       <div class="cs-relance-confirm-grid">
         <label>Date d'envoi <input class="input" type="date" name="sent_date" required></label>
@@ -124,7 +142,7 @@
       <button class="cs-reprise-secondary" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(this.closest('.cs-relance-draft').querySelector('textarea').value)">Copier le message</button>
     </div>
     {% endif %}
-    <p class="cs-relance-note">Valider signifie noter une relance faite hors CoproScope pour le test UX; cela n'envoie aucun message reel.</p>
+    <p class="cs-relance-note">Valider signifie noter une relance faite hors CoproScope dans le journal local; cela n'envoie aucun message reel.</p>
   </article>
 
   <aside class="cs-relance-side" aria-labelledby="relance-links-title">

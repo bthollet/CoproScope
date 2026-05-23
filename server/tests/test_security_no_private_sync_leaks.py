@@ -9,6 +9,7 @@ from io import BytesIO
 from pathlib import Path
 
 from coproscope.core.common import load_instance
+from coproscope.core.share import audit_repo, export_shareable
 from coproscope.modules.agcontentieux import DossierAG
 from coproscope.modules.passation_exports import build_passation_derived_export, render_passation_derived_json
 from coproscope.modules.requestops import VISIBILITY_RESTRICTED, normalize_request
@@ -235,6 +236,48 @@ class SecurityNoPrivateSyncLeaksTests(unittest.TestCase):
         self.assertIn("nested/.ruff_cache", audit.forbidden_entries)
         self.assertIn("nested/logs", audit.forbidden_entries)
         self.assertIn("nested/logs/run.log", audit.forbidden_entries)
+
+    def test_share_audit_and_export_block_oauth_and_ai_secrets_in_allowed_content(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        config_path = repo_root / "server" / "src" / "coproscope" / "configs" / "github_sharing.default.yml"
+        oauth_secret = "GOCSPX-secretValue1234567890"
+        refresh_token = "1//0gRefreshTokenSecretValue123456"
+        openai_key = "sk-proj-123456789012345678901234567890"
+        bearer_token = "Bearer ya29.a0AfH6SMSecretTokenValue123456"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            audit_root = Path(temp_dir) / "repo"
+            export_root = Path(temp_dir) / "export"
+            (audit_root / "docs").mkdir(parents=True)
+            (audit_root / "README.md").write_text("# repo\n", encoding="utf-8")
+            (audit_root / "docs" / "safe.md").write_text("# safe\n", encoding="utf-8")
+            (audit_root / "docs" / "oauth_dump.md").write_text(
+                "\n".join(
+                    [
+                        f'"client_secret": "{oauth_secret}"',
+                        f'"refresh_token": "{refresh_token}"',
+                        openai_key,
+                        f"Authorization: {bearer_token}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            audit = audit_repo(audit_root, config_path)
+            exported = export_shareable(audit_root, config_path, export_root, clean=True)
+            manifest_text = (export_root / "share-manifest.json").read_text(encoding="utf-8")
+            oauth_dump_exported = (export_root / "docs" / "oauth_dump.md").exists()
+
+        violations = {item["path"]: item["rules"] for item in audit["content_violations"]}
+        self.assertIn("docs/oauth_dump.md", audit["blocked"])
+        self.assertIn("docs/oauth_dump.md", violations)
+        for rule in ("oauth_client_secret", "oauth_refresh_token", "openai_secret_key", "bearer_token"):
+            self.assertIn(rule, violations["docs/oauth_dump.md"])
+        self.assertIn("docs/safe.md", exported["shareable"])
+        self.assertFalse(oauth_dump_exported)
+        for secret in (oauth_secret, refresh_token, openai_key, bearer_token):
+            self.assertNotIn(secret, json.dumps(audit, ensure_ascii=False))
+            self.assertNotIn(secret, manifest_text)
 
 
 if __name__ == "__main__":

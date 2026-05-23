@@ -1,84 +1,91 @@
 # Documentation CoproScope
 
-Cette documentation est ecrite pour etre lisible par trois publics :
+Cette documentation doit servir l'UX avant l'outillage. Un coproprietaire novice n'a pas a lancer de commandes pour comprendre la valeur du produit. Les commandes existent, mais elles appartiennent au public averti: contributeurs, integrateurs, auditeurs techniques, demo runners.
 
-- les membres de conseil syndical qui veulent comprendre la promesse ;
-- les relecteurs UX/produit qui veulent challenger les priorites ;
-- les contributeurs techniques qui veulent savoir ou agir sans exposer de donnees.
+## Publics
 
-## Lire vite
-
-| Temps | Lire | Pourquoi |
-|---|---|---|
-| 5 min | [Gouvernail roadmap](./roadmap_backlog_central.md) + [Etude utilisateurs](./etude_utilisateurs.md) + [Etat du developpement](./etat_du_developpement.md) | Comprendre la source de verite, le besoin, ce qui existe et ce qui manque. |
-| 15 min | Ajouter [Concept et philosophie](./concept_et_philosophie.md), [Fonctions cibles](./fonctions_cibles.md), [Feuille de route](./feuille_de_route.md), [Plan directeur local + vault](./plan_directeur_coproscope_local_vault.md) | Comprendre le produit; les priorites actives restent dans le gouvernail. |
-| 30 min | Ajouter [Architecture et flux](./architecture_et_flux.md), [Confidentialite et biffage](./confidentialite_et_biffage.md), [Audit360](./audit360.md) | Comprendre les choix structurants. |
-| Contribution | Ajouter [Plan d'implementation](./implementation_plan.md), [Cycles refonte UX](./refonte_ux_cycles_image_dev_test.md), [Orchestration multi-agents](./orchestration_agents.md), [Politique de partage GitHub](./github_sharing.md), [Outillage](./outillage_open_source.md) | Contribuer seul ou a plusieurs sans casser les garde-fous. |
-
-## Carte de la doc
-
-| Document | Role |
+| Public | Ce que la doc doit lui donner |
 |---|---|
-| [Gouvernail roadmap](./roadmap_backlog_central.md) | Source de verite unique des priorites, du backlog officiel et des rattachements aux anciens plans. |
-| [Etude utilisateurs](./etude_utilisateurs.md) | Synthese accessible de l'enquete UX/SHS et de ses conclusions produit. |
-| [Concept et philosophie](./concept_et_philosophie.md) | Promesse, principes et limites de CoproScope. |
-| [Fonctions cibles](./fonctions_cibles.md) | Tous les blocs fonctionnels, avec statut clair. |
-| [Feuille de route](./feuille_de_route.md) | Source historique P0/P1/P2/P3 issue de l'etude; non canonique pour les priorites actives. |
-| [Plan directeur local + vault](./plan_directeur_coproscope_local_vault.md) | Source historique d'architecture local + vault; ne pilote plus les sprints directement. |
-| [Roadmap produit fini depuis les visuels](./roadmap_produit_fini_visuels_enquete.md) | Source historique de vision UX; les suites actives sont importees dans le gouvernail. |
-| [Cycles refonte UX Image -> Dev -> Test](./refonte_ux_cycles_image_dev_test.md) | Cadence operationnelle pour enqueter sur les images, commander les devs, tester les routes livrees et garder les flux en parallele. |
-| [Registre cycles refonte UX](./registre_cycles_refonte_ux.md) | Trace de flux et journal des points de coordination; les nouvelles vagues passent par le gouvernail. |
-| [Prompts agents refonte UX](./prompts_agents_refonte_ux.md) | Prompts par role pour designer, utilisateur novice, front, back/viewmodel, QA et integrateur-scribe. |
-| [Indicateurs centraux de pilotage copro](./indicateurs_pilotage_copro.md) | Themes de gestion, objets noyau, preuves, seuils et actions pour le cockpit. |
-| [Accessibilite et registre de langage](./accessibilite_registre_langage.md) | Publics cibles, vocabulaire stable, infobulles et test novice 10 minutes. |
-| [Veille open source et integration](./veille_open_source_integration.md) | Radar des briques OSS, gates d'adoption, noyau/plugin/export/transport. |
-| [Strategie Obsidian-like depuis l'enquete](./strategie_obsidian_like_enquete_utilisateur.md) | Horizons produit, lecons Obsidian et strategie plugins/vault centree utilisateur. |
-| [Resilience anti-accaparement](./resilience_anti_accaparement.md) | Archive complete coproprietaire, compartiments chiffres, quorum de secours et gouvernance des cles. |
-| [Livraison test 20h](./livraison_test_2000.md) | Protocole de test novice, commandes Windows et criteres Go/No-go. |
-| [Audit UX atelier pieces](./ux_review_atelier_piece.md) | Revue UX/UI de la bascule locale/vault et de l'atelier piece -> point -> action -> preuve. |
-| [Etat du developpement](./etat_du_developpement.md) | Ce qui est livre, en cours, prevu, pas prioritaire. |
-| [Architecture et flux](./architecture_et_flux.md) | Separation depot public / instances privees / artefacts locaux. |
-| [Documentation noyau vs instance](./documentation_noyau_vs_instance.md) | Frontiere entre docs produit genericisables et docs d'instance sensibles. |
-| [Transition vault collaboratif](./transition_vault_collaboratif.md) | Strategie de passage vers un vault local signe et synchronisable. |
-| [Migration Drive vers local](./migration_drive_vers_local.md) | Runbook de bascule locale, nettoyage et garde-fous. |
-| [Format vault](./vault_format.md) | Format V1 du dossier sync chiffre, blobs et evenements. |
-| [Signatures et historique](./signatures_historique.md) | Modele append-only, signatures et reconstruction locale. |
-| [Objets metier et evenements V1](./objets_metier_evenements_v1.md) | Contrat des objets noyau et evenements collaboratifs. |
-| [Plugins officiels](./plugins_officiels.md) | Strategie de plugins signes, compatibles et revocables. |
-| [Batchs transition locale](./batchs_transition_locale.md) | Commandes Windows relancables depuis une autre conversation. |
-| [Reprise agents paralleles vault](./reprise_agents_paralleles_vault.md) | Lots paralleles sans collision et prompts de lancement. |
-| [Confidentialite et biffage](./confidentialite_et_biffage.md) | PrivacyOps, BiffageOps, colleges d'acces, versions diffusables. |
-| [Audit360](./audit360.md) | Couche transverse faits -> preuves -> risques -> actions. |
-| [FactureOps](./factureops.md) | Extraction et anomalies facture. |
-| [ComptaScope](./comptascope.md) | Rapprochements comptables candidats et rapport explicatif. |
-| [DocOps actionnable](./docops_actionnable.md) | Completude documentaire sous forme pieces presentes, manquantes, obsoletes et a demander. |
-| [IncidentOps](./incidentops.md) | Registre incidents, statuts, prochaines actions et preuves de cloture. |
-| [Strategie gestion copro](./strategie_coproscope_gestion_copro.md) | Passage de l'audit documentaire au cockpit de travail CS. |
-| [Plan d'implementation](./implementation_plan.md) | Contrat technique v1 et non-objectifs. |
-| [Orchestration multi-agents](./orchestration_agents.md) | Lancer plusieurs agents en parallele avec worktrees, ownership et garde-fous. |
-| [Lots paralleles approfondis](./lots_paralleles.md) | Briefs de lots A-H pour conversations independantes approfondies. |
-| [Registre de suivi livraison interface](./registre_suivi_livraison_interface.md) | Suivi operationnel du cockpit local et de la copro demo fictive. |
-| [Politique de partage GitHub](./github_sharing.md) | Ce qui peut ou ne peut pas remonter dans le depot public. |
-| [Outillage open source](./outillage_open_source.md) | Outils locaux installes, retenus ou reportes. |
-| [Registre d'avancement](./registre_avancement.md) | Historique des etapes genericisables. |
+| Coproprietaire novice | Une comprehension simple de ce qui se passe, de la preuve disponible et de l'action possible. |
+| Institution ou acteur d'accompagnement | Une lecture claire de l'interet collectif, des garde-fous et des limites. |
+| Conseil syndical | Un support pour relancer, controler, expliquer et transmettre sans tout porter seul. |
+| Public averti | Commandes, tests, architecture et politique de publication. |
 
-## Images et concepts UX
+## Parcours De Lecture
 
-Les images dans [`assets/etude-utilisateurs/`](./assets/etude-utilisateurs/) illustrent les directions d'interface issues de l'etude :
+### Pour Comprendre L'Usage
 
-- cockpit conseil syndical ;
-- registre decisions/actions/preuves ;
-- controle des comptes guide ;
-- memoire de copropriete et passation CS.
+| Lire | Pourquoi |
+|---|---|
+| [README racine](../README.md) | Promesse, publics, UX cible et maturite reelle. |
+| [Etude utilisateurs](./etude_utilisateurs.md) | Source des besoins: preuve, action, memoire, diffusion prudente. |
+| [Concept et philosophie](./concept_et_philosophie.md) | Ce que CoproScope est, n'est pas, et pourquoi le local-first compte. |
+| [Etat du developpement](./etat_du_developpement.md) | Ce qui est livre, en cours, cible ou pas prioritaire. |
 
-Elles servent a discuter le produit cible. L'interface locale v0 existe, mais ces images restent des concepts cibles.
+### Pour Concevoir L'Experience
 
-## Ligne editoriale
+| Lire | Pourquoi |
+|---|---|
+| [UX novice P0](./ux_novice_p0.md) | Contrat de langage pour publics non experts. |
+| [Registre langage UI](./registre_langage_ui.md) | Vocabulaire stable et formulations prudentes. |
+| [Accessibilite et langage](./accessibilite_registre_langage.md) | Lisibilite, aide contextuelle, test novice. |
+| [Fonctions cibles](./fonctions_cibles.md) | Blocs produit et maturite de chaque fonction. |
+| [Suggestions d'amelioration](./suggestions_amelioration.md) | Pistes d'amelioration issues des cycles precedents. |
 
-La documentation doit rester :
+### Pour Comprendre La Preuve Et La Confidentialite
 
-- franche sur la maturite : livre, en cours, prevu, pas encore ;
-- orientee conseil syndical, pas seulement technique ;
-- prudente sur les donnees sensibles ;
-- francaise dans ses termes quand cela aide la comprehension ;
-- concrete : chaque promesse doit renvoyer a un module, un livrable ou une limite.
+| Lire | Pourquoi |
+|---|---|
+| [Architecture et flux](./architecture_et_flux.md) | Separation depot public, instances privees, artefacts locaux. |
+| [Documentation noyau vs instance](./documentation_noyau_vs_instance.md) | Frontiere entre produit genericisable et donnees sensibles. |
+| [Confidentialite et biffage](./confidentialite_et_biffage.md) | Diffusion prudente, biffage, colleges d'acces. |
+| [Politique de partage GitHub](./github_sharing.md) | Ce qui peut etre publie et ce qui doit rester local. |
+| [Exports passation derives](./exports_passation_derives.md) | Pourquoi un export est un derive, pas une source de verite. |
+
+### Pour Explorer Les Parcours Produit
+
+| Parcours | Lire |
+|---|---|
+| Documents utiles et pieces manquantes | [DocOps actionnable](./docops_actionnable.md), [UX ajout document](./ux_workflow_ajout_document.md) |
+| Demandes et relances | [UI demandes coproprietaires](./ui_demandes_coproprietaires.md) |
+| Comptes et questions au syndic | [ComptaScope](./comptascope.md), [FactureOps](./factureops.md) |
+| AG, decisions, contentieux prudent | [UI AG contentieux passation](./ui_ag_contentieux_passation.md) |
+| Pilotage accessible | [UI pilotage indicateurs](./ui_pilotage_indicateurs.md) |
+| Memoire, passation, anti-confiscation | [Resilience anti-accaparement](./resilience_anti_accaparement.md), [Archive reconstruction coproprietaire](./archive_reconstruction_coproprietaire.md) |
+
+## Public Averti
+
+Cette section est volontairement separee. Elle concerne les personnes qui installent, testent, integrent ou publient CoproScope.
+
+| Besoin | Lire |
+|---|---|
+| Installer et lancer les tests | [server/README](../server/README.md) |
+| Comprendre le contrat technique | [Implementation plan](./implementation_plan.md) |
+| Comprendre le vault local | [Transition vault collaboratif](./transition_vault_collaboratif.md), [Format vault](./vault_format.md), [Signatures et historique](./signatures_historique.md) |
+| Comprendre les evenements | [Objets metier et evenements V1](./objets_metier_evenements_v1.md) |
+| Travailler avec des agents | [Equipe doc agents](./equipe_doc_agents.md), [Orchestration multi-agents](./orchestration_agents.md), [Lots paralleles approfondis](./lots_paralleles.md) |
+
+## Atelier, Journal, Archive
+
+Le workspace local peut contenir des captures, journaux live, commandes de cycle et notes de coordination. Ils sont utiles pour piloter le travail, mais ils ne doivent pas devenir le parcours principal d'un lecteur.
+
+- **Guide**: ce qu'un lecteur doit comprendre ou faire.
+- **Reference**: contrat stable, architecture, module, politique.
+- **Journal**: trace datee d'un cycle, utile mais non obligatoire.
+- **Archive**: source historique ou decision remplacee.
+
+Quand une note de journal devient durable, elle doit etre transformee en guide ou en reference courte.
+
+## Ligne Editoriale
+
+Une bonne page CoproScope doit:
+
+- partir d'une situation vecue, pas d'un module;
+- montrer la preuve, l'action et la limite;
+- dire clairement si le sujet est livre, en cours ou cible;
+- parler d'abord a un coproprietaire novice;
+- permettre a une institution de comprendre l'interet collectif;
+- reserver les details techniques a une section public averti;
+- rappeler la frontiere donnees fictives / donnees privees quand le risque existe.
+
+La doc doit donner confiance sans vendre une magie qui n'existe pas.

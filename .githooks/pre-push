@@ -1,0 +1,29 @@
+#!/bin/sh
+set -eu
+
+remote_name="${1:-origin}"
+branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+
+if [ -z "$branch" ]; then
+  exit 0
+fi
+
+upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+
+if [ -z "$upstream" ]; then
+  echo "pre-push: no upstream configured for '$branch'." >&2
+  echo "pre-push: allowing this push; use 'git push -u ${remote_name} ${branch}' for the first publication." >&2
+  exit 0
+fi
+
+git fetch --quiet --prune "$remote_name"
+
+behind="$(git rev-list --count "HEAD..$upstream" 2>/dev/null || echo 0)"
+
+if [ "$behind" -gt 0 ]; then
+  echo "pre-push: '$branch' is behind '$upstream' by $behind commit(s)." >&2
+  echo "pre-push: run '.\\tools\\git\\sync.cmd -Pull' after committing or stashing local changes." >&2
+  exit 1
+fi
+
+exit 0

@@ -1,18 +1,34 @@
 {% extends "base.html" %}
 {% block topbar_title %}Detail piece/preuve{% endblock %}
 {% block content %}
+{% set piece_label = "Piece introuvable dans ce coffre local" if piece_detail.state == "missing" else piece_detail.piece.label %}
 <section class="band">
   <div>
     <p class="eyebrow">{{ piece_detail.context.title }}</p>
-    <h2>{{ piece_detail.piece.label }}</h2>
+    <h2>{{ piece_label }}</h2>
     <div class="badge-row">
       <span class="badge">{{ piece_detail.piece.id }}</span>
       <span class="badge">{{ piece_detail.piece.rubric_label }}</span>
       <span class="badge">{{ piece_detail.piece.priority_label }}</span>
-      {% if piece_detail.piece.is_fictive %}
-      <span class="badge">Donnees fictives</span>
-      {% endif %}
     </div>
+    <dl class="cs-relance-quick" aria-label="Resume novice piece">
+      <div>
+        <dt>Piece concernee</dt>
+        <dd>{{ piece_label }}</dd>
+      </div>
+      <div>
+        <dt>Pourquoi</dt>
+        <dd>{{ piece_detail.piece.why_it_matters }}</dd>
+      </div>
+      <div>
+        <dt>Action suivante</dt>
+        <dd>{{ piece_detail.piece.next_step }}</dd>
+      </div>
+      <div>
+        <dt>Prudence diffusion</dt>
+        <dd>{{ piece_detail.diffusion.detail }}</dd>
+      </div>
+    </dl>
     <div class="button-row compact cs-flow-actions" aria-label="Actions principales piece/preuve">
       {% for action in piece_detail.actions %}
       {% if action.id in ["relance", "received"] %}

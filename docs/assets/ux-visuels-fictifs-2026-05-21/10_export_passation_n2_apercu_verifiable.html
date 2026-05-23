@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoproScope - Apercu de passation N+2</title>
+  <style>
+    :root {
+      --ink: #0b1e3a;
+      --muted: #5f6f8f;
+      --line: #d7e2f2;
+      --soft: #f4f7fb;
+      --panel: #ffffff;
+      --blue: #1769f2;
+      --blue-2: #0b55d9;
+      --green: #0b9b65;
+      --green-bg: #eaf8f1;
+      --orange: #f59e0b;
+      --orange-bg: #fff6e7;
+      --red: #e53935;
+      --red-bg: #fff0f1;
+      --nav: #07243c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      width: 1672px;
+      height: 941px;
+      overflow: hidden;
+      background: #eef3f9;
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .screen {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      width: 1672px;
+      height: 941px;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      padding: 26px 14px 44px;
+      background: linear-gradient(180deg, #092a46 0%, #061d31 100%);
+      color: white;
+    }
+
+    .brand {
+      padding: 0 12px 24px;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 8px;
+      color: #a9c0da;
+      font-size: 13px;
+    }
+
+    .nav-group {
+      margin-top: 8px;
+    }
+
+    .nav-label {
+      margin: 18px 10px 10px;
+      color: #9fb5cf;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      align-items: center;
+      gap: 4px;
+      min-height: 46px;
+      padding: 0 12px;
+      border-radius: 7px;
+      color: #f6f9ff;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .nav-item.active {
+      background: var(--blue);
+      box-shadow: 0 12px 28px rgba(23, 105, 242, 0.24);
+    }
+
+    .nav-icon {
+      display: grid;
+      width: 19px;
+      height: 19px;
+      place-items: center;
+      border-radius: 5px;
+      background: #e8f1ff;
+      color: #092a46;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .nav-count {
+      display: grid;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      place-items: center;
+      border-radius: 999px;
+      background: #2b7cff;
+      color: white;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .share {
+      margin-top: auto;
+      padding: 16px 18px;
+      border: 1px solid rgba(161, 190, 225, 0.32);
+      border-radius: 7px;
+      background: rgba(24, 76, 118, 0.5);
+    }
+
+    .share strong {
+      display: block;
+      font-size: 15px;
+    }
+
+    .share span {
+      display: block;
+      margin-top: 8px;
+      color: #8ff0c8;
+      font-size: 13px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: 68px 1fr;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 31px 12px 33px;
+      border-bottom: 1px solid var(--line);
+      background: #f6f9fd;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 27px;
+      line-height: 1.05;
+      font-weight: 900;
+    }
+
+    .title p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .search {
+      width: 331px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .fake-badge {
+      width: 191px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #a8dec8;
+      border-radius: 999px;
+      background: #e9f8f1;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    main {
+      padding: 21px 28px 20px;
+      background: #f1f5fa;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 14px;
+      min-height: 98px;
+      padding: 15px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+
+    .metric-icon {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .metric h2 {
+      margin: 0 0 3px;
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .green {
+      color: var(--green);
+    }
+
+    .orange {
+      color: var(--orange);
+    }
+
+    .red {
+      color: var(--red);
+    }
+
+    .blue {
+      color: var(--blue);
+    }
+
+    .bg-green {
+      background: var(--green-bg);
+    }
+
+    .bg-orange {
+      background: var(--orange-bg);
+    }
+
+    .bg-red {
+      background: var(--red-bg);
+    }
+
+    .bg-blue {
+      background: #eef5ff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.48fr) minmax(0, 0.98fr) 345px;
+      gap: 22px;
+      height: 706px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+
+    .preview {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 18px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.18;
+      font-weight: 900;
+    }
+
+    .card p {
+      color: var(--muted);
+      margin: 8px 0 0;
+      line-height: 1.34;
+      font-size: 14px;
+    }
+
+    .scope-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 18px;
+      margin: 9px 0 10px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .scope-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 14px;
+    }
+
+    .scope-copy span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .segmented {
+      display: flex;
+      overflow: hidden;
+      border: 1px solid #b8cced;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .segmented span {
+      padding: 8px 11px;
+      border-right: 1px solid #d7e2f2;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .segmented span:last-child {
+      border-right: 0;
+    }
+
+    .segmented .active {
+      background: var(--blue);
+      color: white;
+    }
+
+    .table-head,
+    .section-row {
+      display: grid;
+      grid-template-columns: 1.05fr 1.42fr 0.82fr 0.78fr;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .table-head {
+      min-height: 31px;
+      padding: 0 18px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #f8fbff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .rows {
+      margin-top: 8px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .section-row {
+      min-height: 47px;
+      padding: 7px 13px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: white;
+      font-size: 13px;
+    }
+
+    .section-row strong {
+      font-size: 14px;
+    }
+
+    .section-row span {
+      color: var(--muted);
+    }
+
+    .pill {
+      display: inline-grid;
+      min-width: 82px;
+      height: 25px;
+      padding: 0 12px;
+      place-items: center;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .pill.ok {
+      border: 1px solid #b3e4d0;
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .pill.warn {
+      border: 1px solid #ffd087;
+      background: var(--orange-bg);
+      color: #c76b00;
+    }
+
+    .pill.stop {
+      border: 1px solid #ffc1c7;
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .row-action {
+      color: var(--blue);
+      font-weight: 900;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .preview-footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: auto;
+    }
+
+    .btn {
+      display: grid;
+      height: 35px;
+      place-items: center;
+      border-radius: 7px;
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .btn.primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .audit {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .checks {
+      display: grid;
+      gap: 9px;
+      margin: 15px 0 14px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 27px 1fr;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
+    }
+
+    .status-icon {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .status-icon.ok {
+      border: 1px solid var(--green);
+      background: #edfbf5;
+      color: var(--green);
+    }
+
+    .status-icon.warn {
+      border: 1px solid var(--orange);
+      background: #fff8ec;
+      color: #b96500;
+    }
+
+    .divider {
+      height: 1px;
+      margin: 0 0 16px;
+      background: var(--line);
+    }
+
+    .blockers {
+      display: grid;
+      gap: 9px;
+    }
+
+    .blocker {
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid #f7cf91;
+      background: #fff9ef;
+    }
+
+    .blocker strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .blocker span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .private-list {
+      align-self: end;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #f7fafc;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.42;
+    }
+
+    .private-list strong {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .decision {
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+    }
+
+    .field {
+      margin-top: 12px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .select-like {
+      min-height: 41px;
+      padding: 10px 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-grid;
+      height: 28px;
+      place-items: center;
+      padding: 0 12px;
+      border: 1px solid #c7d7ef;
+      border-radius: 999px;
+      background: #f7fbff;
+      color: #405476;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .formats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .format {
+      display: grid;
+      height: 35px;
+      place-items: center;
+      border: 1px solid #bcd1ee;
+      border-radius: 7px;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .format.active {
+      background: #eef5ff;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 12px 13px;
+      border: 1px solid #bed0ef;
+      border-radius: 8px;
+      background: #f2f7ff;
+      color: #385178;
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .decision-actions {
+      display: grid;
+      gap: 9px;
+      margin-top: auto;
+    }
+
+    .button {
+      display: grid;
+      height: 36px;
+      place-items: center;
+      border-radius: 7px;
+      border: 1px solid var(--blue);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .button.primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .button.disabled {
+      border-color: #d7e2f2;
+      background: #e8eef8;
+      color: #72829c;
+    }
+
+    .button.secondary {
+      color: var(--blue);
+      background: white;
+    }
+
+    .test-note {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <aside class="sidebar">
+      <div class="brand">
+        <strong>CoproScope</strong>
+        <span>Conseil syndical fictif</span>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-item">
+          <span class="nav-icon">T</span>
+          <span>Tableau de bord</span>
+          <span class="nav-count">12</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">A</span>
+          <span>A traiter</span>
+          <span class="nav-count">3</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">P</span>
+          <span>Pieces manquantes</span>
+          <span class="nav-count">6</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">D</span>
+          <span>Demandes syndic</span>
+          <span class="nav-count">4</span>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Documents et suivi</div>
+        <div class="nav-item">
+          <span class="nav-icon">AG</span>
+          <span>AG</span>
+          <span class="nav-count">2</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">C</span>
+          <span>Controle comptes</span>
+          <span class="nav-count">5</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">M</span>
+          <span>Memoire copro</span>
+          <span class="nav-count">3</span>
+        </div>
+        <div class="nav-item active">
+          <span class="nav-icon">E</span>
+          <span>Exports</span>
+          <span class="nav-count">3</span>
+        </div>
+      </div>
+
+      <div class="share">
+        <strong>Mode de partage</strong>
+        <span>Prive local - donnees fictives</span>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div class="title">
+          <h1>Apercu de passation</h1>
+          <p>Je verifie ce qui sort du coffre avant de transmettre a un autre membre CS.</p>
+        </div>
+        <div class="top-actions">
+          <div class="search">Rechercher action, piece, evenement...</div>
+          <div class="fake-badge">DONNEES FICTIVES</div>
+        </div>
+      </header>
+
+      <main>
+        <section class="metrics">
+          <div class="metric">
+            <div class="metric-icon bg-green green">IN</div>
+            <div>
+              <h2 class="green">9</h2>
+              <strong>Inclus</strong>
+              <span>syntheses, actions, preuves</span>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon bg-orange orange">AV</div>
+            <div>
+              <h2 class="orange">4</h2>
+              <strong>A verifier</strong>
+              <span>relances et notes ouvertes</span>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon bg-red red">EX</div>
+            <div>
+              <h2 class="red">6</h2>
+              <strong>Bloques</strong>
+              <span>bruts, chemins, emails</span>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon bg-blue blue">FO</div>
+            <div>
+              <h2 class="blue">3</h2>
+              <strong>Formats</strong>
+              <span>TXT, JSON audit, MD</span>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon bg-green green">WM</div>
+            <div>
+              <h2 class="green">100%</h2>
+              <strong>Watermark</strong>
+              <span>export derive visible</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid">
+          <article class="card preview">
+            <h2>Apercu avant telechargement</h2>
+            <p>Watermark visible: export derive, non source de verite. Le pack ne contient que des donnees fictives.</p>
+
+            <div class="scope-row">
+              <div class="scope-copy">
+                <strong>Passation CS - mai 2026</strong>
+                <span>Inclut sujets ouverts, decisions recentes et preuves rattachees. Exclut les bruts prives.</span>
+              </div>
+              <div class="segmented">
+                <span class="active">Conseil syndical</span>
+                <span>Diffusable</span>
+                <span>Archive interne</span>
+              </div>
+            </div>
+
+            <div class="table-head">
+              <span>Section</span>
+              <span>Contenu exporte</span>
+              <span>Statut</span>
+              <span>Action</span>
+            </div>
+            <div class="rows">
+              <div class="section-row">
+                <strong>Inclus - synthese reprise</strong>
+                <span>4 sujets chauds + 2 echeances AG</span>
+                <span class="pill ok">OK</span>
+                <span class="row-action">Voir</span>
+              </div>
+              <div class="section-row">
+                <strong>Inclus - actions ouvertes</strong>
+                <span>3 retards, 2 relances a tracer</span>
+                <span class="pill warn">A verifier</span>
+                <span class="row-action">Corriger</span>
+              </div>
+              <div class="section-row">
+                <strong>Inclus - pieces attendues</strong>
+                <span>6 pieces listees, aucune brute jointe</span>
+                <span class="pill warn">Liste seule</span>
+                <span class="row-action">Filtrer</span>
+              </div>
+              <div class="section-row">
+                <strong>Restriction - memoire</strong>
+                <span>2 evenements sensibles avec restrictions</span>
+                <span class="pill warn">Limite</span>
+                <span class="row-action">Limiter</span>
+              </div>
+              <div class="section-row">
+                <strong>Inclus - comptes</strong>
+                <span>3 anomalies documentees, montants arrondis</span>
+                <span class="pill ok">OK</span>
+                <span class="row-action">Voir</span>
+              </div>
+              <div class="section-row">
+                <strong>Bloques - bruts prives</strong>
+                <span>Noms, emails, chemins locaux, PDF originaux</span>
+                <span class="pill stop">Bloque</span>
+                <span class="row-action">Journal</span>
+              </div>
+            </div>
+
+            <div class="preview-footer">
+              <div class="btn primary">Telecharger TXT derive</div>
+              <div class="btn">Voir JSON audit</div>
+              <div class="btn">Voir Markdown</div>
+            </div>
+          </article>
+
+          <aside class="card audit">
+            <h2>Controle confidentialite</h2>
+            <div class="checks">
+              <div class="check"><span class="status-icon ok">OK</span><span>Aucun chemin local dans l'apercu</span></div>
+              <div class="check"><span class="status-icon ok">OK</span><span>Aucun email reel exporte</span></div>
+              <div class="check"><span class="status-icon ok">OK</span><span>Lots et contacts marques fictifs</span></div>
+              <div class="check"><span class="status-icon ok">OK</span><span>Documents bruts remplaces par references</span></div>
+              <div class="check"><span class="status-icon warn">!</span><span>2 relances doivent etre tracees avant telechargement</span></div>
+            </div>
+
+            <div class="divider"></div>
+            <h2>Restrictions et blocages</h2>
+            <div class="blockers">
+              <div class="blocker">
+                <strong>Relance ascenseur non tracee</strong>
+                <span>Date et canal d'envoi externe manquent: export final verrouille.</span>
+              </div>
+              <div class="blocker">
+                <strong>Note infiltration C31 a valider</strong>
+                <span>La synthese diffusable doit confirmer ce qui reste masque.</span>
+              </div>
+            </div>
+
+            <div class="private-list">
+              <strong>References privees fictives</strong>
+              DOC-FICTIF-B12-ASSUR<br>
+              DOC-FICTIF-C31-INFIL<br>
+              ACTION-FICTIF-ASC-2025<br>
+              EVT-FICTIF-INFIL-C31
+            </div>
+          </aside>
+
+          <aside class="card decision">
+            <h2>Decision avant export</h2>
+            <p>Le conseiller voit ce qui part, ce qui reste local, et pourquoi le bouton final peut etre bloque.</p>
+
+            <div class="field">
+              <label>Public vise</label>
+              <div class="select-like">Conseil syndical restreint</div>
+            </div>
+
+            <div class="field">
+              <label>Perimetre</label>
+              <div class="chips">
+                <span class="chip">Sujets ouverts</span>
+                <span class="chip">Actions P1/P2</span>
+                <span class="chip">Mai 2026</span>
+                <span class="chip">Sans bruts</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Formats prepares</label>
+              <div class="formats">
+                <span class="format active">TXT lisible</span>
+                <span class="format active">JSON audit</span>
+                <span class="format active">Markdown</span>
+                <span class="format">Copie presse-papier</span>
+              </div>
+            </div>
+
+            <div class="notice">
+              Export derive, tokenise et verifiable avant telechargement. Il ne devient jamais la source de verite collaborative.
+            </div>
+
+            <div class="decision-actions">
+              <div class="button disabled">Telecharger export derive - verrouille</div>
+              <div class="button primary">Corriger les blocages</div>
+              <div class="button secondary">Retour memoire</div>
+              <div class="button secondary">Retour actions ouvertes</div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </section>
+  </div>
+</body>
+</html>

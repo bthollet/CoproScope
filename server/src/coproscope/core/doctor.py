@@ -4,12 +4,70 @@ import shutil
 from pathlib import Path
 
 from .common import InstanceConfig, RunContext, env_snapshot, module_available
+from ..modules import instancegit
 
 
 def _path_state(path: Path) -> str:
     if path.exists():
         return "OK"
     return "MISSING"
+
+
+def _bool_setting(value: object) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() not in {"0", "false", "faux", "no", "non", "off"}
+    return bool(value)
+
+
+def _instance_git_required(instance: InstanceConfig) -> bool:
+    settings = instance.settings()
+    explicit = settings.get("instance_git_required")
+    if explicit is None:
+        explicit = settings.get("git_local_required")
+    if explicit is not None:
+        return _bool_setting(explicit)
+
+    instance_id = instance.instance_id.lower()
+    if instance_id.startswith(("synthetic-", "demo-")):
+        return False
+    if isinstance(settings.get("demo_publication"), dict):
+        return False
+    return True
+
+
+def _append_instance_git_status(instance: InstanceConfig, lines: list[str]) -> int:
+    issues = 0
+    required = _instance_git_required(instance)
+    lines.append("")
+    lines.append("Git local instance:")
+    lines.append(
+        "- politique: "
+        + ("obligatoire pour instance de travail" if required else "optionnelle pour fixture/demo")
+    )
+
+    try:
+        status = instancegit.inspect_instance_git(instance)
+    except Exception as exc:  # noqa: BLE001
+        lines.append(f"- depot_git: ERREUR_VERIFICATION ({type(exc).__name__})")
+        return 1
+
+    if status.get("has_github_remote"):
+        lines.append("- depot_git: REMOTE_GITHUB_INTERDITE")
+        lines.append("- action: supprimer la remote GitHub; seul le noyau coproscope reste publie sur GitHub.")
+        return 1
+
+    if status.get("is_git_repo"):
+        lines.append(f"- depot_git: OK -> branche {status.get('branch') or 'non_initialisee'}")
+        lines.append("- remote_github: aucune")
+        return issues
+
+    if required:
+        lines.append("- depot_git: A_INITIALISER")
+        lines.append("- action: lancer `coprocs instance git-init --instance-root <racine_instance>`.")
+        issues += 1
+    else:
+        lines.append("- depot_git: OPTIONNEL_NON_INITIALISE")
+    return issues
 
 
 def run_doctor(instance: InstanceConfig, run: RunContext) -> int:
@@ -67,6 +125,7 @@ def run_doctor(instance: InstanceConfig, run: RunContext) -> int:
     for executable in ["python", "gh", "git", "uv", "rg", "fd", "jq", "duckdb", "qpdf", "pdftotext", "tesseract", "magick", "node", "npm.cmd", "evidence.cmd"]:
         lines.append(f"- {executable}: {'OK' if shutil.which(executable) else 'OPTIONNEL_ABSENT'}")
     lines.append("- grist-ctl: BLOQUE_SECURITE si absent; utiliser grist_api par defaut.")
+    issues += _append_instance_git_status(instance, lines)
 
     docai = instance.docai_settings()
     lines.append("")

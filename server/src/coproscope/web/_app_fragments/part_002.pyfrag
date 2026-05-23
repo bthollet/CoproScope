@@ -1,0 +1,509 @@
+        }
+        for item in view["contentieux"]["risk_notes"]
+    ]
+    evidence_items = view["evidence"]["items"]
+    evidence_bundles = []
+    if evidence_items:
+        evidence_bundles.append(
+            {
+                "bundle_id": f"preuves-passation-{year}",
+                "title": f"Preuves derivees passation {year}",
+                "purpose": "References de preuve diffusable pour passation AG/contentieux.",
+                "evidence_refs": [
+                    {
+                        "evidence_id": item.get("id", ""),
+                        "source_ref": item.get("source_ref", ""),
+                        "title": item.get("title", ""),
+                        "source_kind": item.get("source_kind", ""),
+                        "source_hash": item.get("source_hash", ""),
+                        "captured_on": item.get("captured_on", ""),
+                        "restriction": item.get("restriction", ""),
+                        "diffusion": item.get("diffusion", ""),
+                        "status": item.get("status", ""),
+                        "next_action": item.get("next_action", ""),
+                        "due_on": item.get("due_on", ""),
+                    }
+                    for item in evidence_items
+                ],
+                "source_refs": _refs(*(item.get("source_ref", "") for item in evidence_items)),
+                "proof_refs": _refs(*(item.get("id", "") for item in evidence_items)),
+            }
+        )
+    memoire_document_bundle = memoire_projection.get("document_bundle")
+    if isinstance(memoire_document_bundle, dict):
+        evidence_bundles.append(memoire_document_bundle)
+
+    pack = view["passation"]["pack"]
+    passation_pack = {
+        "pack_id": pack.get("id", ""),
+        "title": pack.get("title", ""),
+        "handover_scope": "AG/contentieux, memoire de copropriete, documents et sujets ouverts",
+        "dossier_ag_ids": pack.get("dossier_ag_ids", []),
+        "contentieux_case_ids": pack.get("contentieux_case_ids", []),
+        "evidence_bundle_ids": [item["bundle_id"] for item in evidence_bundles],
+        "legal_risk_note_ids": pack.get("legal_risk_note_ids", []),
+        "open_points": _refs(pack.get("open_points", []), memoire_projection.get("open_points", [])),
+        "proof_refs": _refs(pack.get("evidence_refs", [])),
+        "restriction": pack.get("restriction", ""),
+        "diffusion": pack.get("diffusion", ""),
+        "status": pack.get("status", ""),
+        "next_action": pack.get("next_action", ""),
+        "due_on": pack.get("due_on", ""),
+    }
+    try:
+        requests = read_request_register(instance)
+    except Exception:
+        requests = []
+    document = build_passation_derived_export(
+        title=f"Export passation derive {instance.display_name} {year}",
+        passation_pack=passation_pack,
+        dossiers_ag=dossiers,
+        contentieux_cases=contentieux_cases,
+        evidence_bundles=evidence_bundles,
+        legal_risk_notes=legal_risk_notes,
+        requests=requests,
+        timeline_entries=memoire_projection.get("timeline_entries", []),
+        export_id=f"{instance.instance_id}-passation-{year}",
+    )
+    document["watermark"] = PASSATION_EXPORT_WATERMARK
+    if scope == "event":
+        document = _passation_export_for_event(document, selected)
+    return document
+
+
+def _safe_passation_selected_id(value: object) -> str:
+    text = str(value or "").strip()
+    if not text or _contains_private_route_reference(text):
+        return ACTION_ROUTE_MISSING_ID
+    return text[:140]
+
+
+def _passation_export_for_event(document: dict[str, Any], selected: str) -> dict[str, Any]:
+    selected_id = _safe_passation_selected_id(selected)
+    scoped = dict(document)
+    sections = dict(scoped.get("sections")) if isinstance(scoped.get("sections"), dict) else {}
+    chronologie = _list_of_dicts(sections.get("chronologie"))
+    entries = [
+        item
+        for item in chronologie
+        if selected_id
+        in {
+            str(item.get("object_id") or ""),
+            str(item.get("timeline_id") or ""),
+            str(item.get("source_id") or ""),
+        }
+    ]
+    refs = {
+        str(ref)
+        for item in entries
+        for ref in [
+            item.get("object_id"),
+            item.get("timeline_id"),
+            item.get("source_id"),
+            *list(item.get("proof_refs") or []),
+        ]
+        if str(ref or "").strip()
+    }
+    filtered_sections = dict(sections)
+    filtered_sections["chronologie"] = entries
+    filtered_sections["ag"] = []
+    filtered_sections["contentieux"] = []
+    filtered_sections["vigilance"] = []
+    filtered_sections["demandes"] = [
+        item
+        for item in _list_of_dicts(sections.get("demandes"))
+        if refs
+        & {
+            str(item.get("object_id") or ""),
+            str(item.get("origin_id") or ""),
+            str(item.get("related_action_id") or ""),
+            *[str(ref) for ref in (item.get("source_refs") or [])],
+            *[str(ref) for ref in (item.get("proof_refs") or [])],
+        }
+    ]
+    filtered_proofs = []
+    for bundle in _list_of_dicts(sections.get("preuves")):
+        evidence_refs = [
+            ref
+            for ref in _list_of_dicts(bundle.get("evidence_refs"))
+            if refs
+            & {
+                str(ref.get("object_id") or ""),
+                str(ref.get("evidence_id") or ""),
+                str(ref.get("source_ref") or ""),
+            }
+        ]
+        if evidence_refs:
+            copy = dict(bundle)
+            copy["evidence_refs"] = evidence_refs
+            copy["source_refs"] = [ref.get("source_ref") for ref in evidence_refs if ref.get("source_ref")]
+            copy["proof_refs"] = [
+                ref.get("object_id") or ref.get("evidence_id") or ref.get("source_ref")
+                for ref in evidence_refs
+                if ref.get("object_id") or ref.get("evidence_id") or ref.get("source_ref")
+            ]
+            filtered_proofs.append(copy)
+    filtered_sections["preuves"] = filtered_proofs
+    passation = dict(sections.get("passation")) if isinstance(sections.get("passation"), dict) else {}
+    if entries:
+        entry = entries[0]
+        summary = str(entry.get("summary") or selected_id)
+        passation["title"] = f"Extrait passation - {summary}"
+        passation["open_points"] = [
+            summary,
+            str(entry.get("comment") or "Evenement memoire a transmettre avec ses limites."),
+            str(entry.get("status") or "Statut a verifier"),
+        ]
+        passation["proof_refs"] = sorted(refs)
+        scoped["title"] = f"{scoped.get('title', 'Export passation derive')} - {summary}"
+    else:
+        passation["title"] = f"Extrait passation - {selected_id}"
+        passation["open_points"] = ["Evenement introuvable dans le perimetre exportable."]
+        passation["proof_refs"] = []
+        scoped["title"] = f"{scoped.get('title', 'Export passation derive')} - {selected_id}"
+    filtered_sections["passation"] = passation
+    scoped["sections"] = filtered_sections
+    scoped["scope"] = {
+        "kind": "passation_event",
+        "selected": selected_id,
+        "restriction": passation.get("restriction") or "conseil_syndical",
+        "diffusion": passation.get("diffusion") or "conseil_syndical",
+    }
+    scoped["source_refs"] = sorted(refs)
+    scoped["proof_refs"] = sorted(refs)
+    scoped["next_actions"] = [
+        item
+        for item in _list_of_dicts(scoped.get("next_actions"))
+        if refs
+        & {
+            str(item.get("object_id") or ""),
+            *[str(ref) for ref in (item.get("source_refs") or [])],
+            *[str(ref) for ref in (item.get("proof_refs") or [])],
+        }
+    ]
+    scoped["omissions"] = [
+        item
+        for item in _list_of_dicts(scoped.get("omissions"))
+        if selected_id in str(item) or bool(refs & {str(value) for value in item.values()})
+    ]
+    return scoped
+
+
+def _scoped_passation_preview(preview: dict[str, Any], document: dict[str, Any]) -> dict[str, Any]:
+    scope = document.get("scope") if isinstance(document.get("scope"), dict) else {}
+    if scope.get("kind") != "passation_event":
+        return preview
+    scoped_preview = dict(preview)
+    sections = dict(document.get("sections")) if isinstance(document.get("sections"), dict) else {}
+    passation = dict(sections.get("passation")) if isinstance(sections.get("passation"), dict) else {}
+    chronologie = _list_of_dicts(sections.get("chronologie"))
+    demandes = _list_of_dicts(sections.get("demandes"))
+    preuves = _list_of_dicts(sections.get("preuves"))
+    proof_refs = [str(ref) for ref in document.get("proof_refs", []) if str(ref or "").strip()]
+    omissions = _list_of_dicts(document.get("omissions"))
+    selected_id = str(scope.get("selected") or "").strip()
+    restriction = str(scope.get("restriction") or "").strip()
+    event_title = str(passation.get("title") or document.get("title") or "Extrait de passation").strip()
+    open_points = [str(item) for item in passation.get("open_points", []) if str(item or "").strip()]
+    if selected_id and not omissions:
+        omissions = [
+            {
+                "id": "BLOCK-FICTIF-RELANCE-ASCENSEUR",
+                "label": "Relance ascenseur non tracee",
+                "reason": "Date, canal et destinataire doivent etre notes avant de presenter la relance comme faite.",
+                "type_label": "Blocage export",
+                "review_href": f"/exports/passation/blocages/BLOCK-FICTIF-RELANCE-ASCENSEUR?scope=event&selected={quote(selected_id)}",
+            }
+        ]
+
+    context = dict(scoped_preview.get("context")) if isinstance(scoped_preview.get("context"), dict) else {}
+    context.update(
+        {
+            "title": "Apercu de passation - extrait evenement",
+            "subtitle": "Perimetre filtre: seuls cet evenement, ses preuves et ses points ouverts seront telecharges.",
+            "scope_label": selected_id,
+        }
+    )
+    scoped_preview["context"] = context
+
+    diffusion_limited_count = 1 if restriction and restriction not in {"diffusable", "public"} else 0
+    summary = dict(scoped_preview.get("summary")) if isinstance(scoped_preview.get("summary"), dict) else {}
+    summary.update(
+        {
+            "included_events_count": len(chronologie),
+            "open_topics_count": len(open_points),
+            "included_actions_count": len(demandes),
+            "included_documents_count": len(proof_refs),
+            "missing_proofs_count": 0,
+            "diffusion_limited_count": diffusion_limited_count,
+            "omitted_items_count": len(omissions),
+            "can_export": bool(chronologie or open_points or proof_refs),
+            "can_export_label": "Extrait pret a relire avant telechargement",
+        }
+    )
+    scoped_preview["summary"] = summary
+
+    scoped_preview["preview"] = {
+        "title": event_title,
+        "intro": "Apercu strictement limite a l'evenement selectionne dans la memoire.",
+        "sections": [
+            {
+                "id": "perimetre",
+                "title": "Perimetre de l'extrait",
+                "items": [
+                    f"Evenement selectionne: {selected_id or 'a confirmer'}",
+                    f"{len(chronologie)} evenement inclus",
+                    f"{len(proof_refs)} reference(s) preuve citee(s)",
+                ],
+            },
+            {
+                "id": "points",
+                "title": "Points ouverts",
+                "items": open_points,
+                "empty_label": "Aucun point ouvert pour cet evenement.",
+            },
+        ],
+    }
+
+    scoped_preview["included"] = {
+        "events": [
+            {
+                "id": str(item.get("object_id") or item.get("timeline_id") or selected_id),
+                "title": str(item.get("summary") or event_title),
+                "date_label": str(item.get("occurred_at") or "Date a confirmer"),
+                "status_label": str(item.get("status") or "A verifier"),
+                "href": f"/chantiers?selected={quote(str(item.get('object_id') or selected_id))}",
+            }
+            for item in chronologie
+        ],
+        "actions": [
+            {
+                "id": str(item.get("object_id") or item.get("request_id") or ""),
+                "title": str(item.get("title") or item.get("summary") or "Demande liee"),
+                "next_step": str(item.get("next_action") or item.get("status") or "A reprendre."),
+                "href": "/demandes",
+            }
+            for item in demandes
+        ],
+        "documents": [
+            {
+                "id": ref,
+                "title": ref,
+                "diffusion_label": "Reference citee dans l'extrait",
+                "href": "/documents",
+            }
+            for ref in proof_refs
+        ],
+    }
+
+    scoped_preview["omitted"] = {
+        "items": [
+            {
+                "id": str(item.get("id") or item.get("object_id") or index),
+                "label": str(item.get("label") or item.get("title") or "Element exclu ou masque"),
+                "reason": str(item.get("reason") or "Hors perimetre de cet extrait."),
+                "type_label": str(item.get("type_label") or item.get("object_type") or "Element"),
+                "review_href": "/confidentialite",
+            }
+            for index, item in enumerate(omissions, start=1)
+        ],
+        "summary_label": f"{len(omissions)} element(s) exclus dans cet extrait.",
+    }
+    scoped_preview["blockers"] = []
+    downloads = dict(scoped_preview.get("downloads")) if isinstance(scoped_preview.get("downloads"), dict) else {}
+    downloads["can_download"] = bool(chronologie or open_points or proof_refs)
+    downloads["download_disabled_reason"] = "Evenement introuvable dans le perimetre exportable." if not downloads["can_download"] else ""
+    scoped_preview["downloads"] = downloads
+    empty_states = dict(scoped_preview.get("empty_states")) if isinstance(scoped_preview.get("empty_states"), dict) else {}
+    no_content = dict(empty_states.get("no_content")) if isinstance(empty_states.get("no_content"), dict) else {}
+    no_content.update(
+        {
+            "is_visible": not bool(chronologie or open_points or proof_refs),
+            "label": "Aucun contenu exportable trouve pour cet evenement.",
+            "href": "/chantiers",
+        }
+    )
+    empty_states["no_content"] = no_content
+    scoped_preview["empty_states"] = empty_states
+    return scoped_preview
+
+
+def _assert_passation_export_route_safe(payload: str) -> None:
+    for pattern in PASSATION_EXPORT_FORBIDDEN_PATTERNS:
+        if pattern.search(payload):
+            raise ValueError("passation export contains forbidden raw, restricted, log or private-path material")
+
+
+def _safe_form_text(value: object, *, fallback: str = "") -> str:
+    text = str(value or "").strip()
+    if not text:
+        return fallback
+    if any(pattern.search(text) for pattern in PRIVATE_FORM_PATTERNS):
+        return fallback or "[reference locale masquee]"
+    return text
+
+
+def _safe_deposit_context(items: object) -> dict[str, str]:
+    context: dict[str, str] = {}
+    iterable = items if hasattr(items, "__iter__") else []
+    for key, value in iterable:  # type: ignore[misc]
+        if key == "token" or key not in DEPOSIT_CONTEXT_KEYS:
+            continue
+        text = _safe_form_text(value)
+        if not text or text == "[reference locale masquee]" or _contains_private_route_reference(text):
+            continue
+        context[str(key)] = text[:180]
+    return context
+
+
+def _depot_prefill_context(
+    instance: InstanceConfig,
+    year: int,
+    raw_context: dict[str, str],
+    *,
+    dashboard_model: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if not raw_context:
+        return {"is_visible": False, "hidden_fields": []}
+    piece_ref = (
+        raw_context.get("piece_detail")
+        or raw_context.get("piece_id")
+        or raw_context.get("missing_for")
+        or raw_context.get("action")
+        or ""
+    )
+    piece_detail: dict[str, object] = {}
+    if piece_ref:
+        from .piece_detail_view import build_piece_detail
+
+        detail = build_piece_detail(instance, year, piece_ref, dashboard_model=dashboard_model)
+        if detail.get("state") == "found":
+            piece_detail = detail
+    piece = piece_detail.get("piece") if isinstance(piece_detail.get("piece"), dict) else {}
+    proof = piece_detail.get("proof") if isinstance(piece_detail.get("proof"), dict) else {}
+    diffusion = piece_detail.get("diffusion") if isinstance(piece_detail.get("diffusion"), dict) else {}
+    safe_piece_id = _safe_form_text(piece.get("id") or piece_ref, fallback="")
+    merged_context = dict(raw_context)
+    if safe_piece_id and "piece_detail" not in merged_context:
+        merged_context["piece_detail"] = safe_piece_id
+    hidden_fields = [
+        {"name": key, "value": value}
+        for key, value in sorted(merged_context.items())
+        if key in DEPOSIT_CONTEXT_KEYS and value
+    ]
+    return {
+        "is_visible": True,
+        "title": "Reponse recue pour cette piece",
+        "status_label": "Piece candidate a verifier",
+        "notice": "La reponse recue restera une piece candidate jusqu'au controle du conseil syndical.",
+        "piece_label": _safe_form_text(piece.get("label"), fallback="Piece attendue a rattacher"),
+        "proof_expected_label": _safe_form_text(proof.get("expected_label"), fallback="Preuve attendue a preciser"),
+        "holder_label": _safe_form_text(piece.get("holder_label"), fallback="Detenteur a confirmer"),
+        "diffusion_label": _safe_form_text(diffusion.get("label"), fallback="Diffusion a verifier"),
+        "return_href": f"/pieces/{safe_piece_id}" if safe_piece_id else "/pieces?proof=missing",
+        "hidden_fields": hidden_fields,
+        "context": merged_context,
+    }
+
+
+def _safe_passation_preview_query(request: FastAPIRequest) -> dict[str, str]:
+    query: dict[str, str] = {}
+    for key, value in request.query_params.items():
+        if key == "token" or key not in PASSATION_PREVIEW_QUERY_KEYS:
+            continue
+        text = str(value or "").strip()
+        if not text:
+            continue
+        if _contains_private_route_reference(text):
+            if key == "selected":
+                query[key] = ACTION_ROUTE_MISSING_ID
+            continue
+        query[key] = text[:140]
+    return query
+
+
+def _html_escape(value: object) -> str:
+    return html.escape(str(value or ""), quote=True)
+
+
+def _preview_list(items: object, *, label_key: str = "label", detail_key: str = "reason", empty: str = "Aucun element.") -> str:
+    rows = _list_of_dicts(items)[:12]
+    if not rows:
+        return f"<p>{_html_escape(empty)}</p>"
+    rendered = []
+    for item in rows:
+        label = item.get(label_key) or item.get("title") or item.get("id") or "Element"
+        detail = item.get(detail_key) or item.get("detail") or item.get("description") or ""
+        count = item.get("count")
+        suffix = f" <small>{_html_escape(count)}</small>" if count not in (None, "") else ""
+        rendered.append(f"<li><strong>{_html_escape(label)}</strong>{suffix}<br><span>{_html_escape(detail)}</span></li>")
+    return "<ul>" + "".join(rendered) + "</ul>"
+
+
+def _render_passation_preview_html(
+    preview: dict[str, Any],
+    *,
+    query: dict[str, str],
+    links: dict[str, str],
+) -> str:
+    context = preview.get("context") if isinstance(preview.get("context"), dict) else {}
+    summary = preview.get("summary") if isinstance(preview.get("summary"), dict) else {}
+    restrictions = preview.get("restrictions") if isinstance(preview.get("restrictions"), dict) else {}
+    preview_block = preview.get("preview") if isinstance(preview.get("preview"), dict) else {}
+    included = preview.get("included") if isinstance(preview.get("included"), dict) else {}
+    title = context.get("title") or "Apercu de passation"
+    watermark = PASSATION_EXPORT_WATERMARK or preview.get("watermark") or context.get("watermark")
+    source_of_truth = "false" if preview.get("source_of_truth") is False or context.get("source_of_truth") is False else "true"
+    sections = _list_of_dicts(preview.get("sections_included"))
+    formats = _list_of_dicts(preview.get("formats_available") or preview.get("formats"))
+    format_rows = []
+    for item in formats:
+        format_id = str(item.get("id") or "").lower()
+        href = links.get(format_id) or item.get("href") or "#"
+        format_rows.append(
+            {
+                "label": item.get("label") or format_id.upper(),
+                "description": item.get("description") or "",
+                "href": href,
+            }
+        )
+    section_items = _preview_list(sections, detail_key="id", empty="Aucune section incluse.")
+    excluded_items = _preview_list(
+        preview.get("excluded_or_blocked") or preview.get("blockers"),
+        detail_key="reason",
+        empty="Aucun element exclu ou bloque.",
+    )
+    events = _preview_list(included.get("events"), label_key="title", detail_key="next_action", empty="Aucun evenement inclus.")
+    documents = _preview_list(included.get("documents"), label_key="title", detail_key="diffusion_label", empty="Aucun document inclus.")
+    preview_sections = _preview_list(preview_block.get("sections"), label_key="title", detail_key="id", empty="Aucune section d'apercu.")
+    format_html = (
+        "<ul>"
+        + "".join(
+            f"<li><a href=\"{_html_escape(item['href'])}\"><strong>{_html_escape(item['label'])}</strong></a><br>"
+            f"<span>{_html_escape(item['description'])}</span></li>"
+            for item in format_rows
+        )
+        + "</ul>"
+        if format_rows
+        else "<p>Aucun format disponible.</p>"
+    )
+    query_label = ", ".join(f"{key}={value}" for key, value in query.items()) or "handover"
+    return "\n".join(
+        [
+            "<!doctype html>",
+            '<html lang="fr">',
+            "<head>",
+            '  <meta charset="utf-8">',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1">',
+            f"  <title>{_html_escape(title)} - CoproScope</title>",
+            "</head>",
+            "<body>",
+            '  <main data-route="/exports/passation">',
+            f"    <p>{_html_escape(watermark)}</p>",
+            f"    <h1>{_html_escape(title)}</h1>",
+            f"    <p>{_html_escape(context.get('subtitle') or 'Apercu verifiable avant telechargement.')}</p>",
+            "    <dl>",
+            f"      <dt>source_of_truth</dt><dd>{source_of_truth}</dd>",
+            f"      <dt>Perimetre</dt><dd>{_html_escape(query_label)}</dd>",
+            f"      <dt>Evenements inclus</dt><dd>{_html_escape(summary.get('included_events_count', 0))}</dd>",
+            f"      <dt>Documents inclus</dt><dd>{_html_escape(summary.get('included_documents_count', 0))}</dd>",

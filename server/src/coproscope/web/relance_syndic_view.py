@@ -34,14 +34,14 @@ def build_relance_syndic_view(
             "title": "Relancer le syndic",
             "subtitle": "Une reponse ou une piece manque pour terminer cette action.",
             "role_label": "Conseil syndical",
-            "demo_label": "Donnees fictives de demonstration",
+            "demo_label": "Mode local: aucun message n'est envoye par CoproScope",
         },
         "summary": {
             "total": len(rows),
             "selected_status": selected.get("status_label", "a verifier"),
             "delivery_status": "Brouillon non envoye par CoproScope",
             "sent": sent_valid,
-            "sent_label": "Relance enregistree fictivement" if sent_valid else "",
+            "sent_label": "Relance enregistree localement" if sent_valid else "",
             "sent_details": _safe(latest_relance.get("summary"), "") if sent_valid else "",
             "contextualized": bool(piece_row),
         },
@@ -196,7 +196,7 @@ def _draft_message(*, subject: str, expected: str, selected: dict[str, Any]) -> 
     )
     return {
         "request_id": request_id,
-        "recipient": _safe(selected.get("holder_label"), "Syndic de la copropriete (fictif)"),
+        "recipient": _safe(selected.get("holder_label"), "Syndic de la copropriete"),
         "subject": f"Relance - {subject}",
         "body": body,
         "deadline": "Sous 7 jours",

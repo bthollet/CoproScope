@@ -8,7 +8,32 @@ version = "0.1.0"
 description = "Cockpit documentaire local-first pour les workflows de copropriete."
 readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "MPL-2.0" }
 authors = [{ name = "Codex" }]
+keywords = [
+  "copropriete",
+  "documents",
+  "local-first",
+  "privacy",
+  "audit",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Framework :: FastAPI",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Legal Industry",
+  "Intended Audience :: Other Audience",
+  "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business",
+  "Topic :: Office/Business :: Financial :: Accounting",
+  "Topic :: Security",
+  "Typing :: Typed",
+]
 dependencies = [
   "defusedxml>=0.7",
   "PyYAML>=6.0",
@@ -45,6 +70,11 @@ docai = [
   "docling>=2.0",
   "rapidocr>=3.0",
 ]
+drive = [
+  "google-api-python-client>=2.170",
+  "google-auth-httplib2>=0.2",
+  "google-auth-oauthlib>=1.2",
+]
 vl = [
   "torch>=2.0",
   "torchvision>=0.15",
@@ -61,6 +91,11 @@ layout = [
 [project.scripts]
 coprocs = "coproscope.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/bthollet/CoproScope"
+Repository = "https://github.com/bthollet/CoproScope"
+Issues = "https://github.com/bthollet/CoproScope/issues"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
@@ -74,6 +109,12 @@ coproscope = [
   "templates/*.csv",
   "prompts/*.md",
   "extractors/invoices/*.json",
+  "*_parts/*.py",
+  "core/_*_fragments/*.pyfrag",
+  "modules/_*_parts/*.py",
+  "vault/_*_parts/*.py",
+  "web/_*_fragments/*.pyfrag",
+  "web/viewmodels/_*_fragments/*.pyfrag",
   "web/templates/*.html",
   "web/static/*.css"
 ]

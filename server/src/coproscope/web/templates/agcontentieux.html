@@ -121,7 +121,7 @@
     <table>
       <thead><tr><th>Question</th><th>Preuve / source</th><th>Statut</th><th>Echeance</th></tr></thead>
       <tbody>
-      {% for question in agctx.ag.questions %}
+      {% for question in agctx.ag.questions[:80] %}
         <tr>
           <td><strong>{{ question.title }}</strong><br><small>{{ question.objective }}</small></td>
           <td><code>{{ question.source_ref or "source a rattacher" }}</code><br><small>{{ question.proof_ref or "preuve a nommer" }}</small></td>
@@ -133,6 +133,9 @@
       {% endfor %}
       </tbody>
     </table>
+    {% if agctx.ag.questions|length > 80 %}
+    <p class="hint">La page affiche les 80 premieres questions AG; le registre garde {{ agctx.ag.questions|length }} lignes pour les exports et recherches.</p>
+    {% endif %}
   </div>
 
   <div class="panel" id="pieces-convocation">
@@ -143,7 +146,7 @@
     <table>
       <thead><tr><th>Piece</th><th>Preuve / source</th><th>Restriction / diffusion</th><th>Prochaine action</th></tr></thead>
       <tbody>
-      {% for piece in agctx.ag.pieces %}
+      {% for piece in agctx.ag.pieces[:80] %}
         <tr>
           <td><strong>{{ piece.title }}</strong><br><small>{{ piece.status_label }}</small></td>
           <td><code>{{ piece.source_ref }}</code><br><small>{{ piece.proof_ref or "empreinte a confirmer" }}</small></td>
@@ -155,6 +158,9 @@
       {% endfor %}
       </tbody>
     </table>
+    {% if agctx.ag.pieces|length > 80 %}
+    <p class="hint">La page affiche les 80 premieres pieces; le registre garde {{ agctx.ag.pieces|length }} lignes pour les exports et recherches.</p>
+    {% endif %}
   </div>
 </section>
 
@@ -167,7 +173,7 @@
     <table>
       <thead><tr><th>Dossier</th><th>Preuve / source</th><th>Restriction / diffusion</th><th>Suite</th></tr></thead>
       <tbody>
-      {% for case in agctx.contentieux.cases %}
+      {% for case in agctx.contentieux.cases[:80] %}
         <tr>
           <td><strong>{{ case.title }}</strong><br><small>{{ case.matter }}</small></td>
           <td><code>{{ case.source_ref }}</code><br><small>{{ case.proof_ref }}</small></td>
@@ -179,6 +185,9 @@
       {% endfor %}
       </tbody>
     </table>
+    {% if agctx.contentieux.cases|length > 80 %}
+    <p class="hint">La page affiche les 80 premiers dossiers; le registre garde {{ agctx.contentieux.cases|length }} lignes pour les exports et recherches.</p>
+    {% endif %}
   </div>
 
   <div class="panel" id="notes-risque">
@@ -190,7 +199,7 @@
     <table>
       <thead><tr><th>Note</th><th>Signaux</th><th>Preuve / source</th><th>Statut</th></tr></thead>
       <tbody>
-      {% for note in agctx.contentieux.risk_notes %}
+      {% for note in agctx.contentieux.risk_notes[:80] %}
         <tr>
           <td><strong>{{ note.title }}</strong><br><small>{{ note.next_action }}</small></td>
           <td>{% for signal in note.risk_signals %}{{ signal }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
@@ -202,6 +211,9 @@
       {% endfor %}
       </tbody>
     </table>
+    {% if agctx.contentieux.risk_notes|length > 80 %}
+    <p class="hint">La page affiche les 80 premieres notes; le registre garde {{ agctx.contentieux.risk_notes|length }} lignes pour les exports et recherches.</p>
+    {% endif %}
   </div>
 </section>
 
@@ -213,7 +225,7 @@
   <table>
     <thead><tr><th>Preuve</th><th>Source</th><th>Restriction / diffusion</th><th>Prochaine action</th><th>Statut</th></tr></thead>
     <tbody>
-    {% for proof in agctx.evidence["items"] %}
+    {% for proof in agctx.evidence["items"][:120] %}
       <tr>
         <td><strong>{{ proof.title }}</strong><br><small>{{ proof.id }}</small></td>
         <td><code>{{ proof.source_ref }}</code><br><small>{{ proof.source_kind }} - {{ proof.source_hash or "empreinte absente" }}</small></td>
@@ -226,6 +238,9 @@
     {% endfor %}
     </tbody>
   </table>
+  {% if agctx.evidence["items"]|length > 120 %}
+  <p class="hint">La page affiche les 120 premieres preuves; le registre garde {{ agctx.evidence["items"]|length }} lignes pour les exports et recherches.</p>
+  {% endif %}
 </section>
 
 <section class="grid two" id="pack-passation">
@@ -241,10 +256,13 @@
       <span class="badge is-ok">{{ agctx.passation.pack.due_on }}</span>
     </div>
     <ul class="compact-list">
-      {% for point in agctx.passation.pack.open_points %}
+      {% for point in agctx.passation.pack.open_points[:40] %}
       <li>{{ point }}</li>
       {% endfor %}
     </ul>
+    {% if agctx.passation.pack.open_points|length > 40 %}
+    <p class="hint">{{ agctx.passation.pack.open_points|length - 40 }} point(s) ouvert(s) restent dans le pack complet.</p>
+    {% endif %}
     <p class="hint">{{ agctx.passation.pack.next_action }}</p>
   </div>
 

@@ -127,27 +127,28 @@ class UiRequestsRouteTests(unittest.TestCase):
         self.assertEqual(forbidden.status_code, 403)
 
         response = client.get("/demandes/relance?token=local-secret&request_id=REQ-FICTIF-ASSURANCE-B12")
+        text = unescape(response.text)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Relancer le syndic", response.text)
-        self.assertIn("Donnees fictives de demonstration", response.text)
-        self.assertIn("Attestation assurance 2026 non recue", response.text)
-        self.assertIn("Brouillon a copier, non envoye", response.text)
-        self.assertIn("Piece concernee", response.text)
-        self.assertIn("A qui demander / qui doit l'avoir", response.text)
-        self.assertIn("Noter l'envoi fait hors CoproScope", response.text)
-        self.assertIn("Valider la relance", response.text)
-        self.assertIn("Noter un envoi fait hors CoproScope", response.text)
-        self.assertIn("Date d'envoi", response.text)
-        self.assertIn("Canal", response.text)
-        self.assertIn("Copier le message", response.text)
+        self.assertIn("Relancer le syndic", text)
+        self.assertIn("Mode local: aucun message n'est envoye par CoproScope", text)
+        self.assertIn("Attestation assurance 2026 non recue", text)
+        self.assertIn("Brouillon a copier, non envoye", text)
+        self.assertIn("Piece concernee", text)
+        self.assertIn("A qui demander / qui doit l'avoir", text)
+        self.assertIn("Noter l'envoi fait hors CoproScope", text)
+        self.assertIn("Valider la relance", text)
+        self.assertIn("Noter un envoi fait hors CoproScope", text)
+        self.assertIn("Date d'envoi", text)
+        self.assertIn("Canal", text)
+        self.assertIn("Copier le message", text)
         self.assertIn('href="/demandes?token=local-secret"', response.text)
         self.assertIn('aria-label="Rattacher la reponse du syndic au depot local"', response.text)
         self.assertIn('href="/depot?intent=syndic-answer&amp;request_id=REQ-FICTIF-ASSURANCE-B12&amp;token=local-secret"', response.text)
 
         sent_without_post = client.get("/demandes/relance?token=local-secret&sent=1")
         self.assertEqual(sent_without_post.status_code, 200)
-        self.assertNotIn("Relance enregistree fictivement", sent_without_post.text)
+        self.assertNotIn("Relance enregistree localement", sent_without_post.text)
 
         validated = client.post(
             "/demandes/relance?token=local-secret",
@@ -181,9 +182,28 @@ class UiRequestsRouteTests(unittest.TestCase):
 
         sent = client.get(validated.headers["location"])
         self.assertEqual(sent.status_code, 200)
-        self.assertIn("Relance enregistree fictivement", sent.text)
+        self.assertIn("Relance enregistree localement", sent.text)
         self.assertIn("date 2026-05-21, canal email", sent.text)
         self.assertIn("copie email fictive", sent.text)
+
+    def test_relance_syndic_empty_state_keeps_live_action_labels(self) -> None:
+        self.instance.register("requests").write_text(",".join(requestops.REQUEST_FIELDS) + "\n", encoding="utf-8")
+        requestops.request_action_log_path(self.instance).write_text(
+            ",".join(requestops.ACTION_LOG_FIELDS) + "\n",
+            encoding="utf-8",
+        )
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/demandes/relance?token=local-secret")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Aucune relance syndic a preparer", text)
+        self.assertIn("Noter l'envoi fait hors CoproScope", text)
+        self.assertIn("Choisir ou creer une demande", text)
+        self.assertIn("Rattacher la reponse du syndic", text)
+        self.assertIn('aria-label="Rattacher la reponse du syndic au depot local"', text)
+        self.assertIn("Selectionnez ou creez d'abord une demande", text)
 
     def test_relance_syndic_route_prefills_from_piece_detail_without_fake_send(self) -> None:
         piece_id = self._piece_id()
@@ -199,6 +219,9 @@ class UiRequestsRouteTests(unittest.TestCase):
         self.assertIn("Justificatif comptable", text)
         self.assertIn("Piece concernee", text)
         self.assertIn("A qui demander / qui doit l'avoir", text)
+        self.assertIn("Pourquoi", text)
+        self.assertIn("Action suivante", text)
+        self.assertIn("Prudence diffusion", text)
         self.assertIn("Piece ou preuve a demander", text)
         self.assertIn("Diffusion : verifier avant de joindre une piece", text)
         self.assertIn("Noter l'envoi hors CoproScope indisponible", text)
@@ -262,6 +285,18 @@ class UiRequestsRouteTests(unittest.TestCase):
         self.assertIn("Indisponible tant qu'une demande syndic n'est pas rattachee.", text)
         self.assertIn(f"piece_detail={piece_id}", text)
         self.assertNotIn("Aucune relance syndic a preparer", text)
+
+    def test_requests_and_plain_relance_skip_full_dashboard_model(self) -> None:
+        from coproscope.web import app as web_app
+
+        client = self._client(access_token="local-secret")
+
+        with patch.object(web_app, "build_dashboard_model", side_effect=AssertionError("plain request pages need only shell model")):
+            requests_response = client.get("/demandes?token=local-secret")
+            relance_response = client.get("/demandes/relance?token=local-secret")
+
+        self.assertEqual(requests_response.status_code, 200)
+        self.assertEqual(relance_response.status_code, 200)
 
 
 if __name__ == "__main__":
