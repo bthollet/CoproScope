@@ -1,0 +1,3 @@
+anomaly_id,exercice,severity,status,doc_id,fournisseur,numero_facture,ttc,anomaly,evidence_level,extraction_method,evidence,action
+ANOM-FICTIF-ASC-001,2025,P1,A_TRAITER,DOC-FICTIF-ASC-DEVIS,SERVICES ASCENSEUR FICTIF,FAC-FICTIF-2025-044,3480.00,Montant superieur au contrat fictif sans bon d intervention rattache,medium,manual_demo,DOC-FICTIF-ASC-DEVIS,Demander au syndic le bon d intervention et l explication de l ecart
+ANOM-FICTIF-EAU-002,2025,P2,A_CONFIRMER,DOC-FICTIF-EAU-RELEVE,EAU COMMUNE FICTIVE,FAC-FICTIF-2025-058,912.40,Consommation commune a confirmer par releve ou index fictif,low,manual_demo,DOC-FICTIF-EAU-RELEVE,Demander la ventilation ou confirmer le releve avant validation

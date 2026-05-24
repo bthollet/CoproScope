@@ -30,7 +30,19 @@ Sorties principales :
 - college d'acces maximum brut ;
 - college d'acces maximum derive ;
 - transformations requises ;
-- statut de revue.
+- statut de revue humaine.
+
+La revue humaine utilise cinq statuts :
+
+| Statut | Sens |
+|---|---|
+| `DIFFUSABLE_BRUT` | Le document peut etre partage tel quel, avec justification tracee si la diffusion est large. |
+| `DIFFUSABLE_APRES_BIFFAGE` | Une version biffee doit etre produite ou verifiee avant diffusion. |
+| `DIFFUSABLE_APRES_AGREGATION` | Seule une synthese agregee ou suffisamment transformee doit sortir. |
+| `BLOQUE` | La sortie est bloquee tant que le document reste dans cet etat ou ce chemin. |
+| `A_ARBITRER` | Le CS doit decider explicitement avant toute diffusion. |
+
+Pour toute decision de diffusion vers un college large (`C0`, `C1` ou `C2`), CoproScope demande une justification. Une decision `DIFFUSABLE_BRUT` est refusee si PrivacyOps a detecte qu'un biffage, une aggregation ou une sortie `metadata_only` est requise.
 
 Commande :
 
@@ -111,6 +123,7 @@ Cette place est volontaire : on ne doit pas produire de sorties diffusables sans
 | Screening local de documents existants | Existe. |
 | Enrichissement du registre documents | Existe. |
 | Rapport de screening | Existe. |
+| File de revue humaine | Existe. |
 | File de biffage | Existe. |
 | Biffage texte/PDF/DOCX selon dependances disponibles | Existe comme socle. |
 | Table de correspondance pour pseudonymisation tracee | Existe. |
@@ -119,8 +132,8 @@ Cette place est volontaire : on ne doit pas produire de sorties diffusables sans
 
 | Fonction | Etat |
 |---|---|
-| Interface de revue confidentialite | A faire. |
-| Validation humaine guidee avant diffusion | A faire. |
+| Interface de revue confidentialite | Premiere version. |
+| Validation humaine guidee avant diffusion | Socle present, commandes dediees a ajouter. |
 | Tests visuels de biffage PDF complexes | A renforcer. |
 | Politique fine par copropriete | A documenter et tester. |
 | Exports CommsOps bases sur versions biffees | A construire. |
@@ -133,6 +146,5 @@ Elle doit aussi etre reliee a :
 
 - une source ;
 - une politique d'acces ;
-- un statut de biffage ou d'agregation ;
+- un statut de biffage, d'agregation ou de blocage ;
 - une trace de validation.
-

@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+{% block topbar_title %}Controle des comptes{% endblock %}
+{% block content %}
+{% set guide = model.accounting.guide %}
+{% set before_ag = model.accounting.before_ag %}
+{% set report = model.accounting.report %}
+{% set summary = model.accounting.summary if model.accounting.summary is mapping else {} %}
+{% set focus = namespace(item=none, status='A traiter', tone='p1') %}
+{% if guide.p1|length %}
+  {% set focus.item = guide.p1[0] %}
+  {% set focus.status = 'A traiter' %}
+  {% set focus.tone = 'p1' %}
+{% elif guide.p2|length %}
+  {% set focus.item = guide.p2[0] %}
+  {% set focus.status = 'A confirmer' %}
+  {% set focus.tone = 'p2' %}
+{% elif guide.ok|length %}
+  {% set focus.item = guide.ok[0] %}
+  {% set focus.status = 'Conforme avec preuve' %}
+  {% set focus.tone = 'ok' %}
+{% endif %}
+{% macro token_href(href) -%}
+  {%- set raw_href = href|default('#') -%}
+  {%- if ui_token_param and raw_href != '#' -%}
+    {{- raw_href -}}{{- '&' if '?' in raw_href else '?' -}}{{- ui_token_param -}}
+  {%- else -%}
+    {{- raw_href -}}
+  {%- endif -%}
+{%- endmacro %}
+{% macro readable_status(item, fallback='A traiter') -%}
+  {%- set priority = item.priority|default('', true)|upper -%}
+  {%- if priority in ['P0', 'P1'] -%}A traiter
+  {%- elif priority == 'P2' -%}A confirmer
+  {%- elif priority == 'OK' -%}Conforme avec preuve
+  {%- else -%}{{ fallback }}
+  {%- endif -%}
+{%- endmacro %}
+
+<section class="cs-comptes-page" aria-labelledby="comptes-title">
+  <header class="cs-page-header cs-comptes-header">
+    <div>
+      <p class="eyebrow">ComptaScope</p>
+      <h2 id="comptes-title">Controle des comptes</h2>
+      <p class="lead">Vue de controle avant AG: depenses, factures rapprochees, pieces attendues et questions au syndic.</p>
+    </div>
+    <div class="cs-header-tools" aria-label="Actions comptes">
+      <span class="cs-status-badge">Mode prive local</span>
+      <a class="cs-primary-action" href="{{ token_href('/comptes?export=rapport-ag') }}">Exporter le rapport</a>
+    </div>
+  </header>
+
+  <section class="cs-comptes-kpis" aria-label="Indicateurs de controle comptes">
+    <a class="cs-comptes-kpi cs-tone-info" href="{{ token_href('/comptes') }}">
+      <span>Total charges</span>
+      <strong>{{ summary.total_charges_label|default(summary.total_charges|default('A calculer')) }}</strong>
+      <small>Exercice {{ model.instance.year }}</small>
+    </a>
+    <a class="cs-comptes-kpi cs-tone-ok" href="{{ token_href('/comptes?match=ok') }}">
+      <span>Factures rapprochees</span>
+      <strong>{{ before_ag.ok }}</strong>
+      <small>OK avec preuve rattachee</small>
+    </a>
+    <a class="cs-comptes-kpi cs-tone-warn" href="{{ token_href('/comptes?status=p2') }}">
+      <span>P2 a confirmer</span>
+      <strong>{{ before_ag.to_confirm }}</strong>
+      <small>A confirmer</small>
+    </a>
+    <a class="cs-comptes-kpi cs-tone-danger" href="{{ token_href('/comptes?status=p1') }}">
+      <span>P1 a traiter</span>
+      <strong>{{ before_ag.blocking }}</strong>
+      <small>A traiter</small>
+    </a>
+    <a class="cs-comptes-kpi cs-tone-warn" href="{{ token_href('/pieces?proof=missing') }}">
+      <span>Pieces manquantes</span>
+      <strong>{{ guide.p1|length }}</strong>
+      <small>Preuve attendue</small>
+    </a>
+  </section>
+
+  <section class="cs-comptes-filters" aria-label="Filtres comptes">
+    <form action="{{ token_href('/comptes') }}" method="get" role="search">
+      {% if ui_token_param %}
+      <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+      {% endif %}
+      <label>
+        <span>Exercice</span>
+        <select class="select" name="exercise">
+          <option value="{{ model.instance.year }}">Exercice {{ model.instance.year }}</option>
+        </select>
+      </label>
+      <label>
+        <span>Statut</span>
+        <select class="select" name="status">
+          <option value="">Tous</option>
+          <option value="p1">A traiter</option>
+          <option value="p2">A confirmer</option>
+          <option value="ok">Conforme avec preuve</option>
+        </select>
+      </label>
+      <label>
+        <span>Fournisseur</span>
+        <input class="input" type="search" name="supplier" placeholder="Fournisseur">
+      </label>
+      <label class="cs-comptes-check">
+        <input type="checkbox" name="show_empty" value="1">
+        <span>Afficher aussi les categories sans alerte</span>
+      </label>
+      <button class="button-link secondary" type="submit">Filtrer</button>
+    </form>
+  </section>
+
+  <section class="cs-comptes-next" aria-label="Prochain geste humain">
+    <div>
+      <p class="eyebrow">Prochain geste humain</p>
+      <strong>{{ guide.next_human_step }}</strong>
+    </div>
+    <div class="cs-comptes-next-actions">
+      <a href="{{ token_href('/actions?scope=comptes&priority=P1') }}">A traiter</a>
+      <a href="{{ token_href('/actions?scope=comptes&priority=P2') }}">A confirmer</a>
+      <a href="{{ token_href('/actions?scope=syndic') }}">Questions au syndic</a>
+    </div>
+  </section>
+
+  <section class="cs-comptes-guide" aria-label="Mode de lecture">
+    <div>
+      <strong>A traiter avant AG</strong>
+      <span>Piece, decision ou justification a obtenir avant validation.</span>
+    </div>
+    <div>
+      <strong>A confirmer: rapprochement plausible</strong>
+      <span>Indice utile, sans blocage seul, a confirmer avec le syndic.</span>
+    </div>
+    <div>
+      <strong>Conforme avec preuve</strong>
+      <span>Facture, ligne de depense ou controle documente et rattache.</span>
+    </div>
+  </section>
+
+  <div class="cs-comptes-layout">
+    <section class="cs-comptes-categories" aria-labelledby="categories-title">
+      <div class="cs-panel-head">
+        <div>
+          <p class="eyebrow">Depenses par categorie</p>
+          <h3 id="categories-title">Categories a controler</h3>
+        </div>
+        <span>{{ guide.p1|length + guide.p2|length + guide.ok|length }} points</span>
+      </div>
+
+      <div class="cs-comptes-category-list">
+        {% for item in guide.p1 %}
+        <a class="cs-comptes-category is-selected cs-card-tone-danger" href="{{ token_href('/comptes?status=p1') }}">
+          <span class="cs-comptes-category-status">Statut - A traiter</span>
+          <strong>{{ item.title }}</strong>
+          <dl>
+            <div><dt>Fournisseur</dt><dd>{{ item.source }}</dd></div>
+            <div><dt>Preuve attendue</dt><dd>{{ item.evidence }}</dd></div>
+            <div><dt>Suite</dt><dd>{{ item.next_step }}</dd></div>
+          </dl>
+        </a>
+        {% endfor %}
+
+        {% for item in guide.p2 %}
+        <a class="cs-comptes-category cs-card-tone-warn" href="{{ token_href('/comptes?status=p2') }}">
+          <span class="cs-comptes-category-status">Statut - A confirmer</span>
+          <strong>{{ item.title }}</strong>
+          <dl>
+            <div><dt>Fournisseur</dt><dd>{{ item.source }}</dd></div>
+            <div><dt>Indice</dt><dd>{{ item.evidence }}</dd></div>
+            <div><dt>Suite</dt><dd>{{ item.next_step }}</dd></div>
+          </dl>
+        </a>
+        {% endfor %}
+
+        {% for item in guide.ok %}
+        <a class="cs-comptes-category cs-card-tone-ok" href="{{ token_href('/comptes?status=ok') }}">
+          <span class="cs-comptes-category-status">Statut - Conforme avec preuve</span>
+          <strong>{{ item.title }}</strong>
+          <dl>
+            <div><dt>Fournisseur</dt><dd>{{ item.source }}</dd></div>
+            <div><dt>Preuve</dt><dd>{{ item.evidence }}</dd></div>
+            <div><dt>Suite</dt><dd>{{ item.next_step }}</dd></div>
+          </dl>
+        </a>
+        {% endfor %}
+
+        {% if not guide.p1 and not guide.p2 and not guide.ok %}
+        <div class="cs-empty-state">
+          <strong>Generer ou importer les sorties ComptaScope</strong>
+          <p>Aucune categorie de depenses n'est encore exploitable pour cet exercice.</p>
+          <a href="{{ token_href('/depot') }}">Ouvrir le depot local</a>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <aside class="cs-comptes-detail" aria-labelledby="detail-title">
+      <div class="cs-decision-header">
+        <div>
+          <p class="eyebrow">Panneau detail</p>
+          <h3 id="detail-title">{{ focus.item.title if focus.item else 'Categorie a selectionner' }}</h3>
+          <p>{{ focus.item.reason if focus.item else 'Generer ou importer les sorties ComptaScope, puis relancer cette lecture guide.' }}</p>
+        </div>
+        <span class="pill severity-{{ focus.tone }}">{{ focus.status }}</span>
+      </div>
+
+      <nav class="cs-comptes-tabs" aria-label="Onglets du detail comptes">
+        <a class="active" href="#detail">Detail <span>{{ (guide.p1|length) + (guide.p2|length) }}</span></a>
+        <a href="#pieces">Pieces <span>{{ model.accounting.artifacts|length }}</span></a>
+        <a href="#questions">Questions au syndic <span>{{ model.accounting.syndic_questions|length }}</span></a>
+        <a href="#rapport-ag">Rapport AG <span>{{ 1 if report.exists else 0 }}</span></a>
+      </nav>
+
+      <section id="detail" class="cs-tab-panel cs-comptes-tab-panel" aria-labelledby="detail-tab-title">
+        <div class="cs-panel-head">
+          <h4 id="detail-tab-title">Detail</h4>
+          <span>Controle des comptes</span>
+        </div>
+        {% if focus.item %}
+        <dl class="cs-comptes-detail-list">
+          <div><dt>Statut</dt><dd>{{ focus.status }}</dd></div>
+          <div><dt>Point controle</dt><dd>{{ focus.item.title }}</dd></div>
+          <div><dt>Preuve attendue</dt><dd>{{ focus.item.evidence }}</dd></div>
+          <div><dt>Prochaine action</dt><dd>{{ focus.item.next_step }}</dd></div>
+        </dl>
+        {% else %}
+        <div class="empty">Generer ou importer les sorties ComptaScope, puis relancer cette lecture guide.</div>
+        {% endif %}
+      </section>
+
+      <section id="pieces" class="cs-tab-panel cs-comptes-tab-panel" aria-labelledby="pieces-tab-title">
+        <div class="cs-panel-head">
+          <h4 id="pieces-tab-title">Pieces</h4>
+          <span>{{ model.accounting.artifacts|length }}</span>
+        </div>
+        <div class="cs-card-list">
+          {% for artifact in model.accounting.artifacts %}
+          <div class="cs-piece-card">
+            <strong>{{ artifact.label }}</strong>
+            <span>{{ artifact.state }}{% if artifact.count %} - {{ artifact.count }} lignes{% endif %}</span>
+            <small>{{ artifact.kind }}</small>
+          </div>
+          {% else %}
+          <div class="cs-empty-state">
+            <strong>Aucune piece rattachee</strong>
+            <p>Les factures, rapprochements et controles apparaitront ici apres import.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section id="questions" class="cs-tab-panel cs-comptes-tab-panel" aria-labelledby="questions-tab-title">
+        <div class="cs-panel-head">
+          <h4 id="questions-tab-title">Questions au syndic</h4>
+          <span>{{ model.accounting.syndic_questions|length }}</span>
+        </div>
+        <div class="cs-card-list">
+          {% for row in model.accounting.syndic_questions[:6] %}
+          <article class="cs-followup-card cs-card-tone-{{ 'danger' if row.priority in ['P0', 'P1'] else 'warn' }}">
+            <span>{{ readable_status(row, 'A confirmer') }}</span>
+            <strong>{{ row.title }}</strong>
+            <p>{{ row.question }}</p>
+            <small>{{ row.reason }}</small>
+          </article>
+          {% else %}
+          <div class="cs-empty-state">
+            <strong>Aucune question syndic n'a pu etre preparee depuis les sorties disponibles.</strong>
+            <p>Les questions pretes apparaitront avec les P1 et P2.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section id="rapport-ag" class="cs-tab-panel cs-comptes-tab-panel" aria-labelledby="rapport-ag-tab-title">
+        <div class="cs-panel-head">
+          <h4 id="rapport-ag-tab-title">Rapport AG</h4>
+          <a class="cs-mini-link" href="{{ token_href('/comptes?export=rapport-ag') }}">Exporter le rapport</a>
+        </div>
+        {% if report.exists %}
+        <div class="cs-comptes-report-summary">
+          <strong>Rapport ComptaScope pret pour l'AG</strong>
+          <p>Le rapport local existe pour cet exercice. L'export reprend les points a traiter, les points a confirmer et les preuves deja rattachees.</p>
+          <div>
+            <span>{{ guide.p1|length }} a traiter</span>
+            <span>{{ guide.p2|length }} a confirmer</span>
+            <span>{{ guide.ok|length }} conformes avec preuve</span>
+          </div>
+        </div>
+        {% else %}
+        <div class="cs-empty-state">
+          <strong>Rapport AG a preparer</strong>
+          <p>Le rapport ComptaScope n'est pas encore genere pour cet exercice.</p>
+        </div>
+        {% endif %}
+      </section>
+    </aside>
+  </div>
+
+  <section class="cs-comptes-grid" aria-label="Synthese detaillee">
+    <article class="cs-comptes-panel">
+      <div class="cs-panel-head">
+        <h3>A traiter</h3>
+        <span>P1 a traiter - {{ guide.p1|length }}</span>
+      </div>
+      <div class="cs-comptes-table-scroll">
+        <table class="cs-comptes-table">
+          <thead><tr><th>Statut</th><th>Point controle</th><th>Preuve attendue</th><th>Prochain geste</th></tr></thead>
+          <tbody>
+          {% for item in guide.p1 %}
+            <tr>
+              <td><span class="pill severity-{{ item.tone }}">A traiter</span><br><small>{{ item.status }}</small></td>
+              <td><strong>{{ item.title }}</strong><br><small>{{ item.reason }}</small></td>
+              <td><code>{{ item.evidence }}</code></td>
+              <td>{{ item.next_step }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4">Aucun P1 visible dans les sorties disponibles.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="cs-comptes-panel">
+      <div class="cs-panel-head">
+        <h3>A confirmer</h3>
+        <span>P2 a confirmer - {{ guide.p2|length }}</span>
+      </div>
+      <div class="cs-comptes-table-scroll">
+        <table class="cs-comptes-table">
+          <thead><tr><th>Statut</th><th>Point controle</th><th>Indice</th><th>Question</th></tr></thead>
+          <tbody>
+          {% for item in guide.p2 %}
+            <tr>
+              <td><span class="pill severity-{{ item.tone }}">A confirmer</span><br><small>{{ item.status }}</small></td>
+              <td><strong>{{ item.title }}</strong><br><small>{{ item.reason }}</small></td>
+              <td><code>{{ item.evidence }}</code></td>
+              <td>{{ item.question }}<br><small>{{ item.next_step }}</small></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4">Aucun P2 a confirmer dans les sorties disponibles.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section class="cs-comptes-panel" aria-labelledby="ok-title">
+    <div class="cs-panel-head">
+      <h3 id="ok-title">Conforme avec preuve</h3>
+      <span>OK avec preuve rattachee - {{ guide.ok|length }}</span>
+    </div>
+    <div class="cs-comptes-table-scroll">
+      <table class="cs-comptes-table">
+        <thead>
+          <tr>
+            <th>Statut</th>
+            <th>Facture ou controle</th>
+            <th>Preuve rattachee</th>
+            <th>Usage CS</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for item in guide.ok %}
+          <tr>
+            <td><span class="pill severity-ok">Conforme avec preuve</span><br><small>{{ item.status }}</small></td>
+            <td><strong>{{ item.title }}</strong><br><small>{{ item.reason }}</small></td>
+            <td><code>{{ item.evidence }}</code></td>
+            <td>{{ item.next_step }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4">Aucun rapprochement OK charge pour l'instant.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="cs-comptes-grid" aria-label="Questions et blocages">
+    <article class="cs-comptes-panel">
+      <div class="cs-panel-head">
+        <h3>Questions syndic</h3>
+        <span>{{ model.accounting.syndic_questions|length }}</span>
+      </div>
+      <div class="cs-card-list">
+        {% for row in model.accounting.syndic_questions[:8] %}
+        <article class="cs-followup-card cs-card-tone-{{ 'danger' if row.priority in ['P0', 'P1'] else 'warn' }}">
+          <span>{{ readable_status(row, 'A confirmer') }}</span>
+          <strong>{{ row.title }}</strong>
+          <p>{{ row.question }}</p>
+          <small>{{ row.reason }}</small>
+        </article>
+        {% else %}
+        <div class="empty">Aucune question syndic n'a pu etre preparee depuis les sorties disponibles.</div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="cs-comptes-panel">
+      <div class="cs-panel-head">
+        <h3>Preuves et blocages</h3>
+        <span>{{ model.accounting.blocker_types.non_matches|length }}</span>
+      </div>
+      <div class="cs-comptes-mini-grid">
+        {% for label, count in model.accounting.blocker_types.non_matches.items() %}
+        <a href="{{ token_href('/comptes') }}"><strong>{{ count }}</strong><span>{{ label }}</span></a>
+        {% else %}
+        <div class="empty">Aucun type de blocage comptable charge.</div>
+        {% endfor %}
+      </div>
+      <div class="cs-comptes-supplier-list">
+        <div class="cs-panel-head">
+          <h4>Fournisseur</h4>
+          <span>Lignes a regarder</span>
+        </div>
+        {% for row in model.accounting.supplier_focus %}
+        <div><strong>{{ row.supplier }}</strong><span>{{ row.count }}</span></div>
+        {% else %}
+        <div class="empty">Aucun fournisseur prioritaire dans les non rapproches.</div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+</section>
+{% endblock %}

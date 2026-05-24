@@ -1,0 +1,163 @@
+.cs-missing-card-head > * {
+  min-width: 0;
+}
+
+.cs-missing-card-head strong {
+  flex: 0 0 auto;
+  border: 1px solid #cfd8e5;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #ffffff;
+  color: #475467;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.cs-missing-kv {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cs-missing-card .cs-reprise-actions {
+  margin-top: 2px;
+}
+
+.cs-reprise-item h3,
+.cs-reprise-detail h3 {
+  overflow-wrap: anywhere;
+}
+
+.cs-reprise-kv {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.cs-reprise-kv div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #edf1f6;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fbfcff;
+}
+
+.cs-reprise-kv dd {
+  margin: 0;
+  color: #101828;
+  overflow-wrap: anywhere;
+}
+
+.cs-reprise-warning {
+  width: fit-content;
+  margin-top: 8px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cs-reprise-draft {
+  display: grid;
+  gap: 6px;
+}
+
+.cs-reprise-draft textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 10px;
+  color: #101828;
+  background: #fbfcff;
+  font: inherit;
+  resize: vertical;
+}
+
+.cs-reprise-empty {
+  display: grid;
+  gap: 8px;
+  border-style: dashed;
+  padding: 14px;
+}
+
+.cs-reprise-empty-wide {
+  padding: 18px;
+}
+
+.cs-reprise-empty p {
+  color: #475467;
+}
+
+.cs-reprise-empty a {
+  color: #1d5fd8;
+  font-weight: 760;
+}
+
+.cs-reprise-empty .cs-reprise-primary {
+  color: #ffffff;
+}
+
+.cs-reprise-tone-danger {
+  border-left-color: #df2f24;
+  background: #fff7f5;
+}
+
+.cs-reprise-tone-warn {
+  border-left-color: #f28705;
+  background: #fffaf2;
+}
+
+.cs-reprise-tone-ok {
+  border-left-color: #13976b;
+  background: #f0fdf8;
+}
+
+.cs-reprise-tone-info {
+  border-left-color: #1d5fd8;
+  background: #fbfcff;
+}
+
+@media (max-width: 1080px) {
+  .cs-reprise-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cs-reprise-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-reprise-detail {
+    position: static;
+  }
+}
+
+@media (max-width: 700px) {
+  .cs-reprise-hero {
+    flex-direction: column;
+  }
+
+  .cs-reprise-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-missing-kv {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-missing-card-head {
+    display: grid;
+  }
+
+  .cs-reprise-actions,
+  .cs-reprise-actions > *,
+  .cs-reprise-primary,
+  .cs-reprise-secondary,
+  .cs-reprise-filters a,
+  .cs-reprise-groups a,
+  .cs-reprise-tabs a {
+    width: 100%;
+  }
+}

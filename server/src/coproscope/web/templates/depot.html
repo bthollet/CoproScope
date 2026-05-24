@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Flux local</p>
+    <h2>Depot guide & exports locaux</h2>
+    <p class="lead">Ajoutez des pieces depuis ce poste: CoproScope les copie dans l'instance locale, lance le traitement local, puis produit des traces et demandes de preuves sans publier les bruts.</p>
+    {% if depot_prefill and depot_prefill.is_visible %}
+    <dl class="cs-relance-quick" aria-label="Resume novice depot">
+      <div>
+        <dt>Piece concernee</dt>
+        <dd>{{ depot_prefill.piece_label }}</dd>
+      </div>
+      <div>
+        <dt>Pourquoi</dt>
+        <dd>{{ depot_prefill.notice }}</dd>
+      </div>
+      <div>
+        <dt>Action suivante</dt>
+        <dd>Deposer la reponse recue comme piece candidate.</dd>
+      </div>
+      <div>
+        <dt>Prudence diffusion</dt>
+        <dd>{{ depot_prefill.diffusion_label }}</dd>
+      </div>
+    </dl>
+    {% endif %}
+  </div>
+  {% if depot_prefill and depot_prefill.is_visible %}
+  <div class="status-block pending cs-depot-prefill-top" aria-label="Contexte reponse recue">
+    <span>{{ depot_prefill.title }}</span>
+    <span>{{ depot_prefill.status_label }}</span>
+    <small>{{ depot_prefill.notice }}</small>
+  </div>
+  {% else %}
+  <div class="kpi-grid">
+    <div><strong>{{ model.deposits.count }}</strong><span>depots traces</span></div>
+    <div><strong>{{ model.documents.documents.count }}</strong><span>documents</span></div>
+    <div><strong>{{ model.privacy.review_summary.to_arbitrate or 0 }}</strong><span>a arbitrer</span></div>
+    <div><strong>{{ model.action_summary.total }}</strong><span>actions</span></div>
+  </div>
+  {% endif %}
+</section>
+
+{% if pipeline_status %}
+<section class="band notice-band">
+  <strong>Resultat</strong>
+  <span>{{ pipeline_status }} - manifeste mis a jour</span>
+</section>
+{% endif %}
+
+<section class="grid two">
+  <div class="panel warning">
+    <div class="panel-head">
+      <h3>Zone locale et chiffrement</h3>
+      <span>hors cloud</span>
+    </div>
+    <div class="guide-list">
+      <div>
+        <strong>Ce depot reste local</strong>
+        <span>Les fichiers sont copies dans le dossier local de l'instance. Cette page ne synchronise rien vers un service cloud.</span>
+      </div>
+      <div>
+        <strong>Ce qui est prepare pour le coffre chiffre</strong>
+        <span>Les bruts, les cartes de correspondance, les secrets et les dossiers restreints restent dans les zones locales privees; ils sont exclus des exports servis par l'UI.</span>
+      </div>
+      <div>
+        <strong>A verifier avant toute sync externe</strong>
+        <span>Utilisez les sorties biffage/confidentialite et les exports locaux uniquement apres arbitrage des pieces sensibles.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Parcours produit</h3>
+      <span>piece -> action -> preuve</span>
+    </div>
+    <div class="guide-list">
+      <div>
+        <strong>1. Depot</strong>
+        <span>Chaque fichier recoit une trace: nom stocke, taille, empreinte sha256 et manifeste de depot.</span>
+      </div>
+      <div>
+        <strong>2. Traitement local</strong>
+        <span>Inventaire, extraction texte native, classement, screening confidentialite et file de biffage.</span>
+      </div>
+      <div>
+        <strong>3. Rattachement</strong>
+        <span>Les documents alimentent l'atelier pieces, les points AG/incidents/comptes, les actions et les preuves attendues.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Nouveau depot</h3>
+      <span>pipeline local auto</span>
+    </div>
+    {% if depot_prefill and depot_prefill.is_visible %}
+    <div class="status-block pending cs-depot-prefill-detail" aria-label="Contexte de depot">
+      <span>{{ depot_prefill.title }}</span>
+      <span>{{ depot_prefill.status_label }}</span>
+      <small>{{ depot_prefill.notice }}</small>
+    </div>
+    <table>
+      <tbody>
+        <tr><th>Piece</th><td>{{ depot_prefill.piece_label }}</td></tr>
+        <tr><th>Preuve attendue</th><td>{{ depot_prefill.proof_expected_label }}</td></tr>
+        <tr><th>Detenteur</th><td>{{ depot_prefill.holder_label }}</td></tr>
+        <tr><th>Diffusion</th><td>{{ depot_prefill.diffusion_label }}</td></tr>
+      </tbody>
+    </table>
+    <div class="button-row compact">
+      <a class="button-link secondary" href="{{ token_href(depot_prefill.return_href) }}">Retour detail piece/preuve</a>
+    </div>
+    {% endif %}
+    <form class="upload-form cs-upload-form" action="/depot{{ ui_token_query }}" method="post" enctype="multipart/form-data">
+      {% if depot_prefill and depot_prefill.hidden_fields %}
+      {% for field in depot_prefill.hidden_fields %}
+      <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+      {% endfor %}
+      {% endif %}
+      <label class="cs-upload-label" for="depot-files">
+        <span>{% if depot_prefill and depot_prefill.is_visible %}Reponse recue a rattacher{% else %}Fichiers a deposer{% endif %}</span>
+        <small>{% if depot_prefill and depot_prefill.is_visible %}Le depot sera trace comme piece candidate pour la preuve attendue ci-dessus.{% else %}Ajoutez un ou plusieurs fichiers depuis ce poste local.{% endif %}</small>
+      </label>
+      <input id="depot-files" class="file-input" type="file" name="files" multiple required aria-describedby="depot-upload-help">
+      <small id="depot-upload-help" class="cs-upload-help">Aucun envoi externe: le traitement reste local et le fichier devra etre verifie avant preuve finale.</small>
+      <button class="button-link" type="submit">{% if depot_prefill and depot_prefill.is_visible %}Deposer comme reponse candidate{% else %}Deposer{% endif %}</button>
+    </form>
+    <div class="pipeline-list">
+      <div><strong>1</strong><span>Inventaire</span></div>
+      <div><strong>2</strong><span>Texte natif</span></div>
+      <div><strong>3</strong><span>Classement</span></div>
+      <div><strong>4</strong><span>Confidentialite</span></div>
+      <div><strong>5</strong><span>File biffage</span></div>
+    </div>
+    <p class="hint">Apres depot, le manifeste garde la preuve technique locale: fichiers recus, empreintes, documents lies et etapes executees.</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Exports</h3>
+      <span>{{ model.deposits.exports|length }}</span>
+    </div>
+    <div class="stack">
+      {% for export in model.deposits.exports %}
+      <a class="item" href="{{ token_href(export.href) }}">
+        <strong>{{ export.label }}</strong>
+        <span>{{ export.kind }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="hint">Le pack local prive contient les rapports et registres autorises. Il exclut les zones locales non servies, les secrets et les correspondances sensibles.</p>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Depot selectionne</h3>
+      <span>{{ selected_deposit.deposit_id if selected_deposit else "aucun" }}</span>
+    </div>
+    {% if selected_deposit %}
+    <div class="artifact-list">
+      <div class="artifact">
+        <strong>{{ selected_deposit.status }}</strong>
+        <span>{{ selected_deposit.files|length }} fichiers - {{ selected_deposit.doc_ids|length }} documents lies</span>
+        <code>{{ selected_deposit.deposit_id }}</code>
+      </div>
+      {% for file in selected_deposit.files %}
+      <div class="artifact">
+        <strong>Fichier {{ loop.index }}</strong>
+        <span>{{ file.size_bytes }} octets</span>
+        <code>{{ file.sha256[:12] if file.sha256 else selected_deposit.deposit_id }}</code>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="guide-list">
+      {% if selected_deposit.context %}
+      <div>
+        <strong>Contexte de la reponse recue</strong>
+        <span>Cette piece deposee reste une candidate a verifier pour {{ selected_deposit.context.piece_detail|default(selected_deposit.context.piece_id|default(selected_deposit.context.missing_for|default('la piece attendue', true), true), true) }}.</span>
+      </div>
+      {% endif %}
+      <div>
+        <strong>Sorties du depot</strong>
+        <span>{{ selected_deposit.doc_ids|length }} documents rattaches aux registres locaux; {{ selected_deposit.steps|length }} etapes tracees dans le manifeste.</span>
+      </div>
+      <div>
+        <strong>Actions et preuves a suivre</strong>
+        <span>Consultez Atelier pieces et Actions pour relier chaque piece aux points de controle, demandes au syndic, incidents, comptes et preuves manquantes.</span>
+      </div>
+    </div>
+    <div class="button-row">
+      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/docops{{ ui_token_query }}">
+        <button class="button-link secondary" type="submit">DocOps</button>
+      </form>
+      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/compta{{ ui_token_query }}">
+        <button class="button-link secondary" type="submit">Compta</button>
+      </form>
+      <form method="post" action="/depot/{{ selected_deposit.deposit_id }}/pipeline/all{{ ui_token_query }}">
+        <button class="button-link" type="submit">Traitements locaux</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="empty">Aucun depot UI trace pour cette instance.</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Traitement et preuves</h3>
+      <span>{{ selected_deposit.steps|length if selected_deposit else 0 }}</span>
+    </div>
+    {% if selected_deposit and selected_deposit.steps %}
+    {% set last_step = selected_deposit.steps[-1] %}
+    <div class="artifact-list">
+      <div class="artifact">
+        <strong>Resume des sorties</strong>
+        <span>{{ last_step.after.documents or 0 }} documents indexes - {{ last_step.after.privacy_reviews or 0 }} lignes confidentialite - {{ last_step.after.redaction_queue or 0 }} elements en file biffage</span>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Etape</th><th>Statut</th><th>Sorties locales</th></tr></thead>
+      <tbody>
+      {% for step in selected_deposit.steps[-14:] %}
+        <tr>
+          <td>{{ step.name }}{% if step.error %}<br><small>Traitement local a reprendre; le detail technique reste dans les journaux locaux.</small>{% endif %}</td>
+          <td><span class="pill severity-{{ 'p1' if step.status == 'error' else 'ok' }}">{{ step.status }}</span></td>
+          <td>{{ step.after.documents or 0 }} documents<br><small>{{ step.after.doc_ids|length if step.after.doc_ids else 0 }} lies - {{ step.after.privacy_reviews or 0 }} controles confidentialite - {{ step.after.redaction_queue or 0 }} biffages a preparer</small></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Aucune etape post-depot visible.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>Historique</h3>
+    <span>{{ model.deposits["items"]|length }}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Depot</th>
+        <th>Fichiers</th>
+        <th>Documents</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in model.deposits["items"] %}
+      <tr>
+        <td><a href="/depot?depot={{ item.deposit_id }}{% if ui_token_param %}&{{ ui_token_param }}{% endif %}">{{ item.deposit_id }}</a><br><small>{{ item.created_at }}</small></td>
+        <td>{{ item.files|length }}</td>
+        <td>{{ item.doc_ids|length }}</td>
+        <td>{{ item.status }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">Aucun depot.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

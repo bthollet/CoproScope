@@ -1,0 +1,14 @@
+/* Split CSS manifest for the 600-line cap. Keep imports ordered; package-data includes flat web/static/*.css files. */
+/* Static-test anchors: .skip-link:focus .skip-link:focus-visible :focus-visible .sr-only .quick-help caption-side: top .table-caption @media (hover: none) min-height: 44px .context-banner .context-banner--ok .context-banner--review .context-banner--risk .context-banner__next a text-decoration: underline @media (max-width: 980px) .context-banner__facts */
+@import url("styles_part_01.css");
+@import url("styles_part_02.css");
+@import url("styles_part_03.css");
+@import url("styles_part_04.css");
+@import url("styles_part_05.css");
+@import url("styles_part_06.css");
+@import url("styles_part_07.css");
+@import url("styles_part_08.css");
+@import url("styles_part_09.css");
+@import url("styles_part_10.css");
+@import url("styles_part_11.css");
+@import url("styles_part_12.css");

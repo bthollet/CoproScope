@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">PrivacyOps / BiffageOps</p>
+    <h2>Confidentialite et diffusion</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.privacy.screening.count }}</strong><span>documents screenes</span></div>
+    <div><strong>{{ model.privacy.review_summary.to_arbitrate }}</strong><span>a arbitrer</span></div>
+    <div><strong>{{ model.privacy.review_summary.blocked }}</strong><span>bloques</span></div>
+    <div><strong>{{ model.privacy.review_summary.justification_required }}</strong><span>justifications</span></div>
+  </div>
+</section>
+
+<section class="band">
+  <div>
+    <p class="eyebrow">Decision de diffusion</p>
+    <h3>Statuts lisibles avant partage</h3>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.privacy.review_summary.raw }}</strong><span>diffusable brut</span></div>
+    <div><strong>{{ model.privacy.review_summary.redaction }}</strong><span>apres biffage</span></div>
+    <div><strong>{{ model.privacy.review_summary.aggregation }}</strong><span>apres aggregation</span></div>
+    <div><strong>{{ model.privacy.review_summary.to_arbitrate + model.privacy.review_summary.blocked }}</strong><span>a arbitrer / bloques</span></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>File de revue humaine</h3>
+      <span>{{ model.privacy.review_rows|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Statut</th><th>Document</th><th>Decision proposee</th><th>Prochaine etape</th></tr></thead>
+      <tbody>
+      {% for row in model.privacy.review_rows[:14] %}
+        <tr>
+          <td>
+            {{ row.privacy_review_status or row.remediation_priority }}
+            {% if row.review_justification_required %}<small>justification</small>{% endif %}
+          </td>
+          <td>{{ row.file_name or row.doc_id }}<small>{{ row.original_path }}</small></td>
+          <td>{{ row.review_status_recommendation or row.required_transformations }}</td>
+          <td>{{ row.publication_blocker or row.review_next_step or row.recommended_action }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune revue confidentialite prioritaire chargee.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>File de biffage</h3>
+      <span>{{ model.privacy.queue.count }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Statut</th><th>Document</th><th>Mode</th></tr></thead>
+      <tbody>
+      {% for row in model.privacy.queue_rows[:14] %}
+        <tr>
+          <td>{{ row.queue_status }}</td>
+          <td>{{ row.file_name or row.doc_id }}<small>{{ row.required_transformations }}</small></td>
+          <td>{{ row.recommended_mode }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">La file de biffage n'est pas encore generee.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Artefacts</h3>
+      <span>{{ model.privacy.artifacts|length }}</span>
+    </div>
+    <div class="artifact-list">
+      {% for artifact in model.privacy.artifacts %}
+      <div class="artifact">
+        <strong>{{ artifact.label }}</strong>
+        <span>{{ artifact.state }}{% if artifact.count %} - {{ artifact.count }} lignes{% endif %}</span>
+        <code>{{ artifact.path }}</code>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel warning">
+    <div class="panel-head">
+      <h3>Regle de publication</h3>
+      <span>prudence</span>
+    </div>
+    <p>Une diffusion large doit avoir un statut explicite : brut, apres biffage, apres aggregation, bloque ou a arbitrer. Une pseudonymisation tracee reste une donnee personnelle.</p>
+    {% if model.privacy.report.exists %}
+    <pre class="report">{{ model.privacy.report.text }}</pre>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

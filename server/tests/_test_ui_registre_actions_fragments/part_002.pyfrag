@@ -1,0 +1,243 @@
+                text = unescape(response.text)
+
+                self.assertEqual(response.status_code, 200)
+                for label in expected_labels:
+                    self.assertIn(label, text)
+                self.assertNotIn("P1 Prioritaire", text)
+                self.assertNotIn("P2 Prioritaire", text)
+                self.assertNotIn("Envoyer automatiquement", text)
+                self.assertNoPrivateRegistreLeak(text)
+                for index, href in enumerate(_html_hrefs(text)):
+                    with self.subTest(route=path, href=href):
+                        self.assertLocalHref(href, f"{path}.html.href[{index}]")
+                        self.assertProtectedHrefKeepsToken(href, f"{path}.html.href[{index}]", token)
+
+    def test_actions_summary_counters_open_tokenized_useful_screens(self) -> None:
+        self._seed_registre_actions()
+        token = "local-secret"
+        response = self._client(access_token=token).get(_with_token("/actions", token))
+        self.assertEqual(response.status_code, 200)
+        text = unescape(response.text)
+
+        for target_path, useful_label in ACTION_COUNTER_TARGETS:
+            with self.subTest(target=target_path):
+                href = _find_href_for_path(text, target_path)
+                self.assertIn(f"token={token}", href)
+
+                follow_up = self._client(access_token=token).get(href)
+                self.assertEqual(follow_up.status_code, 200, href)
+                self.assertIn(useful_label, unescape(follow_up.text))
+
+    def test_actions_api_exposes_minimal_registre_namespace_without_private_leaks(self) -> None:
+        self._seed_registre_actions()
+        client = self._client(access_token="local-secret")
+
+        blocked = client.get("/api/model")
+        self.assertEqual(blocked.status_code, 403)
+
+        response = client.get("/api/model?token=local-secret")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        registre = payload["ux"]["registre"]
+
+        self.assertIsInstance(registre, dict)
+        self.assertIsInstance(registre.get("items"), list)
+        self.assertIsInstance(registre.get("selected"), dict)
+        if registre["items"]:
+            first = registre["items"][0]
+            for field in ["id", "title", "status", "proof", "action", "diffusion", "memory", "href"]:
+                with self.subTest(field=field):
+                    self.assertIn(field, first)
+            self.assertLocalHref(first["href"], "registre.items[0].href")
+
+        self.assertNoPrivateRegistreLeak(registre)
+        self.assertNoForbiddenUxTokens(registre)
+        for path, href in _hrefs(registre):
+            with self.subTest(href_path=path):
+                self.assertLocalHref(href, path)
+
+    def test_cycle2_model_ux_registre_contract_when_delivered(self) -> None:
+        self._seed_registre_actions()
+        registre = self._cycle2_registre_or_skip()
+
+        for field in CYCLE2_CONTEXT_FIELDS:
+            with self.subTest(context_field=field):
+                self.assertIn(field, registre["context"])
+                self.assertTrue(registre["context"][field])
+
+        summary = registre["summary"]
+        self.assertIsInstance(summary, dict)
+        for name in CYCLE2_SUMMARY_COUNTERS:
+            with self.subTest(summary_counter=name):
+                self._assert_counter_with_href(summary, name)
+        self.assertIn("last_updated_label", summary)
+
+        for facet in CYCLE2_FACETS:
+            with self.subTest(facet=facet):
+                self.assertIn(facet, registre["facets"])
+        for field in CYCLE2_FILTER_FIELDS:
+            with self.subTest(filter_field=field):
+                self.assertIn(field, registre["filters"])
+
+        tab_labels = [str(tab.get("label", "")) for tab in registre["tabs"]]
+        for label in CYCLE2_TAB_LABELS:
+            with self.subTest(tab_label=label):
+                self.assertIn(label, tab_labels)
+
+        self.assertIsInstance(registre["ag_groups"], list)
+        for group in registre["ag_groups"]:
+            with self.subTest(ag_group=group.get("ag_id")):
+                for field in ["ag_id", "label", "date", "open_count", "late_count", "is_expanded", "href", "items"]:
+                    self.assertIn(field, group)
+                self.assertLocalHref(group["href"], f"ag_groups.{group.get('ag_id')}.href")
+                self.assertIsInstance(group["items"], list)
+                for card in group["items"]:
+                    for field in [
+                        "id",
+                        "resolution_ref",
+                        "title",
+                        "subtitle",
+                        "status_label",
+                        "status_tone",
+                        "priority_label",
+                        "proof_state_label",
+                        "owner_label",
+                        "due_label",
+                        "is_selected",
+                        "href",
+                    ]:
+                        self.assertIn(field, card)
+                    self.assertLocalHref(card["href"], f"ag_groups.{group.get('ag_id')}.items.href")
+
+        items = registre["items"]
+        self.assertIsInstance(items, list)
+        self.assertTrue(items)
+        selected = registre["selected"]
+        self.assertIsInstance(selected, dict)
+        self.assertTrue(selected)
+        self.assertIn(selected["id"], {item["id"] for item in items})
+
+        for field in CYCLE2_ITEM_FIELDS:
+            with self.subTest(selected_field=field):
+                self.assertIn(field, selected)
+        self.assertLocalHref(selected["href"], "selected.href")
+        self.assertIsInstance(selected["proofs"], list)
+        self.assertIsInstance(selected["pieces"], list)
+        self.assertIsInstance(selected["followups"], list)
+        self.assertIsInstance(selected["history"], list)
+
+        for proof in selected["proofs"]:
+            for field in CYCLE2_PROOF_FIELDS:
+                self.assertIn(field, proof)
+            self.assertIn(proof["status"], CYCLE2_PROOF_STATUSES)
+            self.assertLocalHref(proof["href"], f"proofs.{proof.get('proof_id')}.href")
+
+        for piece in selected["pieces"]:
+            for field in CYCLE2_PIECE_FIELDS:
+                self.assertIn(field, piece)
+            self.assertLocalHref(piece["href"], f"pieces.{piece.get('doc_id')}.href")
+            self.assertLocalHref(piece["download_href"], f"pieces.{piece.get('doc_id')}.download_href")
+
+        for followup in selected["followups"]:
+            for field in CYCLE2_FOLLOWUP_FIELDS:
+                self.assertIn(field, followup)
+            self.assertIn(followup["status"], CYCLE2_FOLLOWUP_STATUSES)
+            self.assertLocalHref(followup["href"], f"followups.{followup.get('followup_id')}.href")
+
+        for event in selected["history"]:
+            for field in CYCLE2_HISTORY_FIELDS:
+                self.assertIn(field, event)
+
+        for field in ["status", "label", "reason", "allowed_audience", "blocked_by"]:
+            self.assertIn(field, selected["diffusion"])
+        for field in ["handover_note", "timeline_ref", "open_risk", "pack_section", "next_review_label"]:
+            self.assertIn(field, selected["memory"])
+
+        self.assertNoPrivateRegistreLeak(registre)
+        self.assertNoForbiddenUxTokens(registre)
+        for path, href in _hrefs(registre):
+            with self.subTest(href_path=path):
+                self.assertLocalHref(href, path)
+
+    def test_cycle2_actions_route_layout_labels_when_delivered(self) -> None:
+        self._seed_registre_actions()
+        self._cycle2_registre_or_skip()
+        expected_front_labels = [
+            "Registre des decisions",
+            "Fiche decision",
+            "Action",
+            "Preuves",
+            "Pieces liees",
+            "Relance syndic",
+            "Historique",
+            "Mode prive local",
+            "Exporter le registre",
+            "Nouvelle action",
+            "Preparer une relance",
+        ]
+        template_path = (
+            Path(__file__).resolve().parents[1]
+            / "src"
+            / "coproscope"
+            / "web"
+            / "templates"
+            / "actions.html"
+        )
+        template_html = template_path.read_text(encoding="utf-8")
+        missing_template_labels = [label for label in expected_front_labels if label not in template_html]
+        if missing_template_labels:
+            self.skipTest(
+                "Cycle 2 front /actions layout is outside this back-owned delivery; "
+                f"template labels still missing: {missing_template_labels}"
+            )
+        client = self._client(access_token="local-secret")
+
+        response = client.get(
+            "/actions?token=local-secret"
+            "&scope=decisions"
+            "&selected_item_id=DAP-MISSING"
+            "&tab=relance"
+        )
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        for label in expected_front_labels:
+            with self.subTest(label=label):
+                self.assertIn(label, text)
+        self.assertNotIn("Envoyer automatiquement", text)
+        self.assertNotIn("email automatique", text.lower())
+        self.assertNoPrivateRegistreLeak(text)
+
+
+class UiRegistreActionsTemplateCompatibilityTests(unittest.TestCase):
+    def test_actions_template_contains_decision_action_proof_register(self) -> None:
+        template_path = (
+            Path(__file__).resolve().parents[1]
+            / "src"
+            / "coproscope"
+            / "web"
+            / "templates"
+            / "actions.html"
+        )
+        html = template_path.read_text(encoding="utf-8")
+
+        self.assertIn("Registre decisions - actions - preuves", html)
+        self.assertIn("Suivi des decisions et relances", html)
+        self.assertIn("Files de suivi", html)
+        self.assertIn("Relances preuves", html)
+        self.assertIn("Preuves attendues", html)
+        self.assertIn("Relances responsables", html)
+        self.assertIn("Registre de travail", html)
+        self.assertIn("Historique / conflit", html)
+        self.assertIn("Conflit / arbitrage", html)
+        self.assertIn("{{ action.title }}", html)
+        self.assertIn("{{ action.next_step }}", html)
+        self.assertIn("{{ action.evidence }}", html)
+        self.assertIn("{{ action.owner }}", html)
+        self.assertIn("{{ action.detail }}", html)
+        self.assertIn("/exports/actions.csv{{ action_query_suffix }}", html)
+        self.assertIn("/exports/actions.md{{ action_query_suffix }}", html)
+
+
+if __name__ == "__main__":
+    unittest.main()

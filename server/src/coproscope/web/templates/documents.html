@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">DocOps, SyndicOps, AGOps</p>
+    <h2>Documents, preuves et demandes</h2>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.documents.documents.count }}</strong><span>documents</span></div>
+    <div><strong>{{ model.documents.requests.count }}</strong><span>demandes syndic</span></div>
+    <div><strong>{{ model.documents.ag.count }}</strong><span>lignes AG</span></div>
+    <div><strong>{{ model.documents.findings.count }}</strong><span>constats</span></div>
+  </div>
+</section>
+
+<section class="band">
+  <div>
+    <p class="eyebrow">DocOps actionnable</p>
+    <h3>Ce qu'on a, ce qui manque, ce qu'il faut demander</h3>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ model.documents.actionable.summary.present }}</strong><span>presents</span></div>
+    <div><strong>{{ model.documents.actionable.summary.missing }}</strong><span>manquants</span></div>
+    <div><strong>{{ model.documents.actionable.summary.obsolete }}</strong><span>obsoletes</span></div>
+    <div><strong>{{ model.documents.actionable.summary.to_request }}</strong><span>a demander</span></div>
+  </div>
+  <div class="button-row compact">
+    <a class="button-link secondary" href="/pieces{{ ui_token_query }}">Atelier pieces</a>
+  </div>
+</section>
+
+<section class="band">
+  <div>
+    <p class="eyebrow">Atelier documentaire</p>
+    <h3>Pieces recentes consultables</h3>
+  </div>
+  <div class="button-row compact">
+    <a class="button-link secondary" href="/pieces{{ ui_token_query }}">Atelier pieces</a>
+    <a class="button-link secondary" href="/depot{{ ui_token_query }}">Ajouter une piece</a>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Ouvrir une fiche document</h3>
+    <span>{{ model.documents.documents.rows[:12]|length }}</span>
+  </div>
+  <table>
+    <thead><tr><th>Document</th><th>Type</th><th>Confidentialite</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for row in model.documents.documents.rows[:12] %}
+      <tr>
+        <td>{{ row.file_name or row.doc_id }}<br><small>{{ row.doc_id }}</small></td>
+        <td>{{ row.document_type or row.extension }}</td>
+        <td>{{ row.derivative_max_college or row.raw_max_college or row.sensitivity }}</td>
+        <td><a class="button-link secondary" href="/documents/{{ row.doc_id }}{{ ui_token_query }}">Ouvrir</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">Aucun document charge.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Typologie documentaire</h3>
+      <span>{{ model.documents.document_types|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Type</th><th>Nombre</th></tr></thead>
+      <tbody>
+      {% for label, count in model.documents.document_types.items() %}
+        <tr><td>{{ label }}</td><td>{{ count }}</td></tr>
+      {% else %}
+        <tr><td colspan="2">Registre documentaire absent ou vide.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Pieces a demander</h3>
+      <span>{{ model.documents.actionable.to_request|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Priorite</th><th>Piece</th><th>Diligence</th></tr></thead>
+      <tbody>
+      {% for row in model.documents.actionable.to_request[:12] %}
+        <tr>
+          <td>{{ row.priority or row.criticality }}</td>
+          <td>{{ row.expected_piece or row.expected_label or row.subject }}<br><small>{{ row.reason }}</small></td>
+          <td>{{ row.suggested_diligence or row.action }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucune piece documentaire a demander dans les sorties disponibles.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="button-row">
+      <a class="button-link secondary" href="/actions?scope=documents">Voir les actions documents</a>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Pieces obsoletes ou a classer</h3>
+      <span>{{ model.documents.actionable.summary.obsolete + model.documents.actionable.summary.to_classify }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Statut</th><th>Piece attendue</th><th>Preuve locale</th></tr></thead>
+      <tbody>
+      {% for row in (model.documents.actionable.obsolete + model.documents.actionable.to_classify)[:12] %}
+        <tr>
+          <td>{{ row.status }}</td>
+          <td>{{ row.expected_label or row.document_type }}</td>
+          <td><code>{{ row.evidence_paths or row.matched_doc_ids }}</code></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucune piece obsolete ou a classer dans la matrice chargee.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Constats documentaires</h3>
+      <span>{{ model.documents.stale_or_missing|length }}</span>
+    </div>
+    <table>
+      <thead><tr><th>Severite</th><th>Fait</th><th>Diligence</th></tr></thead>
+      <tbody>
+      {% for row in model.documents.stale_or_missing[:12] %}
+        <tr>
+          <td>{{ row.severity }}</td>
+          <td>{{ row.fact }}</td>
+          <td>{{ row.diligence }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Aucun constat documentaire prioritaire charge.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Artefacts</h3>
+      <span>{{ model.documents.artifacts|length }}</span>
+    </div>
+    <div class="artifact-list">
+      {% for artifact in model.documents.artifacts %}
+      <div class="artifact">
+        <strong>{{ artifact.label }}</strong>
+        <span>{{ artifact.state }}{% if artifact.count %} - {{ artifact.count }} lignes{% endif %}</span>
+        <code>{{ artifact.path }}</code>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Rapport de completude</h3>
+      <span>{{ "pret" if model.documents.missing_report.exists else "absent" }}</span>
+    </div>
+    {% if model.documents.missing_report.exists %}
+    <pre class="report">{{ model.documents.missing_report.text }}</pre>
+    {% else %}
+    <div class="empty">Le rapport de completude n'est pas encore genere pour cette instance.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,465 @@
+                    "invoice_count": 2,
+                    "expense_statement_line_count": 2,
+                    "expense_match_counts": {"MATCH_AMOUNT_ALIAS": 1},
+                    "generated_at": "2026-05-21T08:00:00+00:00",
+                }
+            ),
+            encoding="utf-8",
+        )
+        write_csv(
+            accounting_dir / "expense_statement_lines_2025.csv",
+            EXPENSE_STATEMENT_FIELDS,
+            [
+                {
+                    "statement_line_id": "DEP-JARDIN",
+                    "date": "2025-01-15",
+                    "account": "615000",
+                    "account_label": "Entretien",
+                    "reference": "GL-JARDIN",
+                    "supplier_hint": "JARDINS EXEMPLE",
+                    "label": "Entretien espaces verts",
+                    "amount": "960.00",
+                    "source": "etat_depenses",
+                },
+                {
+                    "statement_line_id": "DEP-EAU",
+                    "date": "2025-04-01",
+                    "account": "606100",
+                    "account_label": "Eau",
+                    "reference": "GL-EAU",
+                    "supplier_hint": "EAUX EXEMPLE",
+                    "label": "Consommation eau",
+                    "amount": "420.00",
+                    "source": "etat_depenses",
+                },
+            ],
+        )
+        write_csv(
+            accounting_dir / "invoice_evidence_2025.csv",
+            ["doc_id", "fournisseur", "numero_facture", "ttc"],
+            [
+                {"doc_id": "DOC-JARDIN", "fournisseur": "JARDINS EXEMPLE", "numero_facture": "J-2025-01", "ttc": "960.00"},
+                {"doc_id": "DOC-EAU", "fournisseur": "EAUX EXEMPLE", "numero_facture": "E-2025-04", "ttc": "420.00"},
+            ],
+        )
+        write_csv(accounting_dir / "invoice_anomalies_2025.csv", ["doc_id", "severity", "anomaly"], [])
+        write_csv(accounting_dir / "accounting_controls_2025.csv", ACCOUNTING_CONTROL_FIELDS, [])
+        write_csv(
+            accounting_dir / "controles_p1_2025.csv",
+            ACCOUNTING_CONTROL_FIELDS,
+            [
+                {
+                    "control_id": "CTRL-DECISION",
+                    "exercice": "2025",
+                    "severity": "P1",
+                    "control": "DECISION_DEPENSE_A_JUSTIFIER",
+                    "status": "A_TRAITER",
+                    "doc_id": "DOC-CTRL",
+                    "evidence": "Decision ou bon de commande attendu",
+                    "action": "Demander la decision AG ou le bon de commande.",
+                }
+            ],
+        )
+        write_csv(
+            accounting_dir / "non_rapproches_prioritaires_2025.csv",
+            NON_MATCH_PRIORITY_FIELDS,
+            [
+                {
+                    "doc_id": "DOC-EAU",
+                    "fournisseur": "EAUX EXEMPLE",
+                    "numero_facture": "E-2025-04",
+                    "ttc": "420.00",
+                    "match_status": "REFERENCE_AMIGUE",
+                    "match_priority": "P2",
+                    "status_label": "Rapprochement a confirmer",
+                    "match_reason": "Deux lignes de depense candidates.",
+                    "next_action": "Confirmer la bonne ligne de depense avec le syndic.",
+                }
+            ],
+        )
+        write_csv(
+            accounting_dir / "invoice_expense_matches_2025.csv",
+            INVOICE_EXPENSE_MATCH_FIELDS,
+            [
+                {
+                    "doc_id": "DOC-JARDIN",
+                    "numero_facture": "J-2025-01",
+                    "fournisseur": "JARDINS EXEMPLE",
+                    "ttc": "960.00",
+                    "match_status": "MATCH_AMOUNT_ALIAS",
+                    "match_confidence": "PROBABLE_FORT",
+                    "match_priority": "OK",
+                    "status_label": "Montant exact + alias fournisseur",
+                    "statement_line_id": "DEP-JARDIN",
+                    "statement_reference": "GL-JARDIN",
+                    "statement_label": "Entretien espaces verts",
+                    "statement_amount": "960.00",
+                    "candidate_count": "1",
+                    "match_method": "amount_supplier_alias",
+                    "match_reason": "Montant TTC exact et alias reconnu.",
+                    "next_action": "Conserver le rattachement.",
+                }
+            ],
+        )
+
+        model = _load_dashboard_model()(self.instance, 2025)
+        comptes = model["ux"]["comptes"]  # type: ignore[index]
+        summary = comptes["summary"]  # type: ignore[index]
+
+        self.assertEqual(model["accounting"]["before_ag"], {"blocking": 1, "to_confirm": 1, "ok": 1})
+        self.assertEqual(model["accounting"]["summary"]["total_charges_label"], "1 380,00 EUR")
+        self.assertEqual(summary["total_charges_label"], "1 380,00 EUR")
+        self.assertEqual(summary["analyzed_posts_count"], 3)
+        self.assertEqual(summary["invoice_total_count"], 2)
+        self.assertEqual(summary["invoice_matched_count"], 1)
+        self.assertEqual(summary["p1_count"], 1)
+        self.assertEqual(summary["p2_count"], 1)
+        self.assertEqual(summary["missing_pieces_count"], 1)
+        self.assertEqual(summary["questions_count"], 2)
+
+        statuses = {category["category_id"]: category["status"] for category in comptes["categories"]}  # type: ignore[index]
+        self.assertEqual(statuses["controles_prioritaires"], "p1")
+        self.assertEqual(statuses["energie_fluides"], "p2")
+        self.assertEqual(statuses["entretien_maintenance"], "ok")
+        self.assertEqual(comptes["selected"]["category_id"], "controles_prioritaires")  # type: ignore[index]
+        self.assertTrue(comptes["questions_syndic"])  # type: ignore[index]
+        self.assertNoBarePriorityLabels(comptes)
+        self.assertNoPrivateComptesLeak(comptes)
+        self.assertNoForbiddenUxTokens(comptes)
+
+    def test_model_ux_comptes_turns_invoice_anomalies_into_safe_alerts_and_questions(self) -> None:
+        accounting_dir = self._fresh_accounting_dir()
+        (accounting_dir / "summary_2025.json").write_text(
+            json.dumps({"invoice_count": 1, "invoice_anomaly_count": 1}),
+            encoding="utf-8",
+        )
+        write_csv(
+            accounting_dir / "expense_statement_lines_2025.csv",
+            EXPENSE_STATEMENT_FIELDS,
+            [
+                {
+                    "statement_line_id": "DEP-ENERGIE",
+                    "date": "2025-02-01",
+                    "account": "606100",
+                    "account_label": "Eau",
+                    "reference": "GL-ENERGIE",
+                    "supplier_hint": "FOURNISSEUR LOCAL",
+                    "label": "Fluides a verifier",
+                    "amount": "120.00",
+                    "source": "etat_depenses",
+                }
+            ],
+        )
+        write_csv(
+            accounting_dir / "invoice_evidence_2025.csv",
+            ["doc_id", "fournisseur", "numero_facture", "ttc"],
+            [{"doc_id": "DOC-ANOM", "fournisseur": "FOURNISSEUR LOCAL", "numero_facture": "A-2025", "ttc": "120.00"}],
+        )
+        write_csv(
+            accounting_dir / "invoice_anomalies_2025.csv",
+            ["anomaly_id", "exercice", "severity", "status", "doc_id", "fournisseur", "numero_facture", "ttc", "anomaly", "evidence_level", "extraction_method", "evidence", "action"],
+            [
+                {
+                    "anomaly_id": "ANOM-001",
+                    "exercice": "2025",
+                    "severity": "P1",
+                    "status": "A_TRAITER",
+                    "doc_id": "DOC-ANOM",
+                    "fournisseur": "FOURNISSEUR LOCAL",
+                    "numero_facture": "A-2025",
+                    "ttc": "120.00",
+                    "anomaly": "raw/secret.pdf mentionne un justificatif incomplet.",
+                    "evidence_level": "L1",
+                    "extraction_method": "local_text",
+                    "evidence": "file:///Users/ExampleUser/CoproScope/restricted/preuve.pdf",
+                    "action": "Demander une copie diffusable au syndic.",
+                }
+            ],
+        )
+        write_csv(accounting_dir / "accounting_controls_2025.csv", ACCOUNTING_CONTROL_FIELDS, [])
+        write_csv(accounting_dir / "controles_p1_2025.csv", ACCOUNTING_CONTROL_FIELDS, [])
+        write_csv(accounting_dir / "non_rapproches_prioritaires_2025.csv", NON_MATCH_PRIORITY_FIELDS, [])
+        write_csv(accounting_dir / "invoice_expense_matches_2025.csv", INVOICE_EXPENSE_MATCH_FIELDS, [])
+
+        model = _load_dashboard_model()(self.instance, 2025)
+        comptes = model["ux"]["comptes"]  # type: ignore[index]
+        summary = comptes["summary"]  # type: ignore[index]
+
+        self.assertEqual(model["accounting"]["before_ag"]["blocking"], 1)
+        self.assertEqual(model["accounting"]["guide"]["p1"][0]["status"], "A traiter")
+        self.assertNoPrivateComptesLeak(model["accounting"]["syndic_questions"])
+        self.assertNoPrivateComptesLeak(model["accounting"]["guide"])
+        self.assertEqual(summary["p1_count"], 1)
+        self.assertEqual(summary["questions_count"], 1)
+        self.assertEqual(summary["missing_pieces_count"], 1)
+        self.assertTrue(comptes["selected"]["alerts"])  # type: ignore[index]
+        self.assertTrue(comptes["selected"]["questions"])  # type: ignore[index]
+        self.assertNoBarePriorityLabels(comptes)
+        self.assertNoPrivateComptesLeak(comptes)
+        self.assertNoForbiddenUxTokens(comptes)
+
+    def test_comptes_page_renders_guided_p1_p2_ok_workflow(self) -> None:
+        self._seed_accounting_guide_outputs()
+
+        try:
+            create_app, _ = _load_ui_objects()
+            from fastapi.testclient import TestClient  # type: ignore
+        except ImportError:
+            self.skipTest("FastAPI/Jinja UI test dependencies unavailable")
+
+        client = TestClient(create_app(self.instance, 2025))
+        response = client.get("/comptes")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("P1 a traiter", text)
+        self.assertIn("P2 a confirmer", text)
+        self.assertIn("OK avec preuve rattachee", text)
+        self.assertIn("Prochain geste humain", text)
+        self.assertIn("Questions syndic", text)
+        self.assertIn("Preuves et blocages", text)
+        self.assertIn("Facture travaux sans decision rattachee", text)
+        self.assertIn("EAUX EXEMPLE - E-2025-04", text)
+        self.assertIn("JARDINS EXEMPLE - J-2025-01", text)
+        self.assertIn("DOC-JARDIN / GL-512", text)
+        self.assertIn("Confirmer la bonne ligne de depense avec le syndic.", text)
+
+    def test_comptes_page_stays_readable_without_accounting_outputs(self) -> None:
+        shutil.rmtree(self.instance.artifact("accounting_dir"), ignore_errors=True)
+
+        try:
+            create_app, _ = _load_ui_objects()
+            from fastapi.testclient import TestClient  # type: ignore
+        except ImportError:
+            self.skipTest("FastAPI/Jinja UI test dependencies unavailable")
+
+        client = TestClient(create_app(self.instance, 2025))
+        response = client.get("/comptes")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Generer ou importer les sorties ComptaScope", text)
+        self.assertIn("Aucun P1 visible dans les sorties disponibles.", text)
+        self.assertIn("Aucun P2 a confirmer dans les sorties disponibles.", text)
+        self.assertIn("Aucun rapprochement OK charge pour l'instant.", text)
+
+    def test_comptes_route_is_token_gated_and_keeps_current_novice_labels(self) -> None:
+        self._seed_accounting_guide_outputs()
+        client = self._client(access_token="local-secret")
+
+        blocked = client.get("/comptes")
+        self.assertEqual(blocked.status_code, 403)
+        self.assertIn("Jeton local requis.", blocked.text)
+
+        response = client.get("/comptes?token=local-secret")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        for label in CURRENT_COMPTES_ROUTE_LABELS:
+            with self.subTest(label=label):
+                self.assertIn(label, text)
+        self.assertIn("A traiter avant AG", text)
+        self.assertIn("A confirmer: rapprochement plausible", text)
+        self.assertNotIn("P1 Prioritaire", text)
+        self.assertNotIn("P2 Prioritaire", text)
+        self.assertNotIn("email automatique", text.lower())
+        self.assertNoPrivateComptesLeak(text)
+        for index, href in enumerate(_html_hrefs(text)):
+            with self.subTest(href=href):
+                self.assertLocalHref(href, f"html.href[{index}]")
+                self.assertProtectedHrefKeepsToken(href, f"html.href[{index}]", "local-secret")
+
+    def test_comptes_counters_keep_token_and_open_useful_screens(self) -> None:
+        self._seed_accounting_guide_outputs()
+        token = "local-secret"
+        response = self._client(access_token=token).get(_with_token("/comptes", token))
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNoPrivateComptesLeak(text)
+        for target_path, useful_label in COMPTES_COUNTER_TARGETS:
+            with self.subTest(target=target_path):
+                href = _find_href_for_path(text, target_path)
+                self.assertIn(f"token={token}", href)
+
+                follow_up = self._client(access_token=token).get(href)
+                self.assertEqual(follow_up.status_code, 200, href)
+                self.assertIn(useful_label, unescape(follow_up.text))
+
+    def test_cycle3_comptes_route_layout_labels_when_delivered(self) -> None:
+        self._seed_accounting_guide_outputs()
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/comptes?token=local-secret&tab=questions&status=p1")
+        text = unescape(response.text)
+        self.assertEqual(response.status_code, 200)
+
+        missing_labels = [label for label in CYCLE3_COMPTES_ROUTE_LABELS if label not in text]
+        if missing_labels:
+            self.skipTest(
+                "Cycle 3 front /comptes layout is not delivered yet; "
+                f"missing target labels: {missing_labels}"
+            )
+        for label in CYCLE3_COMPTES_ROUTE_LABELS:
+            with self.subTest(label=label):
+                self.assertIn(label, text)
+        self.assertNotIn("P1 Prioritaire", text)
+        self.assertNotIn("P2 Prioritaire", text)
+        self.assertNotIn("Envoyer automatiquement", text)
+        self.assertNoPrivateComptesLeak(text)
+
+    def test_cycle3_model_ux_comptes_contract_when_delivered(self) -> None:
+        self._seed_accounting_guide_outputs()
+        comptes = self._cycle3_comptes_or_skip()
+
+        for field in CYCLE3_CONTEXT_FIELDS:
+            with self.subTest(context_field=field):
+                self.assertIn(field, comptes["context"])
+
+        summary = comptes["summary"]
+        self.assertIsInstance(summary, dict)
+        for name in CYCLE3_SUMMARY_COUNTERS:
+            with self.subTest(summary_counter=name):
+                self._assert_counter_with_href(summary, name)
+        for field in CYCLE3_SUMMARY_LABELS:
+            with self.subTest(summary_label=field):
+                self.assertIn(field, summary)
+
+        for facet in CYCLE3_FACETS:
+            with self.subTest(facet=facet):
+                self.assertIn(facet, comptes["facets"])
+        for field in CYCLE3_FILTER_FIELDS:
+            with self.subTest(filter_field=field):
+                self.assertIn(field, comptes["filters"])
+
+        categories = comptes["categories"]
+        self.assertIsInstance(categories, list)
+        for category in categories:
+            with self.subTest(category=category.get("category_id")):
+                for field in CYCLE3_CATEGORY_FIELDS:
+                    self.assertIn(field, category)
+                self.assertLocalHref(category["href"], f"categories.{category.get('category_id')}.href")
+                self.assertIn(category["status"], {"ok", "p2", "p1", "missing", "unknown"})
+
+        selected = comptes["selected"]
+        self.assertIsInstance(selected, dict)
+        for field in CYCLE3_SELECTED_FIELDS:
+            with self.subTest(selected_field=field):
+                self.assertIn(field, selected)
+        self.assertIsInstance(selected["alerts"], list)
+        self.assertIsInstance(selected["pieces"], list)
+        self.assertIsInstance(selected["questions"], list)
+
+        for alert in selected["alerts"]:
+            for field in CYCLE3_ALERT_FIELDS:
+                self.assertIn(field, alert)
+            self.assertNotRegex(str(alert["priority_label"]).strip(), r"^(?:P1|P2)$")
+            self.assertTrue(alert["expected_proof"])
+            self.assertTrue(alert["next_action_label"])
+            self.assertLocalHref(alert["href"], f"alerts.{alert.get('alert_id')}.href")
+
+        for piece in selected["pieces"]:
+            for field in CYCLE3_PIECE_FIELDS:
+                self.assertIn(field, piece)
+            self.assertLocalHref(piece["href"], f"pieces.{piece.get('piece_id')}.href")
+
+        for question in selected["questions"]:
+            for field in CYCLE3_QUESTION_FIELDS:
+                self.assertIn(field, question)
+            self.assertNotRegex(str(question["priority_label"]).strip(), r"^(?:P1|P2)$")
+            self.assertTrue(question["copy_text"])
+            self.assertTrue(question["expected_proof"])
+            self.assertLocalHref(question["href"], f"questions.{question.get('question_id')}.href")
+
+        ag_report = comptes["ag_report"]
+        self.assertIsInstance(ag_report, dict)
+        for field in CYCLE3_AG_REPORT_FIELDS:
+            with self.subTest(ag_report_field=field):
+                self.assertIn(field, ag_report)
+        self.assertLocalHref(ag_report["export_href"], "ag_report.export_href")
+        self.assertLocalHref(ag_report["edit_href"], "ag_report.edit_href")
+
+        self.assertNoBarePriorityLabels(comptes)
+        self.assertNoPrivateComptesLeak(comptes)
+        self.assertNoForbiddenUxTokens(comptes)
+        for path, href in _hrefs(comptes):
+            with self.subTest(href_path=path):
+                self.assertLocalHref(href, path)
+
+    def test_cycle3_model_ux_comptes_masks_private_paths_when_delivered(self) -> None:
+        accounting_dir = self._accounting_dir()
+        (accounting_dir / "summary_2025.json").write_text(
+            json.dumps({"invoice_count": 2, "control_count": 1}),
+            encoding="utf-8",
+        )
+        write_csv(
+            accounting_dir / "invoice_evidence_2025.csv",
+            ["doc_id", "fournisseur", "numero_facture", "ttc"],
+            [
+                {
+                    "doc_id": "DOC-PRIVATE",
+                    "fournisseur": r"C:\Users\ExampleUser\CoproScope\restricted\fournisseur.txt",
+                    "numero_facture": "F-PRIVATE",
+                    "ttc": "120.00",
+                }
+            ],
+        )
+        write_csv(
+            accounting_dir / "invoice_anomalies_2025.csv",
+            ["doc_id", "severity", "anomaly"],
+            [
+                {
+                    "doc_id": "DOC-PRIVATE",
+                    "severity": "P1",
+                    "anomaly": "raw/secret.pdf mentionne dans une anomalie importee.",
+                }
+            ],
+        )
+        write_csv(accounting_dir / "accounting_controls_2025.csv", ACCOUNTING_CONTROL_FIELDS, [])
+        write_csv(
+            accounting_dir / "controles_p1_2025.csv",
+            ACCOUNTING_CONTROL_FIELDS,
+            [
+                {
+                    "control_id": "CTRL-PRIVATE",
+                    "exercice": "2025",
+                    "severity": "P1",
+                    "control": "CHEMIN_PRIVE_A_MASQUER",
+                    "status": "A_TRAITER",
+                    "doc_id": r"C:\Users\ExampleUser\CoproScope\raw\facture.pdf",
+                    "evidence": "file:///Users/ExampleUser/CoproScope/restricted/preuve.pdf",
+                    "action": "Verifier sans exposer logs/audit.log ni chemin absolu.",
+                }
+            ],
+        )
+        write_csv(
+            accounting_dir / "non_rapproches_prioritaires_2025.csv",
+            NON_MATCH_PRIORITY_FIELDS,
+            [
+                {
+                    "doc_id": "DOC-NONMATCH",
+                    "fournisseur": "Fournisseur local",
+                    "numero_facture": "NR-2025",
+                    "ttc": "220.00",
+                    "match_status": "NON_RAPPROCHE",
+                    "match_priority": "P2",
+                    "status_label": "Rapprochement a confirmer",
+                    "match_reason": r"C:\Users\ExampleUser\CoproScope\logs\match.log",
+                    "next_action": "Demander une reference diffusable au syndic.",
+                }
+            ],
+        )
+        write_csv(accounting_dir / "invoice_expense_matches_2025.csv", INVOICE_EXPENSE_MATCH_FIELDS, [])
+
+        comptes = self._cycle3_comptes_or_skip()
+
+        self.assertNoBarePriorityLabels(comptes)
+        self.assertNoPrivateComptesLeak(comptes)
+        self.assertNoForbiddenUxTokens(comptes)
+        for path, href in _hrefs(comptes):
+            with self.subTest(href_path=path):
+                self.assertLocalHref(href, path)
+
+
+if __name__ == "__main__":
+    unittest.main()

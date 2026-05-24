@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block topbar_title %}Relancer le syndic{% endblock %}
+{% block content %}
+<section class="cs-relance-hero" aria-labelledby="relance-title">
+  <div>
+    <p class="eyebrow">Relance syndic</p>
+    <h2 id="relance-title">{{ relance.context.title }}</h2>
+    <p>{{ relance.context.subtitle }}</p>
+    <div class="cs-relance-tags" aria-label="Contexte local">
+      <span>{{ relance.context.role_label }}</span>
+      <span>{{ relance.context.demo_label }}</span>
+      <span>{{ relance.summary.delivery_status }}</span>
+      <span>{{ relance.summary.selected_status }}</span>
+    </div>
+    {% if not relance.empty_state.is_visible %}
+    <dl class="cs-relance-quick" aria-label="Contexte piece et preuve">
+      <div>
+        <dt>Piece concernee</dt>
+        <dd>{{ relance.selected.subject }}</dd>
+      </div>
+      <div>
+        <dt>Preuve attendue</dt>
+        <dd>{{ relance.draft.proof_expected }}</dd>
+      </div>
+      <div>
+        <dt>A qui demander / qui doit l'avoir</dt>
+        <dd>{{ relance.draft.recipient }}</dd>
+      </div>
+      <div>
+        <dt>Pourquoi</dt>
+        <dd>{{ relance.selected.summary }}</dd>
+      </div>
+      <div>
+        <dt>Action suivante</dt>
+        <dd>{{ relance.selected.next_action_label }}</dd>
+      </div>
+      <div>
+        <dt>Prudence diffusion</dt>
+        <dd>{{ relance.selected.diffusion_warning or relance.selected.visibility_label }}</dd>
+      </div>
+    </dl>
+    {% endif %}
+  </div>
+  <div class="cs-relance-actions">
+    {% if not relance.empty_state.is_visible %}
+    <a class="cs-reprise-primary" aria-label="Rattacher la reponse du syndic au depot local" href="{{ token_href(relance.actions.depot_href) }}">Rattacher la reponse du syndic</a>
+    {% endif %}
+    {% if relance.actions.piece_href %}
+    <a class="cs-reprise-secondary" href="{{ token_href(relance.actions.piece_href) }}">Retour detail piece/preuve</a>
+    {% else %}
+    <a class="cs-reprise-secondary" href="{{ token_href('/actions') }}">Retour a traiter</a>
+    {% endif %}
+    <a class="cs-reprise-secondary" href="{{ token_href('/demandes') }}">Voir la demande d'origine</a>
+  </div>
+</section>
+
+{% if relance.summary.sent %}
+<section class="band notice-band">
+  <strong>{{ relance.summary.sent_label }}</strong>
+  <span>Le message n'est pas envoye par CoproScope: l'envoi reel reste externe.</span>
+  {% if relance.summary.sent_details %}
+  <span>{{ relance.summary.sent_details }}</span>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if relance.empty_state.is_visible %}
+<section class="band">
+  <h3>{{ relance.empty_state.title }}</h3>
+  <p class="lead">{{ relance.empty_state.body }}</p>
+  <div class="cs-relance-actions">
+    <a class="cs-reprise-primary" href="{{ token_href('/demandes#nouvelle-demande') }}">Noter l'envoi fait hors CoproScope</a>
+    <a class="cs-reprise-secondary" href="{{ token_href('/demandes#nouvelle-demande') }}">Choisir ou creer une demande</a>
+    <a class="cs-reprise-secondary" aria-label="Rattacher la reponse du syndic au depot local" href="{{ token_href(relance.actions.depot_href) }}">Rattacher la reponse du syndic</a>
+    <a class="cs-reprise-secondary" href="{{ token_href('/demandes') }}">Ouvrir les demandes</a>
+  </div>
+  <p class="hint">Selectionnez ou creez d'abord une demande: CoproScope ne note aucun envoi reel et garde seulement une trace locale rattachee.</p>
+</section>
+{% else %}
+<section class="cs-relance-grid">
+  {% for card in relance.cards %}
+  <article class="cs-relance-card">
+    <span>{{ loop.index }}</span>
+        <h3>{{ 'Diffusion : verifier avant de joindre une piece' if card.title == 'Ne pas joindre sans verifier' else card.title }}</h3>
+    <p>{{ card.body }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="cs-relance-layout">
+  <article class="cs-relance-draft" aria-labelledby="relance-draft-title">
+    <div class="cs-relance-section-head">
+      <div>
+        <p class="eyebrow">Brouillon a copier, non envoye</p>
+        <h3 id="relance-draft-title">{{ relance.draft.subject }}</h3>
+      </div>
+      <span>{{ relance.draft.deadline }}</span>
+    </div>
+    <dl class="cs-relance-kv">
+      <div>
+        <dt>Piece concernee</dt>
+        <dd>{{ relance.selected.subject }}</dd>
+      </div>
+      <div>
+        <dt>A qui demander / qui doit l'avoir</dt>
+        <dd>{{ relance.draft.recipient }}</dd>
+      </div>
+      <div>
+        <dt>Preuve attendue</dt>
+        <dd>{{ relance.draft.proof_expected }}</dd>
+      </div>
+    </dl>
+    <label class="cs-relance-message">
+      <span>Message a copier</span>
+      <textarea readonly rows="11">{{ relance.draft.body }}</textarea>
+    </label>
+    {% if relance.draft.can_mark_sent %}
+    <form class="cs-relance-confirm-form" method="post" action="/demandes/relance{{ ui_token_query }}" aria-labelledby="relance-confirm-title">
+      <div class="cs-relance-confirm-head">
+        <strong id="relance-confirm-title">Noter un envoi fait hors CoproScope</strong>
+        <span>CoproScope garde seulement une trace locale; l'envoi reel reste externe.</span>
+      </div>
+      <div class="cs-relance-confirm-grid">
+        <label>Date d'envoi <input class="input" type="date" name="sent_date" required></label>
+        <label>Canal <select class="select" name="sent_channel" required><option value="email">Email</option><option value="portail syndic">Portail syndic</option><option value="courrier">Courrier</option><option value="reunion">Reunion / oral</option></select></label>
+        <label>A qui demander / qui doit l'avoir <input class="input" name="sent_recipient" required value="{{ relance.draft.recipient }}"></label>
+        <label>Copie ou preuve d'envoi <input class="input" name="sent_note" placeholder="Ex. brouillon copie dans l'email du CS"></label>
+      </div>
+      <div class="cs-relance-actions">
+        <input type="hidden" name="request_id" value="{{ relance.draft.request_id }}">
+        <input type="hidden" name="message" value="{{ relance.draft.body }}">
+        <button class="cs-reprise-primary" type="submit">Noter l'envoi fait hors CoproScope <span class="sr-only">Valider la relance</span></button>
+        <button class="cs-reprise-secondary" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(this.closest('.cs-relance-draft').querySelector('textarea').value)">Copier le message</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="empty">
+      <strong>Noter l'envoi hors CoproScope indisponible</strong>
+      <span>Indisponible tant qu'une demande syndic n'est pas rattachee. Le brouillon reste copiable et la reponse recue pourra etre rattachee au depot comme piece candidate.</span>
+    </div>
+    <div class="cs-relance-actions">
+      <button class="cs-reprise-secondary" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(this.closest('.cs-relance-draft').querySelector('textarea').value)">Copier le message</button>
+    </div>
+    {% endif %}
+    <p class="cs-relance-note">Valider signifie noter une relance faite hors CoproScope dans le journal local; cela n'envoie aucun message reel.</p>
+  </article>
+
+  <aside class="cs-relance-side" aria-labelledby="relance-links-title">
+    <div class="cs-relance-section-head">
+      <div>
+        <p class="eyebrow">Pieces et suite</p>
+        <h3 id="relance-links-title">Verifier avant de copier</h3>
+      </div>
+    </div>
+    <div class="cs-relance-docs">
+      {% for doc in relance.linked_docs %}
+      <a href="{{ token_href(doc.href) }}">
+        <strong>{{ doc.label }}</strong>
+        <span>Ouvrir la piece liee</span>
+      </a>
+      {% else %}
+      <div class="empty">Aucune piece liee visible. Rattacher la reponse depuis le depot local.</div>
+      {% endfor %}
+    </div>
+    <div class="cs-relance-actions vertical">
+      <a class="cs-reprise-primary" href="{{ token_href(relance.actions.depot_href) }}">Rattacher la reponse du syndic</a>
+      <a class="cs-reprise-secondary" href="{{ token_href(relance.actions.pieces_href) }}">Voir les pieces manquantes</a>
+      <a class="cs-reprise-secondary" href="{{ token_href('/actions?scope=syndic&tab=relance') }}">Retour aux brouillons</a>
+    </div>
+  </aside>
+</section>
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>Autres relances possibles</h3>
+    <span>{{ relance.rows|length }}</span>
+  </div>
+  <table>
+    <thead><tr><th>Demande</th><th>Statut</th><th>Suite</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for row in relance.rows[:8] %}
+      <tr>
+        <td><strong>{{ row.subject }}</strong><br><small>{{ row.received_label }}</small></td>
+        <td>{{ row.status_label }}</td>
+        <td>{{ row.next_action_label }}</td>
+        <td><a href="{{ token_href('/demandes/relance?request_id=' ~ row.request_id) }}">Ouvrir</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

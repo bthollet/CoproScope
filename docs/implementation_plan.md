@@ -1,6 +1,12 @@
 # Plan d'implementation CoproScope v1
 
-Ce document ancre le contrat d'execution du produit. La priorisation produit detaillee vit dans la [Feuille de route](./feuille_de_route.md).
+> Statut gouvernail: `SOURCE_HISTORIQUE`.
+> La source de verite roadmap est `docs/roadmap_backlog_central.md`
+> (`RM-2026-0004`). Ne pas ajouter de chantier actif ici.
+
+Ce document ancre le contrat d'execution du produit. La priorisation active vit
+dans le [gouvernail roadmap](./roadmap_backlog_central.md); l'ancienne feuille
+de route reste une source historique.
 
 ## Resume
 
@@ -41,6 +47,10 @@ Ce document ancre le contrat d'execution du produit. La priorisation produit det
 - `coprocs grist sync`
 - `coprocs evidence build`
 - `coprocs workers run`
+- `coprocs ui serve`
+- `coprocs demo build`
+- `coprocs decisions build`
+- `coprocs incidents build`
 - `coprocs strategy export`
 - `coprocs share-audit`
 - `coprocs share-export`
@@ -54,6 +64,10 @@ Alias francais importants :
 - `coprocs factures extraire`
 - `coprocs compta reconstituer`
 - `coprocs compta controles`
+- `coprocs interface servir`
+- `coprocs demonstration construire`
+- `coprocs decisions construire`
+- `coprocs signalements construire`
 
 ## Perimetre v1
 
@@ -67,12 +81,14 @@ Alias francais importants :
 - FactureOps produit les factures candidates et anomalies facture.
 - ComptaScope consomme FactureOps, rapproche les etats de depenses configures et explique chaque echec.
 - AGOps produit un premier registre AG.
+- DecisionOps transforme les resolutions AG en actions suivies avec preuves attendues.
+- IncidentOps structure les signalements et incidents ouverts.
 - Audit360 expose des formes generiques de controle.
 - GristOps/EvidenceOps produisent des sorties locales.
 
 ## Non-objectifs explicites v1
 
-- Pas encore d'application web complete.
+- Pas encore d'application web complete multi-parcours ; une interface locale v0 est autorisee pour rendre visibles les objets metier et les chantiers.
 - Pas de SaaS multi-tenant.
 - Pas de pile RAG obligatoire.
 - Pas de vote electronique complet.
@@ -87,4 +103,19 @@ Alias francais importants :
 - Pas d'ecriture dans les racines brutes.
 - Pas de table comptable exportee sans rapport explicatif.
 - Pas de sortie diffusable sans controle confidentialite.
+- Pas de publication d'une copro seulement pseudonymisee : la demo partageable doit etre fictive ou suffisamment transformee.
 
+## Execution multi-agents
+
+Les prochains sprints peuvent etre executes par plusieurs agents en parallele, mais uniquement avec des worktrees et des perimetres de fichiers explicites.
+
+Document de reference : [Orchestration multi-agents](./orchestration_agents.md).
+
+Regles minimales :
+
+- un agent = une branche `codex/<sprint>-<scope>` = un worktree dedie ;
+- un agent ne modifie que les fichiers dont il a l'ownership ;
+- `viewmodel.py`, `cli.py`, les schemas partages et les README de synthese ont un seul owner a la fois ;
+- les agents UI utilisent des ports differents ;
+- le coordinateur integre les branches une par une et relance la suite de tests ;
+- les instances privees restent hors depot, meme en travail parallele.

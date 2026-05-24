@@ -1,0 +1,265 @@
+    }
+    summary_counter_meta = {
+        "analyzed_posts_count": counter(
+            summary["analyzed_posts_count"],
+            _route_href("/comptes"),
+            "all",
+            "Postes ou factures disponibles dans le controle courant.",
+            "info",
+        ),
+        "invoice_total_count": counter(
+            invoice_total,
+            _route_href("/comptes", tab="pieces"),
+            "pieces",
+            "Factures et pieces comptables chargees pour cet exercice.",
+            "info",
+        ),
+        "invoice_matched_count": counter(
+            invoice_matched,
+            _route_href("/comptes", match_state="matched"),
+            "matched",
+            "Factures reliees a une ligne de depense ou preuve suffisante.",
+            "ok" if invoice_matched else "warn",
+        ),
+        "p1_count": counter(
+            p1_count,
+            _route_href("/comptes", statut="p1"),
+            "p1",
+            "A traiter avant AG avec question ou preuve attendue.",
+            "danger" if p1_count else "ok",
+        ),
+        "p2_count": counter(
+            p2_count,
+            _route_href("/comptes", statut="p2"),
+            "p2",
+            "A confirmer avec le syndic ou une piece.",
+            "warn" if p2_count else "ok",
+        ),
+        "missing_pieces_count": counter(
+            missing_count,
+            _route_href("/comptes", proof_state="missing"),
+            "missing",
+            "Justificatifs a demander ou rattacher.",
+            "warn" if missing_count else "ok",
+        ),
+        "questions_count": counter(
+            len(all_questions),
+            _route_href("/comptes", tab="questions"),
+            "questions",
+            "Questions au syndic preparees comme brouillons a relire.",
+            "warn" if all_questions else "ok",
+        ),
+        "ag_included_count": counter(
+            summary["ag_included_count"],
+            _route_href("/comptes", tab="rapport-ag"),
+            "rapport-ag",
+            "Categories et points ouverts inclus dans la synthese AG.",
+            "warn" if summary["ag_included_count"] else "info",
+        ),
+        "export_blockers_count": counter(
+            blocker_count,
+            _route_href("/comptes", tab="rapport-ag"),
+            "export",
+            "Elements qui bloquent ou limitent un export diffusable.",
+            "danger" if blocker_count else "ok",
+        ),
+    }
+    for name, meta in summary_counter_meta.items():
+        summary[f"{name}_href"] = meta["href"]
+        summary[f"{name}_filter_key"] = meta["filter_key"]
+        summary[f"{name}_help_label"] = meta["help_label"]
+        summary[f"{name}_status_tone"] = meta["status_tone"]
+    summary["counter_meta"] = summary_counter_meta
+    summary["cards"] = [
+        {"id": key, "label": label, **value}
+        for key, label, value in [
+            ("total_charges", "Total depenses (charges)", summary["counters"]["total_charges"]),
+            ("invoice_matched", "Factures rapprochees", summary["counters"]["invoice_matched"]),
+            ("p2", "P2 a confirmer", summary["counters"]["p2"]),
+            ("p1", "P1 a traiter", summary["counters"]["p1"]),
+            ("missing_pieces", "Pieces manquantes", summary["counters"]["missing_pieces"]),
+        ]
+    ]
+    kpis = {
+        "cards": summary["cards"],
+        "total_charges": summary["counters"]["total_charges"],
+        "invoice_matched": summary["counters"]["invoice_matched"],
+        "p2": summary["counters"]["p2"],
+        "p1": summary["counters"]["p1"],
+        "missing_pieces": summary["counters"]["missing_pieces"],
+    }
+
+    facets = {
+        "exercise": [
+            {
+                "value": str(year),
+                "label": f"Exercice {year}",
+                "count": len(categories),
+                "href": _route_href("/comptes", exercice=year),
+                "is_active": True,
+            }
+        ],
+        "category": _comptes_facet_options("category_id", categories, route_field="categorie"),
+        "status": _comptes_facet_options("status", categories, route_field="statut", labels=COMPTES_STATUS_LABELS),
+        "supplier": _comptes_facet_options("supplier_label", all_pieces, route_field="fournisseur"),
+        "proof_state": _comptes_facet_options("proof_state", all_pieces, labels={
+            "missing": "Piece ou preuve a demander",
+            "candidate": "Preuve candidate",
+            "verified": "Preuve rattachee",
+        }),
+        "piece_state": _comptes_facet_options("proof_state", all_pieces, route_field="piece_state", labels={
+            "missing": "Piece manquante",
+            "candidate": "Piece candidate",
+            "verified": "Piece verifiee",
+        }),
+        "alert_type": _comptes_facet_options("type", all_alerts, route_field="alert_type"),
+        "ag_inclusion": _comptes_facet_options("ag_included", categories, route_field="ag", labels={
+            "True": "Incluse AG",
+            "False": "Non incluse AG",
+        }),
+        "match_state": _comptes_facet_options("match_status", all_pieces, route_field="match_state"),
+    }
+    filters = {
+        "selected_exercise": str(year),
+        "selected_category": selected_category_id,
+        "selected_status": "",
+        "selected_supplier": "",
+        "selected_proof_state": "",
+        "selected_piece_state": "",
+        "selected_alert_type": "",
+        "show_solded_lines": True,
+        "query": "",
+        "selected_category_id": selected_category_id,
+        "selected_tab": "detail",
+    }
+    has_accounting_data = bool(invoices or matches or non_matches or controls_p1 or before_ag)
+    empty_states = {
+        "no_accounting": {
+            "is_visible": not has_accounting_data,
+            "label": "Aucun controle comptes charge. Generer ou importer les sorties ComptaScope pour cet exercice.",
+            "href": _route_href("/depot", pipeline="compta"),
+        },
+        "no_exercise": {
+            "is_visible": False,
+            "label": "Aucun exercice comptable disponible. Selectionner ou importer un exercice.",
+            "href": _route_href("/depot"),
+        },
+        "no_category": {
+            "is_visible": not bool(categories),
+            "label": "Aucune categorie de charges exploitable pour cet exercice.",
+            "href": _route_href("/depot", pipeline="compta"),
+        },
+        "no_result": {
+            "is_visible": False,
+            "label": "Aucune categorie ne correspond a ces filtres. Retirer un filtre ou afficher toutes les categories.",
+            "href": _route_href("/comptes"),
+        },
+        "no_amount": {
+            "is_visible": not has_total,
+            "label": "Montant non charge pour ce poste. Le controle reste possible a partir des factures et pieces.",
+            "href": _route_href("/comptes", tab="pieces"),
+        },
+        "no_alert": {
+            "is_visible": not bool(selected.get("alerts")),
+            "label": "Aucune alerte ouverte pour cette categorie. Verifier les preuves OK avant de l'indiquer en AG.",
+            "href": _route_href("/comptes", categorie=selected_category_id),
+        },
+        "no_piece": {
+            "is_visible": not bool(selected.get("pieces")),
+            "label": "Aucune piece rattachee a cette categorie. Importer une facture, une ligne de depense ou demander le justificatif au syndic.",
+            "href": _route_href("/depot", pipeline="compta"),
+        },
+        "no_question": {
+            "is_visible": not bool(selected.get("questions")),
+            "label": "Aucune question preparee. Creer une question depuis une alerte ou une piece manquante.",
+            "href": _route_href("/comptes", categorie=selected_category_id, tab="questions"),
+        },
+        "no_ag_note": {
+            "is_visible": not bool(selected.get("ag_section", {}).get("notes")) if isinstance(selected.get("ag_section"), dict) else True,
+            "label": "Aucune note AG pour cette categorie. Ajouter une note si ce point doit etre explique aux coproprietaires.",
+            "href": _route_href("/comptes", categorie=selected_category_id, tab="rapport-ag"),
+        },
+        "ag_report_empty": {
+            "is_visible": not bool(ag_report.get("included_categories")),
+            "label": "Aucun point inclus dans le rapport AG. Inclure une categorie ou une question ouverte.",
+            "href": _route_href("/comptes", tab="rapport-ag"),
+        },
+        "export_blocked": {
+            "is_visible": blocker_count > 0,
+            "label": "Export non prepare car au moins un element demande une revue de diffusion.",
+            "href": _route_href("/comptes", tab="rapport-ag"),
+        },
+    }
+    export_status = "blocked" if blocker_count else "warning" if all_questions else "ready"
+    detail_view = {
+        "category": selected,
+        "summary": selected.get("controls_summary", {}) if isinstance(selected, dict) else {},
+        "alerts": selected.get("alerts", []) if isinstance(selected, dict) else [],
+        "metrics": {
+            "amount_charges_label": selected.get("amount_charges_label", "Montant non charge"),
+            "invoice_matched_label": selected.get("matched_ratio_label", "A calculer"),
+            "unmatched_invoice_count": selected.get("unmatched_invoice_count", 0),
+            "missing_pieces_count": selected.get("missing_pieces_count", 0),
+            "ecart_label": selected.get("ecart_label", "Aucun ecart calcule"),
+            "last_invoice_label": selected.get("last_invoice_label", "Date non lue"),
+        },
+        "href": _route_href("/comptes", categorie=selected_category_id, tab="detail"),
+    }
+    pieces_view = {
+        "items": selected.get("pieces", []) if isinstance(selected, dict) else [],
+        "all_items": all_pieces,
+        "missing": [piece for piece in all_pieces if piece.get("proof_state") == "missing"],
+        "candidate": [piece for piece in all_pieces if piece.get("proof_state") == "candidate"],
+        "verified": [piece for piece in all_pieces if piece.get("proof_state") == "verified"],
+        "href": _route_href("/comptes", categorie=selected_category_id, tab="pieces"),
+    }
+    questions_view = {
+        "items": selected.get("questions", []) if isinstance(selected, dict) else [],
+        "all_items": all_questions,
+        "draft_count": len([question for question in all_questions if question.get("status") == "draft"]),
+        "include_in_ag_count": len([question for question in all_questions if question.get("include_in_ag_report")]),
+        "href": _route_href("/comptes", categorie=selected_category_id, tab="questions"),
+    }
+    return {
+        "context": {
+            "coffre_label": _public_text(instance.display_name, "Copropriete"),
+            "sharing_mode_label": "Prive local",
+            "sharing_mode_detail": "Aucune synchronisation externe lancee depuis cette page.",
+            "role_label": "Conseil syndical",
+            "exercise_label": f"Exercice {year}",
+            "period_label": f"01/01/{year} - 31/12/{year}",
+            "year": year,
+            "source_label": "Sorties ComptaScope",
+            "last_updated_label": summary["last_control_label"],
+            "token_query": "",
+        },
+        "summary": summary,
+        "kpis": kpis,
+        "facets": facets,
+        "filters": filters,
+        "categories": categories,
+        "selected": selected,
+        "detail": detail_view,
+        "pieces": pieces_view,
+        "questions": questions_view,
+        "rapport_ag": ag_report,
+        "questions_syndic": all_questions,
+        "ag_report": ag_report,
+        "tabs": tabs,
+        "empty_states": empty_states,
+        "export": {
+            "status": export_status,
+            "label": "Exporter le rapport",
+            "href": _route_href("/comptes", export="rapport-ag"),
+            "markdown_href": _route_href("/comptes", export="rapport-ag-md"),
+            "notice": "Relire le perimetre, les questions ouvertes et les niveaux de diffusion avant partage.",
+            "scopes": [
+                {"id": "interne-cs", "label": "Interne CS", "href": _route_href("/comptes", export="interne-cs")},
+                {"id": "rapport-ag", "label": "Rapport AG", "href": _route_href("/comptes", export="rapport-ag")},
+                {"id": "questions-syndic", "label": "Questions syndic", "href": _route_href("/comptes", export="questions-syndic")},
+                {"id": "pieces-a-demander", "label": "Pieces a demander", "href": _route_href("/comptes", export="pieces-a-demander")},
+            ],
+        },
+        "before_ag": before_ag,
+        "guide": accounting.get("guide") if isinstance(accounting.get("guide"), dict) else {},
+    }

@@ -1,0 +1,292 @@
+            ),
+        )
+
+    @app.post("/depot")
+    async def depot_upload(request: FastAPIRequest):
+        _require_token(request)
+        form = await request.form()
+        uploads = [value for key, value in form.multi_items() if key in {"files", "file"}]
+        depot_context = _safe_deposit_context(form.multi_items())
+        try:
+            manifest = create_deposit_from_uploads(instance, uploads, context=depot_context)
+        except DepositError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        run_light_pipeline(instance, manifest)
+        _invalidate_dashboard_model_cache()
+        return RedirectResponse(
+            url=_url_with_token(request, f"/depot?depot={manifest['deposit_id']}&status=uploaded"),
+            status_code=303,
+        )
+
+    @app.post("/depot/{deposit_id}/pipeline/{pipeline}")
+    def depot_pipeline(request: FastAPIRequest, deposit_id: str, pipeline: str):
+        _require_token(request)
+        manifest = read_deposit_manifest(instance, deposit_id)
+        if manifest is None:
+            raise HTTPException(status_code=404, detail="Depot introuvable.")
+        if pipeline == "docai":
+            run_docai_pipeline(instance, manifest)
+        elif pipeline == "docops":
+            run_docops_pipeline(instance, manifest)
+        elif pipeline == "compta":
+            run_accounting_pipeline(instance, manifest, year)
+        elif pipeline == "all":
+            run_all_non_heavy_pipeline(instance, manifest, year)
+        else:
+            raise HTTPException(status_code=404, detail="Pipeline inconnu.")
+        _invalidate_dashboard_model_cache()
+        return RedirectResponse(
+            url=_url_with_token(request, f"/depot?depot={deposit_id}&status={pipeline}"),
+            status_code=303,
+        )
+
+    @app.get("/api/model")
+    def api_model(request: FastAPIRequest):
+        _require_token(request)
+        return _dashboard_model()
+
+    @app.get("/exports/actions.csv")
+    def export_actions_csv(request: FastAPIRequest, scope: str = "", priority: str = "", status: str = ""):
+        _require_token(request)
+        _, rows = _filtered_actions(scope=scope, priority=priority, status=status)
+        return Response(
+            content=actions_to_csv(rows),
+            media_type="text/csv; charset=utf-8",
+            headers=_download_headers(f"coproscope_actions_{year}.csv"),
+        )
+
+    @app.get("/exports/actions.md")
+    def export_actions_markdown(request: FastAPIRequest, scope: str = "", priority: str = "", status: str = ""):
+        _require_token(request)
+        _, rows = _filtered_actions(scope=scope, priority=priority, status=status)
+        return Response(
+            content=actions_to_markdown(rows),
+            media_type="text/markdown; charset=utf-8",
+            headers=_download_headers(f"coproscope_actions_{year}.md"),
+        )
+
+    @app.get("/exports/local.zip")
+    def export_local_zip(request: FastAPIRequest):
+        _require_token(request)
+        _, rows = _filtered_actions()
+        payload = build_local_export_zip(
+            instance,
+            year=year,
+            actions_csv=actions_to_csv(rows),
+            actions_markdown=actions_to_markdown(rows),
+        )
+        return Response(
+            content=payload,
+            media_type="application/zip",
+            headers=_download_headers(f"coproscope_pack_local_{year}.zip"),
+        )
+
+    @app.get("/exports/passation/blocages/{blocker_id}", response_class=HTMLResponse)
+    def export_passation_blocker_detail(request: FastAPIRequest, blocker_id: str):
+        _require_token(request)
+        query = _safe_passation_preview_query(request)
+        model = _dashboard_model()
+        ux = model.get("ux") if isinstance(model.get("ux"), dict) else {}
+        preview = ux.get("passation_export_preview") if isinstance(ux.get("passation_export_preview"), dict) else {}
+        if not preview and isinstance(ux.get("passation_export"), dict):
+            preview = ux["passation_export"]
+        preview = dict(preview)
+        scoped_document = _passation_export_document(
+            instance=instance,
+            year=year,
+            scope=query.get("scope", ""),
+            selected=query.get("selected", ""),
+            dashboard_model=model,
+        )
+        preview = enrich_passation_preview_blocker_links(
+            _scoped_passation_preview(preview, scoped_document),
+            query,
+        )
+        detail = build_passation_blocker_detail(preview, blocker_id, query)
+        return templates.TemplateResponse(
+            request=request,
+            name="passation_blocker_detail.html",
+            context=context(
+                request,
+                "workstreams",
+                model=model,
+                passation_export=preview,
+                passation_blocker=detail,
+                passation_preview_query=query,
+            ),
+        )
+
+    @app.get("/exports/passation.json")
+    def export_passation_json(request: FastAPIRequest):
+        from ..modules.passation_exports import render_passation_derived_json
+
+        _require_token(request)
+        query = _safe_passation_preview_query(request)
+        try:
+            payload = render_passation_derived_json(
+                _passation_export_document(
+                    instance,
+                    year,
+                    scope=query.get("scope", ""),
+                    selected=query.get("selected", ""),
+                    dashboard_model=_dashboard_model(),
+                )
+            )
+            _assert_passation_export_route_safe(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Export passation derive refuse.") from exc
+        return Response(
+            content=payload,
+            media_type="application/json; charset=utf-8",
+            headers=_download_headers(f"coproscope_passation_derivee_{year}.json"),
+        )
+
+    @app.get("/exports/passation.txt")
+    def export_passation_text(request: FastAPIRequest):
+        from ..modules.passation_exports import render_passation_derived_markdown
+
+        _require_token(request)
+        query = _safe_passation_preview_query(request)
+        try:
+            payload = render_passation_derived_markdown(
+                _passation_export_document(
+                    instance,
+                    year,
+                    scope=query.get("scope", ""),
+                    selected=query.get("selected", ""),
+                    dashboard_model=_dashboard_model(),
+                )
+            ).replace(
+                "export dÃ©rivÃ©, non source collaborative",
+                PASSATION_EXPORT_WATERMARK,
+            ).replace(
+                "export dérivé, non source collaborative",
+                PASSATION_EXPORT_WATERMARK,
+            )
+            _assert_passation_export_route_safe(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Export passation derive refuse.") from exc
+        return Response(
+            content=payload,
+            media_type="text/plain; charset=utf-8",
+            headers=_download_headers(f"coproscope_passation_derivee_{year}.txt"),
+        )
+
+    @app.get("/exports/passation", response_class=HTMLResponse)
+    def export_passation_preview(request: FastAPIRequest):
+        _require_token(request)
+        query = _safe_passation_preview_query(request)
+
+        def _target(path: str) -> str:
+            target = path
+            if query:
+                target = f"{target}?{urlencode(query)}"
+            return target
+
+        model = _dashboard_model()
+        ux = model.get("ux") if isinstance(model.get("ux"), dict) else {}
+        preview = ux.get("passation_export_preview") if isinstance(ux.get("passation_export_preview"), dict) else {}
+        if not preview and isinstance(ux.get("passation_export"), dict):
+            preview = ux["passation_export"]
+        preview = dict(preview)
+        scoped_document = _passation_export_document(
+            instance=instance,
+            year=year,
+            scope=query.get("scope", ""),
+            selected=query.get("selected", ""),
+            dashboard_model=model,
+        )
+        preview = enrich_passation_preview_blocker_links(
+            _scoped_passation_preview(preview, scoped_document),
+            query,
+        )
+        preview_context = dict(preview.get("context")) if isinstance(preview.get("context"), dict) else {}
+        preview_context["watermark"] = PASSATION_EXPORT_WATERMARK
+        preview_context["source_of_truth"] = False
+        preview["context"] = preview_context
+        preview["watermark"] = PASSATION_EXPORT_WATERMARK
+        formats = []
+        for item in _list_of_dicts(preview.get("formats") or preview.get("formats_available")):
+            row = dict(item)
+            format_id = str(row.get("id") or "").lower()
+            if format_id == "txt":
+                row["href"] = _target("/exports/passation.txt")
+            elif format_id == "json":
+                row["href"] = _target("/exports/passation.json")
+            formats.append(row)
+        preview["formats"] = formats
+        preview["formats_available"] = formats
+        downloads = dict(preview.get("downloads")) if isinstance(preview.get("downloads"), dict) else {}
+        downloads.update(
+            {
+                "preview_href": _target("/exports/passation"),
+                "text_href": _target("/exports/passation.txt"),
+                "json_href": _target("/exports/passation.json"),
+            }
+        )
+        preview["downloads"] = downloads
+        return templates.TemplateResponse(
+            request=request,
+            name="passation_export.html",
+            context=context(
+                request,
+                "workstreams",
+                model=model,
+                passation_export=preview,
+                passation_preview_query=query,
+            ),
+        )
+
+    @app.get("/exports/{export_path:path}")
+    def blocked_export_path(export_path: str):
+        parts = [part.lower() for part in Path(export_path.replace("\\", "/")).parts]
+        if any(part in FORBIDDEN_EXPORT_PARTS for part in parts):
+            raise HTTPException(status_code=404, detail="Export interdit.")
+        raise HTTPException(status_code=404, detail="Export introuvable.")
+
+    @app.get("/health")
+    def health():
+        return {"status": "ok", "instance": instance.instance_id, "year": year}
+
+    @app.get("/{root_name}/{path:path}")
+    def blocked_private_roots(root_name: str, path: str):
+        if root_name.lower() in FORBIDDEN_WEB_ROOTS:
+            raise HTTPException(status_code=404, detail="Racine privee non servie.")
+        raise HTTPException(status_code=404, detail="Route introuvable.")
+
+    if prewarm_dashboard:
+        _dashboard_model()
+
+    return app
+
+
+def _ui_token() -> str:
+    return os.environ.get("COPROSCOPE_UI_TOKEN") or secrets.token_urlsafe(24)
+
+
+def serve(
+    instance: InstanceConfig,
+    year: int = 2025,
+    host: str = "127.0.0.1",
+    port: int = 8765,
+    *,
+    access_token: str | None = None,
+    unsafe_lan: bool = False,
+) -> None:
+    if host not in LOOPBACK_HOSTS and not unsafe_lan:
+        raise ValueError("Refusing to expose the UI outside loopback without --unsafe-lan.")
+    access_token = access_token or _ui_token()
+    try:
+        import uvicorn  # type: ignore
+    except ImportError as exc:  # pragma: no cover - depends on optional extra
+        raise RuntimeError(
+            "Uvicorn is missing. Install UI dependencies with: python -m pip install -e .[ui]"
+        ) from exc
+
+    print(f"CoproScope UI token URL: http://{host}:{port}/?token={quote(access_token)}")
+    uvicorn.run(
+        create_app(instance, year, access_token=access_token),
+        host=host,
+        port=port,
+        log_level="info",
+    )

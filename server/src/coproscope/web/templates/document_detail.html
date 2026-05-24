@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Fiche document - atelier de piece</p>
+    <h2>{{ document_detail.doc.file_name }}</h2>
+    <div class="badge-row">
+      <span class="badge">{{ document_detail.doc.doc_id }}</span>
+      <span class="badge">{{ document_detail.doc.document_type }}</span>
+      <span class="badge">{{ document_detail.doc.lot }}</span>
+    </div>
+  </div>
+  <div class="status-block">
+    <span>{{ document_detail.diffusion.label }}</span>
+    <span>{{ document_detail.signature.label }}</span>
+    <small>{{ document_detail.storage.status }} - {{ document_detail.storage.note }}</small>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>{{ document_detail.workbench.title }}</h3>
+    <span>{{ document_detail.workbench.primary_action }}</span>
+  </div>
+  <p class="hint">{{ document_detail.workbench.notice }}</p>
+  <table>
+    <thead><tr><th>Etape</th><th>Ce que je regarde</th><th>Etat</th><th>Pourquoi</th></tr></thead>
+    <tbody>
+    {% for step in document_detail.workbench.steps %}
+      <tr>
+        <th>{{ step.label }}</th>
+        <td><strong>{{ step.title }}</strong></td>
+        <td><code>{{ step.status }}</code></td>
+        <td>{{ step.text }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Apercu autorise</h3>
+      <span>{{ document_detail.preview.source_label or document_detail.preview.kind_label }}</span>
+    </div>
+    {% if document_detail.preview.message %}
+    <p class="hint">{{ document_detail.preview.message }}</p>
+    {% endif %}
+    {% if document_detail.preview.kind == "text" %}
+    <pre class="report">{{ document_detail.preview.text }}</pre>
+    {% if document_detail.preview.truncated %}
+    <p class="hint">Apercu limite aux premiers caracteres extraits.</p>
+    {% endif %}
+    {% elif document_detail.preview.kind == "image" %}
+    <img src="{{ document_detail.preview.data_uri }}" alt="Apercu {{ document_detail.doc.file_name }}" style="display:block;width:100%;max-height:620px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fbfcfb;">
+    {% elif document_detail.preview.kind == "pdf" %}
+    <object data="{{ document_detail.preview.data_uri }}" type="{{ document_detail.preview.media_type }}" style="display:block;width:100%;min-height:620px;border:1px solid var(--line);border-radius:8px;background:#fbfcfb;">
+      <div class="empty">Apercu PDF non disponible dans ce navigateur.</div>
+    </object>
+    {% else %}
+    <div class="empty">{{ document_detail.preview.message }}</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Point, action, preuve</h3>
+      <span>{{ document_detail.diffusion.state }}</span>
+    </div>
+    <table>
+      <tbody>
+        <tr>
+          <th>Point</th>
+          <td>{{ document_detail.evidence.chain[1].value }}<br><small>Point de rattachement novice pour retrouver le sujet.</small></td>
+        </tr>
+        <tr>
+          <th>Action</th>
+          <td><strong>{{ document_detail.diffusion.action }}</strong><br><small>{{ document_detail.diffusion.next_step }}</small></td>
+        </tr>
+        <tr>
+          <th>Preuve</th>
+          <td><code>{{ document_detail.evidence.chain[2].value }}</code><br><small>{{ document_detail.evidence.notice }}</small></td>
+        </tr>
+        <tr>
+          <th>Signature</th>
+          <td><code>{{ document_detail.signature.label }}</code><br><small>{{ document_detail.signature.detail }} {{ document_detail.signature.actor }} - {{ document_detail.signature.when }}</small></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="button-row">
+      <a class="button-link secondary" href="/documents{{ ui_token_query }}">Retour aux documents</a>
+      <a class="button-link secondary" href="/confidentialite{{ ui_token_query }}">Voir confidentialite</a>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Annotations futures</h3>
+      <span>{{ document_detail.annotations.mode }}</span>
+    </div>
+    <p class="hint">{{ document_detail.annotations.notice }}</p>
+    <table>
+      <thead><tr><th>Evenement</th><th>Action</th><th>Preuve gardee</th></tr></thead>
+      <tbody>
+      {% for event in document_detail.annotations.events %}
+        <tr>
+          <th>{{ event.label }}<br><small>{{ event.status }}</small></th>
+          <td>{{ event.action }}<br><small>{{ event.actor }} - {{ event.anchor }}</small></td>
+          <td><code>{{ event.proof }}</code><br><small>{{ event.note }}</small></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Historique visible</h3>
+      <span>{{ document_detail.history.status }}</span>
+    </div>
+    <p class="hint">{{ document_detail.history.notice }}</p>
+    <table>
+      <thead><tr><th>Moment</th><th>Etat</th><th>Confiance</th></tr></thead>
+      <tbody>
+      {% for event in document_detail.history.events %}
+        <tr>
+          <th>{{ event.label }}<br><small>{{ event.when }}</small></th>
+          <td><code>{{ event.status }}</code></td>
+          <td>{{ event.signature }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Diffusion et signature</h3>
+      <span>{{ document_detail.diffusion.label }}</span>
+    </div>
+    <table>
+      <tbody>
+        <tr><th>Diffusion</th><td>{{ document_detail.diffusion.detail }}<br><small>{{ document_detail.diffusion.next_step }}</small></td></tr>
+        <tr><th>Signature</th><td>{{ document_detail.signature.detail }}<br><small>{{ document_detail.signature.action }}</small></td></tr>
+      {% for item in document_detail.policy %}
+        <tr>
+          <th>{{ item.label }}</th>
+          <td>{{ item.value }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Ancres sans PDF modifie</h3>
+      <span>{{ document_detail.anchors.status }}</span>
+    </div>
+    <p class="hint">{{ document_detail.anchors.notice }}</p>
+    <table>
+      <tbody>
+      {% for anchor in document_detail.anchors.entries %}
+        <tr>
+          <th>{{ anchor.label }}</th>
+          <td>
+            <code>{{ anchor.target }}</code><br>
+            <small>{{ anchor.status }}</small>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Metadonnees</h3>
+      <span>{{ document_detail.doc.extension or "n/a" }}</span>
+    </div>
+    <table>
+      <tbody>
+      {% for item in document_detail.metadata %}
+        <tr>
+          <th>{{ item.label }}</th>
+          <td><code>{{ item.value }}</code></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Traitement local</h3>
+      <span>{{ document_detail.doc.source_kind or "local" }}</span>
+    </div>
+    <table>
+      <tbody>
+      {% for item in document_detail.workflow %}
+        <tr>
+          <th>{{ item.label }}</th>
+          <td>{{ item.value }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

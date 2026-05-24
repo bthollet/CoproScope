@@ -21,6 +21,36 @@
     "docling_path": { "type": "string" },
     "layout_path": { "type": "string" },
     "ai_review_status": { "type": "string" },
-    "sensitivity": { "type": "string" }
+    "sensitivity": { "type": "string" },
+    "raw_max_college": {
+      "type": "string",
+      "enum": [
+        "C0_Public",
+        "C1_Occupants_Usagers",
+        "C2_Coproprietaires",
+        "C3_Coproprietaire_Concerne",
+        "C4_Conseil_Syndical",
+        "C5_Syndic_Admin",
+        "C6_Prestataire_Mandate",
+        "C7_Contentieux_Secret",
+        "C8_Restreint_Critique"
+      ]
+    },
+    "derivative_max_college": { "type": "string" },
+    "publication_form": { "type": "string" },
+    "restriction_reasons": { "type": "string" },
+    "personal_data_level": { "type": "string" },
+    "ip_status": { "type": "string" },
+    "ai_processing_ceiling": { "type": "string" },
+    "review_required": { "type": "string" },
+    "policy_confidence": { "type": "string" },
+    "required_transformations": { "type": "string" },
+    "screening_signals": { "type": "string" },
+    "privacy_review_status": { "type": "string" },
+    "redaction_status": { "type": "string" },
+    "redaction_mode": { "type": "string" },
+    "redacted_path": { "type": "string" },
+    "redacted_sha256": { "type": "string" },
+    "redaction_map_id": { "type": "string" }
   }
 }

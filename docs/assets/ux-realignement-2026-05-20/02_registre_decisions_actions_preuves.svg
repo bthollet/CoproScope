@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Registre des decisions - cible enquete realignee</title>
+  <desc id="desc">Reprise de la proposition UX d'enquete pour le registre decision action preuve, adaptee au produit actuel.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f5f7fb}.side{fill:#071d2d}.side2{fill:#0b2940}.card{fill:#fff;stroke:#dce3ec;stroke-width:1.2}.soft{fill:#f8fafc}.blue{fill:#1f6feb}.green{fill:#219b6c}.orange{fill:#f28c18}.red{fill:#e5484d}.ink{fill:#102033}.muted{fill:#607086}.small{font:14px Arial,sans-serif}.body{font:16px Arial,sans-serif}.h{font:700 24px Arial,sans-serif}.h2{font:700 18px Arial,sans-serif}.tag{font:700 12px Arial,sans-serif}.white{fill:#fff}
+    </style>
+  </defs>
+  <rect width="1440" height="900" class="bg"/>
+  <rect width="238" height="900" class="side"/>
+  <text x="48" y="38" class="white h2">Cockpit Conseil Syndical</text>
+  <text x="48" y="96" class="white body">Tableau de bord</text>
+  <rect x="14" y="124" width="210" height="38" rx="7" class="side2"/>
+  <text x="48" y="149" class="white body" font-weight="700">A traiter</text><rect x="192" y="132" width="32" height="22" rx="11" class="blue"/><text x="203" y="148" class="white small">12</text>
+  <text x="48" y="202" class="white body">Pieces manquantes</text><rect x="192" y="186" width="32" height="22" rx="11" class="blue"/><text x="203" y="202" class="white small">18</text>
+  <text x="48" y="250" class="white body">Demandes syndic</text><rect x="198" y="234" width="26" height="22" rx="11" class="blue"/><text x="207" y="250" class="white small">7</text>
+  <text x="48" y="298" class="white body">AG</text>
+  <text x="48" y="346" class="white body">Controle comptes</text>
+  <text x="24" y="410" fill="#8aa4bd" class="tag">DOMAINE</text>
+  <text x="48" y="452" class="white body">Documents</text>
+  <text x="48" y="500" class="white body">Contrats</text>
+  <text x="48" y="548" class="white body">Travaux</text>
+  <text x="48" y="596" class="white body">Incidents</text>
+  <text x="24" y="660" fill="#8aa4bd" class="tag">OUTILS</text>
+  <text x="48" y="704" class="white body">Exports &amp; rapports</text>
+  <rect x="16" y="802" width="206" height="72" rx="8" class="side2" stroke="#24465d"/>
+  <text x="52" y="838" class="white body">Mode de partage</text>
+  <text x="52" y="862" fill="#78d39a" class="small">Prive (local)</text>
+
+  <rect x="238" y="0" width="1202" height="72" fill="#fff" stroke="#dce3ec"/>
+  <text x="264" y="36" class="ink h">Registre des decisions</text>
+  <text x="264" y="60" class="muted small">Tracez, suivez et prouvez l'execution des resolutions d'Assemblee Generale.</text>
+  <rect x="1124" y="18" width="150" height="36" rx="7" fill="#fff" stroke="#1f6feb"/>
+  <text x="1150" y="42" class="blue small" font-weight="700">Exporter</text>
+  <rect x="1288" y="18" width="120" height="36" rx="7" class="blue"/>
+  <text x="1310" y="42" class="white small" font-weight="700">Nouvelle action</text>
+
+  <rect x="264" y="102" width="380" height="700" rx="9" class="card"/>
+  <text x="286" y="138" class="ink h2">Toutes les AG</text>
+  <rect x="546" y="116" width="78" height="32" rx="6" fill="#fff" stroke="#dce3ec"/>
+  <text x="568" y="137" class="muted small">Filtrer</text>
+  <line x1="320" y1="176" x2="320" y2="748" stroke="#dce3ec" stroke-width="2"/>
+  <circle cx="320" cy="188" r="5" class="green"/>
+  <text x="344" y="194" class="ink small" font-weight="700">AG du 15/06/2024</text>
+  <rect x="344" y="216" width="270" height="50" rx="6" fill="#f8fafc" stroke="#dce3ec"/>
+  <text x="364" y="238" class="muted small">Resolution AG 1</text><text x="364" y="258" class="ink small">Approbation comptes 2023</text><text x="540" y="250" class="green small">Terminee</text>
+  <rect x="344" y="278" width="270" height="50" rx="6" fill="#eef5ff" stroke="#1f6feb"/>
+  <text x="364" y="300" class="blue small">Resolution AG 3</text><text x="364" y="320" class="ink small" font-weight="700">Travaux etancheite toiture</text><text x="536" y="312" class="orange small">En cours</text>
+  <rect x="344" y="340" width="270" height="50" rx="6" fill="#f8fafc" stroke="#dce3ec"/>
+  <text x="364" y="362" class="muted small">Resolution AG 4</text><text x="364" y="382" class="ink small">Installation visiophone</text><text x="542" y="374" class="red small">En retard</text>
+  <circle cx="320" cy="450" r="5" class="green"/><text x="344" y="456" class="ink small" font-weight="700">AG du 10/12/2023</text>
+  <rect x="344" y="478" width="270" height="50" rx="6" fill="#f8fafc" stroke="#dce3ec"/>
+  <text x="364" y="500" class="muted small">Resolution AG 1</text><text x="364" y="520" class="ink small">Renouvellement contrat</text><text x="540" y="512" class="green small">Terminee</text>
+  <rect x="344" y="540" width="270" height="50" rx="6" fill="#f8fafc" stroke="#dce3ec"/>
+  <text x="364" y="562" class="muted small">Resolution AG 2</text><text x="364" y="582" class="ink small">Eclairage parking</text><text x="536" y="574" class="green small">Terminee</text>
+
+  <rect x="664" y="102" width="738" height="700" rx="9" class="card"/>
+  <rect x="690" y="126" width="116" height="30" rx="15" fill="#eef5ff"/>
+  <text x="710" y="146" class="muted small">Resolution AG 3</text>
+  <text x="690" y="194" class="ink" font-family="Arial,sans-serif" font-size="30" font-weight="700">Travaux etancheite toiture</text>
+  <rect x="1148" y="168" width="114" height="28" rx="14" fill="#fff3dc" stroke="#f28c18"/>
+  <text x="1166" y="187" class="orange small">Action en cours</text>
+  <text x="690" y="226" class="muted small">AG du 15/06/2024 - Majorite simple</text>
+  <text x="690" y="266" class="ink small">L'AG decide de realiser les travaux et autorise le CS a suivre l'execution.</text>
+
+  <rect x="690" y="304" width="164" height="68" rx="6" class="soft" stroke="#dce3ec"/>
+  <text x="720" y="330" class="muted small">Responsable</text><text x="720" y="350" class="ink small" font-weight="700">Conseil Syndical</text>
+  <rect x="858" y="304" width="164" height="68" rx="6" class="soft" stroke="#dce3ec"/>
+  <text x="888" y="330" class="muted small">Echeance</text><text x="888" y="350" class="ink small" font-weight="700">30/06/2025</text>
+  <rect x="1026" y="304" width="164" height="68" rx="6" class="soft" stroke="#dce3ec"/>
+  <text x="1056" y="330" class="muted small">Statut</text><text x="1056" y="350" class="ink small" font-weight="700">Action en cours</text>
+  <rect x="1194" y="304" width="164" height="68" rx="6" class="soft" stroke="#dce3ec"/>
+  <text x="1224" y="330" class="muted small">Priorite</text><text x="1224" y="350" class="ink small" font-weight="700">Moyenne</text>
+
+  <line x1="690" y1="416" x2="1376" y2="416" stroke="#dce3ec"/>
+  <text x="704" y="396" class="blue small" font-weight="700">Action en cours</text>
+  <text x="850" y="396" class="muted small" font-weight="700">Preuves</text>
+  <text x="982" y="396" class="muted small" font-weight="700">Pieces liees</text>
+  <text x="1136" y="396" class="muted small" font-weight="700">Relance syndic</text>
+  <text x="1286" y="396" class="muted small" font-weight="700">Historique</text>
+
+  <rect x="690" y="438" width="224" height="258" rx="8" class="card"/>
+  <text x="716" y="474" class="ink h2">Suivi de l'action</text>
+  <text x="716" y="510" class="muted small">Description</text><text x="716" y="532" class="ink small">Suivre les travaux conformement au devis retenu.</text>
+  <text x="716" y="578" class="muted small">Avancement</text><rect x="716" y="600" width="140" height="8" rx="4" fill="#dce3ec"/><rect x="716" y="600" width="84" height="8" rx="4" class="green"/><text x="868" y="606" class="ink small">60%</text>
+  <text x="716" y="650" class="muted small">Prochaine etape</text><text x="716" y="672" class="ink small">Reception planning entreprise.</text>
+
+  <rect x="936" y="438" width="224" height="258" rx="8" class="card"/>
+  <text x="962" y="474" class="ink h2">Documents lies</text>
+  <rect x="962" y="502" width="174" height="42" rx="6" class="soft" stroke="#dce3ec"/><text x="982" y="528" class="ink small">Devis toiture.pdf</text>
+  <rect x="962" y="562" width="174" height="42" rx="6" class="soft" stroke="#dce3ec"/><text x="982" y="588" class="ink small">Comparatif devis.xlsx</text>
+  <rect x="962" y="622" width="174" height="42" rx="6" class="soft" stroke="#dce3ec"/><text x="982" y="648" class="ink small">PV AG.pdf</text>
+
+  <rect x="1182" y="438" width="176" height="120" rx="8" class="card"/>
+  <text x="1204" y="474" class="ink h2">Preuves</text>
+  <text x="1204" y="512" class="muted small">Aucune preuve ajoutee.</text>
+  <rect x="1204" y="528" width="126" height="30" rx="6" fill="#fff" stroke="#1f6feb"/>
+  <text x="1220" y="548" class="blue small">Ajouter preuve</text>
+  <rect x="1182" y="576" width="176" height="120" rx="8" class="card"/>
+  <text x="1204" y="612" class="ink h2">Relances</text>
+  <text x="1204" y="646" class="ink small">Relance 2</text><text x="1290" y="646" class="orange small">Attente</text>
+  <text x="1204" y="676" class="ink small">Relance 1</text><text x="1290" y="676" class="green small">Repondu</text>
+
+  <rect x="690" y="720" width="668" height="56" rx="8" class="soft" stroke="#dce3ec"/>
+  <text x="716" y="754" class="ink small" font-weight="700">Historique : creation de l'action - piece ajoutee - avancement maj - relance envoyee - reponse syndic</text>
+</svg>

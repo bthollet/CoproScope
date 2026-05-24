@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block content %}
+{% set intake = document_intake if document_intake is defined else model.document_intake %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Depot local</p>
+    <h2>{{ intake.title }}</h2>
+    <p class="lead">{{ intake.intro }}</p>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ intake.summary.total }}</strong><span>documents</span></div>
+    <div><strong>{{ intake.summary.ready }}</strong><span>prets</span></div>
+    <div><strong>{{ intake.summary.todo }}</strong><span>a completer</span></div>
+    <div><strong>{{ intake.summary.blocked }}</strong><span>bloques</span></div>
+  </div>
+</section>
+
+<section class="band" aria-labelledby="ajout-document-action">
+  <div>
+    <p class="eyebrow">Etape 1 sur 4</p>
+    <h3 id="ajout-document-action">Deposer un document depuis ce poste</h3>
+    <p class="lead">Le fichier reste local. Apres depot, vous pourrez verifier la confidentialite puis le rattacher a une demande, une action ou une preuve attendue.</p>
+  </div>
+  <form class="upload-form" action="/depot{{ ui_token_query }}" method="post" enctype="multipart/form-data">
+    <label class="sr-only" for="document-intake-files">Choisir un fichier</label>
+    <input id="document-intake-files" class="file-input" type="file" name="files" multiple>
+    <button class="button-link" type="submit">Deposer dans le coffre local</button>
+    <a class="button-link secondary" href="{{ token_href('/depot?intent=document') }}">Ouvrir le depot guide</a>
+  </form>
+</section>
+
+<section class="grid two">
+  <div class="panel warning">
+    <div class="panel-head">
+      <h3>Confidentialite avant partage</h3>
+      <span>local first</span>
+    </div>
+    <div class="guide-list">
+      {% for control in intake.privacy_controls %}
+      <div>
+        <strong>{{ control.label }}</strong>
+        <span>{{ control.help }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Parcours novice</h3>
+      <span>piece -> point -> action -> preuve</span>
+    </div>
+    <div class="guide-list">
+      {% for step in intake.novice_steps %}
+      <div>
+        <strong>{{ step.title }}</strong>
+        <span>{{ step.body }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Contrat de rattachement</h3>
+      <span>obligatoire</span>
+    </div>
+    <table>
+      <thead><tr><th>Champ</th><th>Role</th></tr></thead>
+      <tbody>
+      {% for item in intake.attachment_contract %}
+        <tr><td>{{ item.label }}</td><td>{{ item.value }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Statuts runtime</h3>
+      <span>{{ intake.status_counts|length }}</span>
+    </div>
+    {% if intake.status_counts %}
+    <div class="pipeline-list">
+      {% for status in intake.status_counts %}
+      <div><strong>{{ status.count }}</strong><span>{{ status.label }}</span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">{{ intake.empty_state.title }}</div>
+    {% endif %}
+    <p class="hint">{{ intake.integration.app_boundary }}</p>
+  </div>
+</section>
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>Documents a ajouter</h3>
+    <span>{{ intake.cards|length }}</span>
+  </div>
+  {% if intake.has_cards %}
+  <div class="stack">
+    {% for card in intake.cards %}
+    <article class="item">
+      <div class="panel-head">
+        <div>
+          <strong>{{ card.document_label }}</strong>
+          <span>{{ card.doc_id }} - {{ card.source_label }} - {{ card.local_reference }}</span>
+        </div>
+        <span class="pill severity-{{ card.status_tone }}">{{ card.status_label }}</span>
+      </div>
+      <div class="grid two">
+        <div>
+          <p><strong>Classification</strong><br>{{ card.classification.document_type }} - {{ card.classification.domain }} - {{ card.classification.period }}</p>
+          <p><strong>Statut</strong><br>{{ card.classification.status_label }} - {{ card.classification.reason }}</p>
+          <p><strong>Empreinte</strong><br><code>{{ card.hash_label }}</code> - {{ card.format_label }} - {{ card.size_label }}</p>
+        </div>
+        <div>
+          <p><strong>Confidentialite</strong><br>{{ card.privacy.status_label }} - {{ card.privacy.rationale }}</p>
+          <p><strong>Controle</strong><br>{{ card.privacy_guard }}</p>
+          <p><strong>Prochaine action</strong><br>{{ card.next_action }}</p>
+        </div>
+      </div>
+
+      {% if card.warning_labels %}
+      <div class="notice-band">
+        {% for warning in card.warning_labels %}
+        <span>{{ warning }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <table>
+        <thead><tr><th>Etape</th><th>Statut</th><th>Suite</th></tr></thead>
+        <tbody>
+        {% for item in card.checklist %}
+          <tr>
+            <td>{{ item.novice_label }}</td>
+            <td><span class="pill severity-{{ item.tone }}">{{ item.status_label }}</span></td>
+            <td>{{ item.next_action }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      {% if card.attachments %}
+      <div class="artifact-list">
+        {% for attachment in card.attachments %}
+        <div class="artifact">
+          <strong>{{ attachment.piece }}</strong>
+          <span>{{ attachment.point_kind }} - {{ attachment.action_kind }} - {{ attachment.proof_intent }}</span>
+          <code>{{ attachment.chain_label }}</code>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty">Rattachement piece -> point -> action -> preuve a completer.</div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <strong>{{ intake.empty_state.title }}</strong>
+    <span>{{ intake.empty_state.body }}</span>
+    <span>{{ intake.empty_state.first_step }}</span>
+    <span>{{ intake.empty_state.next_step }}</span>
+  </div>
+  {% endif %}
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Evenements futurs</h3>
+      <span>{{ intake.future_events|length }}</span>
+    </div>
+    <div class="artifact-list">
+      {% for event_name in intake.future_events %}
+      <div class="artifact">
+        <strong>{{ event_name }}</strong>
+        <span>prepare dans le modele, pas encore signe par cette UI</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Branchement futur</h3>
+      <span>{{ intake.integration.route_name }}</span>
+    </div>
+    <div class="guide-list">
+      <div><strong>Modele</strong><span>{{ intake.integration.view_helper }}</span></div>
+      <div><strong>Template</strong><span>{{ intake.integration.template }}</span></div>
+      <div><strong>Limite</strong><span>{{ intake.integration.app_boundary }}</span></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

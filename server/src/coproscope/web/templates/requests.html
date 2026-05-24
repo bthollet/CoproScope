@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Demandes coproprietaires multi-canaux</p>
+    <h2>Boite de demandes a suivre</h2>
+    <p class="lead">Une lecture novice des demandes recues par email, oral, courrier, assemblee generale, portail syndic, document ou incident: quoi, quelle preuve, qui peut voir, et quelle suite concrete.</p>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ requests.summary.total }}</strong><span>demandes lues</span></div>
+    <div><strong>{{ requests.summary.open }}</strong><span>ouvertes</span></div>
+    <div><strong>{{ requests.summary.needs_source }}</strong><span>preuves a rattacher</span></div>
+    <div><strong>{{ requests.summary.journal_actions }}</strong><span>actions journalisees</span></div>
+  </div>
+</section>
+
+<section class="band" id="nouvelle-demande" aria-labelledby="nouvelle-demande-title">
+  <div>
+    <p class="eyebrow">Nouvelle demande</p>
+    <h3 id="nouvelle-demande-title">Creer une demande simple</h3>
+    <p class="lead">Saisissez un sujet, une origine et la prochaine action. La preuve peut etre une reference locale ou une piece a rattacher plus tard depuis le depot.</p>
+  </div>
+  <form class="request-create-form" action="/demandes{{ ui_token_query }}" method="post">
+    <label>Sujet <input class="input" name="subject" required placeholder="Ex. Attestation assurance 2026 non recue"></label>
+    <label>Canal
+      <select class="select" name="channel">
+        <option value="email">Email</option>
+        <option value="oral">Oral / reunion</option>
+        <option value="courrier">Courrier</option>
+        <option value="portail_syndic">Portail syndic</option>
+        <option value="ag">Assemblee generale</option>
+      </select>
+    </label>
+    <label>Preuve ou source <input class="input" name="source_ref" placeholder="Ex. DOC-FICTIF-B12-ASSUR"></label>
+    <label>Diffusion
+      <select class="select" name="visibility">
+        <option value="conseil_syndical">Conseil syndical</option>
+        <option value="copro">Coproprietaires</option>
+        <option value="restreint">Restreint</option>
+      </select>
+    </label>
+    <label class="request-create-form__wide">Prochaine action <textarea class="textarea" name="next_action" placeholder="Ex. Preparer une relance au syndic et rattacher la reponse comme preuve."></textarea></label>
+    <button class="button-link" type="submit">Creer la demande</button>
+  </form>
+</section>
+
+<section class="novice-grid" aria-label="Mode d'emploi simple">
+  {% for step in requests.novice_steps %}
+  <div class="novice-card severity-ok">
+    <span class="novice-label">repere novice</span>
+    <strong>{{ step.title }}</strong>
+    <p>{{ step.body }}</p>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Canaux d'arrivee <span class="help-dot" title="Le canal dit d'ou vient la trace: il ne connecte pas une boite mail ou un portail externe.">?</span></h3>
+      <span>{{ requests.channel_counts|length }} canaux</span>
+    </div>
+    <div class="badge-row">
+      {% for item in requests.channel_counts %}
+      <span class="badge is-review">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucun canal lu</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Statuts et diffusion <span class="help-dot" title="Le statut explique ou en est la demande; la diffusion indique qui peut lire la synthese.">?</span></h3>
+      <span>{{ requests.visibility_counts|length }} publics</span>
+    </div>
+    <div class="badge-row">
+      {% for item in requests.status_counts %}
+      <span class="badge is-ok">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucun statut lu</span>
+      {% endfor %}
+    </div>
+    <div class="badge-row">
+      {% for item in requests.visibility_counts %}
+      <span class="badge is-public">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">diffusion a choisir</span>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if requests.rows %}
+<section class="next-action-grid" aria-label="Demandes prioritaires">
+  {% for row in requests.open_rows[:6] %}
+  <article class="next-action-card severity-{{ row.status_tone }}">
+    <div class="card-head">
+      <span>{{ row.channel_label }} - {{ row.status_label }}</span>
+      <strong>{{ row.subject }}</strong>
+    </div>
+    <dl>
+      <dt>Preuve / source</dt>
+      <dd><code>{{ row.proof_label }}</code><br><small>{{ row.source_label }}</small></dd>
+      <dt>Prochaine action</dt>
+      <dd>{{ row.next_action_label }}</dd>
+      <dt>Diffusion</dt>
+      <dd><span class="badge {{ row.visibility_badge }}">{{ row.visibility_label }}</span><br><small>{{ row.diffusion_warning }}</small></dd>
+      <dt>Rattachement</dt>
+      <dd>{{ row.related_label or "Relier a un point AG, un point CS ou une action existante." }}</dd>
+    </dl>
+  </article>
+  {% else %}
+  <article class="next-action-card severity-ok">
+    <div class="card-head">
+      <span>0 demande ouverte</span>
+      <strong>Toutes les demandes lues sont fermees</strong>
+    </div>
+    <dl>
+      <dt>Preuve / source</dt>
+      <dd>Verifier que chaque cloture a une preuve et un journal.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Preparer l'export ou attendre une nouvelle demande.</dd>
+      <dt>Diffusion</dt>
+      <dd>Partager seulement la synthese autorisee.</dd>
+      <dt>Rattachement</dt>
+      <dd>Controle final avant diffusion.</dd>
+    </dl>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="band table-band">
+  <div class="panel-head">
+    <h3>Registre des demandes</h3>
+    <span>{{ requests.rows|length }}</span>
+  </div>
+  <table>
+    <caption class="table-caption">Canal, sujet, preuve/source, statut, prochaine action, diffusion et rattachement.</caption>
+    <thead>
+      <tr>
+        <th>Canal</th>
+        <th>Sujet</th>
+        <th>Preuve / source</th>
+        <th>Statut</th>
+        <th>Prochaine action</th>
+        <th>Diffusion</th>
+        <th>Point / action</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in requests.rows[:80] %}
+      <tr>
+        <td><strong>{{ row.channel_label }}</strong><br><small>{{ row.channel_help }}</small></td>
+        <td><strong>{{ row.subject }}</strong><br><small>{{ row.summary }}</small><br><small>{{ row.author_label }} - {{ row.received_label }}</small></td>
+        <td><code>{{ row.proof_label }}</code><br><small>{{ row.source_label }}</small></td>
+        <td><span class="pill severity-{{ row.status_tone }}">{{ row.status_label }}</span><br><small>{{ row.status_help }}</small></td>
+        <td>{{ row.next_action_label }}<br><small>{{ row.latest_action_label }}</small></td>
+        <td><span class="badge {{ row.visibility_badge }}">{{ row.visibility_label }}</span><br><small>{{ row.visibility_help }}</small></td>
+        <td>{{ row.related_label or "a rattacher" }}<br><small>{{ row.related_state }}</small></td>
+      </tr>
+    {% else %}
+      <tr>
+        <td colspan="7">
+          <div class="empty">
+            <strong>{{ requests.empty_state.title }}</strong><br>
+            {{ requests.empty_state.message }}<br>
+            <small>{{ requests.empty_state.first_step }}</small>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if requests.rows|length > 80 %}
+  <p class="hint">La page affiche les 80 premieres demandes. Le modele garde toute la selection pour une route d'export future.</p>
+  {% endif %}
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Journal d'actions concret</h3>
+      <span>{{ requests.summary.journal_actions }}</span>
+    </div>
+    <div class="timeline">
+      {% for row in requests.rows if row.journal_count %}
+        {% for action in row.journal[:4] %}
+        <div class="timeline-item {{ action.tone }}">
+          <time>{{ action.occurred_at or "date a completer" }} - {{ action.action_type_label }}</time>
+          <strong>{{ row.subject }}</strong>
+          <span>{{ action.summary }}</span>
+          <small>Preuve: {{ action.proof_label }} - suite: {{ action.next_action_label }} - diffusion: {{ action.visibility_label }}</small>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">
+          <strong>Aucune action journalisee</strong><br>
+          {{ requests.empty_state.journal_step }}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Demandes a rattacher</h3>
+      <span>{{ requests.summary.unlinked }}</span>
+    </div>
+    <table>
+      <caption class="table-caption">Les demandes sans point ou action rattachee restent difficiles a clore.</caption>
+      <thead><tr><th>Demande</th><th>Suite conseillee</th><th>Preuve</th></tr></thead>
+      <tbody>
+      {% for row in requests.unlinked_rows[:12] %}
+        <tr>
+          <td>{{ row.subject }}<br><small>{{ row.channel_label }}</small></td>
+          <td>{{ row.next_action_label }}</td>
+          <td><code>{{ row.proof_label }}</code></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Toutes les demandes lues ont deja un rattachement ou le registre est vide.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="band">
+  <div>
+    <p class="eyebrow">Sources locales</p>
+    <h3>Modele pret a brancher</h3>
+    <p class="lead">La vue lit le registre RequestOps et le journal local, sans connecter de messagerie ni portail syndic.</p>
+  </div>
+  <div class="status-block pending">
+    <span>registre: {{ requests.source.request_register }}</span>
+    <span>journal: {{ requests.source.action_log }}</span>
+  </div>
+</section>
+{% endblock %}

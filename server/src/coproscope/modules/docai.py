@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from ..core.common import InstanceConfig, RunContext, append_note, module_available, read_csv, relative_to, write_csv
+from ..core.privacy import apply_access_policy, ensure_policy_fields
 
 
 DOCAI_FIELDS = [
@@ -30,6 +31,7 @@ def _read_rows(instance: InstanceConfig) -> tuple[Path, list[str], list[dict[str
     for field in DOCAI_FIELDS + ["status_ocr", "text_path", "page_count", "text_char_count", "notes"]:
         if field not in fields:
             fields.append(field)
+    ensure_policy_fields(fields)
     return registry_path, fields, rows
 
 
@@ -39,6 +41,31 @@ def _write_rows(registry_path: Path, fields: list[str], rows: list[dict[str, str
 
 def _source_path(instance: InstanceConfig, row: dict[str, str]) -> Path:
     return instance.root("workspace") / row.get("original_path", "")
+
+
+def _redacted_source_path(instance: InstanceConfig, row: dict[str, str]) -> Path | None:
+    redacted_path = row.get("redacted_path", "")
+    if not redacted_path:
+        return None
+    path = Path(redacted_path)
+    return path if path.is_absolute() else instance.root("workspace") / redacted_path
+
+
+def _requires_anonymized_ai_input(row: dict[str, str]) -> bool:
+    publication_form = row.get("publication_form", "")
+    transformations = row.get("required_transformations", "")
+    return "redaction" in publication_form or "redaction" in transformations
+
+
+def _source_path_for_enrichment(instance: InstanceConfig, row: dict[str, str], backend: str) -> tuple[Path | None, str]:
+    if backend != "qwen_vl":
+        return _source_path(instance, row), ""
+    if not _requires_anonymized_ai_input(row):
+        return _source_path(instance, row), ""
+    redacted = _redacted_source_path(instance, row)
+    if row.get("redaction_status") != "REDACTED" or redacted is None:
+        return None, "DocAI Qwen VL: bloque tant qu'un derive anonymise n'est pas disponible."
+    return redacted, "DocAI Qwen VL: source anonymisee utilisee."
 
 
 def _docai_dir(instance: InstanceConfig) -> Path:
@@ -211,6 +238,7 @@ def run_ocr(
             row["ocr_engine"] = used_engine
             row["extraction_level"] = _append_level(row.get("extraction_level", ""), f"L2_LOCAL_OCR_{used_engine.upper()}")
             row["text_quality"] = "strong" if len(text.strip()) >= 80 else "weak"
+            apply_access_policy(row, text=text, instance=instance)
             lifted += 1
         else:
             row["ocr_engine"] = selected or "unavailable"
@@ -296,9 +324,19 @@ def enrich(
     for row in rows:
         if not _matches(row, doc_id):
             continue
-        source = _source_path(instance, row)
+        source, privacy_note = _source_path_for_enrichment(instance, row, normalized_backend)
+        if source is None:
+            row["ai_review_status"] = "DISABLED_REQUIRES_ANONYMIZED_DERIVATIVE"
+            row["notes"] = append_note(row.get("notes", ""), privacy_note)
+            continue
         if not source.exists():
             row["notes"] = append_note(row.get("notes", ""), "DocAI enrich: fichier source introuvable.")
+            continue
+        if privacy_note:
+            row["notes"] = append_note(row.get("notes", ""), privacy_note)
+        if normalized_backend == "qwen_vl" and row.get("ai_processing_ceiling") == "no_ai":
+            row["ai_review_status"] = "DISABLED_PRIVACY_POLICY_NO_AI"
+            row["notes"] = append_note(row.get("notes", ""), "DocAI Qwen VL: bloque par la politique confidentialite.")
             continue
         if normalized_backend == "qwen_vl" and settings["mode"] != "local_heavy":
             row["ai_review_status"] = "DISABLED_REQUIRES_LOCAL_HEAVY"

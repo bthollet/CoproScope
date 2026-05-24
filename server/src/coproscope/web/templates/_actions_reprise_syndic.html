@@ -1,0 +1,96 @@
+{% if is_reprise_syndic %}
+<section class="cs-reprise-page" aria-labelledby="cs-reprise-syndic-title">
+  <header class="cs-reprise-hero">
+    <div>
+      <p class="eyebrow">Boite de reprise</p>
+      <h2 id="cs-reprise-syndic-title">Relance syndic</h2>
+      <p>Brouillons, relances a envoyer et reponses a verifier.</p>
+      <p class="cs-reprise-warning">CoproScope prepare le suivi; l'envoi se fait hors outil.</p>
+    </div>
+    <div class="cs-reprise-actions" aria-label="Actions relance syndic">
+      <a class="cs-reprise-secondary" href="{{ token_href('/actions?priority=P1') }}">Voir les actions en retard</a>
+      <a class="cs-reprise-primary" href="{{ token_href('/pieces?proof=missing') }}">Voir la piece attendue</a>
+    </div>
+  </header>
+
+  <nav class="cs-reprise-tabs" aria-label="Etats des relances syndic">
+    <a class="is-active" href="{{ token_href('/actions?scope=syndic&tab=a_preparer') }}">A preparer <span>{{ followup_summary.draft_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=pretes') }}">Pretes a envoyer <span>{{ followup_summary.ready_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=envoyees') }}">Envoyees hors CoproScope <span>{{ followup_summary.sent_external_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=reponses') }}">Reponses a verifier <span>{{ followup_summary.answers_to_verify_count|default(0) }}</span></a>
+    <a href="{{ token_href('/actions?scope=syndic&tab=cloturees') }}">Cloturees <span>0</span></a>
+  </nav>
+
+  <div class="cs-reprise-layout">
+    <section class="cs-reprise-list" aria-labelledby="cs-reprise-followups-title">
+      <div class="cs-reprise-panel-head">
+        <h3 id="cs-reprise-followups-title">Demandes au syndic</h3>
+        <span>{{ followup_items|length }} brouillons</span>
+      </div>
+      {% for item in followup_items[:12] %}
+      <article class="cs-reprise-item {{ 'cs-reprise-tone-ok' if item.status == 'ready_to_copy' else 'cs-reprise-tone-warn' }}">
+        <div>
+          <span>{{ safe_text(item.status_label|default('Brouillon a relire', true), 'Brouillon a relire') }} - {{ safe_text(item.channel_label|default('Canal a verifier', true), 'Canal a verifier') }}</span>
+          <h3>{{ safe_text(item.title, 'Demande au syndic') }}</h3>
+          <p>{{ safe_text(item.proposed_followup_label|default('A envoyer hors CoproScope apres relecture', true), 'A envoyer hors CoproScope apres relecture') }}</p>
+        </div>
+        <dl class="cs-reprise-kv">
+          <div>
+            <dt>Piece attendue</dt>
+            <dd>{{ safe_text(item.expected_proof|default('Preuve attendue a preciser', true), 'Preuve attendue a preciser') }}</dd>
+          </div>
+          <div>
+            <dt>Derniere trace</dt>
+            <dd>{{ safe_text(item.last_request_label|default('Aucune demande tracee', true), 'Aucune demande tracee') }}</dd>
+          </div>
+          <div>
+            <dt>Diffusion</dt>
+            <dd>Conseil syndical uniquement. Ne pas joindre de document restreint sans arbitrage.</dd>
+          </div>
+        </dl>
+        <div class="cs-reprise-actions">
+          <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance?action_id=' ~ item.related_action_id|default('', true)) }}">Ouvrir le brouillon</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(item.answer_href|default('/depot', true)) }}">Rattacher la reponse du syndic</a>
+          <a class="cs-reprise-secondary" href="{{ token_href(item.memory_href|default('/chantiers', true)) }}">Voir dans la memoire</a>
+        </div>
+      </article>
+      {% else %}
+      <div class="cs-reprise-empty">
+        <strong>Aucune relance syndic a preparer. Les actions en retard peuvent en creer une.</strong>
+        <p>Brouillon non pret. Ajoutez l'objet, la piece attendue et le canal conseille.</p>
+        <a href="{{ token_href('/actions?priority=P1') }}">Voir les actions en retard</a>
+      </div>
+      {% endfor %}
+    </section>
+
+    <aside class="cs-reprise-detail" aria-labelledby="cs-reprise-draft-title">
+      <p class="eyebrow">Brouillon prudent</p>
+      <h3 id="cs-reprise-draft-title">{{ safe_text(selected_draft.subject|default('Objet a completer', true), 'Objet a completer') }}</h3>
+      <p class="cs-reprise-warning">Relance non envoyee par CoproScope. Marquer comme envoyee exige une date et un canal hors outil.</p>
+      <dl class="cs-reprise-kv">
+        <div>
+          <dt>Objet suivi</dt>
+          <dd>{{ safe_text(selected_followup.title|default('Relance syndic a preparer', true), 'Relance syndic a preparer') }}</dd>
+        </div>
+        <div>
+          <dt>Preuve attendue</dt>
+          <dd>{{ safe_text(selected_followup.expected_proof|default('Piece attendue a preciser', true), 'Piece attendue a preciser') }}</dd>
+        </div>
+        <div>
+          <dt>Destinataire</dt>
+          <dd>Destinataire a verifier avant copie du brouillon.</dd>
+        </div>
+      </dl>
+      <label class="cs-reprise-draft">
+        <span>Message copiable</span>
+        <textarea readonly rows="8">{{ safe_text(selected_draft.body|default('Bonjour, pouvez-vous nous transmettre la piece attendue avec la date, la source et le contexte de la reponse ?', true), 'Bonjour, pouvez-vous nous transmettre la piece attendue avec la date, la source et le contexte de la reponse ?') }}</textarea>
+      </label>
+      <div class="cs-reprise-actions">
+        <button class="cs-reprise-primary" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(this.closest('.cs-reprise-detail').querySelector('textarea').value)">Copier le brouillon</button>
+        <a class="cs-reprise-secondary" href="{{ token_href('/demandes/relance') }}">Noter l'envoi hors CoproScope</a>
+      </div>
+      <p class="cs-reprise-muted">Cette piece ne doit pas etre jointe sans arbitrage de diffusion.</p>
+    </aside>
+  </div>
+</section>
+{% endif %}

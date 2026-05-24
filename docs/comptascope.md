@@ -18,6 +18,9 @@ Frontiere metier:
 - `invoice_expense_matches_<annee>.csv`: rapprochements factures / etat des depenses, avec cause et prochaine action.
 - `non_rapproches_prioritaires_<annee>.csv`: non-rapprochements et candidats ambigus classes par montant.
 - `supplier_alias_suggestions_<annee>.csv`: alias fournisseurs deduits ou proposes a partir des montants et familles comptables.
+- `controle_comptes_guide_<annee>.csv`: parcours de controle par facture, avec priorite, detail de ligne candidate, motif, action suivante et question syndic.
+- `regroupement_controle_comptes_<annee>.csv`: synthese par priorite, fournisseur, anomalie facture et statut de rapprochement.
+- `questions_syndic_comptascope_<annee>.md`: questions syndic pretes a relire/copier pour les points `P1` et `P2`.
 - `rapport_comptascope_<annee>.md`: rapport explicatif local, avec synthese, priorites, causes, traitements locaux appliques et exemples a traiter.
 - `coproscope_accounting_<annee>.duckdb`: base analytique locale si DuckDB est disponible.
 
@@ -86,6 +89,20 @@ Les traitements locaux sont volontairement explicites et ordonnes:
 9. classement des cas restants en candidats `P2` ou blocages `P1`.
 
 Une similarite de nom evidente ne doit donc plus remonter comme blocage dur: elle devient un candidat `P2` a confirmer. L'outil ne valide pas le rapprochement a la place du conseil syndical, mais il produit une cause locale, une action attendue et une priorite.
+
+## Controle guide et questions syndic
+
+Le fichier `controle_comptes_guide_<annee>.csv` est la vue actionnable pour conseil syndical. Une ligne correspond a une facture candidate et rassemble:
+
+- la priorite `OK`, `P2` ou `P1` ;
+- le fournisseur, la facture, le montant, le niveau de preuve et les anomalies facture ;
+- la ligne d'etat des depenses candidate quand elle existe ;
+- l'ecriture candidate reconstruite ;
+- le motif local, la prochaine action et la question syndic.
+
+Le fichier `regroupement_controle_comptes_<annee>.csv` sert de table de lecture rapide avant AG: il regroupe les lignes du guide par priorite, fournisseur, anomalie facture et statut de rapprochement. Il donne le nombre de factures, le total TTC, le nombre de questions syndic et quelques exemples de factures a ouvrir en premier.
+
+Le fichier `questions_syndic_comptascope_<annee>.md` reprend uniquement les lignes ouvertes. Les blocs `Objet / Bonjour / question / action attendue` sont faits pour etre relus puis copies dans un mail ou une demande de piece. Les lignes `OK` ne generent pas de question.
 
 Les alias et sources de lignes se configurent dans `settings.comptascope`:
 

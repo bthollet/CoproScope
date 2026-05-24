@@ -1,0 +1,519 @@
+
+.cs-passation-side {
+  position: sticky;
+  top: 74px;
+}
+
+.cs-passation-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cs-passation-section-head h3,
+.cs-passation-preview-sections h4,
+.cs-passation-included h4 {
+  margin: 0;
+  color: #101828;
+  line-height: 1.2;
+}
+
+.cs-passation-section-head h3 {
+  font-size: 18px;
+}
+
+.cs-passation-section-head > span {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  border: 1px solid #cfd8e5;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #f8fafc;
+}
+
+.cs-passation-preview-sections,
+.cs-passation-included,
+.cs-passation-side-section,
+.cs-passation-checklist,
+.cs-passation-omission-list,
+.cs-passation-blocker-list {
+  display: grid;
+  gap: 10px;
+}
+
+.cs-passation-preview-sections section {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #edf1f6;
+  padding-top: 10px;
+}
+
+.cs-passation-preview-sections ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: #101828;
+}
+
+.cs-passation-included {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cs-passation-included section {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  border-top: 1px solid #edf1f6;
+  padding-top: 10px;
+}
+
+.cs-passation-included a,
+.cs-passation-downloads a,
+.cs-passation-checklist a,
+.cs-passation-omission-list a,
+.cs-passation-blocker-list a {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  border-left: 4px solid #1d5fd8;
+  padding: 7px 0 7px 10px;
+  color: #101828;
+}
+
+.cs-passation-downloads a {
+  flex: 1 1 140px;
+  border: 1px solid #dce3ec;
+  border-left: 4px solid #17624f;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fbfcff;
+}
+
+.cs-passation-downloads a.is-disabled {
+  border-left-color: #f28705;
+  background: #fffaf2;
+}
+
+.cs-passation-checklist a.is-blocked,
+.cs-passation-blocker-list a,
+.cs-passation-omission-list a {
+  border-left-color: #df2f24;
+}
+
+.cs-passation-checklist a.is-done {
+  border-left-color: #13976b;
+}
+
+.cs-passation-included strong,
+.cs-passation-downloads strong,
+.cs-passation-checklist strong,
+.cs-passation-omission-list strong,
+.cs-passation-blocker-list strong {
+  overflow-wrap: anywhere;
+}
+
+.cs-passation-empty {
+  border-style: dashed;
+}
+
+.cs-passation-empty a {
+  color: #1d5fd8;
+  font-weight: 760;
+}
+
+.cs-passation-audit {
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.cs-passation-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #174ea6;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.cs-passation-breadcrumb span::before {
+  content: "/";
+  margin-right: 8px;
+  color: #6b7a90;
+}
+
+.cs-passation-blocker-alert,
+.cs-passation-mini-grid,
+.cs-passation-check-row,
+.cs-passation-proof-row,
+.cs-passation-blocked-box,
+.cs-passation-format-grid,
+.cs-passation-two-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.cs-passation-blocker-alert {
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: start;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff7ed;
+}
+
+.cs-passation-blocker-alert > div:first-child {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 8px;
+  color: #ea580c;
+  background: #ffedd5;
+  font-weight: 820;
+}
+
+.cs-passation-blocker-alert h3 {
+  margin: 0 0 5px;
+  color: #071a33;
+  font-size: 20px;
+}
+
+.cs-passation-blocker-alert > span,
+.cs-passation-omission-list em,
+.cs-passation-format-grid span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 780;
+}
+
+.cs-passation-mini-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cs-passation-mini-grid > div,
+.cs-passation-omission-list article,
+.cs-passation-check-row,
+.cs-passation-proof-row,
+.cs-passation-blocked-box {
+  border: 1px solid #d7e0ec;
+  border-radius: 8px;
+  padding: 13px;
+  background: #ffffff;
+}
+
+.cs-passation-mini-grid span,
+.cs-passation-check-row small,
+.cs-passation-proof-row span,
+.cs-passation-blocked-box span {
+  color: #31517d;
+}
+
+.cs-passation-omission-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 10px;
+}
+
+.cs-passation-omission-list article span {
+  grid-column: 1 / -1;
+}
+
+.cs-passation-check-row {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.cs-passation-check-row small {
+  grid-column: 2;
+}
+
+.cs-passation-check-row strong {
+  color: #047857;
+}
+
+.cs-passation-check-row.is-warn strong {
+  color: #d97706;
+}
+
+.cs-passation-check-row.is-blocked strong {
+  color: #dc2626;
+}
+
+.cs-passation-format-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cs-passation-format-grid span {
+  text-align: center;
+}
+
+.cs-passation-format-grid span.is-enabled {
+  color: #174ea6;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.cs-passation-lock-button {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #55708f;
+  background: #e2e8f0;
+  font: inherit;
+  font-weight: 780;
+}
+
+.cs-passation-two-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1180px) {
+  .cs-passation-kpis,
+  .cs-passation-included {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .cs-passation-layout,
+  .cs-passation-blocker-layout,
+  .cs-passation-status {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-passation-side {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .cs-passation-hero {
+    flex-direction: column;
+  }
+
+  .cs-passation-hero-actions,
+  .cs-passation-hero-actions > *,
+  .cs-passation-primary,
+  .cs-passation-secondary,
+  .cs-passation-downloads a,
+  .cs-passation-inline-link {
+    width: 100%;
+  }
+
+  .cs-passation-kpis,
+  .cs-passation-included,
+  .cs-passation-mini-grid,
+  .cs-passation-format-grid,
+  .cs-passation-two-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cycle 8A FRONT - boite de reprise */
+.cs-reprise-page {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.cs-reprise-hero,
+.cs-reprise-card,
+.cs-reprise-list,
+.cs-reprise-detail,
+.cs-reprise-item,
+.cs-reprise-empty {
+  min-width: 0;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+.cs-reprise-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+}
+
+.cs-reprise-hero h2 {
+  color: #101828;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.cs-reprise-hero p:not(.eyebrow),
+.cs-reprise-item p,
+.cs-reprise-muted {
+  color: #475467;
+}
+
+.cs-reprise-actions,
+.cs-reprise-filters,
+.cs-reprise-groups,
+.cs-reprise-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cs-reprise-hero > .cs-reprise-actions {
+  justify-content: flex-end;
+}
+
+.cs-reprise-primary,
+.cs-reprise-secondary,
+.cs-reprise-filters a,
+.cs-reprise-groups a,
+.cs-reprise-tabs a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.cs-reprise-primary {
+  border-color: #17624f;
+  background: #17624f;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.cs-reprise-secondary,
+.cs-reprise-filters a,
+.cs-reprise-groups a,
+.cs-reprise-tabs a {
+  background: #ffffff;
+  color: #1d5fd8;
+}
+
+.cs-reprise-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cs-reprise-card {
+  display: grid;
+  gap: 6px;
+  border-left-width: 4px;
+  padding: 12px;
+}
+
+.cs-reprise-card span,
+.cs-reprise-panel-head span,
+.cs-reprise-item span,
+.cs-reprise-kv dt,
+.cs-reprise-draft span,
+.cs-reprise-tabs span,
+.cs-reprise-filters span,
+.cs-reprise-groups span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-reprise-card strong {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.cs-reprise-card small {
+  color: #475467;
+  font-size: 12px;
+}
+
+.cs-reprise-filters,
+.cs-reprise-groups,
+.cs-reprise-tabs {
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.cs-reprise-tabs a.is-active,
+.cs-reprise-filters a:hover,
+.cs-reprise-groups a:hover,
+.cs-reprise-tabs a:hover {
+  border-color: #8fb4ff;
+  background: #eef4ff;
+}
+
+.cs-reprise-tabs span {
+  min-width: 22px;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: #eef4ff;
+  color: #1d5fd8;
+  text-align: center;
+}
+
+.cs-reprise-groups a span {
+  min-width: 22px;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: #eef4ff;
+  color: #1d5fd8;
+  text-align: center;
+}
+
+.cs-reprise-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.cs-reprise-list,
+.cs-reprise-detail {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.cs-reprise-detail {
+  position: sticky;
+  top: 74px;
+}
+
+.cs-reprise-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cs-reprise-item {
+  display: grid;
+  gap: 10px;
+  border-left-width: 4px;
+  padding: 12px;
+}
+
+.cs-missing-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}

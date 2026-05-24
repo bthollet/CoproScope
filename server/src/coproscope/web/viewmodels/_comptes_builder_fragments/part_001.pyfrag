@@ -1,0 +1,500 @@
+from __future__ import annotations
+
+def _build_comptes_ux_model(instance: InstanceConfig, year: int, accounting: dict[str, object]) -> dict[str, object]:
+    invoices_table = accounting.get("invoices")
+    matches_table = accounting.get("matches")
+    non_matches_table = accounting.get("non_matches")
+    anomalies_table = accounting.get("anomalies")
+    ledger_table = accounting.get("ledger")
+    expense_statement_table = accounting.get("expense_statement")
+    invoices = invoices_table.rows if isinstance(invoices_table, DataTable) else []
+    matches = matches_table.rows if isinstance(matches_table, DataTable) else []
+    non_matches = non_matches_table.rows if isinstance(non_matches_table, DataTable) else []
+    anomalies = anomalies_table.rows if isinstance(anomalies_table, DataTable) else []
+    ledger_rows = ledger_table.rows if isinstance(ledger_table, DataTable) else []
+    expense_rows = expense_statement_table.rows if isinstance(expense_statement_table, DataTable) else []
+    controls_p1 = accounting.get("controls_p1") if isinstance(accounting.get("controls_p1"), list) else []
+    before_ag = accounting.get("before_ag") if isinstance(accounting.get("before_ag"), dict) else {}
+    summary_source = accounting.get("summary") if isinstance(accounting.get("summary"), dict) else {}
+    invoices_by_doc = {row.get("doc_id", ""): row for row in invoices if isinstance(row, dict) and row.get("doc_id")}
+    buckets: dict[str, dict[str, object]] = {}
+    all_pieces: list[dict[str, object]] = []
+    all_alerts: list[dict[str, object]] = []
+    all_questions: list[dict[str, object]] = []
+    seen_piece_ids: set[str] = set()
+    seen_docs: set[str] = set()
+
+    def bucket_for(category_id: str) -> dict[str, object]:
+        if category_id not in buckets:
+            info = _comptes_category_info(category_id)
+            buckets[category_id] = {
+                "category_id": category_id,
+                "label": info["label"],
+                "icon": info["icon"],
+                "account_family_label": info["account_family_label"],
+                "pieces": [],
+                "alerts": [],
+                "questions": [],
+                "amount_total": 0.0,
+                "has_amount": False,
+                "amount_keys": set(),
+                "post_keys": set(),
+                "post_count": 0,
+                "source_rows": [],
+                "suppliers": Counter(),
+                "dates": [],
+            }
+        return buckets[category_id]
+
+    def add_amount(bucket: dict[str, object], row: dict[str, str], *, index: int, source: str) -> None:
+        amount = _accounting_row_amount(row, "amount", "statement_amount", "ttc", "montant_depense", "debit")
+        if amount is None:
+            return
+        key = _accounting_row_key(row, index, source)
+        amount_keys = bucket.get("amount_keys")
+        if isinstance(amount_keys, set):
+            if key in amount_keys:
+                return
+            amount_keys.add(key)
+        bucket["amount_total"] = float(bucket.get("amount_total") or 0.0) + amount
+        bucket["has_amount"] = True
+
+    def add_expense_post(category_id: str, row: dict[str, str], *, index: int, source: str) -> None:
+        bucket = bucket_for(category_id)
+        key = _accounting_row_key(row, index, source)
+        post_keys = bucket.get("post_keys")
+        if isinstance(post_keys, set):
+            if key not in post_keys:
+                post_keys.add(key)
+                bucket["post_count"] = int(bucket.get("post_count") or 0) + 1
+        else:
+            bucket["post_count"] = int(bucket.get("post_count") or 0) + 1
+        add_amount(bucket, row, index=index, source=source)
+        supplier = _public_text(_first_value(row, "fournisseur", "supplier", "supplier_hint"), "")
+        if supplier:
+            suppliers = bucket.get("suppliers")
+            if isinstance(suppliers, Counter):
+                suppliers[supplier] += 1
+        invoice_date = _first_value(row, "date_facture", "invoice_date", "date")
+        if invoice_date:
+            dates = bucket.get("dates")
+            if isinstance(dates, list):
+                dates.append(invoice_date)
+        source_rows = bucket.get("source_rows")
+        if isinstance(source_rows, list):
+            source_rows.append(
+                {
+                    "source_id": _stable_action_id("SRC-COMP", index, key, source),
+                    "type": source,
+                    "label": _public_text(
+                        _first_value(row, "label", "statement_label", "account_label", "justification"),
+                        "Ligne de depense",
+                    ),
+                    "href": _route_href("/comptes", categorie=category_id, source=source, ligne=index),
+                }
+            )
+
+    def add_piece(category_id: str, piece: dict[str, object], row: dict[str, str]) -> None:
+        piece_id = str(piece.get("piece_id") or "")
+        if piece_id in seen_piece_ids:
+            return
+        seen_piece_ids.add(piece_id)
+        doc_id = str(piece.get("doc_id") or "")
+        if doc_id:
+            seen_docs.add(doc_id)
+        bucket = bucket_for(category_id)
+        bucket["pieces"].append(piece)
+        all_pieces.append(piece)
+        supplier = str(piece.get("supplier_label") or "")
+        if supplier:
+            suppliers = bucket.get("suppliers")
+            if isinstance(suppliers, Counter):
+                suppliers[supplier] += 1
+        if not expense_source_rows:
+            add_amount(bucket, row, index=len(all_pieces), source="piece")
+        invoice_date = _first_value(row, "date_facture", "invoice_date", "date")
+        if invoice_date:
+            dates = bucket.get("dates")
+            if isinstance(dates, list):
+                dates.append(invoice_date)
+
+    def add_alert_and_question(
+        category_id: str,
+        row: dict[str, str],
+        piece: dict[str, object],
+        *,
+        index: int,
+        priority: str,
+        source: str,
+    ) -> None:
+        alert_seed = _stable_action_id("AL-COMP", index, category_id, str(piece.get("piece_id", "")), source)
+        question = _comptes_question_from_row(
+            row,
+            category_id=category_id,
+            alert_id=alert_seed,
+            piece_id=str(piece.get("piece_id") or ""),
+            index=index,
+            year=year,
+            source=source,
+        )
+        alert = _comptes_alert_from_row(
+            row,
+            category_id=category_id,
+            piece_id=str(piece.get("piece_id") or ""),
+            question_id=str(question.get("question_id") or ""),
+            index=index,
+            priority=priority,
+            source=source,
+        )
+        question["alert_ids"] = [alert["alert_id"]]
+        piece_alerts = piece.get("related_alert_ids")
+        if isinstance(piece_alerts, list):
+            piece_alerts.append(alert["alert_id"])
+        piece_questions = piece.get("question_ids")
+        if isinstance(piece_questions, list):
+            piece_questions.append(question["question_id"])
+        bucket = bucket_for(category_id)
+        bucket["alerts"].append(alert)
+        bucket["questions"].append(question)
+        all_alerts.append(alert)
+        all_questions.append(question)
+
+    expense_source_rows = expense_rows if expense_rows else ledger_rows
+    expense_source_name = "expense_statement" if expense_rows else "ledger"
+    for index, row in enumerate(expense_source_rows, start=1):
+        if not isinstance(row, dict):
+            continue
+        category_id = _comptes_category_id(row)
+        add_expense_post(category_id, row, index=index, source=expense_source_name)
+
+    for index, row in enumerate(matches, start=1):
+        if not isinstance(row, dict):
+            continue
+        merged = _comptes_merge_invoice(row, invoices_by_doc)
+        category_id = _comptes_category_id(merged)
+        priority = _comptes_priority(_first_value(merged, "match_priority", "priorite"), "OK")
+        piece = _comptes_piece_from_row(merged, category_id=category_id, index=index, source="match", priority=priority)
+        add_piece(category_id, piece, merged)
+        if priority != "OK":
+            add_alert_and_question(category_id, merged, piece, index=index, priority=priority, source="match")
+
+    for index, row in enumerate(non_matches, start=1):
+        if not isinstance(row, dict):
+            continue
+        merged = _comptes_merge_invoice(row, invoices_by_doc)
+        category_id = _comptes_category_id(merged)
+        priority = _comptes_priority(_priority_for(merged, "P2"), "P2")
+        piece = _comptes_piece_from_row(merged, category_id=category_id, index=1000 + index, source="non_match", priority=priority)
+        add_piece(category_id, piece, merged)
+        add_alert_and_question(category_id, merged, piece, index=1000 + index, priority=priority, source="non_match")
+
+    for index, row in enumerate(anomalies, start=1):
+        if not isinstance(row, dict):
+            continue
+        merged = _comptes_merge_invoice(row, invoices_by_doc)
+        category_id = _comptes_category_id(merged)
+        priority = _comptes_priority(_priority_for(merged, "P2"), "P2")
+        piece = _comptes_piece_from_row(merged, category_id=category_id, index=1500 + index, source="anomaly", priority=priority)
+        add_piece(category_id, piece, merged)
+        if priority != "OK":
+            add_alert_and_question(category_id, merged, piece, index=1500 + index, priority=priority, source="anomaly")
+
+    for index, raw_row in enumerate(controls_p1, start=1):
+        if not isinstance(raw_row, dict):
+            continue
+        row = _comptes_merge_invoice(raw_row, invoices_by_doc)
+        category_id = _comptes_category_id(row)
+        priority = _comptes_priority(_priority_for(row, "P1"), "P1")
+        piece = _comptes_piece_from_row(row, category_id=category_id, index=2000 + index, source="control", priority=priority)
+        piece["type_label"] = "justificatif"
+        piece["proof_state"] = "missing"
+        piece["proof_state_label"] = _comptes_proof_state_label("missing")
+        piece["role_label"] = "preuve attendue"
+        add_piece(category_id, piece, row)
+        add_alert_and_question(category_id, row, piece, index=2000 + index, priority=priority, source="control")
+
+    for index, row in enumerate(invoices, start=1):
+        if not isinstance(row, dict):
+            continue
+        doc_id = row.get("doc_id", "")
+        if doc_id and doc_id in seen_docs:
+            continue
+        category_id = _comptes_category_id(row)
+        has_anomaly = bool(_first_value(row, "anomalies", "anomalies_facture"))
+        priority = "P2" if has_anomaly else "OK"
+        piece = _comptes_piece_from_row(row, category_id=category_id, index=3000 + index, source="invoice", priority=priority)
+        add_piece(category_id, piece, row)
+        if has_anomaly:
+            add_alert_and_question(category_id, row, piece, index=3000 + index, priority=priority, source="invoice")
+
+    categories: list[dict[str, object]] = []
+    for category_id, bucket in buckets.items():
+        pieces = [piece for piece in bucket.get("pieces", []) if isinstance(piece, dict)]
+        invoice_pieces = [piece for piece in pieces if piece.get("type_label") == "facture"]
+        alerts = [alert for alert in bucket.get("alerts", []) if isinstance(alert, dict)]
+        questions = [question for question in bucket.get("questions", []) if isinstance(question, dict)]
+        def piece_counter_key(piece: dict[str, object], index: int) -> str:
+            invoice_ref = str(piece.get("invoice_ref") or "")
+            if invoice_ref == "Facture sans reference":
+                invoice_ref = ""
+            return str(piece.get("doc_id") or invoice_ref or piece.get("piece_id") or index)
+
+        piece_keys = {piece_counter_key(piece, index) for index, piece in enumerate(invoice_pieces, start=1)}
+        matched_keys = {
+            piece_counter_key(piece, index)
+            for index, piece in enumerate(invoice_pieces, start=1)
+            if piece.get("proof_state") == "verified"
+        }
+        invoice_count = len(piece_keys)
+        matched_count = len(matched_keys)
+        missing_count = len([piece for piece in pieces if piece.get("proof_state") == "missing"])
+        p1_count = len([alert for alert in alerts if alert.get("priority") == "P1"])
+        p2_count = len([alert for alert in alerts if alert.get("priority") == "P2"])
+        ok_count = matched_count
+        post_count = int(bucket.get("post_count") or 0)
+        status = (
+            _comptes_status_from_counts(p1_count, p2_count, missing_count, ok_count, invoice_count)
+            if invoice_count
+            else "unknown"
+            if post_count
+            else _comptes_status_from_counts(p1_count, p2_count, missing_count, ok_count, invoice_count)
+        )
+        has_amount = bool(bucket.get("has_amount"))
+        amount_total = float(bucket.get("amount_total") or 0.0)
+        dates = [str(value) for value in bucket.get("dates", []) if value]
+        last_date = sorted(dates)[-1] if dates else ""
+        category = {
+            "category_id": category_id,
+            "label": bucket.get("label"),
+            "icon": bucket.get("icon"),
+            "account_family_label": bucket.get("account_family_label"),
+            "amount_charges": round(amount_total, 2) if has_amount else None,
+            "amount_charges_label": _comptes_amount_label(amount_total) if has_amount else "Montant non charge",
+            "amount_state": "loaded" if has_amount else "missing",
+            "analyzed_posts_count": max(post_count, invoice_count, len(alerts) if not post_count and not invoice_count else 0),
+            "invoice_count": invoice_count,
+            "matched_invoice_count": matched_count,
+            "matched_ratio": _comptes_ratio_value(matched_count, invoice_count),
+            "matched_ratio_label": _comptes_ratio_label(matched_count, invoice_count),
+            "unmatched_invoice_count": max(invoice_count - matched_count, 0),
+            "missing_pieces_count": missing_count,
+            "ecart_amount": None,
+            "ecart_label": "A verifier" if status in {"p1", "p2", "missing"} else "Aucun ecart detecte",
+            "ecart_state": "detected" if status in {"p1", "p2", "missing"} else "none",
+            "last_invoice_label": _date_label(last_date, "Date non lue"),
+            "last_invoice_href": _route_href("/comptes", categorie=category_id, tab="pieces"),
+            "status": status,
+            "status_label": COMPTES_STATUS_LABELS[status],
+            "status_detail": _comptes_status_detail(status, matched_count, invoice_count, missing_count),
+            "status_tone": COMPTES_STATUS_TONES[status],
+            "alert_count": len(alerts),
+            "p1_count": p1_count,
+            "p2_count": p2_count,
+            "ok_count": ok_count,
+            "question_count": len(questions),
+            "ag_included": status in {"p1", "p2", "missing"},
+            "next_action_label": (
+                "Traiter les questions et preuves attendues avant AG"
+                if status == "p1"
+                else "Confirmer avec le syndic ou une piece"
+                if status == "p2"
+                else "Demander la piece manquante"
+                if status == "missing"
+                else "Conserver la preuve rattachee"
+                if status == "ok"
+                else "Qualifier la categorie"
+            ),
+            "href": _route_href("/comptes", categorie=category_id),
+            "is_selected": False,
+        }
+        categories.append(category)
+
+    status_rank = {"p1": 0, "missing": 1, "p2": 2, "unknown": 3, "ok": 4}
+    categories.sort(key=lambda category: (status_rank.get(str(category.get("status")), 9), str(category.get("label", ""))))
+    selected_category_id = str(categories[0].get("category_id") or "") if categories else ""
+    for category in categories:
+        category["is_selected"] = category.get("category_id") == selected_category_id
+
+    selected: dict[str, object]
+    if selected_category_id:
+        base_category = next(category for category in categories if category.get("category_id") == selected_category_id)
+        bucket = buckets[selected_category_id]
+        pieces = [piece for piece in bucket.get("pieces", []) if isinstance(piece, dict)]
+        alerts = [alert for alert in bucket.get("alerts", []) if isinstance(alert, dict)]
+        questions = [question for question in bucket.get("questions", []) if isinstance(question, dict)]
+        suppliers = bucket.get("suppliers")
+        source_rows = [row for row in bucket.get("source_rows", []) if isinstance(row, dict)]
+        selected = dict(base_category)
+        selected.update(
+            {
+                "novice_summary": (
+                    f"{base_category.get('label')} : {base_category.get('status_label')}. "
+                    f"{base_category.get('next_action_label')}."
+                ),
+                "controls_summary": {
+                    "conforme": f"{base_category.get('matched_invoice_count')} piece(s) avec preuve rattachee.",
+                    "a_confirmer": f"{base_category.get('p2_count')} point(s) a confirmer.",
+                    "bloquant": f"{base_category.get('p1_count')} point(s) a traiter.",
+                },
+                "alerts": alerts,
+                "pieces": pieces,
+                "questions": questions,
+                "ag_section": {
+                    "title": f"{base_category.get('label')} dans le rapport AG",
+                    "include_in_ag_report": bool(base_category.get("ag_included")),
+                    "scope_label": "Inclure les points ouverts de cette categorie dans le rapport AG",
+                    "notes": [_comptes_ag_note(base_category)] if base_category.get("ag_included") else [],
+                    "href": _route_href("/comptes", categorie=selected_category_id, tab="rapport-ag"),
+                },
+                "history": [
+                    {
+                        "event_id": _stable_action_id("HIST-COMP", 0, selected_category_id, "control_loaded"),
+                        "occurred_on": str(year),
+                        "type": "control_loaded",
+                        "type_label": "Controle charge",
+                        "actor_label": "ComptaScope",
+                        "summary": "Sorties comptables chargees dans le guide CS.",
+                        "category_id": selected_category_id,
+                        "piece_ids": [piece.get("piece_id") for piece in pieces[:3]],
+                        "question_ids": [question.get("question_id") for question in questions[:3]],
+                        "is_evidence": False,
+                        "memory_note": "A conserver pour la passation CS.",
+                    }
+                ],
+                "subcategories": [
+                    {
+                        "subcategory_id": _stable_action_id("SUB-COMP", index, supplier),
+                        "label": supplier,
+                        "count": count,
+                        "href": _route_href("/comptes", categorie=selected_category_id, fournisseur=supplier),
+                    }
+                    for index, (supplier, count) in enumerate((suppliers.most_common(5) if isinstance(suppliers, Counter) else []), start=1)
+                ],
+                "source_rows": source_rows[:8]
+                + [
+                    {
+                        "source_id": _stable_action_id("SRC-COMP", index, str(piece.get("piece_id", ""))),
+                        "type": "comptascope",
+                        "label": piece.get("label"),
+                        "href": piece.get("href"),
+                    }
+                    for index, piece in enumerate(pieces[:8], start=1)
+                ][:8],
+                "diffusion": {
+                    "status": "after_review" if base_category.get("status") in {"p1", "p2", "missing"} else "ag_ok",
+                    "label": "A relire avant diffusion" if base_category.get("status") in {"p1", "p2", "missing"} else "AG diffusable",
+                    "reason": "Les questions ouvertes ne doivent pas etre presentees comme des conclusions definitives.",
+                    "allowed_audience": "Conseil syndical",
+                    "blocked_by": [],
+                },
+                "memory_note": "Reprendre ce point avant AG avec les preuves et reponses rattachees.",
+            }
+        )
+    else:
+        selected = _comptes_empty_selected(year)
+
+    tabs = _comptes_tabs(selected)
+    ag_report = _comptes_ag_report(year, categories, all_alerts, all_pieces, all_questions)
+    total_charges = sum(float(category.get("amount_charges") or 0.0) for category in categories)
+    has_total = any(category.get("amount_state") == "loaded" for category in categories)
+    summary_total = _amount_value(summary_source.get("total_charges"))
+    if not has_total and summary_total is not None:
+        total_charges = summary_total
+        has_total = True
+    invoice_summary_pieces = [piece for piece in all_pieces if isinstance(piece, dict) and piece.get("type_label") == "facture"]
+    piece_summary_keys = {
+        str(piece.get("doc_id") or (piece.get("invoice_ref") if piece.get("invoice_ref") != "Facture sans reference" else "") or piece.get("piece_id"))
+        for piece in invoice_summary_pieces
+    }
+    invoice_total = max(
+        len(piece_summary_keys),
+        _coerce_int(summary_source.get("invoice_count")),
+        len(matches) + len(non_matches),
+    )
+    invoice_matched = max(
+        len(
+            {
+                str(piece.get("doc_id") or (piece.get("invoice_ref") if piece.get("invoice_ref") != "Facture sans reference" else "") or piece.get("piece_id"))
+                for piece in invoice_summary_pieces
+                if piece.get("proof_state") == "verified"
+            }
+        ),
+        _accounting_summary_match_count(summary_source),
+    )
+    p1_count = len([alert for alert in all_alerts if alert.get("priority") == "P1"])
+    p2_count = len([alert for alert in all_alerts if alert.get("priority") == "P2"])
+    missing_count = len([piece for piece in all_pieces if piece.get("proof_state") == "missing"])
+    analyzed_posts_count = max(
+        sum(int(category.get("analyzed_posts_count") or 0) for category in categories),
+        _coerce_int(summary_source.get("expense_statement_line_count")),
+        _coerce_int(summary_source.get("entry_count")),
+        invoice_total,
+        len(categories),
+    )
+    blocker_count = len(ag_report.get("blocked_by", [])) if isinstance(ag_report.get("blocked_by"), list) else 0
+
+    def counter(value: object, href: str, filter_key: str, help_label: str, status_tone: str) -> dict[str, object]:
+        return {
+            "value": value,
+            "count": value if isinstance(value, int) else None,
+            "href": href,
+            "filter_key": filter_key,
+            "help_label": help_label,
+            "status_tone": status_tone,
+        }
+
+    summary = {
+        "total_charges_amount": round(total_charges, 2) if has_total else None,
+        "total_charges_label": _comptes_amount_label(total_charges) if has_total else "Montant non charge",
+        "analyzed_posts_count": analyzed_posts_count,
+        "invoice_total_count": invoice_total,
+        "invoice_matched_count": invoice_matched,
+        "invoice_matched_ratio": _comptes_ratio_value(invoice_matched, invoice_total),
+        "invoice_matched_label": f"{_comptes_ratio_label(invoice_matched, invoice_total)} ({invoice_matched} / {invoice_total})",
+        "p1_count": p1_count,
+        "p1_ratio_label": _comptes_ratio_label(p1_count, max(invoice_total, 1)),
+        "p2_count": p2_count,
+        "p2_ratio_label": _comptes_ratio_label(p2_count, max(invoice_total, 1)),
+        "missing_pieces_count": missing_count,
+        "missing_pieces_ratio_label": _comptes_ratio_label(missing_count, max(invoice_total, 1)),
+        "questions_count": len(all_questions),
+        "ag_included_count": len(ag_report.get("included_categories", [])) if isinstance(ag_report.get("included_categories"), list) else 0,
+        "export_blockers_count": blocker_count,
+        "last_control_label": _date_label(str(summary_source.get("generated_at", ""))[:10], f"Situation {year}"),
+        "counters": {
+            "total_charges": counter(
+                _comptes_amount_label(total_charges) if has_total else "Montant non charge",
+                _route_href("/comptes"),
+                "all",
+                "Total lu dans les sorties disponibles.",
+                "info",
+            ),
+            "invoice_matched": counter(
+                invoice_matched,
+                _route_href("/comptes", match_state="matched"),
+                "matched",
+                "Factures reliees a une ligne de depense ou preuve suffisante.",
+                "ok" if invoice_matched else "warn",
+            ),
+            "p1": counter(
+                p1_count,
+                _route_href("/comptes", statut="p1"),
+                "p1",
+                "A traiter avant AG avec question ou preuve attendue.",
+                "danger" if p1_count else "ok",
+            ),
+            "p2": counter(
+                p2_count,
+                _route_href("/comptes", statut="p2"),
+                "p2",
+                "A confirmer avec le syndic ou une piece.",
+                "warn" if p2_count else "ok",
+            ),
+            "missing_pieces": counter(
+                missing_count,
+                _route_href("/comptes", proof_state="missing"),
+                "missing",
+                "Justificatifs a demander ou rattacher.",
+                "warn" if missing_count else "ok",
+            ),
+        },

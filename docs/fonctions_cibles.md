@@ -13,14 +13,15 @@ Cette page distingue clairement ce qui existe, ce qui est en cours, ce qui est c
 | FactureOps | Extraire et qualifier les factures | pieces detectees, texte, OCR, sources structurees | factures candidates, anomalies facture, intensite L0-L4 | amorce v1 |
 | ComptaScope | Controler et expliquer les flux comptables | factures, annexes, etats de depenses, contrats | rapprochements, controles, rapport, exports | amorce v1 forte |
 | AGOps | Aider la preparation et le suivi AG | convocations, PV, annexes, resolutions | registre AG, points d'attention | premiere version |
+| DecisionOps | Transformer une resolution AG en action suivie | registre AG, documents classes, textes extraits | registre decisions-actions-preuves, rapport de suivi | amorce v1 |
 | Audit360 | Transformer signaux en controles actionnables | pieces, demandes, AG, compta, travaux | constats, risques, preuves attendues, actions | couche transverse |
 | GristOps | Donner des tables locales de pilotage | registres CSV, sorties metier | exports locaux consultables | socle local |
 | EvidenceOps | Produire des rapports reproductibles | CSV/DuckDB, Markdown, SQL | pages de rapport locales | socle local |
 | ContractOps | Suivre contrats et obligations | contrats, avenants, attestations | registre contrats, alertes, clauses clefs | cible |
 | WorksOps | Suivre devis, travaux, reception | devis, assurances, decisions, factures | comparatifs, chronologies, garanties | cible prioritaire |
-| IncidentOps | Suivre incidents et sinistres | signalements, photos, assurances | tickets, statuts, preuves de cloture | cible prioritaire |
+| IncidentOps | Suivre incidents et sinistres | signalements, photos, assurances | tickets, statuts, preuves de cloture | amorce v1 |
 | CommsOps | Produire des sorties diffusables | notes, rapports, versions biffees | syntheses, PDF, messages propres | cible prioritaire |
-| Interface locale | Rendre le produit accessible | registres et rapports stabilises | cockpit CS, vues metier | pas encore |
+| Interface locale | Rendre le produit accessible | registres et rapports stabilises | cockpit CS, vues metier, actions | v0 locale |
 
 ## Ce qui existe deja
 
@@ -92,6 +93,30 @@ Fonctions presentes :
 - resolutions detectees ;
 - points d'attention.
 
+### DecisionOps
+
+DecisionOps ajoute le chainon apres AG: une resolution n'est plus seulement un texte archive, elle devient une ligne de suivi avec action attendue, responsable, echeance, preuve attendue, pieces candidates et statut.
+
+Fonctions presentes en amorce :
+
+- lecture du registre AG produit par AGOps quand il existe ;
+- extraction de lignes de resolutions depuis les textes AG ;
+- creation du registre `registre_decisions_actions_preuves.csv` ;
+- rattachement automatique de preuves locales candidates par type de piece et mots-clefs ;
+- rapport local `rapport_decisions_actions_preuves.md`.
+
+### IncidentOps
+
+IncidentOps structure les signalements et sinistres du quotidien sous forme de registre actionnable.
+
+Fonctions presentes en amorce :
+
+- detection de documents ressemblant a des incidents ou sinistres ;
+- registre `registre_incidents.csv` avec statut, priorite, prochaine action et preuve attendue ;
+- export CSV des incidents ouverts ;
+- rapport local `rapport_incidentops.md` ;
+- validation que les incidents ouverts ont une prochaine action et une preuve de cloture attendue.
+
 ## Ce qui existe mais doit devenir plus utilisable
 
 | Bloc | Probleme UX actuel | Direction |
@@ -101,19 +126,18 @@ Fonctions presentes :
 | SyndicOps | Socle present, workflow incomplet. | Statuts, echeances, relances, preuves, modeles. |
 | ComptaScope | Tres utile mais expert. | Controle comptes guide, questions au syndic, rapport AG. |
 | AGOps | Prepare l'AG, suit peu l'apres-AG. | Registre decisions-actions-preuves. |
+| DecisionOps | Produit le registre mais reste peu visible. | Raccord interface, demandes, travaux et preuves. |
+| IncidentOps | Suit les incidents ouverts mais reste minimal. | Raccord contrats, assurance, photos et cloture probatoire. |
 | Audit360 | Concept fort, encore abstrait. | Tableaux faits/preuves/risques/actions par parcours. |
 
 ## Ce qui n'existe pas encore
 
 | Bloc | Pourquoi c'est important |
 |---|---|
-| Registre decision -> action -> preuve | Transformer les PV d'AG en travail suivi. |
 | WorksOps | Gros besoin sur travaux, devis, reception, garanties. |
-| IncidentOps | Les sinistres et incidents sont des douleurs quotidiennes. |
 | ContractOps | Les contrats structurent charges, obligations et mises en concurrence. |
 | CommsOps | Le CS doit produire des syntheses claires sans fuite de donnees. |
 | Passation CS | La memoire du conseil syndical est fragile. |
-| Interface locale | Le produit doit devenir utilisable sans lire des CSV. |
 
 ## Hors perimetre court terme
 
@@ -129,8 +153,7 @@ Fonctions presentes :
 L'ordre de construction recommande :
 
 1. stabiliser les registres et preuves ;
-2. rendre les modules existants visibles dans un cockpit ;
-3. construire les chaines manquantes : decisions, travaux, incidents, passation ;
+2. enrichir le cockpit local existant ;
+3. construire les chaines manquantes ou incompletes : travaux, contrats, passation, communications ;
 4. produire des sorties diffusables biffees ou agregees ;
 5. seulement ensuite, enrichir l'interface et les automatisations.
-

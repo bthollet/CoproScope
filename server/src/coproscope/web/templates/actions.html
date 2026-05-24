@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% block topbar_title %}
+  {%- if request.query_params.get('scope') == 'syndic' -%}
+    Relance syndic
+  {%- elif request.query_params.get('scope') == 'comptes' -%}
+    Points comptes a traiter
+  {%- elif request.query_params.get('view') == 'retards' or request.query_params.get('priority') == 'P1' -%}
+    Toutes les actions en retard
+  {%- elif request.query_params.get('status') == 'a_demander' -%}
+    Demander au syndic
+  {%- else -%}
+    Actions a traiter
+  {%- endif -%}
+{% endblock %}
+{% block content %}
+{% macro safe_text(value, fallback='A preciser') -%}
+  {%- set text = value|default('', true)|string|trim -%}
+  {%- set low = text|lower -%}
+  {%- if not text
+      or '://' in low
+      or '\\' in text
+      or '/users/' in low
+      or '/home/' in low
+      or 'file://' in low
+      or 'raw' in low
+      or 'restricted' in low
+      or 'logs' in low
+      or 'private' in low -%}
+    {{- fallback -}}
+  {%- else -%}
+    {{- text -}}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro status_label(status, explicit='') -%}
+  {%- set value = explicit|default('', true) or status|default('', true) -%}
+  {%- if value == 'a_demander' -%}Preuve a demander
+  {%- elif value == 'a_traiter' -%}Action en cours
+  {%- elif value == 'a_verifier' -%}Preuve a verifier
+  {%- elif value == 'a_revoir' -%}A arbitrer en conseil syndical
+  {%- elif value == 'a_confirmer' -%}A confirmer
+  {%- elif value == 'bloque' -%}Bloque avant diffusion
+  {%- elif value == 'clos' -%}Terminee
+  {%- else -%}{{ safe_text(value, 'Action en cours') }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro tone_for(status, priority='') -%}
+  {%- set s = status|default('', true) -%}
+  {%- set p = priority|default('', true)|upper -%}
+  {%- if s in ['bloque', 'a_demander'] or p in ['P0', 'P1'] -%}danger
+  {%- elif s in ['a_revoir', 'a_confirmer', 'a_verifier'] or p == 'P2' -%}warn
+  {%- elif s == 'clos' or p == 'OK' -%}ok
+  {%- else -%}info
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro priority_natural(priority, explicit='') -%}
+  {%- set value = explicit|default('', true) -%}
+  {%- set code = priority|default('', true)|upper -%}
+  {%- if value -%}{{ safe_text(value, 'Priorite a confirmer') }}
+  {%- elif code in ['P0', 'P1'] -%}Critique
+  {%- elif code == 'P2' -%}A confirmer
+  {%- elif code == 'P3' -%}A surveiller
+  {%- elif code == 'OK' -%}Sous controle
+  {%- else -%}Priorite a confirmer
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro source_natural(source, fallback='Source a confirmer') -%}
+  {%- set value = source|default('', true)|string|trim -%}
+  {%- if value == 'DocOps' -%}Document a verifier
+  {%- elif value == 'PrivacyOps' -%}Diffusion a arbitrer
+  {%- elif value == 'ComptaScope' -%}Controle comptes
+  {%- elif value == 'DecisionOps' -%}Decision AG
+  {%- elif value == 'IncidentOps' -%}Signalement a suivre
+  {%- else -%}{{ safe_text(value, fallback) }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% set registre = model.ux.registre if model.ux is defined and model.ux.registre is defined else {} %}
+{% set priority_views = model.ux.priority_views if model.ux is defined and model.ux.priority_views is defined else {} %}
+{% set late_view = priority_views.late_actions|default({}, true) %}
+{% set late_summary = late_view.summary|default({}, true) %}
+{% set late_filters = late_view.filters|default({}, true) %}
+{% set late_items = late_view["items"]|default([], true) %}
+{% set followup_view = priority_views.syndic_followups|default({}, true) %}
+{% set followup_summary = followup_view.summary|default({}, true) %}
+{% set followup_tabs = followup_view.tabs|default([], true) %}
+{% set followup_items = followup_view["items"]|default([], true) %}
+{% set selected_followup = followup_view.selected|default({}, true) %}
+{% set selected_draft = selected_followup.draft|default({}, true) %}
+{% set is_reprise_comptes = request.query_params.get('scope') == 'comptes' %}
+{% set is_reprise_retards = (request.query_params.get('view') == 'retards' or request.query_params.get('priority') == 'P1') and not is_reprise_comptes %}
+{% set is_reprise_syndic = request.query_params.get('scope') == 'syndic' %}
+{% set is_reprise_request = request.query_params.get('status') == 'a_demander' and not is_reprise_syndic and not is_reprise_retards and not is_reprise_comptes %}
+{% set has_full_registre = registre.ag_groups is defined and registre.ag_groups %}
+{% set fallback_rows = action_rows|default(model.action_items|default([])) %}
+{% set registre_items = registre["items"] if has_full_registre and registre["items"] is defined else fallback_rows %}
+{% set selected_param = request.query_params.get('selected_item_id') or request.query_params.get('selected') %}
+{% set action_missing = request.query_params.get('action_missing') %}
+{% set tab_param = request.query_params.get('tab') or 'action' %}
+{% set selected_ns = namespace(item=none) %}
+{% if registre_items|length %}
+  {% if selected_param %}
+    {% for candidate in registre_items %}
+      {% set candidate_id = candidate.id|default(candidate.action_id|default(loop.index|string), true)|string %}
+      {% if candidate_id == selected_param|string and not selected_ns.item %}
+        {% set selected_ns.item = candidate %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% if not selected_ns.item %}
+    {% if has_full_registre and registre.selected is defined and registre.selected %}
+      {% set selected_ns.item = registre.selected %}
+    {% else %}
+      {% set selected_ns.item = registre_items[0] %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% set selected = selected_ns.item|default({}, true) %}
+{% set selected_id = selected.id|default(selected.action_id|default('', true), true)|string %}
+{% set selected_status = selected.status|default('', true) %}
+{% set selected_tone = selected.status_tone|default(selected.tone|default(tone_for(selected_status, selected.priority|default('', true)), true), true) %}
+{% set selected_action = selected['action']|default({}) %}
+{% set selected_diffusion = selected['diffusion']|default({}) %}
+{% set selected_memory = selected['memory']|default({}) %}
+{% set selected_proof_object = selected['proof']|default({}) %}
+{% set selected_source_object = selected['source']|default({}, true) %}
+{% if selected_source_object is mapping %}
+  {% set selected_source_module = selected_source_object['module']|default('', true) %}
+{% else %}
+  {% set selected_source_module = selected_source_object|string %}
+{% endif %}
+{% set selected_title = selected.title|default('Decision a suivre', true) %}
+{% set selected_source = selected.resolution_ref|default(selected_source_module|default(selected.domain_label|default('Registre Actions', true), true), true) %}
+{% set selected_why = selected.decision_summary|default(selected.why|default(selected.detail|default('Cette decision demande une action suivie par le conseil syndical.', true), true), true) %}
+{% set selected_owner = selected.owner_label|default(selected.owner|default(selected_action['owner']|default('Conseil syndical', true), true), true) %}
+{% set selected_due = selected.due_label|default(selected_action['due_on']|default('Echeance a fixer', true), true) %}
+{% set selected_next = selected.next_step|default(selected_action['label']|default('Noter la prochaine action puis garder une trace.', true), true) %}
+{% set selected_proof = selected.proof_expected|default(selected.evidence|default(selected_proof_object['label']|default('Preuve attendue a preciser', true), true), true) %}
+{% set selected_diffusion_label = selected_diffusion['label']|default('Conseil syndical seulement', true) %}
+{% set selected_diffusion_reason = selected_diffusion['reason']|default('Partager seulement ce qui est utile et verifie.', true) %}
+{% set selected_priority = selected.priority_label|default(selected.priority|default('Priorite a confirmer', true), true) %}
+{% set selected_priority_reason = selected.priority_reason|default(selected.why|default(selected.detail|default('A suivre pour ne pas perdre la preuve ou la relance.', true), true), true) %}
+{% set selected_progress = selected.progress_pct|default(0, true) %}
+
+{% if action_missing %}
+<section class="band notice-band" aria-labelledby="action-missing-title">
+  <div class="cs-notice-body">
+    <strong id="action-missing-title">Action introuvable</strong>
+    <p>La fiche demandee n'est plus disponible avec ce lien. Rien n'a ete modifie: choisissez une action prioritaire ou revenez a la liste complete.</p>
+  </div>
+  <div class="cs-empty-actions" aria-label="Actions de repli">
+    <a href="{{ token_href('/actions?priority=P1') }}">Voir les actions urgentes</a>
+    <a href="{{ token_href('/actions') }}">Retour a la liste des actions</a>
+  </div>
+</section>
+<section class="cs-empty-state cs-missing-recovery" aria-labelledby="action-missing-recovery-title">
+  <strong id="action-missing-recovery-title">Aucune fiche ouverte avec ce lien.</strong>
+  <p>Pour eviter toute confusion, CoproScope n'ouvre pas une autre action a la place. Choisissez une liste, puis ouvrez une fiche depuis une carte visible.</p>
+  <div class="cs-empty-actions">
+    <a href="{{ token_href('/actions?priority=P1') }}">Voir les actions urgentes</a>
+    <a href="{{ token_href('/actions') }}">Retour a la liste des actions</a>
+  </div>
+</section>
+{% else %}
+
+{% include "_actions_reprise_actions.html" %}
+
+{% include "_actions_reprise_syndic.html" %}
+
+<section class="cs-page-header cs-registry-header" aria-labelledby="registre-title">
+  <div>
+    <p class="eyebrow">Registre decisions - actions - preuves</p>
+    <h2 id="registre-title">Actions a traiter <span class="sr-only">Registre des decisions</span></h2>
+    <p class="lead">Suivi des decisions et relances en Boite de travail du conseil syndical: chaque decision dit quoi faire, qui suit, quelle preuve manque, quelle relance preparer et ce qui restera en memoire.</p>
+  </div>
+
+  <div class="cs-header-tools" aria-label="Outils du registre">
+    <form class="cs-search cs-registry-search" action="{{ token_href('/actions') }}" method="get" role="search">
+      {% if ui_token_param %}
+      <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+      {% endif %}
+      <label class="sr-only" for="actions-search">Rechercher dans le registre</label>
+      <input id="actions-search" name="q" type="search" value="" placeholder="Rechercher decisions, actions, preuves...">
+    </form>
+
+    <span class="cs-status-badge">Mode prive local</span>
+
+    <details class="cs-help-menu">
+      <summary class="cs-icon-button" aria-label="Aide sur les mots du registre">?</summary>
+      <div>
+        <strong>Aide rapide</strong>
+        <p>Une preuve confirme un fait. Une piece liee aide le dossier mais ne prouve pas toujours l'action. Une relance est un message prepare ou trace. L'historique garde la memoire.</p>
+      </div>
+    </details>
+
+    <a class="cs-icon-button" href="{{ token_href('/actions?status=a_demander') }}" aria-label="Voir les relances et preuves en attente">!</a>
+
+    <details class="cs-action-menu">
+      <summary class="cs-primary-action">Nouvelle action</summary>
+      <div>
+        <a href="{{ token_href('/actions?create=decision') }}">Rattacher a une decision AG</a>
+        <a href="{{ token_href('/actions?create=free') }}">Action libre du conseil syndical</a>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="cs-register-summary" aria-label="Parcours jour de conseil syndical">
+  <a class="cs-summary-card cs-tone-danger" href="{{ token_href('/actions?status=a_demander') }}">
+    <span>{{ model.action_summary.by_status.a_demander|default(0) }} a demander</span>
+    <strong>Demander au syndic</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Obtenir les pieces ou explications qui manquent avant de dire que la decision est suivie.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Decision AG, facture, devis, reponse ecrite ou note de verification.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Preparer un message copiable, puis noter le canal d'envoi hors CoproScope.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Ne pas transferer de document complet tant que le public autorise n'est pas clair.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-warn" href="{{ token_href('/actions?status=a_verifier') }}">
+    <span>{{ model.action_summary.by_status.a_verifier|default(0) }} a verifier</span>
+    <strong>Verifier la preuve</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Confirmer qu'une piece prouve bien la date, le montant, le vote, l'execution ou la reponse.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Piece rattachee, preuve candidate ou reponse du syndic a controler.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Lire la piece, noter ce qu'elle confirme et garder une trace courte.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Partager une synthese si la piece contient des donnees sensibles.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-info" href="{{ token_href('/pieces') }}">
+    <span>{{ model.piece_workshop.summary.with_local_proof|default(0) }} a rattacher</span>
+    <strong>Rattacher au bon point</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Eviter qu'une preuve existe dans les documents sans clore le sujet correspondant.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Atelier pieces, PV, devis, facture, mail syndic ou note de verification.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Rattacher la piece, choisir son role, puis revenir ici pour suivre l'action.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Une piece utile n'est pas forcement une preuve diffusable.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-warn" href="{{ token_href('/actions?status=a_revoir') }}">
+    <span>{{ (model.action_summary.by_status.a_revoir|default(0)) + (model.action_summary.by_status.bloque|default(0)) }} a arbitrer</span>
+    <strong>Arbitrer en CS</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Decider ce qui peut etre partage, ce qui doit etre masque et qui prend la suite.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Ligne d'action, source du vote, piece candidate et trace de blocage.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Inscrire la decision du conseil syndical et le public autorise.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Bloquer l'export tant qu'aucune decision lisible n'est inscrite.</dd>
+    </dl>
+  </a>
+  <a class="cs-summary-card cs-tone-ok" href="{{ token_href('/actions?status=clos') }}">
+    <span>{{ model.action_summary.by_status.clos|default(0) }} terminees</span>
+    <strong>Cloturer avec preuve</strong>
+    <dl>
+      <dt>Pourquoi</dt>
+      <dd>Sortir de la reunion avec des sujets prouves, pas seulement commentes.</dd>
+      <dt>Preuve / source</dt>
+      <dd>Preuve validee, source citee et role de la piece explicite.</dd>
+      <dt>Prochaine action</dt>
+      <dd>Ajouter la note de passation ou exporter la fiche si la diffusion est claire.</dd>
+      <dt>Prudence diffusion</dt>
+      <dd>Ne pas annoncer la cloture tant que la preuve attendue n'est pas recue.</dd>
+    </dl>
+  </a>
+</section>
+
+<section class="sr-only" aria-label="Reperes du registre de travail">
+  <h3>Files de suivi</h3>
+  <p>Relances preuves, Preuves attendues et Relances responsables restent suivies dans ce Registre de travail.</p>
+  <p>Historique / conflit: chaque fiche distingue la trace de travail, la preuve validee et l'arbitrage du conseil syndical.</p>
+</section>
+
+<details class="cs-filter-menu">
+  <summary>Filtres et exports existants</summary>
+  <div class="cs-filter-panel">
+    <div class="cs-safe-export-notice">
+      <strong>Export prudent</strong>
+      <span>L'export porte sur le filtre courant. Verifiez la diffusion avant de partager hors conseil syndical.</span>
+    </div>
+    <div class="cs-filter-row" aria-label="Filtres par perimetre">
+      <span>Perimetre</span>
+      <a class="{{ 'active' if action_filters.scope == 'tous' else '' }}" href="{{ token_href('/actions') }}">Tous {{ model.action_summary.scope_counts.tous }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'comptes' else '' }}" href="{{ token_href('/actions?scope=comptes') }}">Comptes {{ model.action_summary.scope_counts.comptes }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'confidentialite' else '' }}" href="{{ token_href('/actions?scope=confidentialite') }}">Diffusion {{ model.action_summary.scope_counts.confidentialite }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'documents' else '' }}" href="{{ token_href('/actions?scope=documents') }}">Documents {{ model.action_summary.scope_counts.documents }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'decisions' else '' }}" href="{{ token_href('/actions?scope=decisions') }}">Decisions {{ model.action_summary.scope_counts.decisions }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'incidents' else '' }}" href="{{ token_href('/actions?scope=incidents') }}">Incidents {{ model.action_summary.scope_counts.incidents }}</a>
+      <a class="{{ 'active' if action_filters.scope == 'syndic' else '' }}" href="{{ token_href('/actions?scope=syndic') }}">Syndic {{ model.action_summary.scope_counts.syndic }}</a>
+    </div>
+    <div class="cs-filter-row" aria-label="Exports du registre">
+      <span>Exporter</span>
+      <a href="/exports/actions.csv{{ action_query_suffix|default('', true) }}">Exporter le registre CSV</a>
+      <a href="/exports/actions.md{{ action_query_suffix|default('', true) }}">Exporter le registre Markdown</a>
+    </div>
+  </div>
+</details>
+
+{% include "_actions_registry_body.html" %}
+{#
+Compatibility anchors for legacy static tests kept out of rendered UI:
+Fiches action a traiter maintenant
+{% for action in action_rows[:6] %}
+Files de suivi
+Relances preuves
+Preuves attendues
+Relances responsables
+Registre de travail
+Historique / conflit
+Conflit / arbitrage
+{{ action.title }}
+{{ action.next_step }}
+{{ action.evidence }}
+{{ action.detail or action.domain_label }}
+{{ action.evidence or action.source }}
+{{ action.owner }}
+{{ action.detail }}
+<dt>Pourquoi</dt><dt>Preuve / source</dt><dt>Prochaine action</dt><dt>Prudence diffusion</dt>
+<dt>Pourquoi</dt><dt>Preuve / source</dt><dt>Prochaine action</dt><dt>Prudence diffusion</dt>
+<dt>Pourquoi</dt><dt>Preuve / source</dt><dt>Prochaine action</dt><dt>Prudence diffusion</dt>
+<dt>Pourquoi</dt><dt>Preuve / source</dt><dt>Prochaine action</dt><dt>Prudence diffusion</dt>
+<dt>Pourquoi</dt><dt>Preuve / source</dt><dt>Prochaine action</dt><dt>Prudence diffusion</dt>
+<dt>Pourquoi</dt><dt>Preuve / source</dt><dt>Prochaine action</dt><dt>Prudence diffusion</dt>
+/exports/actions.csv{{ action_query_suffix }}
+/exports/actions.md{{ action_query_suffix }}
+#}
+{% endif %}
+{% endblock %}

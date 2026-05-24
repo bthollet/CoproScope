@@ -1,5 +1,9 @@
 # Feuille de route produit
 
+> Statut gouvernail: `SOURCE_HISTORIQUE`.
+> La source de verite roadmap est `docs/roadmap_backlog_central.md`
+> (`RM-2026-0003`, `RM-2026-0007`). Ne pas ajouter de priorite active ici.
+
 Cette feuille de route part de l'etude utilisateurs et de l'etat reel du depot.
 
 ## Cap

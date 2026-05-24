@@ -1,0 +1,2 @@
+entry_id,exercice,date,journal,compte_debit,compte_credit,debit,credit,fournisseur,numero_facture,piece_doc_id,source_path,statut,justification
+REC-2025-0001,2025,2025-01-15,ACHATS_RECONSTITUES,615000,401000,1200.00,1200.00,JARDINS EXEMPLE SERVICES,FAC-2025-001,DOC-1526D530DB8C,G:\Mon Drive\Communauté Beauvallon\00 - Copropriétés\021 - Beauvallon Pinède - Copropriétaires\coproscope\examples\synthetic_copro\raw\2025-01-15_facture_entretien_jardin.txt,PROBABLE,Ecriture candidate reconstruite depuis facture; validation humaine requise.

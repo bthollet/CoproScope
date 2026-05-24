@@ -23,8 +23,16 @@ GRIST_TABLES = [
 ]
 
 
+def _dataset_college(dataset: str) -> str:
+    return "C0_Public" if dataset == "demo" else "C4_Conseil_Syndical"
+
+
 def sync_grist(instance: InstanceConfig, run: RunContext, target: str, dataset: str, year: int) -> dict[str, object]:
-    grist_dir = instance.artifact("grist_dir") / dataset / str(year)
+    access_college = _dataset_college(dataset)
+    if target != "local" and dataset != "demo" and os.environ.get("COPROSCOPE_ALLOW_PRIVATE_SYNC") != "true":
+        raise RuntimeError("Private Grist sync requires COPROSCOPE_ALLOW_PRIVATE_SYNC=true and explicit private API configuration.")
+
+    grist_dir = instance.artifact("grist_dir") / dataset / access_college / str(year)
     grist_dir.mkdir(parents=True, exist_ok=True)
     ensure_accounting_outputs(instance, run, year)
 
@@ -34,11 +42,12 @@ def sync_grist(instance: InstanceConfig, run: RunContext, target: str, dataset: 
         "mode": "local_export",
         "target": target,
         "dataset": dataset,
+        "access_college": access_college,
         "year": year,
         "tables": GRIST_TABLES,
         "exports": copied,
         "api_ready": bool(os.environ.get("GRIST_API_KEY") and os.environ.get("GRIST_DOC_ID")),
-        "security": "No external Grist sync without explicit private API configuration.",
+        "security": "Datasets are partitioned by access college. No external Grist sync without explicit private API configuration. Redaction maps are never exported.",
         "generated_at": now_iso(),
     }
     write_text(grist_dir / "grist_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=True))

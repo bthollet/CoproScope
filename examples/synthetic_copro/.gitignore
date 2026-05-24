@@ -1,6 +1,13 @@
 .env.local
 logs/
 outputs/
-registers/
-staging/
+registers/*
+!registers/
+!registers/*.csv
+staging/*
+!staging/
+!staging/text/
+!staging/text/*.native.txt
+!staging/privacy_dir/
+!staging/privacy_dir/*.csv
 desktop.ini

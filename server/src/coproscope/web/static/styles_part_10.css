@@ -1,0 +1,522 @@
+
+/* Cycle N+2 FRONT - detail evenement memoire */
+.memory-event-detail-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.memory-event-header,
+.memory-event-status-strip > div,
+.memory-event-main-card,
+.memory-event-side > section,
+.memory-event-empty,
+.memory-event-audit {
+  min-width: 0;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+.memory-event-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+}
+
+.memory-event-header h2,
+.memory-event-main-card h3,
+.memory-event-side h3,
+.memory-event-empty h3 {
+  margin: 0;
+  color: #101828;
+  line-height: 1.2;
+}
+
+.memory-event-header h2 {
+  font-size: 28px;
+}
+
+.memory-event-header p:not(.eyebrow),
+.memory-event-main-card p,
+.memory-event-side p,
+.memory-event-empty p,
+.memory-event-side small {
+  margin: 0;
+  color: #475467;
+  overflow-wrap: anywhere;
+}
+
+.memory-event-actions,
+.memory-event-bottom-actions,
+.memory-event-audit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.memory-event-actions {
+  justify-content: flex-end;
+}
+
+.memory-event-actions a,
+.memory-event-bottom-actions a,
+.memory-event-transmission-review a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #1d5fd8;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.memory-event-actions a.is-primary {
+  border-color: #17624f;
+  color: #ffffff;
+  background: #17624f;
+}
+
+.memory-event-badge,
+.memory-event-title-row > span,
+.memory-event-audit span,
+.memory-event-timeline-row span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #9a3412;
+  background: #fff7ed;
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.memory-event-status-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.memory-event-status-strip > div {
+  display: grid;
+  gap: 5px;
+  border-left: 4px solid #1d5fd8;
+  padding: 12px;
+}
+
+.memory-event-status-strip > div:nth-child(2) {
+  border-left-color: #df2f24;
+}
+
+.memory-event-status-strip > div:nth-child(3) {
+  border-left-color: #f28705;
+}
+
+.memory-event-status-strip > div:nth-child(4) {
+  border-left-color: #13976b;
+}
+
+.memory-event-status-strip span,
+.memory-event-facts dt,
+.memory-event-transmission-review dt {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 740;
+}
+
+.memory-event-status-strip strong {
+  color: #101828;
+  overflow-wrap: anywhere;
+}
+
+.memory-event-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 370px);
+  gap: 12px;
+  align-items: start;
+}
+
+.memory-event-main-card,
+.memory-event-side > section,
+.memory-event-empty {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.memory-event-side {
+  position: sticky;
+  top: 74px;
+  display: grid;
+  gap: 12px;
+}
+
+.memory-event-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memory-event-facts,
+.memory-event-transmission-review dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.memory-event-facts div,
+.memory-event-transmission-review dl div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fbfcff;
+}
+
+.memory-event-facts dd,
+.memory-event-transmission-review dd {
+  margin: 0;
+  color: #101828;
+  overflow-wrap: anywhere;
+}
+
+.memory-event-handover-note,
+.memory-event-restriction-note {
+  display: grid;
+  gap: 7px;
+  border: 1px solid #dce3ec;
+  border-left: 4px solid #1d5fd8;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcff;
+}
+
+.memory-event-restriction-note {
+  border-left-color: #f28705;
+}
+
+.memory-event-timeline {
+  display: grid;
+  gap: 10px;
+}
+
+.memory-event-timeline ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-event-timeline-row {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 12px;
+  border-left: 2px solid #dce3ec;
+  padding: 0 0 14px 14px;
+}
+
+.memory-event-timeline-row time {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.memory-event-timeline-row div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.memory-event-timeline-row a,
+.memory-event-linked-documents a {
+  color: #1d5fd8;
+  font-weight: 760;
+}
+
+.memory-event-passation-card ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.memory-event-linked-documents {
+  display: grid;
+  gap: 8px;
+}
+
+.memory-event-linked-documents a {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+  border: 1px solid #dce3ec;
+  border-left: 4px solid #1d5fd8;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fbfcff;
+}
+
+.memory-event-linked-documents a span {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #174ea6;
+  background: #eef4ff;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.memory-event-linked-documents a small {
+  grid-column: 2;
+}
+
+.memory-event-audit {
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+@media (max-width: 1080px) {
+  .memory-event-layout,
+  .memory-event-status-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .memory-event-side {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .memory-event-header,
+  .memory-event-title-row {
+    flex-direction: column;
+  }
+
+  .memory-event-actions,
+  .memory-event-actions > *,
+  .memory-event-bottom-actions a,
+  .memory-event-transmission-review a {
+    width: 100%;
+  }
+
+  .memory-event-facts,
+  .memory-event-transmission-review dl,
+  .memory-event-timeline-row,
+  .memory-event-linked-documents a {
+    grid-template-columns: 1fr;
+  }
+
+  .memory-event-linked-documents a small {
+    grid-column: auto;
+  }
+}
+
+/* Cycle N FRONT - apercu export passation */
+.cs-passation-page {
+  display: grid;
+  gap: 12px;
+}
+
+.cs-passation-hero,
+.cs-passation-status,
+.cs-passation-preview,
+.cs-passation-side,
+.cs-passation-omissions,
+.cs-passation-blockers,
+.cs-passation-empty,
+.cs-passation-audit {
+  min-width: 0;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+.cs-passation-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+}
+
+.cs-passation-heading {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.cs-passation-heading h2 {
+  margin: 0;
+  color: #101828;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.cs-passation-heading p:not(.eyebrow),
+.cs-passation-status p,
+.cs-passation-preview > p,
+.cs-passation-side-section p,
+.cs-passation-empty p,
+.cs-passation-included p,
+.cs-passation-omission-list p {
+  margin: 0;
+  color: #475467;
+}
+
+.cs-passation-hero-actions,
+.cs-passation-downloads,
+.cs-passation-audit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cs-passation-hero-actions {
+  justify-content: flex-end;
+}
+
+.cs-passation-primary,
+.cs-passation-secondary,
+.cs-passation-inline-link {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.cs-passation-primary {
+  border-color: #17624f;
+  background: #17624f;
+  color: #ffffff;
+}
+
+.cs-passation-secondary,
+.cs-passation-inline-link {
+  background: #ffffff;
+  color: #1d5fd8;
+}
+
+.cs-passation-status {
+  display: grid;
+  grid-template-columns: minmax(220px, .75fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border-left: 4px solid #f28705;
+  padding: 14px;
+}
+
+.cs-passation-status div {
+  display: grid;
+  gap: 4px;
+}
+
+.cs-passation-status strong {
+  color: #101828;
+  font-size: 18px;
+}
+
+.cs-passation-status span,
+.cs-passation-section-head > span,
+.cs-passation-kpis span,
+.cs-passation-audit span,
+.cs-passation-downloads span,
+.cs-passation-checklist span,
+.cs-passation-blocker-list span,
+.cs-passation-omission-list span,
+.cs-passation-included span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 740;
+}
+
+.cs-passation-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cs-passation-kpis div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  border: 1px solid #dce3ec;
+  border-left: 4px solid #1d5fd8;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.cs-passation-kpis div:nth-child(2) {
+  border-left-color: #13976b;
+}
+
+.cs-passation-kpis div:nth-child(3) {
+  border-left-color: #667085;
+}
+
+.cs-passation-kpis div:nth-child(4) {
+  border-left-color: #f28705;
+}
+
+.cs-passation-kpis div:nth-child(5) {
+  border-left-color: #df2f24;
+}
+
+.cs-passation-kpis strong {
+  color: #101828;
+  font-size: 25px;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.cs-passation-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 12px;
+  align-items: start;
+}
+
+.cs-passation-blocker-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, .9fr) minmax(280px, .85fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.cs-passation-preview,
+.cs-passation-side,
+.cs-passation-omissions,
+.cs-passation-blockers,
+.cs-passation-empty {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}

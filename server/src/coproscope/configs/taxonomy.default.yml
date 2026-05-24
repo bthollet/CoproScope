@@ -47,8 +47,8 @@
       "lot": "Contrats",
       "type_document": "Contrat_Assurance",
       "priorite": 65,
-      "motifs_nom_fichier": ["assurance"],
-      "mots_cles": ["multirisques", "contrat d'assurance", "police d'assurance"]
+      "motifs_nom_fichier": ["(?<!demande_)attestation.*assurance", "contrat.*assurance", "police.*assurance"],
+      "mots_cles": ["contrat d'assurance", "police d'assurance"]
     },
     {
       "lot": "ITE_Travaux",
@@ -61,8 +61,8 @@
       "lot": "Communication",
       "type_document": "Communication",
       "priorite": 40,
-      "motifs_nom_fichier": ["mail", "courriel", "relance", "note"],
-      "mots_cles": ["courriel", "relance", "demande", "reponse"]
+      "motifs_nom_fichier": ["mail", "email", "e-mail", "courriel", "relance", "note"],
+      "mots_cles": ["mail", "email", "e-mail", "courriel", "relance", "demande", "reponse"]
     }
   ]
 }

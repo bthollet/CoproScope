@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..core.common import InstanceConfig, RunContext
-from . import agscope, docuscope, factureops
+from . import agscope, biffageops, docuscope, factureops, privacyops
 from .accounting import accounting_controls, reconstruct_accounting
 from .evidenceops import build_evidence_report
 from .gristops import sync_grist
@@ -14,6 +14,8 @@ def run_workers(instance: InstanceConfig, run: RunContext, scope: str, year: int
         actions.append({"worker": "inventory_worker", "path": str(docuscope.inventory(instance, run))})
     if scope in {"documents", "all"}:
         actions.append({"worker": "document_text_worker", "path": str(docuscope.extract_text(instance, run))})
+        actions.append({"worker": "privacy_screening_worker", "result": privacyops.screen_existing(instance, run)})
+        actions.append({"worker": "biffage_queue_worker", "result": biffageops.build_redaction_queue(instance, run)})
     if scope in {"syndic", "all"}:
         actions.append({"worker": "syndic_tracking_worker", "path": str(docuscope.missing_docs(instance, run))})
     if scope in {"ag", "all"}:

@@ -1,0 +1,6 @@
+kpi_id,family,indicator,formula,source,status,value,notes
+KPI-001,Documents,Taux documents OCR requis,OCR_REQUIRED / total documents,registre_documents,CALCULATED,0.0%,
+KPI-002,Documents,Taux documents non classes,A_CLASSER / total documents,registre_documents,CALCULATED,0.0%,
+KPI-008,Syndic,Delai moyen de reponse syndic,date reponse - date demande,registre_demandes,TO_FILL,,
+KPI-011,Syndic,Taux demandes CS tracees,demandes avec preuve / demandes totales,registre_demandes,CALCULATED,0.0%,
+KPI-012,Syndic,Taux reponses syndic completes,reponses completes / demandes echeues,registre_demandes,CALCULATED,0.0%,

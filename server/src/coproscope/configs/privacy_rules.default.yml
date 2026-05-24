@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "default_college": "C4_Conseil_Syndical",
+  "review_confidence_threshold": "medium",
+  "public_path_markers": ["examples/synthetic_copro", "diffusable", "communicable", "publication"],
+  "path_rules": [
+    {
+      "markers": ["_RESTREINT", "restreint", "impayes", "recouvrement", "banque", "rib", "contentieux", "avocat", "procedure"],
+      "raw_max_college": "C8_Restreint_Critique",
+      "restriction_reasons": ["RGPD", "contentieux", "finance"],
+      "confidence": "high"
+    },
+    {
+      "markers": ["assemblees_generales", "ag_par_date", "convocation", "pv"],
+      "raw_max_college": "C2_Coproprietaires",
+      "restriction_reasons": [],
+      "confidence": "medium"
+    },
+    {
+      "markers": ["reglement", "edd", "referentiel_copropriete", "diagnostic", "carnet_entretien"],
+      "raw_max_college": "C2_Coproprietaires",
+      "restriction_reasons": [],
+      "confidence": "medium"
+    },
+    {
+      "markers": ["affiche", "consigne", "communication", "occupants"],
+      "raw_max_college": "C1_Occupants_Usagers",
+      "restriction_reasons": [],
+      "confidence": "medium"
+    }
+  ],
+  "document_type_rules": [
+    {
+      "document_types": ["Reglement_Copropriete", "EDD", "Convocation_AG", "PV_AG", "Contrat_Syndic", "Contrat_Assurance", "Diagnostic_Technique"],
+      "raw_max_college": "C2_Coproprietaires",
+      "confidence": "medium"
+    },
+    {
+      "document_types": ["Facture", "Devis", "Annexe_Comptable"],
+      "raw_max_college": "C4_Conseil_Syndical",
+      "derivative_max_college": "C2_Coproprietaires",
+      "publication_form": "redaction_required",
+      "confidence": "medium"
+    },
+    {
+      "document_types": ["Contrat_Travail", "Impayes", "Releve_Bancaire", "Contentieux_Nominatif"],
+      "raw_max_college": "C8_Restreint_Critique",
+      "publication_form": "aggregation_required",
+      "confidence": "high"
+    }
+  ],
+  "critical_terms": [
+    "mot de passe",
+    "password",
+    "code portail",
+    "code badge",
+    "cle vigik",
+    "iban",
+    "impaye",
+    "recouvrement",
+    "sante",
+    "handicap",
+    "revenu fiscal",
+    "avis d'imposition"
+  ]
+}

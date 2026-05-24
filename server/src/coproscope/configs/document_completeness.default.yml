@@ -20,14 +20,16 @@
       "lot": "Syndic",
       "libelle_attendu": "Contrat syndic en cours",
       "type_document": "Contrat_Syndic",
-      "criticite": "P0"
+      "criticite": "P0",
+      "fraicheur_mois": 36
     },
     {
       "preuve_id": "PRV-004",
       "lot": "Comptes",
       "libelle_attendu": "Annexes comptables completes",
       "type_document": "Annexe_Comptable",
-      "criticite": "P1"
+      "criticite": "P1",
+      "fraicheur_mois": 24
     },
     {
       "preuve_id": "PRV-005",

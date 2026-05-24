@@ -1,0 +1,500 @@
+            f"      <dt>Sujets ouverts</dt><dd>{_html_escape(summary.get('open_topics_count', 0))}</dd>",
+            f"      <dt>Restriction</dt><dd>{_html_escape(restrictions.get('label') or 'Diffusion a relire')}</dd>",
+            "    </dl>",
+            "    <nav aria-label=\"Telechargements derives\">",
+            f"      <a href=\"{_html_escape(links.get('txt', '#'))}\">Telecharger TXT</a>",
+            f"      <a href=\"{_html_escape(links.get('json', '#'))}\">Telecharger JSON</a>",
+            f"      <a href=\"{_html_escape(links.get('self', '/exports/passation'))}\">Actualiser l'apercu</a>",
+            "    </nav>",
+            "    <section><h2>Sections incluses</h2>",
+            section_items,
+            "    </section>",
+            "    <section><h2>Elements exclus ou bloques</h2>",
+            excluded_items,
+            "    </section>",
+            "    <section><h2>Restrictions</h2>",
+            f"      <p>{_html_escape(restrictions.get('reason') or 'Relire avant partage externe.')}</p>",
+            "    </section>",
+            "    <section><h2>Apercu de contenu</h2>",
+            preview_sections,
+            "    </section>",
+            "    <section><h2>Evenements</h2>",
+            events,
+            "    </section>",
+            "    <section><h2>Documents</h2>",
+            documents,
+            "    </section>",
+            "    <section><h2>Formats disponibles</h2>",
+            format_html,
+            "    </section>",
+            "  </main>",
+            "</body>",
+            "</html>",
+        ]
+    )
+
+
+def create_app(
+    instance: InstanceConfig,
+    year: int = 2025,
+    access_token: str | None = None,
+    *,
+    prewarm_dashboard: bool = False,
+):
+    FastAPI, HTTPException, Request, HTMLResponse, RedirectResponse, Response, StaticFiles, Jinja2Templates = _require_web_stack()
+
+    app = FastAPI(title="CoproScope local", docs_url=None, redoc_url=None)
+    templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    dashboard_cache: dict[str, dict[str, object] | None] = {"model": None}
+
+    def _dashboard_model() -> dict[str, object]:
+        cached = dashboard_cache.get("model")
+        if isinstance(cached, dict):
+            return cached
+        model = build_dashboard_model(instance, year)
+        dashboard_cache["model"] = model
+        return model
+
+    def _invalidate_dashboard_model_cache() -> None:
+        dashboard_cache["model"] = None
+
+    def _public_missing_pieces_model() -> dict[str, object] | None:
+        try:
+            return build_public_missing_pieces_model(instance, year)
+        except PublicReadModelUnavailable:
+            if public_reconstruction_db_path(instance) is None:
+                return None
+            return build_empty_public_missing_pieces_model(instance, year)
+
+    def _is_public_path(path: str) -> bool:
+        return path in PUBLIC_PATHS or any(path.startswith(prefix) for prefix in PUBLIC_PATH_PREFIXES)
+
+    def _request_has_token(request: FastAPIRequest) -> bool:
+        if not access_token:
+            return False
+        supplied = (
+            request.query_params.get("token")
+            or request.headers.get("x-coproscope-token", "")
+            or request.cookies.get(TOKEN_COOKIE_NAME, "")
+        )
+        return bool(supplied and secrets.compare_digest(str(supplied), access_token))
+
+    def _require_token(request: FastAPIRequest) -> None:
+        if not access_token:
+            return
+        if not _request_has_token(request):
+            raise HTTPException(status_code=403, detail="Jeton local requis.")
+
+    def _token_suffix(request: FastAPIRequest) -> str:
+        if not access_token or not _request_has_token(request):
+            return ""
+        return f"token={quote(access_token)}"
+
+    def _token_value(request: FastAPIRequest) -> str:
+        if not access_token or not _request_has_token(request):
+            return ""
+        return access_token
+
+    def _url_with_token(request: FastAPIRequest, path: str) -> str:
+        suffix = _token_suffix(request)
+        if not suffix:
+            return path
+        separator = "&" if "?" in path else "?"
+        return f"{path}{separator}{suffix}"
+
+    @app.middleware("http")
+    async def _local_token_gate(request: FastAPIRequest, call_next):  # type: ignore[no-untyped-def]
+        if access_token and not _is_public_path(str(request.url.path)) and not _request_has_token(request):
+            return Response("Jeton local requis.", status_code=403, media_type="text/plain; charset=utf-8")
+        response = await call_next(request)
+        if access_token and _request_has_token(request):
+            response.set_cookie(
+                TOKEN_COOKIE_NAME,
+                access_token,
+                httponly=True,
+                samesite="lax",
+                secure=False,
+            )
+        return response
+
+    def context(request: FastAPIRequest, page: str, **extra: object) -> dict[str, object]:
+        model = extra.pop("model", None)
+        if model is None:
+            model = _dashboard_model()
+        values: dict[str, object] = {
+            "request": request,
+            "page": page,
+            "model": model,
+            "ui_token_query": f"?{_token_suffix(request)}" if _token_suffix(request) else "",
+            "ui_token_param": _token_suffix(request),
+            "pilotage_route_enabled": True,
+        }
+        if page in CONTEXT_BANNER_PAGES:
+            values["context_banner"] = build_context_banner(
+                instance,
+                next_action_href=_url_with_token(request, "/gouvernance"),
+            )
+        values.update(extra)
+        return values
+
+    def _filtered_actions(scope: str = "", priority: str = "", status: str = "") -> tuple[dict[str, object], list[dict[str, str]]]:
+        model = _dashboard_model()
+        actions = filter_action_items(
+            model["action_items"],  # type: ignore[arg-type]
+            scope=scope,
+            priority=priority,
+            status=status,
+        )
+        return model, actions
+
+    def _query_suffix(scope: str = "", priority: str = "", status: str = "", token: str = "") -> str:
+        query = {
+            key: value
+            for key, value in {
+                "scope": scope,
+                "priority": priority,
+                "status": status,
+                "token": token,
+            }.items()
+            if value
+        }
+        return f"?{urlencode(query)}" if query else ""
+
+    def _download_headers(filename: str) -> dict[str, str]:
+        return {
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        }
+
+    @app.get("/", response_class=HTMLResponse)
+    def overview(request: FastAPIRequest):
+        return templates.TemplateResponse(request=request, name="overview.html", context=context(request, "overview"))
+
+    @app.get("/actions", response_class=HTMLResponse)
+    def actions(request: FastAPIRequest, scope: str = "", priority: str = "", status: str = ""):
+        model, rows = _filtered_actions(scope=scope, priority=priority, status=status)
+        return templates.TemplateResponse(
+            request=request,
+            name="actions.html",
+            context=context(
+                request,
+                "actions",
+                model=model,
+                action_rows=rows,
+                action_filters={
+                    "scope": scope or "tous",
+                    "priority": priority or "tous",
+                    "status": status or "tous",
+                },
+                action_query_suffix=_query_suffix(scope=scope, priority=priority, status=status, token=_token_value(request)),
+            ),
+        )
+
+    @app.get("/actions/{action_id}")
+    def action_detail(request: FastAPIRequest, action_id: str):
+        public_action_id = _public_action_route_id(action_id)
+        query_name = "selected" if public_action_id in _known_action_route_ids(_dashboard_model()) else "action_missing"
+        target = f"/actions?{urlencode({query_name: public_action_id})}"
+        return RedirectResponse(_url_with_token(request, target), status_code=303)
+
+    @app.get("/comptes", response_class=HTMLResponse)
+    def accounting(request: FastAPIRequest):
+        return templates.TemplateResponse(request=request, name="accounting.html", context=context(request, "accounting"))
+
+    @app.get("/documents", response_class=HTMLResponse)
+    def documents(request: FastAPIRequest):
+        return templates.TemplateResponse(request=request, name="documents.html", context=context(request, "documents"))
+
+    @app.get("/documents/ajouter", response_class=HTMLResponse)
+    def document_intake_page(request: FastAPIRequest):
+        from .document_intake_view import template_context
+
+        _require_token(request)
+        return templates.TemplateResponse(
+            request=request,
+            name="document_intake.html",
+            context=context(
+                request,
+                "document_intake",
+                **template_context(_document_intake_preparation_rows(year)),
+            ),
+        )
+
+    @app.get("/documents/{doc_id}", response_class=HTMLResponse)
+    def document_detail(request: FastAPIRequest, doc_id: str):
+        from .document_viewer import DocumentNotFoundError, build_document_detail
+
+        try:
+            detail = build_document_detail(instance, doc_id)
+        except DocumentNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Document introuvable.") from exc
+        return templates.TemplateResponse(
+            request=request,
+            name="document_detail.html",
+            context=context(request, "documents", document_detail=detail),
+        )
+
+    @app.get("/pieces", response_class=HTMLResponse)
+    def pieces(request: FastAPIRequest):
+        if request.query_params.get("proof") == "missing":
+            public_model = _public_missing_pieces_model()
+            if public_model is not None:
+                return templates.TemplateResponse(
+                    request=request,
+                    name="pieces.html",
+                    context=context(request, "pieces", model=public_model),
+                )
+        return templates.TemplateResponse(request=request, name="pieces.html", context=context(request, "pieces"))
+
+    @app.get("/pieces/{piece_id}", response_class=HTMLResponse)
+    def piece_detail(request: FastAPIRequest, piece_id: str):
+        from .piece_detail_view import build_piece_detail
+
+        model = _dashboard_model()
+        detail = build_piece_detail(instance, year, piece_id, dict(request.query_params), dashboard_model=model)
+        return templates.TemplateResponse(
+            request=request,
+            name="piece_detail.html",
+            context=context(request, "pieces", model=model, piece_detail=detail),
+        )
+
+    @app.get("/demandes", response_class=HTMLResponse)
+    def requests_page(request: FastAPIRequest):
+        from .requests_view import template_context
+
+        _require_token(request)
+        return templates.TemplateResponse(
+            request=request,
+            name="requests.html",
+            context=context(request, "requests", model=_shell_model(instance, year), **template_context(instance, year)),
+        )
+
+    @app.post("/demandes")
+    async def create_request(request: FastAPIRequest):
+        from ..modules import requestops
+
+        _require_token(request)
+        form = await request.form()
+        subject = _safe_form_text(form.get("subject"))
+        if not subject:
+            raise HTTPException(status_code=422, detail="Sujet requis.")
+        channel = str(form.get("channel") or requestops.CHANNEL_EMAIL).strip()
+        source_ref = _safe_form_text(form.get("source_ref"))
+        visibility = str(form.get("visibility") or requestops.VISIBILITY_CS).strip()
+        next_action = _safe_form_text(form.get("next_action"))
+        today = datetime.now(timezone.utc).date().isoformat()
+        request_id = f"REQ-UI-{secrets.token_hex(4).upper()}"
+        row = {
+            "request_id": request_id,
+            "received_at": today,
+            "author_label": "membre_cs_demo",
+            "author_role": "conseil_syndical",
+            "channel": channel,
+            "subject": subject,
+            "summary": subject,
+            "proof_ref": "",
+            "source_ref": source_ref or "source_locale_a_rattacher",
+            "status": requestops.STATUS_TO_QUALIFY,
+            "next_action": next_action or "Qualifier la demande puis rattacher la preuve ou la reponse attendue.",
+            "related_point_id": "",
+            "related_action_id": "",
+            "visibility": visibility,
+            "origin_kind": "ui_demo",
+            "origin_id": request_id,
+            "notes": "Creation depuis l'interface locale; donnees de demonstration uniquement.",
+        }
+        existing = requestops.read_request_register(instance)
+        new_request = requestops.normalize_request(row)
+        run = RunContext(instance, "ui create request")
+        try:
+            requestops.write_request_register(instance, run, [*existing, new_request])
+        except Exception:
+            run.finish("FAILED", f"request {request_id} not created")
+            raise
+        else:
+            _invalidate_dashboard_model_cache()
+            run.finish("OK", f"created request {request_id}")
+        return RedirectResponse(
+            url=_url_with_token(request, f"/demandes?status=created&request_id={request_id}#nouvelle-demande"),
+            status_code=303,
+        )
+
+    @app.get("/demandes/relance", response_class=HTMLResponse)
+    def relance_syndic_page(
+        request: FastAPIRequest,
+        request_id: str = "",
+        action_id: str = "",
+        piece_id: str = "",
+        piece_detail: str = "",
+        sent: str = "",
+        sent_id: str = "",
+    ):
+        from .relance_syndic_view import build_relance_syndic_view
+
+        _require_token(request)
+        model = _dashboard_model() if piece_detail or piece_id else _shell_model(instance, year)
+        return templates.TemplateResponse(
+            request=request,
+            name="relance_syndic.html",
+            context=context(
+                request,
+                "requests",
+                model=model,
+                relance=build_relance_syndic_view(
+                    instance,
+                    year,
+                    request_id=request_id,
+                    action_id=action_id,
+                    piece_id=piece_id,
+                    piece_detail=piece_detail,
+                    sent=sent,
+                    sent_id=sent_id,
+                    dashboard_model=model if piece_detail or piece_id else None,
+                ),
+            ),
+        )
+
+    @app.post("/demandes/relance")
+    async def validate_relance_syndic(request: FastAPIRequest):
+        from ..modules import requestops
+
+        _require_token(request)
+        form = await request.form()
+        request_id = _safe_form_text(form.get("request_id"))
+        if not request_id:
+            raise HTTPException(status_code=422, detail="Demande requise.")
+        try:
+            requests = requestops.read_request_register(instance)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail="Registre demandes indisponible.") from exc
+        selected = next((item for item in requests if item.request_id == request_id), None)
+        if selected is None:
+            raise HTTPException(status_code=404, detail="Demande introuvable.")
+        try:
+            existing_actions = requestops.normalize_actions(
+                requestops.rows_from_csv(requestops.request_action_log_path(instance).read_text(encoding="utf-8-sig"))
+            )
+        except (OSError, ValueError):
+            existing_actions = []
+        today = datetime.now(timezone.utc).date().isoformat()
+        sent_date = _safe_form_text(form.get("sent_date")) or today
+        sent_channel = _safe_form_text(form.get("sent_channel")) or "canal a preciser"
+        sent_recipient = _safe_form_text(form.get("sent_recipient")) or "destinataire a preciser"
+        sent_note = _safe_form_text(form.get("sent_note"))
+        summary = (
+            "Relance notee hors CoproScope: "
+            f"date {sent_date}, canal {sent_channel}, destinataire {sent_recipient}."
+        )
+        if sent_note:
+            summary = f"{summary} Note: {sent_note}"
+        action = requestops.normalize_action(
+            {
+                "journal_id": f"JRN-UI-RELANCE-{secrets.token_hex(4).upper()}",
+                "request_id": request_id,
+                "occurred_at": today,
+                "actor_role": "conseil_syndical",
+                "action_type": "relance",
+                "summary": summary,
+                "proof_ref": selected.proof_ref,
+                "source_ref": selected.source_ref,
+                "status_after": requestops.STATUS_FOLLOW_UP,
+                "next_action": "Attendre la reponse du syndic puis rattacher la piece recue.",
+                "visibility": selected.visibility,
+            }
+        )
+        run = RunContext(instance, "ui validate syndic followup")
+        try:
+            requestops.write_request_action_log(instance, run, [*existing_actions, action])
+        except Exception:
+            run.finish("FAILED", f"followup {request_id} not recorded")
+            raise
+        else:
+            _invalidate_dashboard_model_cache()
+            run.finish("OK", f"followup {request_id} recorded")
+        return RedirectResponse(
+            url=_url_with_token(request, f"/demandes/relance?request_id={request_id}&sent=1&sent_id={action.journal_id}"),
+            status_code=303,
+        )
+
+    @app.get("/ag-contentieux", response_class=HTMLResponse)
+    def agcontentieux_page(request: FastAPIRequest):
+        from .agcontentieux_view import build_agcontentieux_passation_view
+
+        _require_token(request)
+        return templates.TemplateResponse(
+            request=request,
+            name="agcontentieux.html",
+            context=context(
+                request,
+                "agcontentieux",
+                model=_shell_model(instance, year),
+                agcontentieux=build_agcontentieux_passation_view(instance, year),
+            ),
+        )
+
+    @app.get("/gouvernance", response_class=HTMLResponse)
+    def governance(request: FastAPIRequest):
+        from .governance import build_governance_overview
+
+        return templates.TemplateResponse(
+            request=request,
+            name="governance.html",
+            context=context(request, "governance", governance=build_governance_overview(instance, year)),
+        )
+
+    @app.get("/pilotage", response_class=HTMLResponse)
+    def pilotage(request: FastAPIRequest):
+        _require_token(request)
+        from .pilotage_view import build_pilotage_view
+
+        pilotage_view = build_pilotage_view(instance=instance, period_label=str(year), source_label="pilotageops")
+        return templates.TemplateResponse(
+            request=request,
+            name="pilotage.html",
+            context=context(request, "pilotage", pilotage=pilotage_view, pilotage_view=pilotage_view),
+        )
+
+    @app.get("/confidentialite", response_class=HTMLResponse)
+    def privacy(request: FastAPIRequest):
+        return templates.TemplateResponse(request=request, name="privacy.html", context=context(request, "privacy"))
+
+    @app.get("/chantiers", response_class=HTMLResponse)
+    def workstreams(request: FastAPIRequest):
+        return templates.TemplateResponse(request=request, name="workstreams.html", context=context(request, "workstreams"))
+
+    @app.get("/chantiers/{event_id}")
+    def workstream_detail(request: FastAPIRequest, event_id: str):
+        public_event_id = public_memory_event_id(event_id)
+        if public_event_id == DEMO_MEMORY_EVENT_ID:
+            return templates.TemplateResponse(
+                request=request,
+                name="memory_event_detail.html",
+                context=context(
+                    request,
+                    "workstreams",
+                    memory_event=build_memory_event_detail(public_event_id, dict(request.query_params)),
+                ),
+            )
+        query_name = "selected" if public_event_id in _known_memoire_event_route_ids(_dashboard_model()) else "event_missing"
+        target = f"/chantiers?{urlencode({query_name: public_event_id})}"
+        return RedirectResponse(_url_with_token(request, target), status_code=303)
+
+    @app.get("/depot", response_class=HTMLResponse)
+    def depot_page(request: FastAPIRequest, depot: str = "", status: str = ""):
+        _require_token(request)
+        selected = read_deposit_manifest(instance, depot) if depot else latest_deposit_manifest(instance)
+        depot_context = _safe_deposit_context(request.query_params.items())
+        model = _dashboard_model() if any(
+            depot_context.get(key) for key in ("piece_detail", "piece_id", "missing_for", "action")
+        ) else None
+        return templates.TemplateResponse(
+            request=request,
+            name="depot.html",
+            context=context(
+                request,
+                "depot",
+                model=model,
+                selected_deposit=selected,
+                pipeline_status=status,
+                depot_prefill=_depot_prefill_context(instance, year, depot_context, dashboard_model=model),

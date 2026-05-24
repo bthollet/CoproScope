@@ -2,7 +2,7 @@
 
 ## Idee centrale
 
-CoproScope est un cockpit local-first pour conseil syndical.
+CoproScope est un outil local-first pour rendre la copropriete lisible et actionnable par des coproprietaires non experts, des collectifs d'habitants et les acteurs qui les accompagnent.
 
 Il part d'un constat simple : dans beaucoup de coproprietes, l'information existe deja, mais elle est dispersee, fragile, peu tracable, peu actionnable et parfois trop sensible pour etre partagee telle quelle.
 
@@ -20,12 +20,14 @@ Le projet reconstruit une chaine :
 
 L'etude UX/SHS montre que le besoin n'est pas seulement documentaire.
 
-Le conseil syndical a besoin de :
+L'enquete partait beaucoup des conseils syndicaux, parce qu'ils portent souvent les demandes, les controles et la passation. Mais le besoin produit depasse ce seul relais: il faut rendre les chaines de preuve comprehensibles pour des coproprietaires novices et pour les institutions qui les accompagnent.
+
+Les utilisateurs ont besoin de :
 
 - preuve : savoir d'ou vient l'information ;
 - action : savoir quoi faire maintenant ;
 - memoire : ne pas perdre l'historique ;
-- limite : savoir ce qui releve ou non du role CS ;
+- limite : savoir ce qui releve ou non de leur role, de leur mandat ou de leur droit d'acces ;
 - diffusion : expliquer sans exposer de donnees sensibles.
 
 CoproScope doit donc eviter deux ecueils :
@@ -35,7 +37,7 @@ CoproScope doit donc eviter deux ecueils :
 
 ## La promesse en termes simples
 
-Quand CoproScope fonctionne bien, une equipe peut dire :
+Quand CoproScope fonctionne bien, un coproprietaire ou un collectif peut dire :
 
 - on sait ce qu'on a ;
 - on sait ce qu'il manque ;
@@ -43,13 +45,13 @@ Quand CoproScope fonctionne bien, une equipe peut dire :
 - on sait ce qu'on peut diffuser ;
 - on sait quelle demande ou decision rattacher a quelle preuve ;
 - on sait quels points traiter avant l'AG ;
-- on peut transmettre le dossier au prochain conseil syndical.
+- on peut transmettre le dossier au prochain relais sans repartir de zero.
 
 ## Ce que CoproScope est
 
 - un outil local-first ;
 - un cockpit documentaire et operationnel ;
-- un assistant de controle pour conseil syndical ;
+- un assistant de controle et de comprehension pour coproprietaires et collectifs ;
 - un systeme de registres et preuves ;
 - une aide a la restitution propre ;
 - une base open source genericisable.
@@ -82,9 +84,9 @@ Les instances reelles restent hors depot. Le depot public recoit le code, les sc
 
 PrivacyOps et BiffageOps ne sont pas des details techniques. Ils rendent possible la diffusion prudente : screening, college d'acces, biffage, pseudonymisation, version diffusable.
 
-### 5. Le conseil syndical n'est pas un persona unique
+### 5. Le conseil syndical est un relais, pas le centre unique
 
-Un CS peut etre vigie, pompier, batisseur, expert, fatigue ou captif du syndic. CoproScope doit accepter ces niveaux de maturite.
+Un CS peut etre vigie, pompier, batisseur, expert, fatigue ou captif du syndic. Mais une copropriete peut aussi avoir peu ou pas de relais actif. CoproScope doit donc rester lisible pour des coproprietaires novices et pour les institutions qui veulent les accompagner.
 
 ### 6. L'IA doit rester sous preuve
 
@@ -92,15 +94,14 @@ Les aides IA peuvent accelerer l'extraction, la synthese ou la revue. Elles ne d
 
 ### 7. L'interface vient apres les objets metier
 
-Pas d'application web prematuree. L'interface locale devient pertinente quand les registres, statuts et rapports sont assez stables.
+Pas d'application web decorative. L'interface locale est le produit pour les non-techniciens; les registres, statuts et rapports ne valent que s'ils nourrissent une experience comprehensible.
 
 ## Pourquoi c'est mobilisateur
 
-Chaque couche utile rend le travail du conseil syndical un peu moins solitaire :
+Chaque couche utile rend le travail collectif un peu moins solitaire :
 
 - une piece retrouvee evite une relance floue ;
 - un biffage evite une diffusion risquee ;
 - un rapprochement comptable produit une vraie question ;
 - une resolution suivie evite l'oubli post-AG ;
 - une memoire de copropriete evite de repartir de zero.
-
