@@ -82,6 +82,31 @@ integration, selon son ownership declare. Les devs ne codent pas tant qu'il n'y
 a pas UI cible reelle, commande dev validee, qualification novice requise et
 owner unique sur les fichiers sensibles.
 
+## Methode equipe UX/UI recherche sans dev
+
+Quand Brice dit `lance une equipe UX/UI`, avec ou sans accent sur `equipe`,
+utiliser
+[`protocole_equipe_ux_ui_recherche.md`](./protocole_equipe_ux_ui_recherche.md).
+
+Ce mode est volontairement different de l'equipe agile:
+
+- 6 roles maximum;
+- aucun dev, aucun patch, aucun ticket technique detaille;
+- deux testeurs obligatoires: Testeur metier expert et Testeur
+  accessibilite/novice;
+- generation d'images par le Designer UI / generateur visuel;
+- images retenues archivees dans `docs/assets/...` et referencees dans la doc
+  de mission avec prompt/intention, decision et retours testeurs;
+- heartbeat automatique toutes les 10 minutes sur le fil courant jusqu'au
+  marqueur `UXUI-DONE - equipe UX/UI a fini son job`.
+
+Le coordinateur cree le `RM-*` si necessaire, le `CH-*` horodate, la ligne
+`CONV-*`, la doc de mission `docs/recherche_ux_ui_<date>_<slug>.md` et le
+dossier d'images `docs/assets/ux-ui-recherche-<date>-<slug>/`. Si les outils
+de sous-agents sont disponibles, il lance les roles separement; sinon il execute
+les roles dans le fil courant avec des sections nommees. Dans tous les cas, la
+relance ne doit pas dupliquer un role vivant.
+
 ## Regle zero interconversations
 
 Tout agent doit appliquer

@@ -36,6 +36,13 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   dev back/viewmodel et QA, avec flux decale UI reelle -> image/blueprint si
   pertinent -> qualification novice -> dev -> test produit, et comparaison
   reguliere avec les visuels de l'enquete utilisateur.
+- Quand Brice dit "lance une equipe UX/UI" avec ou sans accent sur `equipe`,
+  appliquer
+  [`docs/protocole_equipe_ux_ui_recherche.md`](./docs/protocole_equipe_ux_ui_recherche.md):
+  equipe de recherche sans dev, 6 roles maximum dont Testeur metier expert et
+  Testeur accessibilite/novice, generation d'images, images retenues archivees
+  dans la doc de mission, et relance heartbeat toutes les 10 minutes jusqu'au
+  marqueur `UXUI-DONE - equipe UX/UI a fini son job`.
 - Dans une conversation orientee vers un but, comme un audit ou une livraison,
   le coordinateur garde le chemin critique. Les demandes ponctuelles de
   generalisation, doctrine, cadrage transverse ou side-quest bornee sont
@@ -208,6 +215,22 @@ est disponible, il lance un sub-agent avec objectif borne, ownership explicite,
 fichiers evites, trace et critere de fin. Si aucun thread n'est disponible, il
 note la demande comme reprise ulterieure ou question d'arbitrage, sauf si elle
 bloque directement le but principal.
+
+## Methode equipe UX/UI sans dev
+
+Quand la commande naturelle est `lance une equipe UX/UI`, avec ou sans accent
+sur `equipe`, utiliser
+[`docs/protocole_equipe_ux_ui_recherche.md`](./docs/protocole_equipe_ux_ui_recherche.md).
+Cette equipe ne code pas: elle produit recherche, parcours, wireflows,
+directions UI, images generees et decisions UX/UI. Le Designer UI / generateur
+visuel produit les images candidates; seules les images retenues ou utiles a
+une decision sont archivees dans `docs/assets/...` et referencees dans la doc
+de mission.
+
+Au lancement effectif, le coordinateur cree une heartbeat automation Codex
+toutes les 10 minutes sur le fil courant. Elle relance les roles idle ou
+bloques sans les dupliquer, puis s'arrete quand la trace finale contient
+`UXUI-DONE - equipe UX/UI a fini son job`.
 
 ## Ports locaux
 
