@@ -71,6 +71,12 @@ ambigu ou sensible pour un novice, le designer genere une image ou un blueprint
 avant le dev; le membre novice le qualifie en GO/NO-GO, puis seulement le
 coordinateur ouvre l'ownership front/back.
 
+La comparaison aux visuels d'enquete utilisateur est une activite recurrente:
+designer, novice et QA rapprochent l'UI reelle des captures source ou du visuel
+designer derive avant commande dev, apres livraison, puis avant tout GO. Les
+ecarts de structure, hierarchie, densite, vocabulaire et affordances sont traces
+comme acceptes, refuses ou reportes.
+
 Un agent idle est relance sur QA, preparation, documentation, coherence ou
 integration, selon son ownership declare. Les devs ne codent pas tant qu'il n'y
 a pas UI cible reelle, commande dev validee, qualification novice requise et
@@ -124,7 +130,8 @@ par role sont dans [`prompts_agents_refonte_ux.md`](./prompts_agents_refonte_ux.
 Regle specifique: aucun dev ne demarre une vue manquante sans blueprint
 designer, aucun dev ne demarre une UI pertinente sans image/blueprint qualifie
 par le novice, et aucun testeur ne valide une intention abstraite sans route ou
-artefact reel livre.
+artefact reel livre. Aucun GO UI n'est publie sans comparaison aux visuels
+d'enquete ou justification explicite de non-pertinence.
 
 ## Preparation avant lancement
 

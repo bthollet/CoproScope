@@ -34,7 +34,8 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   [`docs/protocole_equipe_agile_agents.md`](./docs/protocole_equipe_agile_agents.md):
   coordinateur-scribe, designer/facilitateur, utilisateur novice, dev front,
   dev back/viewmodel et QA, avec flux decale UI reelle -> image/blueprint si
-  pertinent -> qualification novice -> dev -> test produit.
+  pertinent -> qualification novice -> dev -> test produit, et comparaison
+  reguliere avec les visuels de l'enquete utilisateur.
 - Dans une conversation orientee vers un but, comme un audit ou une livraison,
   le coordinateur garde le chemin critique. Les demandes ponctuelles de
   generalisation, doctrine, cadrage transverse ou side-quest bornee sont
@@ -193,9 +194,12 @@ Resume d'execution:
 6. des que le sujet est visuel, nouveau, ambigu ou sensible pour un novice, le
    designer produit une image ou un blueprint, puis le novice donne un
    GO/NO-GO avant tout dev;
-7. les devs restent en lecture tant que le blueprint, la commande dev, la
+7. le designer, le novice et la QA comparent souvent l'UI reelle aux visuels
+   d'enquete utilisateur ou au visuel designer derive, et tracent les ecarts
+   acceptes/refuses avant GO;
+8. les devs restent en lecture tant que le blueprint, la commande dev, la
    qualification novice et le contrat `model.ux.*` ne sont pas stabilises;
-8. chaque point annonce: a tester, en dev, en enquete, commande prete, agents
+9. chaque point annonce: a tester, en dev, en enquete, commande prete, agents
    idle, decision requise, prochain mouvement et preuves.
 
 Dans ce cadre, le coordinateur ne quitte pas la piste critique pour traiter une
@@ -243,6 +247,9 @@ Regles supplementaires:
 - ne pas laisser les devs inventer une vue manquante sans blueprint designer;
 - ne pas lancer un dev UI sans route/ecran/artefact reel cible et, si pertinent,
   sans image designer qualifiee par le novice;
+- comparer regulierement l'UI livree aux visuels de l'enquete utilisateur ou au
+  visuel designer derive; un GO UI sans comparaison explicite est refuse sauf
+  justification de non-pertinence;
 - tester une route livree, pas une intention abstraite;
 - tenir [`docs/registre_cycles_refonte_ux.md`](./docs/registre_cycles_refonte_ux.md)
   et utiliser les prompts de

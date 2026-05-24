@@ -21,6 +21,11 @@ Source de verite UX:
 - `docs/assets/etude-utilisateurs/controle-comptes-guide.png`
 - `docs/assets/etude-utilisateurs/memoire-copropriete.png`
 
+Les visuels designer generes pour les cycles suivants completent ces sources,
+mais ne les remplacent pas. A chaque cycle UI, les agents comparent l'UI reelle
+au visuel d'enquete le plus proche ou au visuel designer derive, puis tracent
+les ecarts acceptes, refuses ou reportes.
+
 ## Principe de pipeline
 
 Le travail n'avance jamais en file unique. A chaque point de coordination, les
@@ -50,6 +55,7 @@ Point de coordination toutes les 10 minutes, dans ce format exact:
 - **En dev maintenant**: bloc, owners front/back, risque principal.
 - **En enquete maintenant**: image ou visuel recree, questions utilisateur.
 - **Commande prete**: ticket dev valide pour le prochain bloc.
+- **Comparaison visuels enquete**: ecarts UI reelle vs visuel source ou derive.
 - **Decision requise**: arbitrage produit, UX, donnees ou securite.
 - **Prochain mouvement**: action concrete avant le prochain point.
 
@@ -62,6 +68,7 @@ Le heartbeat Codex actif `coordination-refonte-ux-coproscope` utilise ce format.
 Entree:
 
 - capture Canva existante ou visuel recree par le designer;
+- route ou capture UI reelle a comparer si elle existe deja;
 - contexte metier de copropriete;
 - conclusions d'enquete utilisateur: preuve + action + memoire.
 
@@ -79,6 +86,7 @@ Sortie:
 - composants a corriger;
 - vocabulaire a utiliser et vocabulaire a bannir;
 - parcours nominal et parcours d'echec;
+- ecarts avec le visuel d'enquete ou le visuel designer derive;
 - premiere version de la commande dev.
 
 ### 2. Commande dev
@@ -87,6 +95,7 @@ La commande dev est obligatoire avant tout developpement. Elle contient:
 
 - objectif utilisateur;
 - UI reelle cible: route, ecran, modale, artefact ou parcours;
+- visuel source ou derive a comparer;
 - structure visuelle;
 - composants;
 - donnees necessaires;
@@ -106,6 +115,7 @@ Responsabilites:
 - dev back/viewmodel: projection `model.ux.*`, compteurs, listes, details,
   liens tokenises;
 - QA: tests routes, securite, langage novice, DOM, responsive.
+- QA et novice: comparaison par blocs avec le visuel source ou derive.
 
 Garde-fous:
 
@@ -128,7 +138,8 @@ Controle QA:
 - structure DOM attendue;
 - langage novice;
 - accessibilite minimale;
-- comparaison visuelle par blocs avec l'image cible.
+- comparaison visuelle par blocs avec l'image cible ou le visuel d'enquete le
+  plus proche.
 
 Controle membre CS novice:
 
@@ -311,6 +322,8 @@ Acceptance:
 - Aucun developpement UI ne demarre sans UI reelle cible.
 - Une UI nouvelle, visuelle, dense ou sensible part en dev sans image/blueprint
   designer qualifie par le novice.
+- Une livraison UI est acceptee sans comparaison au visuel d'enquete ou au
+  visuel designer derive.
 - Testeur teste une maquette au lieu d'une route livree.
 - Designer laisse les devs inventer une vue manquante.
 - Un compteur n'ouvre rien.

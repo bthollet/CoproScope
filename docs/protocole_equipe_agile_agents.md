@@ -16,6 +16,10 @@ Des que le sujet est visuel, nouveau, ambigu, dense ou sensible pour un membre
 CS novice, le designer genere une image ou un blueprint, puis le novice le
 qualifie en GO/NO-GO avant que le developpement commence.
 
+Les visuels de l'enquete utilisateur et les visuels designer derives sont des
+references actives, pas des archives. Les agents comparent regulierement l'UI
+reelle a ces references pendant le cadrage, apres livraison et avant tout GO UI.
+
 ## Regle de demarrage
 
 Avant de lancer l'equipe, le coordinateur doit:
@@ -30,6 +34,8 @@ Avant de lancer l'equipe, le coordinateur doit:
    n'est pas stable.
 7. bloquer tout dev UI tant que la cible UI reelle, l'image/blueprint pertinent
    et la qualification novice ne sont pas explicites.
+8. nommer le visuel d'enquete ou le visuel designer derive qui servira de
+   reference, ou justifier pourquoi la comparaison n'est pas pertinente.
 
 Sans ces elements, l'equipe reste en cadrage lecture seule.
 
@@ -107,21 +113,45 @@ No-go immediat:
   visuel, dense ou sensible;
 - test qui valide une maquette sans route, ecran ou artefact livre.
 
+## Comparaison aux visuels d'enquete
+
+Cette comparaison est recurrente pour tout travail UI.
+
+- **Avant dev**: le designer rattache la commande a un visuel source
+  (`docs/assets/etude-utilisateurs/...`) ou a un visuel designer derive. Il
+  nomme les elements a conserver: structure, hierarchie, densite, vocabulaire,
+  gestes attendus et signaux de confiance.
+- **Pendant dev**: les devs verifient que les compromis techniques ne cassent
+  pas ces reperes. Si l'ecart change l'intention utilisateur, le bloc retourne
+  au designer.
+- **En QA/novice**: le test de la route reelle inclut une comparaison par blocs
+  avec le visuel de reference: premier viewport, CTA, cartes, tableaux,
+  statuts, preuves, prochaine action, diffusion et etats vides.
+- **En cloture**: le GO/NO-GO cite les ecarts acceptes, refuses ou reportes. Si
+  aucune comparaison n'est pertinente, la trace l'explique.
+
+Un agent idle cote UX/QA peut etre relance uniquement sur cette comparaison,
+meme sans nouveau code a produire.
+
 ## Cycle type
 
 1. Cadrage de l'UI reelle cible: route, ecran, modale, artefact ou parcours.
 2. Enquete sur UI existante, image generee, blueprint ou capture livree.
-3. Qualification novice de l'image/blueprint ou de l'UI existante.
-4. Commande dev au format obligatoire.
-5. Developpement front/back sur ownership explicite.
-6. Test de la route, de l'ecran ou de l'artefact reel livre.
-7. Correction mineure ou retour designer si l'intention change.
-8. Cloture par preuves: UI reelle, captures, tests, go/no-go novice.
+3. Comparaison avec les visuels d'enquete ou le visuel designer derive.
+4. Qualification novice de l'image/blueprint ou de l'UI existante.
+5. Commande dev au format obligatoire.
+6. Developpement front/back sur ownership explicite.
+7. Test de la route, de l'ecran ou de l'artefact reel livre.
+8. Comparaison QA/novice de l'UI livree avec le visuel de reference.
+9. Correction mineure ou retour designer si l'intention change.
+10. Cloture par preuves: UI reelle, captures, tests, comparaison visuelle,
+    go/no-go novice.
 
 La commande dev doit contenir:
 
 - objectif utilisateur;
 - UI cible reelle et route ou artefact a tester;
+- visuel d'enquete ou visuel designer derive de reference;
 - structure visuelle;
 - composants;
 - donnees necessaires;
@@ -139,6 +169,8 @@ La commande dev doit contenir:
   image/blueprint designer qualifie par le novice.
 - Aucun testeur ne valide une intention abstraite: il teste une route, un ecran
   ou un artefact reel.
+- Aucun GO UI ne sort sans comparaison aux visuels d'enquete ou justification
+  explicite de non-pertinence.
 - Un fichier sensible a un seul owner a la fois.
 - Les donnees privees ne sont pas ajoutees a Git.
 - Les donnees fictives doivent etre marquees comme fictives ou demo.
@@ -154,6 +186,7 @@ Chaque point de coordination utilise ce format:
 - En dev maintenant
 - En enquete maintenant
 - Commande prete
+- Comparaison visuels enquete
 - Agents idle a relancer
 - Decision requise
 - Prochain mouvement
@@ -189,10 +222,12 @@ Le comportement attendu est:
 4. il nomme l'UI reelle cible du cycle courant;
 5. il demande au designer une image ou un blueprint des que c'est pertinent,
    puis fait qualifier cette sortie par le novice avant dev;
-6. il garde le flux decale actif;
-7. il travaille localement sur la piste critique pendant que les agents
+6. il fait comparer regulierement l'UI reelle au visuel d'enquete ou au visuel
+   designer derive, et trace les ecarts;
+7. il garde le flux decale actif;
+8. il travaille localement sur la piste critique pendant que les agents
    traitent les pistes paralleles;
-8. il delegue aux sub-agents les generalisations et side-quests bornees si les
+9. il delegue aux sub-agents les generalisations et side-quests bornees si les
    threads disponibles le permettent;
-9. il integre uniquement apres preuves et ownership clair;
-10. il publie un `BOT-END` ou un point de reprise exploitable.
+10. il integre uniquement apres preuves et ownership clair;
+11. il publie un `BOT-END` ou un point de reprise exploitable.
