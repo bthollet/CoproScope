@@ -33,7 +33,8 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
 - Quand Brice demande une "equipe agile" ou une equipe multi-agents, appliquer
   [`docs/protocole_equipe_agile_agents.md`](./docs/protocole_equipe_agile_agents.md):
   coordinateur-scribe, designer/facilitateur, utilisateur novice, dev front,
-  dev back/viewmodel et QA, avec flux decale image -> dev -> test produit.
+  dev back/viewmodel et QA, avec flux decale UI reelle -> image/blueprint si
+  pertinent -> qualification novice -> dev -> test produit.
 - Dans une conversation orientee vers un but, comme un audit ou une livraison,
   le coordinateur garde le chemin critique. Les demandes ponctuelles de
   generalisation, doctrine, cadrage transverse ou side-quest bornee sont
@@ -186,9 +187,15 @@ Resume d'execution:
 4. le travail tourne en double flux: `N-1` teste le produit livre, `N`
    developpe la commande validee, `N+1` prepare le visuel et la commande
    suivante;
-5. les devs restent en lecture tant que le blueprint, la commande dev et le
-   contrat `model.ux.*` ne sont pas stabilises;
-6. chaque point annonce: a tester, en dev, en enquete, commande prete, agents
+5. chaque cycle nomme une UI reelle: route, ecran, modale, artefact HTML ou
+   parcours local. Si l'UI manque, le premier objectif est de la rendre
+   testable, pas de raisonner sur une intention abstraite;
+6. des que le sujet est visuel, nouveau, ambigu ou sensible pour un novice, le
+   designer produit une image ou un blueprint, puis le novice donne un
+   GO/NO-GO avant tout dev;
+7. les devs restent en lecture tant que le blueprint, la commande dev, la
+   qualification novice et le contrat `model.ux.*` ne sont pas stabilises;
+8. chaque point annonce: a tester, en dev, en enquete, commande prete, agents
    idle, decision requise, prochain mouvement et preuves.
 
 Dans ce cadre, le coordinateur ne quitte pas la piste critique pour traiter une
@@ -234,6 +241,8 @@ Regles supplementaires:
 - garder un bloc en test, un bloc en dev et un bloc en enquete quand c'est possible;
 - ne pas demarrer le dev sans commande validee;
 - ne pas laisser les devs inventer une vue manquante sans blueprint designer;
+- ne pas lancer un dev UI sans route/ecran/artefact reel cible et, si pertinent,
+  sans image designer qualifiee par le novice;
 - tester une route livree, pas une intention abstraite;
 - tenir [`docs/registre_cycles_refonte_ux.md`](./docs/registre_cycles_refonte_ux.md)
   et utiliser les prompts de

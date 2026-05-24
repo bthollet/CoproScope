@@ -65,9 +65,16 @@ Le coordinateur garde les roles en flux decale:
 - `N+1`: designer et utilisateur preparent l'image, le blueprint et la
   commande suivante.
 
+Chaque cycle part d'une UI reelle ou en produit une: route locale, ecran,
+modale, artefact HTML ou parcours testable. Quand le sujet est visuel, nouveau,
+ambigu ou sensible pour un novice, le designer genere une image ou un blueprint
+avant le dev; le membre novice le qualifie en GO/NO-GO, puis seulement le
+coordinateur ouvre l'ownership front/back.
+
 Un agent idle est relance sur QA, preparation, documentation, coherence ou
 integration, selon son ownership declare. Les devs ne codent pas tant qu'il n'y
-a pas commande dev validee et owner unique sur les fichiers sensibles.
+a pas UI cible reelle, commande dev validee, qualification novice requise et
+owner unique sur les fichiers sensibles.
 
 ## Regle zero interconversations
 
@@ -115,7 +122,9 @@ Le registre de suivi est
 par role sont dans [`prompts_agents_refonte_ux.md`](./prompts_agents_refonte_ux.md).
 
 Regle specifique: aucun dev ne demarre une vue manquante sans blueprint
-designer, et aucun testeur ne valide une intention abstraite sans route livree.
+designer, aucun dev ne demarre une UI pertinente sans image/blueprint qualifie
+par le novice, et aucun testeur ne valide une intention abstraite sans route ou
+artefact reel livre.
 
 ## Preparation avant lancement
 

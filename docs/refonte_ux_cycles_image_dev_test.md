@@ -10,7 +10,7 @@ Ce document met en oeuvre le protocole de refonte UX issu des visuels
 d'enquete utilisateur. Il sert de mode operatoire pour garder trois flux actifs
 en permanence:
 
-- un ecran livre a tester;
+- une UI reelle livree a tester;
 - un bloc en developpement;
 - le visuel ou blueprint suivant en enquete.
 
@@ -35,6 +35,12 @@ trois niveaux suivants doivent etre renseignes:
 Objectif operationnel: les testeurs ont toujours quelque chose sous la dent
 pendant que les devs travaillent, et les devs ont toujours une commande
 stabilisee pendant que le designer prepare la suivante.
+
+Regle obligatoire: le cycle ne part jamais d'une intention abstraite. Il nomme
+une route, un ecran, une modale, un artefact HTML ou un parcours local. Si le
+sujet est visuel, nouveau, ambigu ou sensible pour le novice, le designer
+genere une image ou un blueprint et le membre CS novice le qualifie avant tout
+developpement.
 
 ## Cadence obligatoire
 
@@ -80,6 +86,7 @@ Sortie:
 La commande dev est obligatoire avant tout developpement. Elle contient:
 
 - objectif utilisateur;
+- UI reelle cible: route, ecran, modale, artefact ou parcours;
 - structure visuelle;
 - composants;
 - donnees necessaires;
@@ -301,6 +308,9 @@ Acceptance:
 ## No-go
 
 - Aucun developpement ne demarre sans commande dev validee.
+- Aucun developpement UI ne demarre sans UI reelle cible.
+- Une UI nouvelle, visuelle, dense ou sensible part en dev sans image/blueprint
+  designer qualifie par le novice.
 - Testeur teste une maquette au lieu d'une route livree.
 - Designer laisse les devs inventer une vue manquante.
 - Un compteur n'ouvre rien.
