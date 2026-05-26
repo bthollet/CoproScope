@@ -18,7 +18,7 @@ Le projet reconstruit une chaine :
 
 ## Ce que l'etude utilisateurs a clarifie
 
-L'etude UX/SHS montre que le besoin n'est pas seulement documentaire.
+L'etude documentaire UX/SHS montre que le besoin n'est pas seulement documentaire.
 
 L'enquete partait beaucoup des conseils syndicaux, parce qu'ils portent souvent les demandes, les controles et la passation. Mais le besoin produit depasse ce seul relais: il faut rendre les chaines de preuve comprehensibles pour des coproprietaires novices et pour les institutions qui les accompagnent.
 
@@ -70,27 +70,37 @@ Quand CoproScope fonctionne bien, un coproprietaire ou un collectif peut dire :
 
 ### 1. Les originaux ne se touchent pas
 
-Les racines brutes restent en lecture seule. Toute transformation passe par les registres, sorties, journaux, versions biffees ou artefacts locaux.
+Les documents bruts restent en lecture seule. Toute transformation passe par les registres, sorties, journaux, versions biffees ou artefacts locaux.
 
-### 2. La preuve prime
+### 2. La traçabilité des traitements faits par l'appli prime
 
 Chaque automatisation utile doit laisser une trace : hash, registre, source, methode, statut, rapport, action attendue.
 
 ### 3. Le prive reste prive
 
-Les instances reelles restent hors depot. Le depot public recoit le code, les schemas, les exemples synthetiques, les methodes et les formes genericisees.
+Les instances reelles restent hors github. Le github recoit le code, les schemas, les exemples synthetiques, les methodes et les formes genericisees.
 
 ### 4. La confidentialite est une fonction produit
 
-PrivacyOps et BiffageOps ne sont pas des details techniques. Ils rendent possible la diffusion prudente : screening, college d'acces, biffage, pseudonymisation, version diffusable.
+PrivacyOps et BiffageOps ne sont pas des details techniques. Ils rendent possible la diffusion prudente : screening, college d'acces, biffage, pseudonymisation, version diffusable à tous les copropriétaires.
 
 ### 5. Le conseil syndical est un relais, pas le centre unique
 
 Un CS peut etre vigie, pompier, batisseur, expert, fatigue ou captif du syndic. Mais une copropriete peut aussi avoir peu ou pas de relais actif. CoproScope doit donc rester lisible pour des coproprietaires novices et pour les institutions qui veulent les accompagner.
 
-### 6. L'IA doit rester sous preuve
+### 6. IA et Cloud: maximiser les traitements locaux, faciliter le traitement humain, sécuriser le recours au cloud
 
-Les aides IA peuvent accelerer l'extraction, la synthese ou la revue. Elles ne doivent pas effacer la source, le doute, la validation humaine ou la politique de confidentialite.
+Les aides IA peuvent accelerer l'extraction, la synthese ou la revue. Elles ne doivent pas effacer la source, le doute, la validation humaine ou la politique de confidentialite. CoproScope cherche à maximiser les traitements sans IA :
+ - CoproScope est conçu pour fonctionner totalement hors ligne, en offrant la possibilité de recourir à des services tiers Cloud ou IA
+ - Tous les traitements (extraction des données des documents, etc.) sont faits localement
+
+#### 6.1 IA: aucun envoi de données par CoproScope, et fiabiliser le recours volontaire à l'IA pour les utilisateurs qui souhaitent y recourir
+ - En cas d'échec des outils automatiques, des outils IA locale peuvent être déclencher (ex: si la reconnaissance de texte classique n'a pas marché, ou pour reconnaitre les différentes parties d'une facture)
+ - CoproScope crée une version anonymisée de toutes les données, dans un format texte brut, qui permet d'éviter les fuites de données par des copropriétaires qui auraient recours à l'IA pour comprendre ce qu'il se passe
+ - Il propose également des trames pour guider l'IA dans la production d'analyses pertinentes
+
+#### 6.2 Cloud: faciliter le travail à plusieurs, tout en évitant à la fois les fuites et l'accaparement des données
+L'enquête utilisateur met en évidence la nécessité de collaborer de manière efficace sans occulter le risque de captation de l'information par une partie de la gouvernance, parfois volontaire, parfois involontaire. CoprosCope veut permettre la décentralisation de l'information et la collaboration sur les dossiers en permettant de synchroniser en temps réél toute l'information dans un dossier crypté.
 
 ### 7. L'interface vient apres les objets metier
 
