@@ -99,7 +99,7 @@ Les aides IA peuvent accelerer l'extraction, la synthese ou la revue. Elles ne d
  - CoproScope crée une version anonymisée de toutes les données, dans un format texte brut, qui permet d'éviter les fuites de données par des copropriétaires qui auraient recours à l'IA pour comprendre ce qu'il se passe
  - Il propose également des trames pour guider l'IA dans la production d'analyses pertinentes
 
-#### 6.2 Cloud: faciliter le travail à plusieurs, tout en évitant à la fois les fuites et l'accaparement des données
+#### 6.2 Cloud: faciliter le travail à plusieurs, tout en évitant à la fois les fuites externe et l'accaparement interne des données
 L'enquête utilisateur met en évidence la nécessité de collaborer de manière efficace sans occulter le risque de captation de l'information par une partie de la gouvernance, parfois volontaire, parfois involontaire. CoprosCope veut permettre la décentralisation de l'information et la collaboration sur les dossiers en permettant de synchroniser en temps réél toute l'information dans un dossier crypté.
 
 ### 7. L'interface vient apres les objets metier
