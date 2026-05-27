@@ -1,0 +1,129 @@
+.agw-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.agw-hero,
+.agw-status,
+.agw-metrics article,
+.agw-boundaries article,
+.agw-checks article,
+.agw-actions button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.agw-hero,
+.agw-status,
+.agw-metrics article,
+.agw-boundaries article,
+.agw-checks article {
+  padding: 1rem;
+}
+
+.agw-hero__actions,
+.agw-metrics,
+.agw-boundaries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.agw-hero__actions {
+  margin-top: 1rem;
+}
+
+.agw-status,
+.agw-metrics article {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+}
+
+.agw-status span,
+.agw-status small,
+.agw-metrics small,
+.agw-boundaries p,
+.agw-checks p,
+.agw-actions small,
+.agw-row span {
+  color: var(--muted);
+}
+
+.agw-status strong,
+.agw-metrics strong {
+  font-size: 1.25rem;
+}
+
+.agw-metrics,
+.agw-boundaries {
+  margin-bottom: 1rem;
+}
+
+.agw-metrics article,
+.agw-boundaries article {
+  flex: 1 1 190px;
+}
+
+.agw-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.agw-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(130px, 0.65fr) minmax(110px, 0.6fr) minmax(170px, 0.9fr) minmax(210px, 1.1fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 880px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.agw-row.is-head {
+  font-weight: 700;
+}
+
+.agw-checks,
+.agw-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.agw-actions button {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.agw-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .agw-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .agw-table {
+    overflow-x: visible;
+  }
+
+  .agw-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .agw-row.is-head {
+    display: none;
+  }
+}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% set view = participants_ag %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="pag-hero" aria-labelledby="pag-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="pag-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="pag-hero__actions">
+      <a class="button-link" href="#participants">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#actions">Voir les actions bloquees</a>
+    </div>
+  </div>
+  <aside class="pag-status" aria-label="Statut des participants AG fictifs">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucun import reel ni vote officiel</small>
+  </aside>
+</section>
+
+<section class="pag-summary" aria-label="Resume de la liste AG fictive">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="pag-boundaries" aria-label="Limites de la liste participants AG">
+  {% for item in view.boundaries %}
+  <article>
+    <strong>{{ item.label }}</strong>
+    <p>{{ item.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="pag-definitions-title">
+  <div class="panel-head">
+    <h3 id="pag-definitions-title">Mots utiles pour l'AG</h3>
+    <span>Definitions courtes</span>
+  </div>
+  <div class="pag-definitions">
+    {% for definition in view.definitions %}
+    <article>
+      <strong>{{ definition.label }}</strong>
+      <p>{{ definition.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="participants" aria-labelledby="participants-title">
+  <div class="panel-head">
+    <h3 id="participants-title">Personnes a verifier</h3>
+    <span>{{ view.participants|length }} lignes fictives</span>
+  </div>
+  <div class="pag-table" role="table" aria-label="Participants AG et droits fictifs">
+    <div class="pag-row is-head" role="row">
+      <span role="columnheader">Identifiant</span>
+      <span role="columnheader">Lot</span>
+      <span role="columnheader">Role</span>
+      <span role="columnheader">Droit AG</span>
+      <span role="columnheader">Pouvoir</span>
+      <span role="columnheader">Voix AG</span>
+      <span role="columnheader">A verifier</span>
+    </div>
+    {% for person in view.participants %}
+    <div class="pag-row" role="row">
+      <strong role="cell">{{ person.owner_id }}</strong>
+      <span role="cell">{{ person.lot }}</span>
+      <span role="cell">{{ person.role }}</span>
+      <span role="cell">{{ person.vote }}</span>
+      <span role="cell">{{ person.power }}</span>
+      <span role="cell">{{ person.ag_voices }}</span>
+      <span role="cell">{{ person.caution }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Presence et pouvoirs</h3>
+      <span>Feuille de presence</span>
+    </div>
+    <div class="pag-checks">
+      {% for item in view.attendance %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Resolutions a rattacher</h3>
+      <span>Suivi fictif</span>
+    </div>
+    <div class="pag-resolutions">
+      {% for resolution in view.resolutions %}
+      <article>
+        <span>{{ resolution.id }}</span>
+        <strong>{{ resolution.title }}</strong>
+        <small>{{ resolution.voices }} - {{ resolution.follow_up }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Droits et pouvoirs AG</h3>
+      <span>Controle humain</span>
+    </div>
+    <div class="pag-checks">
+      {% for check in view.checks %}
+      <article>
+        <strong>{{ check.label }}</strong>
+        <small>{{ check.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Sources et sorties bloquees</h3>
+      <span>Synthese derivee</span>
+    </div>
+    <div class="pag-checks">
+      {% for item in view.blocked_sources %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="actions">
+  <div class="panel-head">
+    <h3>Actions bloquees</h3>
+    <span>Aucun envoi</span>
+  </div>
+  <div class="pag-actions">
+    {% for action in view.actions %}
+    <button type="button" {% if action.enabled != "true" %}disabled aria-disabled="true"{% endif %}>
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </button>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="pag-versions-title">
+  <div class="panel-head">
+    <h3 id="pag-versions-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

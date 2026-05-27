@@ -13,6 +13,7 @@ from ..core.common import InstanceConfig, RunContext
 from ..vault.public_read_models import (
     PublicReadModelUnavailable,
     build_empty_public_missing_pieces_model,
+    build_public_actions_model,
     build_public_missing_pieces_model,
     public_reconstruction_db_path,
 )
@@ -30,6 +31,20 @@ from .depot import (
     run_light_pipeline,
 )
 from .context_banner import build_context_banner
+from .document_intake_route import (
+    _document_intake_doc_id,
+    _document_intake_is_register_source,
+    _document_intake_link_complete,
+    _document_intake_link_payload,
+    _document_intake_page_rows_and_sources,
+    _document_intake_privacy_value,
+    _document_intake_source_value,
+    _document_intake_type_value,
+    _save_document_intake_manifest_choice,
+    _save_document_intake_manifest_link,
+    _save_document_intake_register_choice,
+    _save_document_intake_register_link,
+)
 from .memory_event_view import DEMO_MEMORY_EVENT_ID, build_memory_event_detail, public_memory_event_id
 from .passation_blocker_view import build_passation_blocker_detail, enrich_passation_preview_blocker_links
 from .viewmodel import actions_to_csv, actions_to_markdown, build_dashboard_model, filter_action_items
@@ -218,77 +233,6 @@ def _known_memoire_event_route_ids(model: dict[str, object]) -> set[str]:
         if event_id != ACTION_ROUTE_MISSING_ID:
             event_ids.add(event_id)
     return event_ids
-
-
-def _document_intake_preparation_rows(year: int) -> list[dict[str, object]]:
-    return [
-        {
-            "doc_id": f"DOC-PREP-PV-{year}",
-            "display_name": f"PV assemblee generale {year}",
-            "local_reference": f"depot-local/DOC-PREP-PV-{year}",
-            "sha256": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
-            "file_format": "pdf",
-            "size_bytes": "245760",
-            "document_type": "PV_AG",
-            "domain": "gouvernance",
-            "period": str(year),
-            "classification_status": "ACCEPTED",
-            "privacy_status": "RESERVE_CS",
-            "privacy_rationale": "Lecture limitee avant validation de la version diffusable.",
-            "attachments": [
-                {
-                    "piece_label": f"PV AG {year}",
-                    "point_id": f"AG-{year}-PREP",
-                    "point_label": "Point AG a confirmer",
-                    "point_kind": "ag",
-                    "action_kind": "verifier",
-                    "action_label": "Verifier que le point et la decision cible sont corrects.",
-                    "proof_intent": "decision",
-                    "proof_label": "Decision votee ou a confirmer.",
-                }
-            ],
-        },
-        {
-            "doc_id": f"DOC-PREP-FACTURE-{year}",
-            "display_name": f"Facture entretien {year}",
-            "local_reference": f"depot-local/DOC-PREP-FACTURE-{year}",
-            "sha256": "abcdef1234567890abcdef1234567890",
-            "file_format": "pdf",
-            "size_bytes": "98304",
-            "document_type": "Facture",
-            "domain": "comptes",
-            "period": str(year),
-            "classification_status": "PROPOSED",
-            "privacy_status": "A_ARBITRER",
-            "privacy_rationale": "A confirmer avant tout partage hors instance locale.",
-        },
-        {
-            "doc_id": f"DOC-PREP-BIFFAGE-{year}",
-            "display_name": "Devis travaux a biffer",
-            "local_reference": f"depot-local/DOC-PREP-BIFFAGE-{year}",
-            "sha256": "0123456789abcdef0123456789abcdef",
-            "file_format": "pdf",
-            "size_bytes": "372736",
-            "document_type": "Devis",
-            "domain": "travaux",
-            "period": str(year),
-            "classification_status": "ACCEPTED",
-            "privacy_status": "A_BIFFER",
-            "privacy_rationale": "Une version diffusable doit masquer les donnees non partageables.",
-            "required_derivative": f"derivees/DOC-PREP-BIFFAGE-{year}-biffe",
-            "attachments": [
-                {
-                    "piece_label": "Devis travaux",
-                    "point_label": "Travaux a preparer",
-                    "point_kind": "chantier",
-                    "action_kind": "biffer",
-                    "action_label": "Preparer la version diffusable.",
-                    "proof_intent": "presence",
-                    "proof_label": "Version biffee disponible.",
-                }
-            ],
-        },
-    ]
 
 
 def _require_web_stack():

@@ -1,0 +1,118 @@
+.coffre-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.coffre-hero,
+.coffre-model article,
+.coffre-status,
+.coffre-gates article,
+.coffre-actions button,
+.coffre-state-list article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.coffre-hero,
+.coffre-status {
+  padding: 1.2rem;
+}
+
+.coffre-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.coffre-status {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+}
+
+.coffre-status span,
+.coffre-gates span,
+.coffre-rights-row span,
+.coffre-actions small,
+.coffre-state-list p {
+  color: var(--muted);
+}
+
+.coffre-status strong {
+  font-size: 1.25rem;
+}
+
+.coffre-model {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.coffre-model article,
+.coffre-gates article,
+.coffre-state-list article {
+  padding: 0.85rem;
+}
+
+.coffre-gates,
+.coffre-actions,
+.coffre-state-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.coffre-actions button {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.coffre-rights-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.coffre-rights-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) repeat(5, minmax(92px, 0.7fr)) minmax(110px, 0.8fr);
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 760px;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.coffre-rights-row.is-head {
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .coffre-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .coffre-rights-table {
+    overflow-x: visible;
+  }
+
+  .coffre-rights-row {
+    grid-template-columns: 1fr 1fr;
+    min-width: 0;
+  }
+
+  .coffre-rights-row.is-head {
+    display: none;
+  }
+}

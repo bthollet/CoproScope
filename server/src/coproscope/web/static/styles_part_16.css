@@ -1,0 +1,141 @@
+.crcs-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.crcs-hero,
+.crcs-boundary article,
+.crcs-status,
+.crcs-steps article,
+.crcs-actions button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.crcs-hero,
+.crcs-status {
+  padding: 1.2rem;
+}
+
+.crcs-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.crcs-status {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+}
+
+.crcs-status span,
+.crcs-status small,
+.crcs-boundary p,
+.crcs-steps span,
+.crcs-steps small,
+.crcs-actions small,
+.crcs-decision-row span {
+  color: var(--muted);
+}
+
+.crcs-status strong {
+  font-size: 1.25rem;
+}
+
+.crcs-boundary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.crcs-boundary article,
+.crcs-steps article {
+  padding: 0.85rem;
+}
+
+.crcs-facts {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.crcs-facts div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.crcs-facts dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.crcs-facts dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.crcs-steps,
+.crcs-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crcs-actions button {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.crcs-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.crcs-decision-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.crcs-decision-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(100px, 0.65fr) minmax(220px, 1.2fr) minmax(170px, 0.9fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 760px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.crcs-decision-row.is-head {
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .crcs-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .crcs-decision-table {
+    overflow-x: visible;
+  }
+
+  .crcs-decision-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .crcs-decision-row.is-head {
+    display: none;
+  }
+}

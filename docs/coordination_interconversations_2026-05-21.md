@@ -232,7 +232,7 @@ POINT-20260521-2248 - Coordination environnement test
 
 Statut: INTEGRE
 
-Decision: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test` devient la cible de recette/live par defaut pour les agents locaux. Platanes (`examples/synthetic_copro`) reste la cible des tests publics/CI et des exemples partageables.
+Decision: `C:\Users\brice\CoproScope\instances\beauvallon_test` devient la cible de recette/live par defaut pour les agents locaux. Platanes (`examples/synthetic_copro`) reste la cible des tests publics/CI et des exemples partageables.
 
 Fichiers impactes: `AGENTS.md`, `docs/orchestration_agents.md`, `docs/orchestration_live.md`, `docs/recette_visuelle_refonte_ux.md`, `docs/passerelle_ux_db_2026-05-21.md`, `docs/point_coordination_live_8766_2026-05-21.md`, `docs/presence_agents.md`.
 

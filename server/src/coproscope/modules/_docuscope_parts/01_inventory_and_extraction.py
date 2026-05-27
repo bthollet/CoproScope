@@ -39,10 +39,14 @@ SKIP_DIRS = {
     ".mypy_cache",
     ".ruff_cache",
     ".cache",
+    ".coproscope",
     "node_modules",
     "coproscope",
     "server",
     "docs",
+    "00 - lire avant de partager",
+    "08 - versions partageables",
+    "09 - rapports et syntheses",
     "_archives",
     "_instance_docs",
     "_transition_reports",
@@ -50,7 +54,7 @@ SKIP_DIRS = {
     "900_systeme_audit",
     "990_archives",
 }
-SKIP_FILENAMES = {"desktop.ini", "thumbs.db", "passation_coproscope_local.md"}
+SKIP_FILENAMES = {"desktop.ini", "thumbs.db", ".gitignore", "instance.yml", "passation_coproscope_local.md"}
 PRESERVE_FIELDS = {
     "lot",
     "document_type",
@@ -124,9 +128,80 @@ def _doc_id_for(digest: str) -> str:
     return f"DOC-{digest[:12].upper()}"
 
 
-def _iter_files(root: Path):
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _raw_roots(instance) -> list[Path]:
+    roots = instance.root_list("raw")
+    return roots or [instance.root("raw")]
+
+
+def _dedupe_scan_roots(roots: list[Path]) -> list[Path]:
+    result: list[Path] = []
+    for root in [item.resolve() for item in roots]:
+        if any(_is_relative_to(root, existing) for existing in result):
+            continue
+        result = [existing for existing in result if not _is_relative_to(existing, root)]
+        result.append(root)
+    return result
+
+
+def _configured_inventory_roots(instance, raw_roots: list[Path]) -> list[Path]:
+    roots = list(raw_roots)
+    physical_deposit = instance.physical_deposit_path()
+    if physical_deposit is not None:
+        roots.append(physical_deposit)
+    if instance.user_moves_allowed():
+        roots.append(instance.root("workspace"))
+    return _dedupe_scan_roots(roots)
+
+
+def _protected_roots(instance) -> list[Path]:
+    roots: list[Path] = []
+    for name in ["system", "outputs", "staging", "logs"]:
+        try:
+            roots.append(instance.root(name))
+        except KeyError:
+            pass
+    technical_root = instance.technical_root()
+    if technical_root is not None:
+        roots.append(technical_root)
+    for name in ["documents", "duplicates", "manifest", "requests", "ag", "findings", "kpi"]:
+        try:
+            roots.append(instance.register(name).parent)
+        except KeyError:
+            pass
+    return _dedupe_scan_roots(roots)
+
+
+def _is_protected(path: Path, scan_root: Path, protected_roots: list[Path]) -> bool:
+    return any(
+        _is_relative_to(path, protected) and not _is_relative_to(scan_root, protected)
+        for protected in protected_roots
+    )
+
+
+def _source_labels(path: Path, instance, raw_roots: list[Path]) -> tuple[str, str]:
+    physical_deposit = instance.physical_deposit_path()
+    if physical_deposit is not None and _is_relative_to(path, physical_deposit):
+        return "DEPOT_PHYSIQUE", "physical_deposit"
+    if any(_is_relative_to(path, raw_root) for raw_root in raw_roots):
+        return "RAW", "raw"
+    if instance.user_moves_allowed() and _is_relative_to(path, instance.root("workspace")):
+        return "COFFRE_VISIBLE", "visible_vault"
+    return "RAW", "raw"
+
+
+def _iter_files(root: Path, protected_roots: list[Path]):
     for path in sorted(root.rglob("*")):
         if not path.is_file():
+            continue
+        if _is_protected(path, root, protected_roots):
             continue
         try:
             relative_parts = path.relative_to(root).parts
@@ -154,9 +229,9 @@ def _classify_sensitivity(relative_path: str, instance) -> tuple[str, str]:
 
 
 def inventory(instance, run: RunContext) -> Path:
-    raw_roots = instance.root_list("raw")
-    if not raw_roots:
-        raw_roots = [instance.root("raw")]
+    raw_roots = _raw_roots(instance)
+    scan_roots = _configured_inventory_roots(instance, raw_roots)
+    protected_roots = _protected_roots(instance)
     workspace_root = instance.root("workspace")
     registry_path = instance.register("documents")
     duplicates_path = instance.register("duplicates")
@@ -166,16 +241,17 @@ def inventory(instance, run: RunContext) -> Path:
     rows: list[dict[str, str]] = []
     by_digest: dict[str, list[dict[str, str]]] = defaultdict(list)
 
-    for raw_root in raw_roots:
-        if not raw_root.exists():
-            run.log_error(f"inventory source missing: {raw_root}")
+    for scan_root in scan_roots:
+        if not scan_root.exists():
+            run.log_error(f"inventory source missing: {scan_root}")
             continue
-        for path in _iter_files(raw_root):
+        for path in _iter_files(scan_root, protected_roots):
             digest = sha256_file(path)
             previous = existing.get(digest, {})
             stat = path.stat()
             relative_path = relative_to(workspace_root, path)
             sensitivity, scope = _classify_sensitivity(relative_path, instance)
+            source_zone, source_kind = _source_labels(path, instance, raw_roots)
             row = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
             row.update(
                 {
@@ -190,8 +266,8 @@ def inventory(instance, run: RunContext) -> Path:
                     "size_bytes": str(stat.st_size),
                     "last_modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).replace(microsecond=0).isoformat(),
                     "first_seen": previous.get("first_seen") or seen_at,
-                    "source_zone": "RAW",
-                    "source_kind": "raw",
+                    "source_zone": source_zone,
+                    "source_kind": source_kind,
                     "status_ocr": previous.get("status_ocr") or "PENDING",
                     "classification_status": previous.get("classification_status") or "PENDING",
                     "sensitivity": previous.get("sensitivity") or sensitivity,

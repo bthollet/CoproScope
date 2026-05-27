@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
 {% set intake = document_intake if document_intake is defined else model.document_intake %}
+{% set sources = intake_sources if intake_sources is defined else {} %}
 <section class="band">
   <div>
-    <p class="eyebrow">Depot local</p>
+    <p class="eyebrow">Sources d'absorption</p>
     <h2>{{ intake.title }}</h2>
+    <p class="lead"><strong>Ajouter des pieces au coffre local</strong> - Hub d'absorption local: inbox du coffre, dossier local ou Drive Desktop, glisser-deposer, mailbox future. Prochaine action: qualifier puis relier la preuve.</p>
     <p class="lead">{{ intake.intro }}</p>
+    <div class="cs-trust-badges" aria-label="Garde-fous de confiance">
+      {% for badge in intake.trust_badges %}
+      <span>{{ badge }}</span>
+      {% endfor %}
+    </div>
   </div>
   <div class="kpi-grid">
     <div><strong>{{ intake.summary.total }}</strong><span>documents</span></div>
@@ -13,7 +20,41 @@
     <div><strong>{{ intake.summary.todo }}</strong><span>a completer</span></div>
     <div><strong>{{ intake.summary.blocked }}</strong><span>bloques</span></div>
   </div>
+  <div class="cs-action-progress" aria-label="Progression qualification documents">
+    <div>
+      <span>Progression de qualification</span>
+      <strong>{{ intake.summary.progress_pct }}%</strong>
+    </div>
+    <div class="cs-progress-bar" aria-label="Qualification {{ intake.summary.progress_pct }} pour cent">
+      <span style="width: {{ intake.summary.progress_pct }}%"></span>
+    </div>
+  </div>
 </section>
+
+{% if sources.source_cards is defined %}
+<section class="band" aria-labelledby="sources-absorption-title">
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">Regler plusieurs inbox</p>
+      <h3 id="sources-absorption-title">Sources d'information</h3>
+      <p class="lead">{{ sources.human_review_notice }}</p>
+    </div>
+    <span>{{ sources.total_to_qualify }} a qualifier</span>
+  </div>
+  <div class="cs-source-grid">
+    {% for source in sources.source_cards %}
+    <a class="cs-source-card{% if source.selected %} is-selected{% endif %}" href="{{ token_href(source.href) }}" aria-label="{{ source.label }}: {{ source.count }} elements a qualifier">
+      <span class="pill severity-{{ source.state_tone }}">{{ source.state_label }}</span>
+      <strong>{{ source.label }}</strong>
+      <small>{{ source.kind_label }}</small>
+      <span class="cs-source-count">{{ source.count }}</span>
+      <span>{{ source.last_absorption }}</span>
+      <em>{{ source.rule_label }}</em>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
 <section class="band" aria-labelledby="ajout-document-action">
   <div>
@@ -21,13 +62,61 @@
     <h3 id="ajout-document-action">Deposer un document depuis ce poste</h3>
     <p class="lead">Le fichier reste local. Apres depot, vous pourrez verifier la confidentialite puis le rattacher a une demande, une action ou une preuve attendue.</p>
   </div>
-  <form class="upload-form" action="/depot{{ ui_token_query }}" method="post" enctype="multipart/form-data">
-    <label class="sr-only" for="document-intake-files">Choisir un fichier</label>
-    <input id="document-intake-files" class="file-input" type="file" name="files" multiple>
+  <form class="upload-form cs-drop-form" action="/depot{{ ui_token_query }}" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="intent" value="document">
+    <input type="hidden" name="return" value="document_intake">
+    <input type="hidden" name="source" value="drag_drop">
+    <label class="cs-dropzone" for="document-intake-files">
+      <span class="cs-dropzone-icon" aria-hidden="true">+</span>
+      <strong>Glissez vos fichiers ici</strong>
+      <span>ou choisissez des fichiers depuis ce poste</span>
+      <input id="document-intake-files" class="file-input" type="file" name="files" multiple required aria-describedby="document-intake-upload-help">
+    </label>
+    <small id="document-intake-upload-help" class="cs-upload-help">Aucun envoi externe: le fichier est copie dans l'instance locale puis revient ici a qualifier.</small>
     <button class="button-link" type="submit">Deposer dans le coffre local</button>
     <a class="button-link secondary" href="{{ token_href('/depot?intent=document') }}">Ouvrir le depot guide</a>
   </form>
 </section>
+
+<section class="band cs-docops-workflow" aria-labelledby="docops-workflow-title">
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">DocOps local</p>
+      <h3 id="docops-workflow-title">Etapes de traitement des pieces</h3>
+    </div>
+    <span>{{ intake.summary.total }} documents</span>
+  </div>
+  <div class="cs-workflow-grid">
+    {% for step in intake.docops_workflow %}
+    <article class="cs-workflow-step severity-{{ step.tone }}">
+      <strong>{{ step.counter }}</strong>
+      <span>{{ step.label }}</span>
+      <small>{{ step.detail }}</small>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+{% if intake.has_cards %}
+<section class="band" aria-labelledby="docops-feedback-bridge-title">
+  <div>
+    <p class="eyebrow">Tri de lot</p>
+    <h3 id="docops-feedback-bridge-title">Corriger une file de documents</h3>
+    <p class="lead">Utile quand plusieurs documents, une file DocOps ou des corrections de confidentialite doivent etre revus ensemble.</p>
+    <div class="cs-trust-badges" aria-label="Regles du tri de lot">
+      <span>Le fichier reste local. Rien n'est partage.</span>
+      <span>DocOps propose, vous confirmez.</span>
+      <span>Reserve CS demande un motif.</span>
+      <span>A masquer demande des pages ou plages.</span>
+      <span>A decider plus tard ne diffuse rien.</span>
+    </div>
+  </div>
+  <div class="docops-feedback-actions" aria-label="Choix de parcours">
+    <a class="button-link" href="{{ token_href('/documents/tri-feedback') }}">Ouvrir le tri de lot</a>
+    <a class="button-link secondary" href="#documents-a-ajouter">Continuer document par document</a>
+  </div>
+</section>
+{% endif %}
 
 <section class="grid two">
   <div class="panel warning">
@@ -64,7 +153,7 @@
 <section class="grid two">
   <div class="panel">
     <div class="panel-head">
-      <h3>Contrat de rattachement</h3>
+      <h3>A quoi va servir la piece</h3>
       <span>obligatoire</span>
     </div>
     <table>
@@ -79,7 +168,7 @@
 
   <div class="panel">
     <div class="panel-head">
-      <h3>Statuts runtime</h3>
+      <h3>Etat des pieces</h3>
       <span>{{ intake.status_counts|length }}</span>
     </div>
     {% if intake.status_counts %}
@@ -95,12 +184,42 @@
   </div>
 </section>
 
-<section class="band table-band">
+<section id="documents-a-ajouter" class="band table-band">
   <div class="panel-head">
-    <h3>Documents a ajouter</h3>
+    <div>
+      <h3>Documents a ajouter et informations a qualifier</h3>
+      {% if sources.selected_label is defined %}
+      <span>Filtre: {{ sources.selected_label }}</span>
+      {% endif %}
+    </div>
     <span>{{ intake.cards|length }}</span>
   </div>
+  {% if sources.source_filters is defined %}
+  <nav class="cs-source-filters" aria-label="Filtrer les sources d'absorption">
+    {% for source_filter in sources.source_filters %}
+    <a class="{% if source_filter.selected %}is-selected{% endif %}" href="{{ token_href(source_filter.href) }}">
+      {{ source_filter.label }} <span>{{ source_filter.count }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+  {% endif %}
   {% if intake.has_cards %}
+  <table class="table-dense">
+    <thead><tr><th>Document</th><th>Source</th><th>Statut</th><th>Type</th><th>Confidentialite</th><th>Diffusion</th><th>Suite</th></tr></thead>
+    <tbody>
+    {% for card in intake.cards %}
+      <tr>
+        <td><strong>{{ card.document_label }}</strong><br><small>{{ card.doc_id }}</small></td>
+        <td>{{ card.source_label }}</td>
+        <td><span class="pill severity-{{ card.status_tone }}">{{ card.status_label }}</span></td>
+        <td>{{ card.classification.document_type }}</td>
+        <td>{{ card.privacy.status_label }}</td>
+        <td><span class="pill severity-{{ card.diffusion_review.tone }}">{{ card.diffusion_review.label }}</span></td>
+        <td>{{ card.next_action }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
   <div class="stack">
     {% for card in intake.cards %}
     <article class="item">
@@ -111,14 +230,84 @@
         </div>
         <span class="pill severity-{{ card.status_tone }}">{{ card.status_label }}</span>
       </div>
+      <ol class="cs-docops-track" aria-label="Progression DocOps pour {{ card.document_label }}">
+        {% for step in card.docops_track %}
+        <li class="cs-docops-track-step is-{{ step.state }}">
+          <span>{{ step.label }}</span>
+          <strong>{{ step.detail }}</strong>
+        </li>
+        {% endfor %}
+      </ol>
+      <form class="upload-form" action="/documents/ajouter/qualifier{{ ui_token_query }}" method="post" aria-label="Qualifier {{ card.document_label }}">
+        {% if selected_deposit %}
+        <input type="hidden" name="depot" value="{{ selected_deposit.deposit_id }}">
+        {% endif %}
+        <input type="hidden" name="source" value="{{ card.source_id }}">
+        {% if pipeline_status %}
+        <input type="hidden" name="status" value="{{ pipeline_status }}">
+        {% endif %}
+        <input type="hidden" name="doc_id" value="{{ card.doc_id }}">
+        <label for="document-type-{{ card.index }}">Type documentaire</label>
+        <select id="document-type-{{ card.index }}" name="document_type">
+          {% for option in intake.document_type_options %}
+          <option value="{{ option.value }}"{% if option.value == card.classification.document_type %} selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <label for="document-privacy-{{ card.index }}">Confidentialite</label>
+        <select id="document-privacy-{{ card.index }}" name="privacy_status">
+          {% for option in intake.privacy_options %}
+          <option value="{{ option.value }}"{% if option.value == card.privacy.status %} selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <small>Si vous hesitez, gardez A decider ou Je ne sais pas encore.</small>
+        <button class="button-link secondary" type="submit">Enregistrer ce choix local</button>
+      </form>
+      <form class="upload-form" action="/documents/ajouter/rattacher{{ ui_token_query }}" method="post" aria-label="Rattacher {{ card.document_label }}">
+        {% if selected_deposit %}
+        <input type="hidden" name="depot" value="{{ selected_deposit.deposit_id }}">
+        {% endif %}
+        <input type="hidden" name="source" value="{{ card.source_id }}">
+        {% if pipeline_status %}
+        <input type="hidden" name="status" value="{{ pipeline_status }}">
+        {% endif %}
+        <input type="hidden" name="doc_id" value="{{ card.doc_id }}">
+        <label for="point-kind-{{ card.index }}">Point concerne</label>
+        <select id="point-kind-{{ card.index }}" name="point_kind">
+          {% for option in intake.point_kind_options %}
+          <option value="{{ option.value }}"{% if option.value == card.attachment_form.point_kind %} selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <label for="point-label-{{ card.index }}">Libelle du point</label>
+        <input id="point-label-{{ card.index }}" name="point_label" value="{{ card.attachment_form.point_label }}" maxlength="160" placeholder="Exemple: AG 2025 - resolution travaux">
+        <label for="action-kind-{{ card.index }}">Action attendue</label>
+        <select id="action-kind-{{ card.index }}" name="action_kind">
+          {% for option in intake.action_kind_options %}
+          <option value="{{ option.value }}"{% if option.value == card.attachment_form.action_kind %} selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <label for="action-label-{{ card.index }}">Libelle de l'action</label>
+        <input id="action-label-{{ card.index }}" name="action_label" value="{{ card.attachment_form.action_label }}" maxlength="160" placeholder="Exemple: verifier le montant vote">
+        <label for="proof-intent-{{ card.index }}">Preuve attendue</label>
+        <select id="proof-intent-{{ card.index }}" name="proof_intent">
+          {% for option in intake.proof_intent_options %}
+          <option value="{{ option.value }}"{% if option.value == card.attachment_form.proof_intent %} selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <label for="proof-label-{{ card.index }}">Libelle de la preuve</label>
+        <input id="proof-label-{{ card.index }}" name="proof_label" value="{{ card.attachment_form.proof_label }}" maxlength="160" placeholder="Exemple: facture et decision retrouvees">
+        <small>Le rattachement enregistre uniquement des libelles metier et le doc_id.</small>
+        <button class="button-link secondary" type="submit">Enregistrer ce rattachement</button>
+      </form>
       <div class="grid two">
         <div>
-          <p><strong>Classification</strong><br>{{ card.classification.document_type }} - {{ card.classification.domain }} - {{ card.classification.period }}</p>
+          <p><strong>{{ card.prequalification_label }}</strong><br>{{ card.classification.document_type }} - {{ card.classification.domain }} - {{ card.classification.period }}</p>
           <p><strong>Statut</strong><br>{{ card.classification.status_label }} - {{ card.classification.reason }}</p>
           <p><strong>Empreinte</strong><br><code>{{ card.hash_label }}</code> - {{ card.format_label }} - {{ card.size_label }}</p>
         </div>
         <div>
           <p><strong>Confidentialite</strong><br>{{ card.privacy.status_label }} - {{ card.privacy.rationale }}</p>
+          <p><strong>Diffusion</strong><br>{{ card.diffusion_review.label }} - {{ card.diffusion_review.body }}</p>
+          <p><strong>OCR / texte local</strong><br>{{ card.docops.text_label }} - {{ card.docops.text_detail }}</p>
           <p><strong>Controle</strong><br>{{ card.privacy_guard }}</p>
           <p><strong>Prochaine action</strong><br>{{ card.next_action }}</p>
         </div>
@@ -171,32 +360,4 @@
   {% endif %}
 </section>
 
-<section class="grid two">
-  <div class="panel">
-    <div class="panel-head">
-      <h3>Evenements futurs</h3>
-      <span>{{ intake.future_events|length }}</span>
-    </div>
-    <div class="artifact-list">
-      {% for event_name in intake.future_events %}
-      <div class="artifact">
-        <strong>{{ event_name }}</strong>
-        <span>prepare dans le modele, pas encore signe par cette UI</span>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-head">
-      <h3>Branchement futur</h3>
-      <span>{{ intake.integration.route_name }}</span>
-    </div>
-    <div class="guide-list">
-      <div><strong>Modele</strong><span>{{ intake.integration.view_helper }}</span></div>
-      <div><strong>Template</strong><span>{{ intake.integration.template }}</span></div>
-      <div><strong>Limite</strong><span>{{ intake.integration.app_boundary }}</span></div>
-    </div>
-  </div>
-</section>
 {% endblock %}

@@ -4,7 +4,7 @@ Date de reference: 2026-05-20.
 
 Note 2026-05-21: cette note reste une trace historique Platanes. Pour les
 recettes live locales actuelles, l'environnement de test par defaut est
-`C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+`C:\Users\brice\CoproScope\instances\beauvallon_test`.
 
 Cette note fige un lot QA de livraison testable continue. Elle decrit ce qui peut etre demarre, visite et verifie sur l'environnement local de test, sans revendiquer une recette navigateur deja faite ni une validation de diffusion publique.
 
@@ -14,7 +14,7 @@ Commande serveur autorisee pour une demo ou une recette locale:
 
 ```powershell
 cd C:\Users\brice\CoproScope\coproscope
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
 
 Commande publique/CI equivalente, sans donnee locale privee:
@@ -36,7 +36,7 @@ Le port `8769` est propose pour eviter les ports courants. S'il est occupe, choi
 
 ## Donnees synthetiques
 
-La cible de recette live locale par defaut est `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`. `examples/synthetic_copro` reste la cible publique/CI.
+La cible de recette live locale par defaut est `C:\Users\brice\CoproScope\instances\beauvallon_test`. `examples/synthetic_copro` reste la cible publique/CI.
 
 Ces donnees servent a verifier les parcours, les libelles, les garde-fous et les exports derives. Elles ne prouvent pas que des donnees reelles, des pieces privees, des chemins utilisateur ou une synchronisation cloud fonctionneront sans revue separee.
 

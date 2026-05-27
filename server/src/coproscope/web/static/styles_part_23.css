@@ -1,0 +1,147 @@
+.ctr-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.85fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.ctr-hero,
+.ctr-status,
+.ctr-summary article,
+.ctr-definitions article,
+.ctr-checks article,
+.ctr-actions button,
+.ctr-actions a {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.ctr-hero,
+.ctr-status,
+.ctr-summary article,
+.ctr-definitions article,
+.ctr-checks article {
+  padding: 1rem;
+}
+
+.ctr-hero__actions,
+.ctr-summary,
+.ctr-definitions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ctr-hero__actions {
+  margin-top: 1rem;
+}
+
+.ctr-status,
+.ctr-summary article {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+}
+
+.ctr-status span,
+.ctr-status small,
+.ctr-summary p,
+.ctr-summary span,
+.ctr-definitions p,
+.ctr-checks small,
+.ctr-actions small,
+.ctr-row span,
+.ctr-row small {
+  color: var(--muted);
+}
+
+.ctr-status strong,
+.ctr-summary strong {
+  font-size: 1.25rem;
+}
+
+.ctr-summary,
+.ctr-definitions {
+  margin-bottom: 1rem;
+}
+
+.ctr-summary article,
+.ctr-definitions article {
+  flex: 1 1 190px;
+}
+
+.ctr-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.ctr-row {
+  display: grid;
+  grid-template-columns:
+    minmax(165px, 0.85fr) minmax(135px, 0.7fr) minmax(130px, 0.65fr)
+    minmax(220px, 1.1fr) minmax(120px, 0.6fr) minmax(210px, 1fr)
+    minmax(210px, 1fr) minmax(230px, 1.15fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 1240px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ctr-row.is-head {
+  font-weight: 700;
+}
+
+.ctr-row strong,
+.ctr-row small {
+  display: block;
+}
+
+.ctr-checks,
+.ctr-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ctr-actions {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.ctr-actions button,
+.ctr-actions a {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 5.2rem;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.ctr-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .ctr-hero,
+  .ctr-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ctr-table {
+    overflow-x: visible;
+  }
+
+  .ctr-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .ctr-row.is-head {
+    display: none;
+  }
+}

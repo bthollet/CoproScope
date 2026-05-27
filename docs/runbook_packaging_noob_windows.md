@@ -48,7 +48,7 @@ chiffree.
 | Coffres locaux | `%LOCALAPPDATA%\CoproScope\coffres\<coffre_id>\local` | Etat de travail local, peut contenir des index/caches clairs controles. |
 | Surface sync chiffree | `%LOCALAPPDATA%\CoproScope\coffres\<coffre_id>\sync_chiffre` | Seule source autorisee pour Drive apres verification. |
 | Logs | `%LOCALAPPDATA%\CoproScope\logs` | Logs sanitises, sans token, sans contenu clair, sans chemins Drive prives. |
-| Exports explicites | `%USERPROFILE%\Documents\CoproScope\exports` | Choix utilisateur; jamais synchronise automatiquement. |
+| Exports explicites | `%USERPROFILE%\CoproScope\exports` | Choix utilisateur; jamais synchronise automatiquement. |
 
 Interdits pour les donnees de profil et de coffre: `Google Drive`, `OneDrive`,
 `Dropbox`, depot Git, `.venv`, dossier temporaire partage, bureau synchronise.

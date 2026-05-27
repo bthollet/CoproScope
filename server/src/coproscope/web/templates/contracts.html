@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% set view = contracts %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="ctr-hero" aria-labelledby="ctr-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="ctr-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="ctr-hero__actions">
+      <a class="button-link" href="#contracts-file">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#contract-actions">Voir les liens metier</a>
+    </div>
+  </div>
+  <aside class="ctr-status" aria-label="Statut ContractOps">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Pas de rappel ni mise en concurrence depuis CoproScope</small>
+  </aside>
+</section>
+
+<section class="ctr-summary" aria-label="Resume des contrats">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="ctr-definitions-title">
+  <div class="panel-head">
+    <h3 id="ctr-definitions-title">Mots utiles pour verifier</h3>
+    <span>ContractOps</span>
+  </div>
+  <div class="ctr-definitions">
+    {% for definition in view.definitions %}
+    <article>
+      <strong>{{ definition.label }}</strong>
+      <p>{{ definition.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="contracts-file" aria-labelledby="ctr-table-title">
+  <div class="panel-head">
+    <h3 id="ctr-table-title">File contrats, obligations et attestations</h3>
+    <span>{{ view.contracts|length }} lignes</span>
+  </div>
+  <div class="ctr-table" role="table" aria-label="Contrats, obligations, echeances, preuves et liens metier">
+    <div class="ctr-row is-head" role="row">
+      <span role="columnheader">Contrat</span>
+      <span role="columnheader">Acteur</span>
+      <span role="columnheader">Statut</span>
+      <span role="columnheader">Obligation</span>
+      <span role="columnheader">Echeance</span>
+      <span role="columnheader">Preuve attendue</span>
+      <span role="columnheader">Liens</span>
+      <span role="columnheader">Suite</span>
+    </div>
+    {% for contract in view.contracts %}
+    <div class="ctr-row" role="row">
+      <strong role="cell">{{ contract.id }}<small>{{ contract.title }} - {{ contract.source_label }}</small></strong>
+      <span role="cell">{{ contract.provider_label }}<small>{{ contract.family_label }}</small></span>
+      <span role="cell">{{ contract.status_label }}<small>{{ contract.proof_state }}</small></span>
+      <span role="cell">{{ contract.obligation }}<small>Clause clef: {{ contract.clause_key }}</small></span>
+      <span role="cell">{{ contract.due_at or 'date a confirmer' }}</span>
+      <span role="cell">{{ contract.proof_expected }}</span>
+      <span role="cell">{{ contract.linked_charge }}<small>{{ contract.linked_work }} - {{ contract.linked_incident }}</small></span>
+      <span role="cell">{{ contract.next_action }}<small>{{ contract.diffusion }}</small></span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Decisions avant relance</h3>
+      <span>Validation humaine</span>
+    </div>
+    <div class="ctr-checks">
+      {% for gate in view.decision_gates %}
+      <article>
+        <strong>{{ gate.label }}</strong>
+        <small>{{ gate.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Garde-fous diffusion</h3>
+      <span>Originaux non servis</span>
+    </div>
+    <div class="ctr-checks">
+      {% for item in view.boundaries %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Familles suivies</h3>
+      <span>{{ view.family_counts|length }}</span>
+    </div>
+    <div class="badge-row">
+      {% for item in view.family_counts %}
+      <span class="badge is-review">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucune famille alimentee</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Statuts lisibles</h3>
+      <span>{{ view.status_counts|length }}</span>
+    </div>
+    <div class="badge-row">
+      {% for item in view.status_counts %}
+      <span class="badge is-public">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucun statut</span>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="contract-actions" aria-labelledby="ctr-actions-title">
+  <div class="panel-head">
+    <h3 id="ctr-actions-title">Actions disponibles et bloquees</h3>
+    <span>Pas d'automatisme juridique</span>
+  </div>
+  <div class="ctr-actions">
+    {% for action in view.actions %}
+    {% if action.enabled == "true" %}
+    <a class="button-link secondary" href="{{ token_href(action.href) }}">
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </a>
+    {% else %}
+    <button type="button" disabled aria-disabled="true">
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="ctr-version-title">
+  <div class="panel-head">
+    <h3 id="ctr-version-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

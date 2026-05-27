@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CoproScope - {{ model.instance.name|default('CoproScope') if model.instance is defined else 'CoproScope' }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20260525-responsive-nav">
 </head>
 <body class="cs-shell">
   {% set ux = model.ux if model.ux is defined else {} %}
@@ -31,7 +31,7 @@
       </div>
 
       <p id="navigation-aide" class="sr-only">
-        Navigation principale: accueil des priorites, actions, comptes, documents, ajout de document, pieces, demandes novice, AG contentieux passation, indicateurs a surveiller, droits, confidentialite, chantiers et depot local.
+        Navigation principale: accueil des priorites, actions, comptes, documents, ajout de document, pieces, travaux suivis, demandes novice, AG contentieux passation, indicateurs a surveiller, droits, roles et commissions, confidentialite, chantiers et depot local.
       </p>
       <nav class="nav cs-sidebar-nav" aria-label="Navigation principale" aria-describedby="navigation-aide">
         <div class="cs-nav-section">
@@ -45,23 +45,31 @@
             <span>A traiter</span>
             <span class="cs-nav-count">{{ action_summary.total|default(kpis.actions|default('')) }}</span>
           </a>
+          <a class="{{ 'active' if page == 'suggestionops' else '' }}" href="{{ token_href('/suggestions') }}" aria-label="Suggestions utiles, source, preuve et revue humaine"{% if page == 'suggestionops' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">24</span>
+            <span>Suggestions</span>
+          </a>
           <a class="{{ 'active' if page == 'pieces' else '' }}" href="{{ token_href('/pieces?proof=missing') }}" aria-label="Atelier pieces, relier piece, point, action et preuve"{% if page == 'pieces' %} aria-current="page"{% endif %}>
             <span class="cs-nav-icon" aria-hidden="true">03</span>
             <span>Pieces manquantes</span>
             <span class="cs-nav-count">{{ kpis.doc_requests|default('') }}</span>
           </a>
-          <a class="{{ 'active' if page == 'requests' else '' }}" href="{{ token_href('/demandes') }}" aria-label="Demandes syndic et coproprietaires"{% if page == 'requests' %} aria-current="page"{% endif %}>
+          <a class="{{ 'active' if page == 'travaux' else '' }}" href="{{ token_href('/travaux') }}" aria-label="Travaux suivis, preuves manquantes et partage a verifier"{% if page == 'travaux' %} aria-current="page"{% endif %}>
             <span class="cs-nav-icon" aria-hidden="true">04</span>
+            <span>Travaux suivis</span>
+          </a>
+          <a class="{{ 'active' if page == 'requests' else '' }}" href="{{ token_href('/demandes') }}" aria-label="Demandes syndic et coproprietaires"{% if page == 'requests' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">05</span>
             <span>Demandes syndic</span>
             <span class="cs-nav-count">{{ scope_counts.syndic|default('') }}</span>
           </a>
           <a class="{{ 'active' if page == 'agcontentieux' else '' }}" href="{{ token_href('/ag-contentieux') }}" aria-label="AG, contentieux et passation, lecture novice"{% if page == 'agcontentieux' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">05</span>
+            <span class="cs-nav-icon" aria-hidden="true">06</span>
             <span>AG / contentieux</span>
             <span class="cs-nav-count">{{ kpis.decisions|default('') }}</span>
           </a>
           <a class="{{ 'active' if page == 'accounting' else '' }}" href="{{ token_href('/comptes') }}" aria-label="Comptes et controles"{% if page == 'accounting' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">06</span>
+            <span class="cs-nav-icon" aria-hidden="true">07</span>
             <span>Controle comptes</span>
             <span class="cs-nav-count">{{ action_summary.accounting|default('') }}</span>
           </a>
@@ -70,23 +78,45 @@
         <div class="cs-nav-section">
           <span class="cs-nav-heading">Documents</span>
           <a class="{{ 'active' if page == 'documents' else '' }}" href="{{ token_href('/documents') }}" aria-label="Documents, pieces et preuves"{% if page == 'documents' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">07</span>
+            <span class="cs-nav-icon" aria-hidden="true">08</span>
             <span>Documents</span>
           </a>
-          <a class="{{ 'active' if page == 'document_intake' else '' }}" href="{{ token_href('/documents/ajouter') }}" aria-label="Ajouter un document, preparation novice sans upload reel"{% if page == 'document_intake' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">08</span>
+          <a class="{{ 'active' if page == 'document_intake' else '' }}" href="{{ token_href('/documents/ajouter') }}" aria-label="Ajouter un document dans le coffre local"{% if page == 'document_intake' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">09</span>
             <span>Ajouter un document</span>
+          </a>
+          <a class="{{ 'active' if page == 'courriers_preuves' else '' }}" href="{{ token_href('/courriers/preuves') }}" aria-label="Courriers et preuves, brouillons sans envoi automatique"{% if page == 'courriers_preuves' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">18</span>
+            <span>Courriers preuves</span>
+          </a>
+          <a class="{{ 'active' if page == 'messages_entrants' else '' }}" href="{{ token_href('/messages/entrants') }}" aria-label="Messages entrants, qualifier avant diffusion"{% if page == 'messages_entrants' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">19</span>
+            <span>Messages recus</span>
+          </a>
+          <a class="{{ 'active' if page == 'incidentops' else '' }}" href="{{ token_href('/incidents') }}" aria-label="Incidents et sinistres, preuves de cloture"{% if page == 'incidentops' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">21</span>
+            <span>Incidents</span>
+          </a>
+          <a class="{{ 'active' if page == 'contractops' else '' }}" href="{{ token_href('/contrats') }}" aria-label="Contrats, obligations et attestations a verifier"{% if page == 'contractops' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">22</span>
+            <span>Contrats</span>
           </a>
           {% if pilotage_route_enabled is defined and pilotage_route_enabled %}
           <a class="{{ 'active' if page == 'pilotage' else '' }}" href="{{ token_href('/pilotage') }}" aria-label="Indicateurs, quoi surveiller en priorite"{% if page == 'pilotage' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">09</span>A surveiller</a>
+            <span class="cs-nav-icon" aria-hidden="true">10</span>
+            <span>A surveiller</span>
+          </a>
+          <a class="{{ 'active' if page == 'activityops' else '' }}" href="{{ token_href('/pilotage/activite') }}" aria-label="Activite en cours, travaux agents et blocages"{% if page == 'activityops' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">23</span>
+            <span>Activite en cours</span>
+          </a>
           {% endif %}
           <a class="{{ 'active' if page == 'workstreams' else '' }}" href="{{ token_href('/chantiers') }}" aria-label="Memoire de copropriete et passation"{% if page == 'workstreams' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">10</span>
+            <span class="cs-nav-icon" aria-hidden="true">11</span>
             <span>{{ 'Memoire copropriete' if page == 'workstreams' else 'Chantiers' }}</span>
           </a>
           <a class="{{ 'active' if page == 'depot' else '' }}" href="{{ token_href('/depot') }}" aria-label="Depot local et exports prepares"{% if page == 'depot' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">11</span>
+            <span class="cs-nav-icon" aria-hidden="true">12</span>
             <span>Depot local</span>
           </a>
         </div>
@@ -94,12 +124,32 @@
         <div class="cs-nav-section">
           <span class="cs-nav-heading">Parametres</span>
           <a class="{{ 'active' if page == 'governance' else '' }}" href="{{ token_href('/gouvernance') }}" aria-label="Droits, roles et gouvernance"{% if page == 'governance' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">12</span>
+            <span class="cs-nav-icon" aria-hidden="true">13</span>
             <span>Droits et roles</span>
           </a>
+          <a class="{{ 'active' if page == 'governance_cr_cs' else '' }}" href="{{ token_href('/gouvernance/compte-rendu-cs') }}" aria-label="Compte rendu du conseil syndical, validation interne"{% if page == 'governance_cr_cs' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">16</span>
+            <span>Compte rendu conseil</span>
+          </a>
+          <a class="{{ 'active' if page == 'governance_atelier_ag' else '' }}" href="{{ token_href('/gouvernance/atelier-ag') }}" aria-label="Atelier AG, projet conseil syndical non officiel"{% if page == 'governance_atelier_ag' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">20</span>
+            <span>Atelier AG</span>
+          </a>
+          <a class="{{ 'active' if page == 'participants_ag' else '' }}" href="{{ token_href('/gouvernance/participants-ag') }}" aria-label="Participants AG, droits et pouvoirs a verifier"{% if page == 'participants_ag' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">17</span>
+            <span>Participants AG</span>
+          </a>
+          <a class="{{ 'active' if page == 'roles_commissions' else '' }}" href="{{ token_href('/gouvernance/roles-commissions') }}" aria-label="Roles et commissions, droits par ressource a relire"{% if page == 'roles_commissions' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">25</span>
+            <span>Roles commissions</span>
+          </a>
           <a class="{{ 'active' if page == 'privacy' else '' }}" href="{{ token_href('/confidentialite') }}" aria-label="Confidentialite, diffusion et masquage"{% if page == 'privacy' %} aria-current="page"{% endif %}>
-            <span class="cs-nav-icon" aria-hidden="true">13</span>
+            <span class="cs-nav-icon" aria-hidden="true">14</span>
             <span>Diffusion et masquage</span>
+          </a>
+          <a class="{{ 'active' if page == 'coffre_partage' else '' }}" href="{{ token_href('/coffre/partage') }}" aria-label="Coffre et partage, droits et invitations bloquees"{% if page == 'coffre_partage' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">15</span>
+            <span>Coffre et partage</span>
           </a>
         </div>
       </nav>
@@ -127,9 +177,26 @@
         <div class="instance-meta" aria-label="Contexte du coffre local">
           <span>Exercice {{ instance.year|default('2025') }}</span>
           <span>Coffre {{ instance.id|default('local') }}</span>
+          {% if instance_switcher_href is defined and instance_switcher_href %}
+          <a class="instance-switch-link" href="{{ instance_switcher_href }}">Changer</a>
+          {% endif %}
         </div>
         <a class="button-link cs-top-action" href="{{ token_href('/demandes') }}"><span aria-hidden="true">+</span> Nouvelle demande</a>
       </header>
+
+      <form id="cs-global-drop-form" class="cs-global-drop-form" action="/depot{{ ui_token_query }}" method="post" enctype="multipart/form-data" aria-label="Depot global dans le coffre local">
+        <input type="hidden" name="intent" value="document">
+        <input type="hidden" name="return" value="document_intake">
+        <input type="hidden" name="source" value="global_drop">
+        <label class="sr-only" for="cs-global-drop-input">Choisir un fichier depuis ce poste</label>
+        <input id="cs-global-drop-input" type="file" name="files" multiple>
+        <div id="cs-global-drop-overlay" class="cs-global-drop-overlay" hidden>
+          <div>
+            <strong>Deposer dans le coffre local</strong>
+            <span>Les fichiers seront envoyes vers Ajouter un document pour qualification humaine.</span>
+          </div>
+        </div>
+      </form>
 
       {% if context_banner is defined and context_banner %}
       {% include "_context_banner.html" %}
@@ -155,5 +222,73 @@
       </footer>
     </div>
   </div>
+  <script>
+  (function () {
+    var form = document.getElementById("cs-global-drop-form");
+    var input = document.getElementById("cs-global-drop-input");
+    var overlay = document.getElementById("cs-global-drop-overlay");
+    if (!form || !input || !overlay || !window.DataTransfer) {
+      return;
+    }
+    var dragDepth = 0;
+    function hasFiles(event) {
+      var types = event.dataTransfer && event.dataTransfer.types;
+      return types && Array.prototype.indexOf.call(types, "Files") !== -1;
+    }
+    function show() {
+      overlay.hidden = false;
+      document.body.classList.add("cs-is-global-dragging");
+    }
+    function hide() {
+      overlay.hidden = true;
+      document.body.classList.remove("cs-is-global-dragging");
+      dragDepth = 0;
+    }
+    document.addEventListener("dragenter", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      dragDepth += 1;
+      show();
+    });
+    document.addEventListener("dragover", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    });
+    document.addEventListener("dragleave", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      dragDepth -= 1;
+      if (dragDepth <= 0) {
+        hide();
+      }
+    });
+    document.addEventListener("drop", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      event.preventDefault();
+      var transfer = new DataTransfer();
+      Array.prototype.forEach.call(event.dataTransfer.files || [], function (file) {
+        transfer.items.add(file);
+      });
+      if (!transfer.files.length) {
+        hide();
+        return;
+      }
+      input.files = transfer.files;
+      form.submit();
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        hide();
+      }
+    });
+  }());
+  </script>
 </body>
 </html>

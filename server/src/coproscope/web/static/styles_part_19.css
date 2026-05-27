@@ -1,0 +1,139 @@
+.mei-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.mei-hero,
+.mei-status,
+.mei-summary article,
+.mei-definitions article,
+.mei-checks article,
+.mei-actions button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.mei-hero,
+.mei-status {
+  padding: 1.2rem;
+}
+
+.mei-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.mei-status {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+}
+
+.mei-status span,
+.mei-status small,
+.mei-summary span,
+.mei-summary p,
+.mei-definitions p,
+.mei-checks small,
+.mei-actions small,
+.mei-row span {
+  color: var(--muted);
+}
+
+.mei-status strong {
+  font-size: 1.25rem;
+}
+
+.mei-summary,
+.mei-definitions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mei-summary article,
+.mei-definitions article,
+.mei-checks article {
+  padding: 0.85rem;
+}
+
+.mei-summary strong {
+  display: block;
+  margin: 0.25rem 0;
+  font-size: 1.7rem;
+}
+
+.mei-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.mei-row {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, 0.7fr) minmax(130px, 0.7fr) minmax(155px, 0.9fr)
+    minmax(160px, 1fr) minmax(130px, 0.8fr) minmax(135px, 0.8fr)
+    minmax(155px, 0.9fr) minmax(160px, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 1120px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.mei-row.is-head {
+  font-weight: 700;
+}
+
+.mei-checks,
+.mei-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mei-actions {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mei-actions button {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 5.2rem;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.mei-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .mei-hero,
+  .mei-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .mei-table {
+    overflow-x: visible;
+  }
+
+  .mei-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .mei-row.is-head {
+    display: none;
+  }
+}

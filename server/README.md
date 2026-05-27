@@ -60,8 +60,8 @@ Les commandes suivantes se lancent depuis la racine du depot avec l'interpreteur
 | Factures | `.\server\.venv\Scripts\python.exe -m coproscope.cli invoices extract --instance-root .\examples\synthetic_copro --year 2025` |
 | Comptes | `.\server\.venv\Scripts\python.exe -m coproscope.cli accounting reconstruct --instance-root .\examples\synthetic_copro --year 2025` |
 | Controles comptables | `.\server\.venv\Scripts\python.exe -m coproscope.cli accounting controls --instance-root .\examples\synthetic_copro --year 2025` |
-| Demo fictive | `.\server\.venv\Scripts\python.exe -m coproscope.cli demo build --source-instance-root .\examples\synthetic_copro --output-instance "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --mode fictive --year 2025` |
-| UI locale | `.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root "$env:USERPROFILE\Documents\CoproScope\instances\demo_fictive_tilleuls" --year 2025 --port 8765` |
+| Demo fictive | `.\server\.venv\Scripts\python.exe -m coproscope.cli demo build --source-instance-root .\examples\synthetic_copro --output-instance "$env:USERPROFILE\CoproScope\instances\demo_fictive_tilleuls" --mode fictive --year 2025` |
+| UI locale | `.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root "$env:USERPROFILE\CoproScope\instances\demo_fictive_tilleuls" --year 2025 --port 8765` |
 | Audit publication | `.\server\.venv\Scripts\python.exe -m coproscope.cli share-audit --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml` |
 | Export public | `.\server\.venv\Scripts\python.exe -m coproscope.cli share-export --repo-root . --config .\server\src\coproscope\configs\github_sharing.default.yml --output-dir ..\public-export --clean` |
 

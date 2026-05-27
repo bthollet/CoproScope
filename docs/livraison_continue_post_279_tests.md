@@ -4,7 +4,7 @@ Date de reference: 2026-05-20.
 
 Note 2026-05-21: ce document conserve l'etat historique post-279 tests sur
 Platanes. La recette/live locale par defaut est maintenant
-`C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+`C:\Users\brice\CoproScope\instances\beauvallon_test`.
 
 Ce document fige l'etat testable apres la stabilisation de la suite complete. Il ne remplace pas une recette navigateur: la validation rapportee ici est automatisee, avec **suite complete 279 tests OK**, sans validation manuelle navigateur revendiquee.
 
@@ -12,7 +12,7 @@ Ce document fige l'etat testable apres la stabilisation de la suite complete. Il
 
 - Suite complete: 279 tests OK.
 - Perimetre verifie par tests: noyau metier, routes FastAPI, templates principaux, exports controles, securite des routes sensibles, modules vault/sync et parcours UI synthetiques.
-- Donnees de reference live locale: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`; `examples/synthetic_copro` reste la reference publique/CI.
+- Donnees de reference live locale: `C:\Users\brice\CoproScope\instances\beauvallon_test`; `examples/synthetic_copro` reste la reference publique/CI.
 - Aucun engagement sur donnees reelles, synchronisation cloud fiable, signature collaborative finale ou conseil juridique.
 
 ## Lancement serveur visible
@@ -21,7 +21,7 @@ Commande recommandee pour ouvrir une instance locale testable avec serveur au pr
 
 ```powershell
 cd C:\Users\brice\CoproScope\coproscope
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
 
 Le serveur reste visible dans le terminal et s'arrete avec `Ctrl+C`. L'URL tokenisee affichee par la commande doit etre ouverte manuellement. Ne pas transformer cette commande en lancement cache, scan de ports ou boucle de probing reseau pendant une demo.

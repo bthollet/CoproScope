@@ -1,0 +1,147 @@
+.pag-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.pag-hero,
+.pag-status,
+.pag-summary article,
+.pag-boundaries article,
+.pag-definitions article,
+.pag-checks article,
+.pag-resolutions article,
+.pag-actions button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.pag-hero,
+.pag-status {
+  padding: 1.2rem;
+}
+
+.pag-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.pag-status {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+}
+
+.pag-status span,
+.pag-status small,
+.pag-summary span,
+.pag-summary p,
+.pag-boundaries p,
+.pag-definitions p,
+.pag-checks small,
+.pag-resolutions span,
+.pag-resolutions small,
+.pag-actions small,
+.pag-row span {
+  color: var(--muted);
+}
+
+.pag-status strong {
+  font-size: 1.25rem;
+}
+
+.pag-summary,
+.pag-boundaries,
+.pag-definitions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pag-summary article,
+.pag-boundaries article,
+.pag-definitions article,
+.pag-checks article {
+  padding: 0.85rem;
+}
+
+.pag-summary strong {
+  display: block;
+  margin: 0.25rem 0;
+  font-size: 1.7rem;
+}
+
+.pag-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.pag-row {
+  display: grid;
+  grid-template-columns:
+    minmax(135px, 0.8fr) minmax(110px, 0.7fr) minmax(145px, 1fr)
+    minmax(125px, 0.8fr) minmax(135px, 0.9fr) minmax(80px, 0.5fr)
+    minmax(190px, 1.1fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 980px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pag-row.is-head {
+  font-weight: 700;
+}
+
+.pag-checks,
+.pag-resolutions,
+.pag-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pag-resolutions article {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+}
+
+.pag-actions button {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.pag-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .pag-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .pag-table {
+    overflow-x: visible;
+  }
+
+  .pag-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .pag-row.is-head {
+    display: none;
+  }
+}

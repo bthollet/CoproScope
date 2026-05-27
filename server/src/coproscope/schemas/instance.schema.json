@@ -13,7 +13,12 @@
       "type": "object",
       "required": ["raw", "workspace", "system", "outputs", "staging", "logs"],
       "properties": {
-        "raw": { "type": "string" },
+        "raw": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
         "workspace": { "type": "string" },
         "system": { "type": "string" },
         "outputs": { "type": "string" },
@@ -29,6 +34,61 @@
     "matrices": { "type": "object" },
     "artifacts": { "type": "object" },
     "env": { "type": "object" },
-    "settings": { "type": "object" }
+    "settings": {
+      "type": "object",
+      "properties": {
+        "layout": {
+          "type": "object",
+          "description": "Doctrine temporaire: depot physique novice, technique sous .coproscope, et identite documentaire stable par hash/doc_id.",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "description": "Mode de presentation de l'arborescence, par exemple novice_v1."
+            },
+            "version": { "type": "string" },
+            "technical_root": {
+              "type": "string",
+              "description": "Racine technique locale, typiquement ./.coproscope."
+            },
+            "physical_deposit": {
+              "type": "string",
+              "description": "Dossier physique novice, typiquement ./01 - Deposez les nouveaux fichiers ici/A deposer ici."
+            },
+            "user_moves_allowed": {
+              "type": "boolean",
+              "description": "Quand vrai, l'inventaire rescane le coffre visible et conserve les doc_id par sha256."
+            }
+          },
+          "additionalProperties": true
+        }
+        ,
+        "intake_sources": {
+          "type": "array",
+          "description": "Sources d'absorption configurees pour la file Ajouter un document. Les chemins restent locaux et ne doivent pas etre affiches dans l'UI publique.",
+          "items": {
+            "type": "object",
+            "required": ["id", "kind", "label"],
+            "properties": {
+              "id": { "type": "string" },
+              "kind": {
+                "type": "string",
+                "enum": ["inbox_vault", "local_folder", "drive_desktop", "drag_drop", "mailbox", "future_channel"]
+              },
+              "label": { "type": "string" },
+              "state": {
+                "type": "string",
+                "enum": ["active", "paused", "needs_setup", "connector_later", "future"]
+              },
+              "path": {
+                "type": "string",
+                "description": "Chemin local optionnel; ne pas exposer dans les vues diffusables."
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
   }
 }

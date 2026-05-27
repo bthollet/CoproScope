@@ -2,11 +2,51 @@ from __future__ import annotations
 
 from ._runtime import *
 
+def _decision_dedupe_key(row: dict[str, str], index: int) -> tuple[str, ...]:
+    decision_id = row.get("decision_action_id", "").strip()
+    if decision_id:
+        return ("id", decision_id)
+    business_key = (
+        row.get("ag_id", "").strip(),
+        row.get("source_doc_id", "").strip(),
+        row.get("resolution_ref", "").strip(),
+        row.get("decision_text", "").strip(),
+        row.get("action_attendue", "").strip(),
+        row.get("preuve_attendue", "").strip(),
+    )
+    if any(business_key):
+        return ("business", *business_key)
+    return ("row", str(index))
+
+
+def _decision_row_score(row: dict[str, str]) -> tuple[int, int, int]:
+    proof_score = 1 if row.get("proof_doc_ids") else 0
+    request_score = 1 if row.get("related_request_ids") else 0
+    text_score = sum(1 for value in row.values() if str(value or "").strip())
+    return (proof_score, request_score, text_score)
+
+
+def _dedupe_decision_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    selected: dict[tuple[str, ...], dict[str, str]] = {}
+    order: list[tuple[str, ...]] = []
+    for index, row in enumerate(rows):
+        key = _decision_dedupe_key(row, index)
+        current = selected.get(key)
+        if current is None:
+            order.append(key)
+            selected[key] = row
+            continue
+        if _decision_row_score(row) > _decision_row_score(current):
+            selected[key] = row
+    return [selected[key] for key in order]
+
+
 def _decision_model(instance: InstanceConfig) -> dict[str, object]:
     register_path = decisionops.decision_register_path(instance)
     register = _read_table(register_path)
     report_path = instance.artifact("reports_dir") / "rapport_decisions_actions_preuves.md"
-    rows = register.rows
+    raw_rows = register.rows
+    rows = _dedupe_decision_rows(raw_rows)
     missing_proofs = [row for row in rows if row.get("statut") == "PREUVE_A_DEMANDER"]
     candidate_before_ag = [row for row in rows if row.get("statut") == "CANDIDAT_AVANT_AG"]
     proofs_to_verify = [row for row in rows if row.get("statut") == "PREUVE_LOCALE_A_VERIFIER"]
@@ -35,7 +75,9 @@ def _decision_model(instance: InstanceConfig) -> dict[str, object]:
         "proofs_to_verify": proofs_to_verify[:40],
         "report": _read_report(report_path),
         "summary": {
-            "total": register.count,
+            "total": len(rows),
+            "raw_total": register.count,
+            "deduplicated": max(0, register.count - len(rows)),
             "open": len(open_rows),
             "missing_proofs": len(missing_proofs),
             "candidate_before_ag": len(candidate_before_ag),

@@ -44,8 +44,12 @@ class PilotageUiDataTests(unittest.TestCase):
         self.assertEqual(view["cards"][0]["domain_label"], "Consommations")
         self.assertEqual(view["cards"][0]["proof_source"], "Registre KPI local - registre_releves - kpi.csv:KPI-EAU")
         self.assertIn("Controler la source du KPI", view["cards"][0]["next_action"])
+        self.assertTrue(view["cards"][0]["confidence"])
+        self.assertTrue(view["cards"][0]["action_href"])
         self.assertEqual(view["cards"][1]["domain_label"], "Demandes")
         self.assertEqual(view["cards"][1]["status"], "a_verifier")
+        self.assertEqual(view["cards"][1]["confidence_label"], "a verifier")
+        self.assertEqual(view["cards"][1]["action_href"], "/actions?scope=syndic")
         self.assertIn("preuve manquante", view["cards"][1]["proof_source"])
         self.assertNotIn("Exemple local", " ".join(card["title"] for card in view["cards"]))
 
@@ -65,6 +69,9 @@ class PilotageUiDataTests(unittest.TestCase):
         for card in view["cards"]:
             self.assertIn("Exemple local", card["title"])
             self.assertIn("Exemple local CoproScope", card["proof_source"])
+            self.assertTrue(card["confidence"])
+            self.assertTrue(card["action_href"])
+            self.assertTrue(card["action_label"])
             self.assertTrue(card["next_action"])
             self.assertTrue(card["proof_ref"].startswith("DEMO-LOCAL-"))
 
@@ -91,6 +98,8 @@ class PilotageUiDataTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Decisions AG suivies", response.text)
         self.assertIn("Registre KPI local - registre_ag", response.text)
+        self.assertIn("Confiance", response.text)
+        self.assertIn("Ouvrir les decisions a suivre", response.text)
         self.assertNotIn("Aucun indicateur pret a afficher", response.text)
 
 

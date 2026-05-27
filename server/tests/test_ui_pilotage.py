@@ -47,7 +47,10 @@ class PilotageUiTests(unittest.TestCase):
         self.assertEqual(ui_card["proof_source"], "FactureOps - FACT-EAU-2026-05")
         self.assertEqual(ui_card["threshold"], "attention >= 10; alerte >= 20")
         self.assertEqual(ui_card["status_label"], "prioritaire")
+        self.assertEqual(ui_card["confidence_label"], "haute")
         self.assertIn("Demander le releve", ui_card["next_action"])
+        self.assertEqual(ui_card["action_href"], "/actions?selected=ACT-RELANCE-EAU")
+        self.assertEqual(ui_card["action_label"], "Ouvrir l'action rattachee")
         self.assertEqual(ui_card["diffusion_label"], "Conseil syndical et syndic")
         self.assertIn("Point POINT-EAU", ui_card["attachment_label"])
         self.assertIn("Action ACT-RELANCE-EAU", ui_card["attachment_label"])
@@ -70,6 +73,28 @@ class PilotageUiTests(unittest.TestCase):
 
         self.assertEqual(view["cards"][0]["domain_label"], "Amortissement et investissements")
         self.assertIn("Action ACT-ARBITRAGE-AG", view["cards"][0]["attachment_label"])
+        self.assertEqual(view["cards"][0]["action_href"], "/actions?selected=ACT-ARBITRAGE-AG")
+
+    def test_view_model_rejects_indicator_without_confidence(self) -> None:
+        with self.assertRaisesRegex(ValueError, "confidence"):
+            build_pilotage_view(
+                [
+                    {
+                        "indicator_id": "score_sans_confiance",
+                        "domain": "gouvernance",
+                        "title": "Score sans confiance",
+                        "period": "2026-05",
+                        "status": "OK",
+                        "threshold": "seuil renseigne",
+                        "source": "Registre test",
+                        "proof_ref": "DOC-1",
+                        "novice_reading": "Carte volontairement incomplete.",
+                        "next_action": "Completer avant affichage.",
+                        "diffusion": "cs",
+                        "point_ref": "POINT-TEST",
+                    }
+                ]
+            )
 
     def test_view_model_empty_state_is_useful_for_novice(self) -> None:
         view = build_pilotage_view([])
@@ -125,10 +150,13 @@ class PilotageUiTests(unittest.TestCase):
         self.assertIn("Periode", html)
         self.assertIn("Preuve ou source", html)
         self.assertIn("Seuil", html)
+        self.assertIn("Confiance", html)
         self.assertIn("Prochaine action", html)
         self.assertIn("Diffusion", html)
         self.assertIn("Rattachement", html)
         self.assertIn("preuve manquante", html)
+        self.assertIn('href="/actions?scope=syndic"', html)
+        self.assertIn("Ouvrir les demandes a suivre", html)
         self.assertIn("Aucun indicateur pret a afficher", empty_html)
         self.assertNotIn('href="/pilotage', html)
         self.assertNotIn('href="/pilotage', empty_html)

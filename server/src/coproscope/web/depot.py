@@ -100,6 +100,15 @@ def deposits_dir(instance: InstanceConfig) -> Path:
     return path
 
 
+def deposit_target_root(instance: InstanceConfig) -> Path:
+    physical_deposit = instance.physical_deposit_path()
+    if physical_deposit is not None:
+        return physical_deposit
+    raw_roots = instance.root_list("raw")
+    raw_root = raw_roots[0] if raw_roots else instance.root("raw")
+    return raw_root / DEPOSIT_ROOT_NAME
+
+
 def _validate_deposit_id(deposit_id: str) -> str:
     cleaned = str(deposit_id or "").strip()
     if not DEPOSIT_ID_RE.fullmatch(cleaned):
@@ -266,8 +275,7 @@ def create_deposit_from_uploads(
         raise DepositError("Trop de fichiers dans un seul depot.", 413)
 
     deposit_id = _new_deposit_id(instance)
-    raw_root = instance.root("raw")
-    target_dir = raw_root / DEPOSIT_ROOT_NAME / deposit_id
+    target_dir = deposit_target_root(instance) / deposit_id
     manifest: dict[str, Any] = {
         "deposit_id": deposit_id,
         "created_at": now_iso(),

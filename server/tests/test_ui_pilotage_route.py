@@ -36,7 +36,11 @@ class UiPilotageRouteTests(unittest.TestCase):
         self.assertIn("Taux documents OCR requis", response.text)
         self.assertIn("Registre KPI local", response.text)
         self.assertIn('href="/pilotage"', response.text)
-        self.assertIn(">A surveiller</a>", response.text)
+        self.assertIn(">A surveiller</span>", response.text)
+        self.assertIn("Preuve ou source", response.text)
+        self.assertIn("Confiance", response.text)
+        self.assertIn("Prochaine action", response.text)
+        self.assertIn("Ouvrir les decisions a suivre", response.text)
 
     def test_pilotage_route_uses_existing_token_guard_and_nav_token(self) -> None:
         client = self._client(access_token="local-secret")
@@ -47,6 +51,7 @@ class UiPilotageRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Pilotage des indicateurs", response.text)
         self.assertIn('href="/pilotage?token=local-secret"', response.text)
+        self.assertIn('href="/actions?scope=decisions&amp;token=local-secret"', response.text)
         self.assertIn('aria-label="Indicateurs, quoi surveiller en priorite"', response.text)
         self.assertIn('aria-current="page"', response.text)
 

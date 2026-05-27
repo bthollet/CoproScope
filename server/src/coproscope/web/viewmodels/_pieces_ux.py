@@ -330,10 +330,10 @@ def _ux_piece_from_action(action: dict[str, str], index: int) -> dict[str, objec
 def _ux_piece_fictive_examples() -> list[dict[str, object]]:
     examples = [
         (
-            "EXEMPLE-ASSURANCE",
-            "Attestation assurance immeuble recente",
-            "Assurance",
-            "Demander l'attestation en cours de validite au syndic.",
+            "UX-PIECE-COMP-C2B3F479",
+            "Justificatif comptable - attestation assurance immeuble recente",
+            "Comptes et factures",
+            "Demander au syndic l'attestation en cours de validite avant de clore le controle.",
         ),
         (
             "EXEMPLE-TRAVAUX",
@@ -349,7 +349,7 @@ def _ux_piece_fictive_examples() -> list[dict[str, object]]:
         novice_status = _ux_piece_novice_status("exemple")
         items.append(
             {
-                "id": _stable_action_id("UX-PIECE-EXEMPLE", index, point_id, expected_piece),
+                "id": point_id,
                 "expected_piece": expected_piece,
                 "rubric_label": rubric,
                 "point_label": "Exemple de point a rattacher",
@@ -360,9 +360,12 @@ def _ux_piece_fictive_examples() -> list[dict[str, object]]:
                 "priority": "P2",
                 "priority_label": _priority_label("P2"),
                 "reason": reason,
-                "next_step": "Remplacer cet exemple par une vraie piece issue du depot ou d'une relance.",
+                "next_step": f"Brouillon a copier, non envoye: {reason}",
                 "is_fictive": True,
                 "requires_real_validation": True,
+                "related": {"action_id": point_id, "request_id": "", "event_id": point_id},
+                "owner_label": "Syndic ou detenteur a confirmer",
+                "proof_expected_label": expected_piece,
                 "linked_documents": [],
                 "linked_documents_count": 0,
                 "request_href": relance_href,

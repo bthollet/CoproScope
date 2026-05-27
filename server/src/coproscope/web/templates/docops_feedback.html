@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% set tri = docops_feedback %}
+{% block topbar_title %}{{ tri.title }}{% endblock %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">DocOps feedback</p>
+    <h2>{{ tri.title }}</h2>
+    <p>{{ tri.notice }}</p>
+    <div class="docops-feedback-actions" aria-label="Sorties locales">
+      <a class="button-link" href="{{ token_href('/exports/docops-feedback-tri.csv') }}">Exporter le registre local CSV</a>
+      <a class="button-link secondary" href="{{ token_href('/exports/docops-feedback-tri.json') }}">Exporter le registre local JSON</a>
+    </div>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ tri.summary.total }}</strong><span>documents</span></div>
+    <div><strong>{{ tri.summary.mask }}</strong><span>a masquer</span></div>
+    <div><strong>{{ tri.summary.cs }}</strong><span>reserve CS</span></div>
+    <div><strong>{{ tri.summary.blocked }}</strong><span>bloques</span></div>
+    <div><strong>{{ tri.summary.later }}</strong><span>a decider</span></div>
+  </div>
+</section>
+
+{% if tri.saved %}
+<section class="band" role="status" aria-live="polite">
+  <div>
+    <p class="eyebrow">Correction enregistree</p>
+    <h3>{{ tri.saved.doc_id }}</h3>
+    <p>La correction locale est tracee pour reprise DocOps. Stockage: {{ tri.saved.storage }}.</p>
+  </div>
+</section>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Propositions a corriger</h3>
+    <span>{{ tri.cards|length }}</span>
+  </div>
+  <div class="docops-rules" aria-label="Regles de decision">
+    <span>Ouvert: partage coproprietaires possible.</span>
+    <span>A masquer: pages ou plages obligatoires avant derive diffusable.</span>
+    <span>Reserve CS: motif obligatoire.</span>
+    <span>Bloque: justification obligatoire, aucune diffusion.</span>
+  </div>
+  <div class="artifact-list docops-feedback-list">
+    {% for card in tri.cards %}
+    <form class="artifact" method="post" action="{{ token_href('/documents/tri-feedback') }}">
+      <input type="hidden" name="doc_id" value="{{ card.doc_id }}">
+      <input type="hidden" name="sha256" value="{{ card.sha256 }}">
+      <strong>{{ card.doc_id }}</strong>
+      <span>Type propose: {{ card.document_type }} - confidentialite proposee: {{ card.privacy_status }}</span>
+      <span>{{ card.reason }} Confiance {{ card.confidence }}. Etat: {{ card.local_state }}.</span>
+      <label>Type documentaire
+        <select name="document_type">
+          {% for item in tri.document_type_choice_options %}
+          <option value="{{ item.value }}" {% if item.value == card.document_type %}selected{% endif %}>{{ item.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Confidentialite
+        <select name="privacy_status">
+          {% for choice in tri.privacy_choices %}
+          <option value="{{ choice.value }}" {% if choice.value == card.privacy_status %}selected{% endif %}>{{ choice.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Justification si restriction
+        <textarea name="justification" rows="2" placeholder="Motif obligatoire pour reserve CS, a masquer ou bloque"></textarea>
+      </label>
+      <label>Pages ou plages a masquer
+        <input name="redaction_scope" placeholder="Exemple: pages 2-3, lignes adresse">
+      </label>
+      <label>Relecteur
+        <input name="reviewer" value="membre_cs_demo">
+      </label>
+      <button type="submit">Enregistrer les corrections</button>
+    </form>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

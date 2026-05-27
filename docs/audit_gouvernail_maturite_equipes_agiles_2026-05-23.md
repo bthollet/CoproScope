@@ -1,155 +1,142 @@
 # Audit gouvernail - maturite proche issue des retours agiles
 
-Date: 2026-05-23
+Date initiale: 2026-05-23
+Mise a jour: 2026-05-24
 
-Perimetre: challenge du gouvernail `docs/roadmap_backlog_central.md` au regard
-des retours equipes agiles, tests novices, QA live et tests locaux relances.
+Perimetre: challenge du gouvernail `docs/roadmap_backlog_central.md` au
+regard des retours equipes agiles, tests novices, QA live, tests locaux et
+filtre "maximiser ce qui peut etre fait sans IA cloud".
 
-## Verdict
+## Synthese 2026-05-24
 
-Le gouvernail est pertinent sur le cap: `preuve + action + memoire`, avec
-qualite novice et socle DB comme verrous P0. Son risque actuel est la surcharge:
-trop d'items P0 ou ACTIF peuvent donner la meme valeur a une fonctionnalite
-presque livrable, un chantier bloque, une ambition structurante et un audit
-specialise.
+Le diagnostic a change depuis l'audit initial: le lot local-first proche de
+maturite n'est plus seulement candidat, il est integre techniquement.
 
-Pour piloter la maturite, il faut donc separer:
+- `RM-2026-0019` est `INTEGRE`: `/actions` public est branche, le couloir
+  `piece -> relance -> depot` est clarifie, passation/share sont durcis contre
+  fuites de secrets et elargissement prive de scope.
+- `RM-2026-0016` reste `ACTIF`, mais le verrou a change: il ne s'agit plus de
+  construire les premiers read models publics, mais de mesurer `/actions`,
+  `/pieces?proof=missing` et les exports sur instance metier reelle.
+- `RM-2026-0017` est le P0 operationnel courant: reconstruction progressive
+  Beauvallon, simulation comparee au reel, pieces primaires filtrees et
+  pipeline local.
+- `RM-2026-0020` est `INTEGRE`: le choix d'instance locale existe et simplifie
+  la recette reelle.
 
-- priorite strategique: important pour le produit;
-- maturite technique: code, tests, perf et anti-fuite solides;
-- maturite utilisateur: un novice peut accomplir une boucle courte sans aide;
-- maturite de diffusion: export, partage ou sync ne fuite pas de donnees.
+Conclusion: le gouvernail est coherent. La priorite immediate ne doit pas
+rouvrir un chantier IA ou UI generaliste; elle doit utiliser la reconstruction
+Beauvallon comme banc de preuve reel pour mesurer performance, robustesse et
+qualite utilisateur.
 
-Une fonctionnalite approche de la maturite seulement si elle tient ces quatre
-questions: quoi traiter, quelle preuve, quelle action, quelle trace ou diffusion
-prudente.
+## Verdict actualise
+
+Le cap `preuve + action + memoire` reste le bon. Le risque principal n'est plus
+la pertinence fonctionnelle des lots proches; il est maintenant la confusion
+entre:
+
+- fonctionnalite integree techniquement;
+- fonctionnalite recettee sur fixture;
+- fonctionnalite validee sur instance metier reelle;
+- fonctionnalite diffusable/partageable sans fuite.
+
+Le gouvernail doit donc garder une regle stricte: une fonctionnalite peut etre
+marquee `INTEGRE` quand le code et les gates sont verts, mais le GO produit
+reel exige encore mesure sur donnees metier, temps de reponse, absence de fuite
+et comprehension novice.
 
 ## Fonctionnalites proches de maturite
 
-| Rang | Fonctionnalite | Maturite actuelle | Pourquoi elle est proche | Dernier verrou avant GO |
+| Rang | Fonctionnalite | Statut actualise | Ce qui est acquis | Dernier verrou produit |
 |---:|---|---|---|---|
-| 1 | Couloir `piece manquante -> detail piece -> relance -> depot` | Release candidate conditionnelle | Boucle utilisateur concrete, routes reelles, token conserve, detail compact, depot contextualise, gate live et tests cibles verts. | Rejouer en navigateur sur instance reelle avec temps cible 3-5 s et preuve multi-viewport stable. |
-| 2 | Relance syndic locale sans envoi automatique | Proche produit | Le brouillon est prudent, contextualise depuis demande ou piece, et ne pretend pas envoyer. Les tests couvrent token, etat vide, pre-remplissage et absence de faux envoi. | Consolider la trace d'envoi hors CoproScope: date, canal, personne, prochaine verification, puis rattacher proprement a action/preuve. |
-| 3 | Read model public `pieces manquantes` | Mature technique sur un premier cas | Allowlist publique, pas de `SELECT *`, pas de FTS/MATCH, fallback vide prudent, pas de build dashboard au GET; tests relances localement OK. | Generaliser au read model `/actions` sans perdre l'anti-fuite ni recreer la lenteur du dashboard global. |
-| 4 | Passation prudente avec blocages | Proche sur l'apercu et les blocages | Exports derives JSON/TXT, blocages explicites, liens token-safe, non-source-de-verite, tests anti-fuite solides. | Ne pas declarer la passation globale mature tant que `/exports/passation` reste lente sur instance reelle; garder le GO aux sous-surfaces rapides. |
-| 5 | AG/contentieux precontentieux derive | Proche pour usage expert borne | Plan actionnable, rapports anonymises, controles privacy/audit, route specialisee allegee et rapide. | Ne pas la vendre comme assistant juridique autonome; rester sur aide a pieces, reserves, demandes et seuils de decision humaine. |
-| 6 | Frontiere publication `share-audit` / `share-export` | Mature comme garde-fou | Les sorties publiables sont scannees et bloquent chemins locaux, tokens, secrets et contenus interdits. | Ajouter une recette utilisateur: que comprend un non-tech quand une publication est bloquee ? |
+| 1 | Read models publics `/pieces?proof=missing` et `/actions` | Integre technique | Projections locales allowlistees, controle schema/version, fallback vide, pas de `SELECT *`, pas de FTS/MATCH, pas de dashboard global quand le vault public est configure. | Mesurer sur instance metier reelle et surveiller que les nouveaux filtres n'elargissent pas la surface publique. |
+| 2 | Couloir `piece -> detail -> relance -> depot` | GO technique local-first | Routes reelles, token conserve, relance non envoyee, depot contextualise, labels novice visibles, navigateur desktop/mobile OK sur fixture. | Rejouer sur instance Beauvallon reconstruite, avec temps cible et donnees non synthetiques. |
+| 3 | Relance syndic locale sans envoi automatique | Proche produit | Brouillon prudent, contextualise depuis piece/action, aucune promesse d'envoi automatique, rattachement depot/reponse. | Consolider la trace d'envoi hors CoproScope: date, canal, personne, prochaine verification. |
+| 4 | Frontiere publication `share-audit` / `share-export` | GO technique anti-fuite | Blocage chemins, tokens, OAuth, refresh token, OpenAI `sk-*`, Bearer token, redaction maps et contenus interdits. | Ajouter une UX explicite de blocage: pourquoi c'est bloque et quoi faire pour produire une derive partageable. |
+| 5 | Passation prudente avec blocages | Proche sur sous-surfaces | Exports derives, blocages explicites, liens token-safe, protection `scope=event` prive. | Ne pas declarer la passation globale mature tant que les exports restent lents sur instance reelle. |
+| 6 | AG/contentieux precontentieux derive | Utilisable si borne | Rapports derives, controles privacy/audit, aide a pieces/reserves/demandes. | Ne pas vendre comme assistant juridique autonome; garder decision humaine et sources citees. |
 
 ## Fonctionnalites a ne pas surestimer
 
 | Fonctionnalite | Statut reel | Challenge gouvernail |
 |---|---|---|
-| Installable noob Drive chiffre | Strategique, pas proche release | Le bootstrap CLI et la checklist existent, mais OAuth, vraie connexion Drive, assistant et parcours sans terminal restent bloquants. |
-| Onboarding | Cadre produit pertinent, pas encore fonctionnalite mature | Il fixe les criteres de sortie, mais les quatre intentions ne sont pas encore toutes rejouables sans aide. |
-| Registre `/actions` complet | Stable en consultation, pas mature en creation | Les routes passent, mais `Nouvelle action`, rattachement decision, preuve, echeance et responsable doivent devenir un vrai flux createur. |
-| Controle comptes guide | Amorce forte | La lecture et les questions syndic sont utiles, mais le parcours anomalie -> question -> relance/preuve -> rapport AG reste incomplet. |
-| Memoire/passation complete | Direction claire | Il existe une passation amont et des details, pas encore une timeline centrale de reprise avec pack transmissible complet. |
-| Gouvernance complexe, multi-coffres, anti-confiscation UI | Differenciant long terme | A garder haut dans la vision, mais pas a melanger avec les candidats a maturite proche. |
-
-## Challenge des priorites du gouvernail
-
-1. `RM-2026-0003`, `RM-2026-0006` et `RM-2026-0016` forment le bon triangle de
-   maturite proche: UX utile, gates novice, performance/read models.
-2. `RM-2026-0014` est bien P0 strategique, mais ne doit pas aspirer les cycles
-   de maturite tant que le JSON OAuth, le vrai upload Drive et l'assistant noob
-   ne sont pas debloques.
-3. `RM-2026-0008` est tres utile pour l'urgence audit/AG, mais doit rester un
-   couloir borne. S'il devient le centre produit, il risque de detourner la
-   maturite du coeur reutilisable: pieces, demandes, actions, preuves,
-   passation.
-4. `RM-2026-0017` peut etre excellent comme banc de preuve reel/test, mais il
-   ne doit pas remplacer la maturation des read models. Sa valeur est de
-   verifier la robustesse, pas d'ouvrir un second produit.
+| Installable noob Drive chiffre (`RM-2026-0014`) | Strategique, encore bloque cote OAuth/JSON | Ne pas le melanger avec les lots local-first deja integres. Le partage Drive doit rester chiffrement/transport, pas source de raisonnement cloud. |
+| Reconstruction Beauvallon (`RM-2026-0017`) | P0 operationnel actif | C'est le banc de preuve reel/test, pas un second produit. Sa valeur est de demontrer que le systeme reconstruit une base fiable depuis les pieces primaires. |
+| Passation globale | Direction correcte, pas GO complet | Les sous-surfaces sont durcies; le verrou restant est perf et lisibilite sur instance reelle. |
+| Registre `/actions` createur | Consultation/read model integres | La creation complete d'action, echeance, preuve, responsable et decision rattachee reste un futur flux produit. |
+| Controle comptes guide | Amorce forte | Le parcours complet anomalie -> question -> relance/preuve -> rapport AG doit encore etre ferme. |
+| Gouvernance multi-coffres / anti-confiscation UI | Differenciant long terme | A garder dans la vision, mais hors maturite proche tant que les flux simples ne sont pas prouves sur reel. |
 
 ## Challenge sans IA cloud
 
 Objectif produit: maximiser ce qui peut etre fait en local, sans envoyer les
 pieces, textes OCR, noms, chemins, mails ou rapports vers une IA cloud.
 
-| Fonctionnalite | Potentiel sans IA cloud | Ce qui doit rester local/deterministe | Risque si on la confie trop vite au cloud |
+| Fonctionnalite | Potentiel sans IA cloud | Primitive locale retenue | Statut |
 |---|---|---|---|
-| `piece manquante -> detail -> relance -> depot` | Tres eleve | Completeness par registres, checklist pieces attendues, liens action/preuve, templates de relance, depot contextualise, OCR local si besoin. | Envoyer des pieces ou raisons de manque sensibles pour obtenir une reformulation qui peut etre produite par gabarit. |
-| Relance syndic locale | Tres eleve | Brouillons par modele, variables controlees, ton factuel, copie manuelle, journal d'envoi externe. | Transformer une relance probatoire en texte IA non source, trop assertif ou juridiquement imprudent. |
-| Read model public `pieces manquantes` | Maximal | SQLite/projections locales, allowlist de colonnes, statuts, liens, fallback vide, tests anti-fuite. | Aucun besoin cloud; si du cloud intervient ici, c'est un signal d'architecture trop floue. |
-| Passation prudente avec blocages | Eleve | Export structure, listes de sujets ouverts, blocages, restrictions, preuves manquantes, biffage local, validation humaine. | Generer une synthese cloud contenant trop de contexte ou donnant une fausse certitude sur ce qui est diffusable. |
-| AG/contentieux precontentieux | Moyen a eleve si borne | Extraction locale, checklists AG, pieces P1, reserves, echeances, preuves citees, rapports a trous avec prudence. | Faire porter au cloud le raisonnement juridique ou exposer une convocation/requete sensible, meme anonymisee imparfaitement. |
-| `share-audit` / `share-export` | Maximal | Scans de contenu, denylist/allowlist, biffage, blocage, manifestes bornes, tests canari. | Faire du cloud un juge de confidentialite; il doit au mieux recevoir une derive deja anonymisee, jamais decider seul. |
+| Read models publics | Maximal | SQLite/projections locales, allowlist, schema/version, fallback vide, tests anti-fuite. | Integre pour `/pieces?proof=missing` et `/actions`. |
+| Couloir piece/relance/depot | Tres eleve | Completeness locale, gabarits de relance, depot contextualise, journal d'action. | GO technique; recette reelle a faire. |
+| Relance syndic | Tres eleve | Brouillon controle, copie manuelle, envoi hors outil, trace locale. | Proche produit. |
+| Passation/share | Eleve | Exports derives, biffage, blocage secrets, validation humaine. | Sous-surfaces durcies; perf reelle a mesurer. |
+| AG/contentieux | Moyen a eleve si borne | Checklists, rapports a trous, sources citees, derives anonymisees. | Usage expert borne seulement. |
+| Drive chiffre | Transport uniquement | Chiffrement local puis upload minimal. | Bloque tant que le client OAuth n'est pas fourni. |
 
-Conclusion: les candidats les plus compatibles avec l'objectif "sans IA cloud"
-sont, dans l'ordre, les read models publics, la boucle pieces/relance/depot, la
-relance locale et les frontieres de publication. Le module AG/contentieux et les
-syntheses de passation doivent rester utiles sans cloud, avec l'IA eventuelle
-limitee a un second regard sur derives anonymisees, jamais au chemin critique.
-
-Regle d'arbitrage proposee: une fonctionnalite monte en priorite si elle
+Regle d'arbitrage maintenue: une fonctionnalite monte en priorite si elle
 remplace un appel IA cloud potentiel par une primitive locale verifiable:
 projection SQLite, OCR local, gabarit, checklist, extraction citee, biffage,
 journal d'action ou export derive.
 
-## Recommandation de sequence
+## Sequence recommandee actualisee
 
-### Lot A - Passer en maturite produit courte
+### Lot 1 - Recette reelle sur Beauvallon
 
-- Verrouiller le couloir `pieces -> detail -> relance -> depot`.
-- Exiger navigateur multi-viewport + instance reelle + cible 3-5 s.
-- Nettoyer tout vocabulaire `demo`, `fictif`, `test` au premier niveau.
-- Produire un verdict GO/NO-GO novice verbalise.
+- Utiliser `RM-2026-0017` comme banc de preuve.
+- Comparer l'instance simulation triee par CoproScope avec l'instance reelle.
+- Mesurer `/actions`, `/pieces?proof=missing`, detail piece, relance, depot et
+  passation sur donnees metier.
+- Produire un GO/NO-GO separe: performance, non-fuite, comprehension novice,
+  couverture des pieces primaires.
 
-### Lot B - Transformer le socle DB en maturite reutilisable
+### Lot 2 - Fermer les flux createurs
 
-- Construire `/actions` en read model public versionne.
-- Garder les memes exigences que `pieces manquantes`: allowlist, projection
-  meta, fallback vide, pas de DDL au GET, pas de fuite `source_file`/`chemin`.
-- Mesurer `/actions?priority=P1`, `/actions?scope=syndic` et
-  `/actions?status=a_demander`.
-
-### Lot C - Fermer la boucle produit
-
+- Transformer `/actions` de registre consultable en flux createur minimal:
+  action, responsable, echeance, preuve attendue, decision/source rattachee.
 - Relier `comptes -> question syndic -> relance -> preuve attendue`.
-- Faire de `/actions` le pivot createur minimal.
-- Declarer la passation mature seulement quand les sujets ouverts, blocages,
-  preuves et restrictions sont transmissibles sans lenteur ni ambiguite.
+- Garder l'envoi hors CoproScope tant que la chaine probatoire n'est pas
+  totalement auditable.
 
-## Verification locale
+### Lot 3 - Partage et installable
 
-Panier relance depuis `server/` le 2026-05-23:
+- Ne reprendre `RM-2026-0014` que lorsque le JSON OAuth Desktop app est place
+  hors Git.
+- Garder le partage Drive comme transport chiffre, jamais comme traitement IA.
+- Ajouter l'UX de blocage publication: expliquer la cause et la correction
+  attendue sans exposer le secret bloque.
 
-```text
-python -m unittest tests.test_public_read_models tests.test_ui_piece_detail_route tests.test_ui_requests_route tests.test_ui_agcontentieux_route tests.test_ui_passation_export_route tests.test_ui_smoke_routes_expanded -v
-Ran 49 tests in 25.022s
-OK
-```
+## Verifications acquises
 
-Ce resultat confirme une maturite technique forte sur les surfaces ciblees. Il
-ne suffit pas a lui seul pour un GO produit global: le gate novice navigateur,
-les temps reponse reels et la boucle complete restent les juges finaux.
-
-## Resultat equipe agile lancee
-
-Le 2026-05-23, trois lots ont ete lances et integres dans le workspace
-principal sous contrainte "sans IA cloud":
-
-- Rawls / lot A: lecteur public `public_actions_v1` ajoute, avec allowlist,
-  controle `projection_meta`, fallback vide, pas de `SELECT *`, pas de
-  FTS/MATCH, pas de DDL persistant au GET. Verdict: GO technique lecteur,
-  GO produit reporte tant que la route `/actions` n'est pas branchee dessus.
-- Meitner / lot B: couloir novice `piece -> relance -> depot` clarifie; piece
-  concernee, raison, prochaine action, relance non envoyee, depot/reponse et
-  prudence diffusion sont visibles sans vocabulaire demo/fictif/DocAI au premier
-  niveau. Verdict: GO technique local-first, live navigateur encore a faire.
-- Chandrasekhar / lot C: passation/share renforces contre secrets OAuth,
-  refresh token, OpenAI `sk-*`, Bearer token et elargissement prive
-  `scope=event -> global`. Verdict: GO technique anti-fuite.
-
-Verification commune depuis `server/`:
+Panier local final depuis `server/`:
 
 ```text
 python -m unittest tests.test_public_read_models tests.test_code_line_limit tests.test_vault tests.test_ui_piece_detail_route tests.test_ui_requests_route tests.test_ui_depot_flow tests.test_ui_live_ux_contract tests.test_ui_passation_export_route tests.test_security_no_private_sync_leaks tests.test_pipeline tests.test_privacy tests.test_audit360_import tests.test_gdriveops tests.test_ui_smoke_routes_expanded -v
-Ran 117 tests in 39.835s
+Ran 119 tests in 38.406s
 OK (skipped=1)
 ```
 
-Le skip est attendu: aucun serveur live n'etait lance sur `127.0.0.1:8766`.
-Le prochain verrou produit est donc net: brancher `/actions` sur son read model
-public, puis faire une passe navigateur live/multi-viewport sur le couloir
-novice complet.
+Recette live separee avec serveur `127.0.0.1:8766`:
+
+```text
+python -m unittest tests.test_ui_live_ux_contract -v
+Ran 6 tests in 2.077s
+OK
+```
+
+Passe navigateur in-app: desktop 1280x720 et mobile 390x844 sur
+`/pieces?proof=missing`, detail piece, relance, depot et `/actions?priority=P1`.
+Labels utiles presents, aucun debordement horizontal.
+
+## Decision gouvernail
+
+`RM-2026-0019` peut rester `INTEGRE`. Le prochain travail prioritaire n'est pas
+un nouveau lot IA ou un nouvel ecran abstrait: c'est la validation metier via
+`RM-2026-0017`, avec mesures reelles et comparaison simulation/reel.

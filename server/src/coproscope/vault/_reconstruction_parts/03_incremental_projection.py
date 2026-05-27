@@ -222,6 +222,7 @@ def _ensure_projection_tracking_schema(connection: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_event_applied_type ON event_applied(event_type, event_created_at);
         """
     )
+    _ensure_object_followups_schema(connection)
 
 
 def _backfill_projection_events_from_event_log(
@@ -319,6 +320,7 @@ def _require_reconstruction_schema(connection: sqlite3.Connection) -> None:
         "points",
         "actions",
         "expected_pieces",
+        "object_followups",
         "object_links",
         "source_import_map",
     }
@@ -339,7 +341,7 @@ def _table_names(connection: sqlite3.Connection) -> set[str]:
 
 
 def _business_counts(connection: sqlite3.Connection) -> dict[str, int]:
-    tables = ("points", "actions", "expected_pieces", "object_links", "source_import_map")
+    tables = ("points", "actions", "expected_pieces", "object_followups", "object_links", "source_import_map")
     return {table: _count_rows(connection, table) for table in tables}
 
 

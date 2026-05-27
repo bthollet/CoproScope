@@ -24,6 +24,37 @@ La parallelisation ne doit pas servir a faire travailler plusieurs agents sur le
 
 Un agent ne doit pas supposer qu'il est seul. Il ne revert pas le travail des autres, ne deplace pas une responsabilite sans accord, et ne modifie pas les donnees privees.
 
+## Routeur automatique d'equipes
+
+Avant de lancer une equipe multi-agents, utiliser
+[`strategie_equipes_multi_agents.md`](./strategie_equipes_multi_agents.md).
+Le routeur choisit l'equipe-type et la strategie d'orchestration avant de
+creer le `CH-*`:
+
+- `INCIDENT_STATIONNEMENT`: arbitrage, doublon ou blocage; check-in seulement;
+- `FANIN_CONSOLIDATION`: retours concurrents ou tardifs; dedoublonner avant
+  tout nouveau dispatch;
+- `RECHERCHE_METIER`: experts juridique/syndic/compta/travaux/CS sans dev;
+- `UXUI_RECHERCHE`: recherche UX/UI visuelle sans dev;
+- `AGILE_UI_PRODUIT`: delivery UI avec visuel IA, blueprint, novice, front,
+  back et QA;
+- `BACKEND_DOMAINE`: owner code unique sur DB/vault/read model/sync/extracteurs,
+  experts en lecture;
+- `RECETTE_LIVE_QA`: serveur reserve, captures et verdict navigateur;
+- `INTEGRATION_RELEASE`: integration serie, une branche/worktree a la fois;
+- `DOCTRINE_SIDEQUEST`: protocole ou cadrage transverse borne.
+
+Le choix automatique ne saute jamais le preflight: `EN_ATTENTE_USER`, incident
+de doublon ou `BLOQUE` non stationne gagnent sur toute priorite backlog. Si un
+`CH-*` vivant existe deja, le routeur reprend seulement ses roles manquants,
+idle, bloques ou expires.
+
+Apres le choix d'un `ORD-*` et d'un `CH-*`, le coordinateur publie les slots de
+role dans [`tableau_execution_courant.md`](./tableau_execution_courant.md).
+Les conversations workers ne piochent pas dans `roadmap_backlog_central.md`;
+elles prennent seulement un slot `A_PRENDRE` deja ouvert pour le chantier
+courant.
+
 ## Chemin critique et side-quests
 
 Dans une conversation orientee vers un but principal, par exemple un audit, une
@@ -48,6 +79,22 @@ defaut, il produit une doctrine, une note ou une proposition d'integration.
 Quand Brice demande une "equipe agile", une equipe multi-agents, ou un
 fonctionnement UX/dev/QA par iterations rapides, utiliser
 [`protocole_equipe_agile_agents.md`](./protocole_equipe_agile_agents.md).
+Quand la demande est seulement "equipe multi-agents" ou quand le prochain lot
+vient du gouvernail, appliquer d'abord le routeur automatique; l'equipe agile
+UI produit n'est lancee que si le routeur choisit `AGILE_UI_PRODUIT`.
+
+Au lancement effectif, le coordinateur met a jour la heartbeat canonique
+`relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
+courant. Il ne cree pas de heartbeat concurrente sans demande explicite de
+Brice; tout doublon actif est mis en pause. La relance laisse un check-in
+persistant dans `docs/presence_agents.md`, meme en `DONT_NOTIFY`, reprend les
+roles manquants, idle, bloques ou expires, ne duplique pas un role vivant, et
+traite `AGILE-DONE - equipe agile a fini son job` comme une fin de lot, pas
+comme une fin d'orchestration. Si tous les roles du lot sont clos, la heartbeat
+reprend le gouvernail, choisit le prochain `ORD-*` actionnable et ouvre une
+nouvelle equipe avec un nouveau `CH-*`, puis met a jour le tableau d'execution
+courant avec les slots workers. Elle n'est supprimee que sur demande explicite
+de Brice ou absence verifiee de tout `ORD-*` actionnable.
 
 Le noyau d'equipe est:
 
@@ -58,6 +105,13 @@ Le noyau d'equipe est:
 - dev back / viewmodel;
 - QA securite / regression.
 
+Si le budget de threads le permet, le coordinateur ajoute aussi un testeur
+expert metier juridique/compta/process chantier/syndic. Ce role reste en
+lecture seule, contre-teste les risques de procedure et de diffusion, et rend
+ses constats en `fait -> preuve attendue -> regle/process -> action`. Si aucun
+thread n'est disponible, QA et coordinateur reprennent sa checklist dans le
+verdict du lot.
+
 Le coordinateur garde les roles en flux decale:
 
 - `N-1`: QA et utilisateur novice testent une route ou un artefact livre;
@@ -67,9 +121,11 @@ Le coordinateur garde les roles en flux decale:
 
 Chaque cycle part d'une UI reelle ou en produit une: route locale, ecran,
 modale, artefact HTML ou parcours testable. Quand le sujet est visuel, nouveau,
-ambigu ou sensible pour un novice, le designer genere une image ou un blueprint
-avant le dev; le membre novice le qualifie en GO/NO-GO, puis seulement le
-coordinateur ouvre l'ownership front/back.
+ambigu ou sensible pour un novice, le designer genere une image IA bitmap de
+l'ecran complet et un blueprint avant le dev; le membre novice les qualifie en
+GO/NO-GO, puis seulement le coordinateur ouvre l'ownership front/back. L'un
+et/ou l'autre peuvent etre annules seulement avec justification tracee
+`VISUEL_IA_WAIVED` et/ou `BLUEPRINT_WAIVED`.
 
 La comparaison aux visuels d'enquete utilisateur est une activite recurrente:
 designer, novice et QA rapprochent l'UI reelle des captures source ou du visuel
@@ -129,8 +185,14 @@ fichier sensible sans owner declare.
 Les demandes et chantiers vivants sont suivis dans deux registres transverses:
 
 - `roadmap_backlog_central.md` comme gouvernail unique pour les intentions `RM-*`;
+- `tableau_execution_courant.md` comme tableau court du chantier courant et
+  seule surface ou un worker prend un slot;
 - `presence_agents.md` pour les chantiers `CH-*`, conversations `CONV-*`,
   ownerships, worktrees, heartbeats et fins de mission.
+
+Les nouveaux chantiers doivent etre nommes
+`CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court`; les anciens `CH-YYYY-NNNN`
+restent des references legacy mais ne sont plus crees.
 
 Les anciennes feuilles de route, backlogs et journaux de cycles sont des sources
 rattachees. Un agent ne les utilise pour demarrer un chantier que si le
@@ -153,10 +215,11 @@ Le registre de suivi est
 par role sont dans [`prompts_agents_refonte_ux.md`](./prompts_agents_refonte_ux.md).
 
 Regle specifique: aucun dev ne demarre une vue manquante sans blueprint
-designer, aucun dev ne demarre une UI pertinente sans image/blueprint qualifie
-par le novice, et aucun testeur ne valide une intention abstraite sans route ou
-artefact reel livre. Aucun GO UI n'est publie sans comparaison aux visuels
-d'enquete ou justification explicite de non-pertinence.
+designer, aucun dev ne demarre une UI pertinente sans image IA bitmap plein
+ecran et blueprint qualifies par le novice, et aucun testeur ne valide une
+intention abstraite sans route ou artefact reel livre. Aucun GO UI n'est publie
+sans comparaison aux visuels d'enquete ou justification explicite de
+non-pertinence.
 
 ## Preparation avant lancement
 
@@ -196,10 +259,11 @@ Mission: Sprint <numero> - <nom court>
 Objectif: <resultat visible attendu>
 Role/filiere: <UX | DB | QA | front | back | docs | coordinateur>
 Roadmap: RM-YYYY-NNNN
-Chantier: CH-YYYY-NNNN
+Chantier: CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court
 Conversation: CONV-YYYY-NNNN
 Branche: codex/<sprint>-<scope>
 Worktree: <chemin absolu ou relatif>
+Port local reserve: <port ou aucun serveur>
 
 Tu n'es pas seul dans le codebase. Ne revert jamais les changements des autres.
 
@@ -221,10 +285,10 @@ Lease ownership:
 
 Donnees:
 - Ne jamais ajouter de donnees reelles dans Git.
-- Utiliser `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test` comme environnement de test local par defaut.
+- Utiliser `C:\Users\brice\CoproScope\instances\beauvallon_test` comme environnement de test local par defaut.
 - Utiliser `examples/synthetic_copro` seulement pour les tests publics/CI et les exemples partageables.
 - Utiliser toute autre instance privee seulement en lecture locale si explicitement demande.
-- La copro demo publiable reste hors Drive, dans `Documents/CoproScope/instances/...`.
+- La copro demo publiable reste hors Drive, dans `CoproScope/instances/...`.
 
 Verification:
 - <commande test 1>
@@ -267,6 +331,10 @@ Voir les briefs detailles : [Lots paralleles approfondis](./lots_paralleles.md).
 
 ## Ports et serveurs locaux
 
+La reference canonique est la section `Ports locaux` de `AGENTS.md`. Un port
+est un ownership temporaire: il doit etre reserve dans le contrat agent, visible
+dans `presence_agents.md`, puis libere dans le `BOT-END`.
+
 | Usage | Port |
 |---|---:|
 | Integration principale | 8765 |
@@ -274,14 +342,30 @@ Voir les briefs detailles : [Lots paralleles approfondis](./lots_paralleles.md).
 | Agent compta | 8767 |
 | Agent privacy | 8768 |
 | Agent demo/docs | 8769 |
+| Agent syndic | 8770 |
+| Agent DocOps | 8771 |
+| Agent decision/action/preuve | 8772 |
+| Agent travaux | 8773 |
+| Agent incidents | 8774 |
+| Agent comms/passation | 8775 |
 
 Exemple :
 
 ```powershell
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
 
-Regle compatible antivirus : lancer le serveur dans un terminal PowerShell visible, au premier plan ou minimise par l'utilisateur, puis l'arreter avec `Ctrl+C`. Ne pas utiliser de fenetre cachee, de `Start-Process` cache, de scan de ports/processus, de `taskkill`, ni d'ouverture navigateur automatique. Si une page ne repond pas, lire le terminal serveur visible plutot que chercher et tuer un PID.
+Regle compatible antivirus : lancer le serveur dans un terminal PowerShell
+visible, au premier plan ou minimise par l'utilisateur, puis l'arreter avec
+`Ctrl+C`. Ne pas utiliser de fenetre cachee, de `Start-Process` cache, de scan
+de ports/processus, de `taskkill`, ni d'ouverture navigateur automatique. Si une
+page ne repond pas, lire le terminal serveur visible plutot que chercher et tuer
+un PID.
+
+La plage `8780` a `8799` sert uniquement aux recettes temporaires, gates live et
+comparaisons. Avant de l'utiliser, annoncer le port, l'instance, le token et le
+motif dans la trace `CONV-*`; apres usage, noter l'arret ou la conservation
+volontaire du serveur.
 
 ## Registre de suivi multi-agents
 
@@ -290,10 +374,37 @@ jour une ligne quand plusieurs agents tournent :
 
 | Conversation | Roadmap | Chantier | Branche/worktree | Ownership | Statut | Expire | Prochain geste |
 |---|---|---|---|---|---|---|---|
-| `CONV-YYYY-NNNN` | `RM-YYYY-NNNN` | `CH-YYYY-NNNN` | `codex/...` / `...\_worktrees\...` | fichiers reserves | EN_COURS | date + fuseau | action concrete |
+| `CONV-YYYY-NNNN` | `RM-YYYY-NNNN` | `CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court` | `codex/...` / `...\_worktrees\...` | fichiers reserves | EN_COURS | date + fuseau | action concrete |
 
 Statuts conseilles : `A_LANCER`, `EN_COURS`, `EN_ATTENTE_USER`, `BLOQUE`,
 `PRET_A_INTEGRER`, `INTEGRE`, `EXPIRE`, `ABANDONNE`, `CLOTURE`.
+
+## Watchdog orchestration
+
+Avant de relancer une equipe ou de conclure que l'orchestrateur tourne encore,
+lancer:
+
+```powershell
+.\tools\orchestration-watch.cmd
+```
+
+Pour obtenir un prompt de relance sans inventer de roles:
+
+```powershell
+.\tools\orchestration-watch.cmd --emit-prompt
+```
+
+Le watchdog signale les conversations `EN_COURS` stale ou expirees, les
+`EN_ATTENTE_USER`, les `BLOQUE`, les lots `PRET_A_INTEGRER` et la derniere
+trace de `relance-equipe-agile-gouvernail-autonome`. En mode strict:
+
+```powershell
+.\tools\agent-check.cmd -Orchestration
+```
+
+Un resultat rouge ne lance pas automatiquement une equipe. Il force le
+coordinateur a remonter l'arbitrage, regulariser une expiration ou ouvrir un
+nouveau `CH-*` avec ownership explicite.
 
 ## Vague active 21h15
 
@@ -339,6 +450,6 @@ Ouvrir manuellement l'URL tokenisee affichee par `ui open-test`, puis verifier l
 - Ne jamais commiter `coproscope-instances/`, `raw`, `restricted`, `.env.local`, tables de correspondance ou exports prives.
 - Ne pas publier une instance seulement pseudonymisee.
 - Ne pas melanger copro demo et instance privee dans le cockpit.
-- La recette live locale par defaut se fait sur `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+- La recette live locale par defaut se fait sur `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 - Les tests publics doivent passer sur `examples/synthetic_copro` ou sur une demo fictive.
 - Toute sortie diffusable doit passer par PrivacyOps/BiffageOps ou par une transformation fictive robuste.

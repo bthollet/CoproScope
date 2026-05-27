@@ -39,15 +39,29 @@ def _dispatch(args: argparse.Namespace) -> int:
                 open_browser=not args.no_browser,
             )
         elif args.drive_command == "smoke":
-            result = gdriveops.prepare_encrypted_drive_smoke(
-                sync_root=args.sync_root,
-                encrypted_path=args.encrypted_path,
-                token_path=args.token_path,
-            )
+            if args.upload:
+                result = gdriveops.upload_encrypted_drive_smoke(
+                    sync_root=args.sync_root,
+                    encrypted_path=args.encrypted_path,
+                    token_path=args.token_path,
+                    folder_name=args.folder_name,
+                    cleartext_canary=args.cleartext_canary,
+                    generation=args.generation,
+                    parent_sha256=args.parent_sha256,
+                )
+            else:
+                result = gdriveops.prepare_encrypted_drive_smoke(
+                    sync_root=args.sync_root,
+                    encrypted_path=args.encrypted_path,
+                    token_path=args.token_path,
+                    cleartext_canary=args.cleartext_canary,
+                    generation=args.generation,
+                    parent_sha256=args.parent_sha256,
+                )
         else:
             return 1
         print(json.dumps(result, indent=2, ensure_ascii=True))
-        return 0 if result.get("status") in {"ok", "ready", "prepared"} else 1
+        return 0 if result.get("status") in {"ok", "ready", "prepared", "uploaded"} else 1
     if args.command == "vault":
         roots = vault_core.roots_from_args(args)
         if args.vault_command == "init":
@@ -109,6 +123,10 @@ def _dispatch(args: argparse.Namespace) -> int:
         result = instancegit.inspect_instance_git(instance)
         print(json.dumps(result, indent=2, ensure_ascii=True))
         return 0 if result.get("ok") else 1
+    if args.command == "instance" and args.instance_command == "layout" and args.instance_layout_command == "plan":
+        result = instance_layout.build_instance_layout_plan(instance)
+        print(json.dumps(result, indent=2, ensure_ascii=True))
+        return 0 if result.get("status") == "planned" and result.get("dry_run") else 1
 
     run = RunContext(instance, command=" ".join(part for part in sys.argv[1:] if part))
     try:

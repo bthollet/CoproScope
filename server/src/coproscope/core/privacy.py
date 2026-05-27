@@ -93,6 +93,7 @@ REGEX_RULES: list[tuple[str, str, str, str]] = [
     ),
     ("SECURITY", r"\b(?:mot de passe|password|code portail|code badge|vigik|clef|cl[eé] d'acc[eè]s|camera|videosurveillance)\b", "securite", "high"),
     ("CONFIDENTIAL", r"\b(?:confidentiel|secret|secret des affaires|ne pas diffuser|diffusion restreinte)\b", "secret", "high"),
+    ("NEGOTIATION", r"\b(?:n[eé]gociation commerciale|consultation des entreprises|appel d'offres|offres concurrentes|mise en concurrence|devis concurrentiel)\b", "negociation_commerciale", "high"),
     ("IP_PLAN", r"\b(?:architecte|maitrise d'oeuvre|plan d'architecte|plan de principe|croquis|copyright)\b", "IP", "medium"),
     ("PERSON_NAME", r"\b(?:m\.|mme|monsieur|madame)\s+[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,2}\b", "RGPD", "medium"),
 ]
@@ -108,6 +109,7 @@ TEXT_DIRECT_IDENTIFIER_CATEGORIES = {
 }
 
 CRITICAL_CATEGORIES = {"IBAN", "IMPAID", "HEALTH", "REVENUE", "SECURITY", "SECURITY_SECRET", "CONFIDENTIAL"}
+CS_BLOCK_CATEGORIES = {"NEGOTIATION"}
 
 
 def normalize_college(value: str | None, default: str = "C4_Conseil_Syndical") -> str:
@@ -160,7 +162,16 @@ def detect_privacy_signals(text: str) -> list[PrivacySignal]:
             value = match.group(0).strip()
             if value:
                 signals.append(PrivacySignal(category, value, reason, confidence))
-    return _dedupe_signals(signals)
+    return _dedupe_signals(_filter_privacy_signals(signals))
+
+
+def _filter_privacy_signals(signals: list[PrivacySignal]) -> list[PrivacySignal]:
+    filtered: list[PrivacySignal] = []
+    for signal in signals:
+        if signal.category == "LOT" and not any(char.isdigit() for char in signal.value):
+            continue
+        filtered.append(signal)
+    return filtered
 
 
 def redaction_signals(text: str) -> list[PrivacySignal]:
@@ -189,12 +200,12 @@ def _append_reasons(existing: set[str], signals: list[PrivacySignal]) -> None:
 
 
 def _configured_policy(row: dict[str, str], rules: dict[str, Any], haystack: str) -> tuple[str, str, str, set[str], str]:
-    default_raw = str(rules.get("default_college", "C4_Conseil_Syndical"))
+    default_raw = str(rules.get("default_college", "C2_Coproprietaires"))
     raw_candidates: list[str] = []
     derivative = ""
     publication_form = ""
     reasons: set[str] = set()
-    confidence = "low"
+    confidence = str(rules.get("default_confidence", "medium"))
 
     normalized_path = haystack.lower().replace("\\", "/")
     for marker in rules.get("public_path_markers", []):
@@ -310,15 +321,14 @@ def build_access_policy(row: dict[str, str], text: str, instance: InstanceConfig
     elif "CONTENTIOUS" in categories:
         raw = max_restrictive(raw, "C7_Contentieux_Secret")
         confidence = _max_confidence(confidence, "high")
+    elif categories.intersection(CS_BLOCK_CATEGORIES):
+        raw = max_restrictive(raw, "C4_Conseil_Syndical")
+        derivative = derivative or "C2_Coproprietaires"
+        publication_form = "metadata_only"
+        confidence = _max_confidence(confidence, "high")
     elif {"EMAIL", "PHONE", "PERSON_NAME", "LOT", "ACCOUNT_INDIVIDUAL"}.intersection(categories):
         raw = max_restrictive(raw, "C4_Conseil_Syndical")
         confidence = _max_confidence(confidence, "medium")
-
-    if "facture" in lower or row.get("document_type") in {"Facture", "Devis", "Annexe_Comptable"}:
-        raw = max_restrictive(raw, "C4_Conseil_Syndical")
-        derivative = derivative or "C2_Coproprietaires"
-        publication_form = publication_form or "redaction_required"
-        reasons.add("finance")
 
     derivative, publication_form = _normalize_derivative_policy(raw, derivative, publication_form)
     required_transformations = _required_transformations(publication_form, categories)
@@ -393,6 +403,8 @@ def _review_required(raw: str, publication_form: str, confidence: str, categorie
     if publication_form in {"aggregation_required", "metadata_only"}:
         return True
     if categories.intersection(CRITICAL_CATEGORIES):
+        return True
+    if categories.intersection(CS_BLOCK_CATEGORIES):
         return True
     return False
 

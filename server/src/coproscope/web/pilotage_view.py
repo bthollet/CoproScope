@@ -5,6 +5,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from ..modules import pilotageops
 
@@ -37,6 +38,13 @@ DIFFUSION_LABELS = {
     pilotageops.DIFFUSION_AG: "Assemblee generale",
 }
 
+CONFIDENCE_LABELS = {
+    "haute": "haute",
+    "moyenne": "moyenne",
+    "faible": "faible",
+    "a_verifier": "a verifier",
+}
+
 DOMAIN_LABELS = {
     pilotageops.DOMAIN_CONSOMMATIONS: "Consommations",
     pilotageops.DOMAIN_ENTRETIEN: "Entretien",
@@ -57,10 +65,22 @@ CARD_REQUIRED_FIELDS = (
     "threshold",
     "source",
     "proof_ref",
+    "confidence",
     "novice_reading",
     "next_action",
     "diffusion",
 )
+
+DOMAIN_ACTION_TARGETS = {
+    pilotageops.DOMAIN_CONSOMMATIONS: ("/comptes", "Voir les comptes et preuves"),
+    pilotageops.DOMAIN_ENTRETIEN: ("/comptes", "Voir les comptes et preuves"),
+    pilotageops.DOMAIN_INVESTISSEMENTS: ("/comptes", "Voir les comptes et preuves"),
+    pilotageops.DOMAIN_ESPACES_VERTS: ("/comptes", "Voir les comptes et preuves"),
+    pilotageops.DOMAIN_TRAVAUX: ("/travaux", "Ouvrir travaux suivis"),
+    pilotageops.DOMAIN_GOUVERNANCE: ("/actions?scope=decisions", "Ouvrir les decisions a suivre"),
+    pilotageops.DOMAIN_DEMANDES: ("/actions?scope=syndic", "Ouvrir les demandes a suivre"),
+    pilotageops.DOMAIN_RISQUES: ("/ag-contentieux", "Voir AG et contentieux"),
+}
 
 _DEFAULT_CARDS = object()
 
@@ -310,6 +330,8 @@ def _card_view(card: pilotageops.PilotageCard | Mapping[str, Any]) -> dict[str, 
     diffusion = _text(data.get("diffusion"))
     point_ref = _text(data.get("point_ref"))
     action_ref = _text(data.get("action_ref"))
+    confidence = _text(data.get("confidence"))
+    action_href, action_label = _action_target(domain, action_ref)
     return {
         "card_id": _text(data.get("card_id")),
         "indicator_id": _text(data.get("indicator_id")),
@@ -326,9 +348,12 @@ def _card_view(card: pilotageops.PilotageCard | Mapping[str, Any]) -> dict[str, 
         "source": _text(data.get("source")),
         "proof_ref": _text(data.get("proof_ref")),
         "proof_source": _proof_source(_text(data.get("source")), _text(data.get("proof_ref"))),
-        "confidence": _text(data.get("confidence")),
+        "confidence": confidence,
+        "confidence_label": CONFIDENCE_LABELS.get(confidence, confidence),
         "novice_reading": _text(data.get("novice_reading")),
         "next_action": _text(data.get("next_action")),
+        "action_href": action_href,
+        "action_label": action_label,
         "diffusion": diffusion,
         "diffusion_label": DIFFUSION_LABELS.get(diffusion, diffusion),
         "point_ref": point_ref,
@@ -397,6 +422,12 @@ def _attachment_label(point_ref: str, action_ref: str) -> str:
     if action_ref:
         parts.append(f"Action {action_ref}")
     return " / ".join(parts) if parts else "rattachement a completer"
+
+
+def _action_target(domain: str, action_ref: str) -> tuple[str, str]:
+    if action_ref:
+        return f"/actions?selected={quote(action_ref, safe='')}", "Ouvrir l'action rattachee"
+    return DOMAIN_ACTION_TARGETS.get(domain, ("/actions", "Ouvrir la file de travail"))
 
 
 def _value_text(value: Any, unit: str) -> str:

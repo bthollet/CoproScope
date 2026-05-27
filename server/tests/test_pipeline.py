@@ -9,10 +9,12 @@ import unittest
 from pathlib import Path
 
 from coproscope.cli import _dispatch, build_parser
-from coproscope.core.common import RunContext, load_instance, read_csv
+from coproscope.core.common import RunContext, load_instance, read_csv, sha256_file
 from coproscope.core.doctor import run_doctor
 from coproscope.core.pipeline import run_pipeline
 from coproscope.core.share import audit_repo, export_shareable
+from coproscope.modules.docuscope import inventory
+from coproscope.web.depot import create_deposit_from_uploads
 
 
 class CoproScopePipelineTests(unittest.TestCase):
@@ -36,11 +38,116 @@ class CoproScopePipelineTests(unittest.TestCase):
     def _local_token(self) -> str:
         return "local" + "-secret"
 
+    def _configure_standard_layout(self) -> Path:
+        for name in ["raw", "system", "outputs", "staging", "logs", "registers"]:
+            shutil.rmtree(self.example_root / name, ignore_errors=True)
+
+        deposit = self.example_root / "01 - Deposez les nouveaux fichiers ici" / "A deposer ici"
+        technical = self.example_root / ".coproscope"
+        for path in [
+            deposit,
+            self.example_root / "03 - Classement de travail",
+            technical / "raw" / "copies_controlees",
+            technical / "system",
+            technical / "outputs",
+            technical / "staging",
+            technical / "logs",
+            technical / "registers",
+        ]:
+            path.mkdir(parents=True, exist_ok=True)
+
+        self.instance.payload["roots"] = {
+            "workspace": ".",
+            "raw": ["./.coproscope/raw/copies_controlees"],
+            "system": "./.coproscope/system",
+            "outputs": "./.coproscope/outputs",
+            "staging": "./.coproscope/staging",
+            "logs": "./.coproscope/logs",
+            "restricted": [],
+        }
+        self.instance.payload["registers"] = {
+            "documents": "./.coproscope/registers/registre_documents.csv",
+            "duplicates": "./.coproscope/registers/registre_doublons.csv",
+            "manifest": "./.coproscope/registers/manifest_sha256.csv",
+            "requests": "./.coproscope/registers/registre_demandes.csv",
+            "ag": "./.coproscope/registers/registre_ag.csv",
+            "findings": "./.coproscope/registers/constats_diligences.csv",
+            "kpi": "./.coproscope/registers/kpi.csv",
+        }
+        settings = self.instance.payload.setdefault("settings", {})
+        settings["layout"] = {
+            "version": "instance-standard-v1-temp",
+            "technical_root": "./.coproscope",
+            "physical_deposit": "./01 - Deposez les nouveaux fichiers ici/A deposer ici",
+            "user_moves_allowed": True,
+        }
+        return deposit
+
     def test_doctor_passes_on_synthetic_instance(self) -> None:
         run = RunContext(self.instance, "doctor")
         issues = run_doctor(self.instance, run)
         run.finish("OK" if issues == 0 else "WARN", f"issues={issues}")
         self.assertEqual(issues, 0)
+
+    def test_doctor_passes_with_standard_layout_doctrine(self) -> None:
+        self._configure_standard_layout()
+        run = RunContext(self.instance, "doctor layout doctrine")
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            issues = run_doctor(self.instance, run)
+        run.finish("OK" if issues == 0 else "WARN", f"issues={issues}")
+
+        output = stdout.getvalue()
+        self.assertEqual(issues, 0)
+        self.assertIn("Doctrine arborescence", output)
+        self.assertIn("mouvements_utilisateur: AUTORISES", output)
+        self.assertIn("identite_documentaire: sha256 + manifeste + doc_id", output)
+
+    def test_inventory_keeps_doc_id_after_visible_user_move(self) -> None:
+        deposit = self._configure_standard_layout()
+        source = deposit / "piece AG test.txt"
+        source.write_text("Convocation AG fictive avec ordre du jour et annexes.", encoding="utf-8")
+        digest = sha256_file(source)
+
+        run = RunContext(self.instance, "inventory layout first")
+        inventory(self.instance, run)
+        run.finish("OK", "first inventory")
+        _, first_rows = read_csv(self.instance.register("documents"))
+        first = [row for row in first_rows if row.get("sha256") == digest]
+        self.assertEqual(len(first), 1)
+        self.assertEqual(first[0]["source_kind"], "physical_deposit")
+        doc_id = first[0]["doc_id"]
+
+        target_dir = self.example_root / "03 - Classement de travail" / "AG"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target = target_dir / source.name
+        source.rename(target)
+
+        run = RunContext(self.instance, "inventory layout moved")
+        inventory(self.instance, run)
+        run.finish("OK", "second inventory")
+        _, second_rows = read_csv(self.instance.register("documents"))
+        second = [row for row in second_rows if row.get("sha256") == digest]
+        self.assertEqual(len(second), 1)
+        self.assertEqual(second[0]["doc_id"], doc_id)
+        self.assertEqual(second[0]["source_kind"], "visible_vault")
+        self.assertIn("03 - Classement de travail", second[0]["original_path"])
+        self.assertNotIn("01 - Deposez les nouveaux fichiers ici", second[0]["original_path"])
+
+    def test_ui_deposit_uses_physical_deposit_when_layout_declares_it(self) -> None:
+        deposit = self._configure_standard_layout()
+
+        class FakeUpload:
+            def __init__(self) -> None:
+                self.filename = "piece depot UI.txt"
+                self.file = io.BytesIO(b"Piece ajoutee depuis le depot UI.")
+
+        manifest = create_deposit_from_uploads(self.instance, [FakeUpload()])
+
+        stored_path = self.example_root / manifest["files"][0]["path"]
+        self.assertTrue(stored_path.exists())
+        self.assertTrue(stored_path.is_relative_to(deposit))
+        self.assertFalse((self.example_root / ".coproscope" / "raw" / "copies_controlees" / "_depot_ui").exists())
 
     def test_pipeline_run_creates_expected_outputs(self) -> None:
         run = RunContext(self.instance, "pipeline run")

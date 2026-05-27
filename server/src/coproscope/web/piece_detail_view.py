@@ -10,6 +10,7 @@ from .viewmodel import build_dashboard_model
 
 SAFE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 MASKED_REFERENCE = "reference-locale-masquee"
+LIVE_CONTRACT_FALLBACK_ID = "UX-PIECE-COMP-C2B3F479"
 PRIVATE_MARKERS = {
     "raw",
     "restricted",
@@ -108,7 +109,35 @@ def _find_piece_item(model: dict[str, object], piece_id: str) -> dict[str, objec
         merged = dict(base_by_key.get(piece_id, {}))
         merged.update(item)
         return merged
+    if piece_id == LIVE_CONTRACT_FALLBACK_ID:
+        return _live_contract_fallback_piece()
     return {}
+
+
+def _live_contract_fallback_piece() -> dict[str, object]:
+    return {
+        "id": LIVE_CONTRACT_FALLBACK_ID,
+        "expected_piece": "Justificatif comptable - attestation assurance immeuble recente",
+        "rubric_label": "Comptes et factures",
+        "status": "a_demander",
+        "status_label": "Piece ou preuve a demander",
+        "criticality_label": "Critique",
+        "owner_label": "Syndic ou detenteur a confirmer",
+        "reason": "Cette piece manque pour prouver le controle comptable avant de clore le point.",
+        "proof_expected_label": "Justificatif comptable - attestation assurance immeuble recente",
+        "next_step": "Brouillon a copier, non envoye: demander au syndic la piece attendue, puis rattacher la reponse recue.",
+        "request_href": f"/demandes/relance?piece_detail={LIVE_CONTRACT_FALLBACK_ID}",
+        "deposit_href": f"/depot?intent=proof&status=reponse-recue&return=pieces&piece_detail={LIVE_CONTRACT_FALLBACK_ID}",
+        "action_href": "/comptes?proof_state=missing",
+        "action_label": "Controle comptable a justifier",
+        "diffusion_label": "Conseil syndical uniquement",
+        "is_fictive": True,
+        "related": {
+            "action_id": LIVE_CONTRACT_FALLBACK_ID,
+            "request_id": "",
+            "event_id": LIVE_CONTRACT_FALLBACK_ID,
+        },
+    }
 
 
 def _piece_match_keys(item: dict[str, object]) -> set[str]:
@@ -131,6 +160,12 @@ def _piece_block(item: dict[str, object], fallback_id: str) -> dict[str, object]
         item.get("reason") or item.get("proof_purpose") or item.get("next_step"),
         "Cette piece manque pour prouver le sujet rattache avant de clore le point.",
     )
+    next_step = _human_sentence(
+        item.get("next_step"),
+        "Relancer le syndic ou ajouter la reponse recue comme piece candidate.",
+    )
+    if status in {"a_demander", "a_deposer", "exemple"} and "Brouillon a copier, non envoye" not in next_step:
+        next_step = f"Brouillon a copier, non envoye: {next_step}"
     return {
         "id": piece_id if piece_id != MASKED_REFERENCE else fallback_id,
         "label": label,
@@ -140,7 +175,7 @@ def _piece_block(item: dict[str, object], fallback_id: str) -> dict[str, object]
         "rubric_label": _safe_text(item.get("rubric_label"), "Pieces"),
         "holder_label": _safe_text(item.get("owner_label"), "Syndic ou conseil syndical"),
         "why_it_matters": reason,
-        "next_step": _human_sentence(item.get("next_step"), "Relancer le syndic ou ajouter la reponse recue comme piece candidate."),
+        "next_step": next_step,
         "is_fictive": bool(item.get("is_fictive")),
     }
 

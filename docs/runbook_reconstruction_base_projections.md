@@ -36,10 +36,10 @@ Ne pas reconstruire si:
 Exemple pour `beauvallon_test`:
 
 ```powershell
-$InstanceRoot = "C:\Users\brice\Documents\CoproScope\instances\beauvallon_test"
+$InstanceRoot = "C:\Users\brice\CoproScope\instances\beauvallon_test"
 $Runtime = Join-Path $InstanceRoot "900_Systeme_Audit\coproscope_runtime"
 $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$BackupRoot = "C:\Users\brice\Documents\CoproScope\sauvegardes\beauvallon_test\$Stamp"
+$BackupRoot = "C:\Users\brice\CoproScope\dev\instance_support\sauvegardes\beauvallon_test\$Stamp"
 New-Item -ItemType Directory -Force -Path $BackupRoot
 ```
 

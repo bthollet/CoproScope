@@ -13,7 +13,7 @@ Regle simple:
 ## Etat courant a transmettre
 
 - Produit local: `http://127.0.0.1:8766/?token=local-secret`.
-- Instance de test par defaut: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test` (`beauvallon-test`).
+- Instance de test par defaut: `C:\Users\brice\CoproScope\instances\beauvallon_test` (`beauvallon-test`).
 - Instance Platanes: `coproscope/examples/synthetic_copro`, reservee aux tests publics/CI et exemples partageables.
 - Suite UI complete: `150 tests OK` au dernier passage TestClient.
 - Contrat principal: l'interface consomme des projections `model.ux.*`; la DB doit aider a stabiliser ces projections, pas imposer un schema directement au template.

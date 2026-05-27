@@ -171,6 +171,45 @@ class PrivacyOpsTests(unittest.TestCase):
         self.assertEqual(row["publication_form"], "raw")
         self.assertEqual(row["privacy_review_status"], "DIFFUSABLE_BRUT")
 
+    def test_ite_works_file_is_open_by_default_without_private_signal(self) -> None:
+        source = self.example_root / "raw" / "2026_dossier_ite_travaux.md"
+        source.write_text(
+            "Dossier ITE travaux. Lot ITE facade. Chronologie, devis votes et planning chantier.\n",
+            encoding="utf-8",
+        )
+        run = RunContext(self.instance, "privacy ite works")
+        docuscope.inventory(self.instance, run)
+        fields, rows = read_csv(self.instance.register("documents"))
+        for row in rows:
+            if row.get("file_name") == source.name:
+                row["lot"] = "ITE_Travaux"
+                row["document_type"] = "Dossier_ITE_Travaux"
+        write_csv(self.instance.register("documents"), fields, rows)
+
+        privacyops.screen_existing(self.instance, run, include_generated=False)
+        row = self._row_for_file(source.name)
+
+        self.assertEqual(row["raw_max_college"], "C2_Coproprietaires")
+        self.assertEqual(row["publication_form"], "raw")
+        self.assertEqual(row["privacy_review_status"], "DIFFUSABLE_BRUT")
+        self.assertNotIn("LOT:", row["screening_signals"])
+
+    def test_commercial_negotiation_blocks_raw_copro_diffusion(self) -> None:
+        source = self.example_root / "raw" / "consultation_des_entreprises_devis.md"
+        source.write_text(
+            "Négociation commerciale en cours. Mise en concurrence et offres concurrentes a arbitrer.\n",
+            encoding="utf-8",
+        )
+
+        run = RunContext(self.instance, "privacy negotiation")
+        privacyops.screen_existing(self.instance, run, include_generated=False)
+        row = self._row_for_file(source.name)
+
+        self.assertEqual(row["raw_max_college"], "C4_Conseil_Syndical")
+        self.assertEqual(row["publication_form"], "metadata_only")
+        self.assertEqual(row["privacy_review_status"], "BLOQUE")
+        self.assertIn("negociation_commerciale", row["restriction_reasons"])
+
     def test_human_review_decision_requires_justification_for_wide_diffusion(self) -> None:
         ag_dir = self.example_root / "220_Assemblees_generales" / "221_AG_par_date" / "2026-04-29_AGE"
         ag_dir.mkdir(parents=True, exist_ok=True)
@@ -240,9 +279,9 @@ class PrivacyOpsTests(unittest.TestCase):
         privacyops.screen_existing(self.instance, run, include_generated=False, scan_workspace_prefixes=True)
         row = self._row_for_file("2026-04-29_note_finance_generique.md")
 
-        self.assertEqual(row["raw_max_college"], "C4_Conseil_Syndical")
+        self.assertEqual(row["raw_max_college"], "C2_Coproprietaires")
         self.assertEqual(row["derivative_max_college"], "C2_Coproprietaires")
-        self.assertEqual(row["publication_form"], "redaction_required")
+        self.assertEqual(row["publication_form"], "raw")
 
     def test_security_secret_redaction_removes_secret_value(self) -> None:
         source = self.example_root / "raw" / "codes_badges.md"

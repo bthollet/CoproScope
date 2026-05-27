@@ -19,7 +19,7 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
 - Les instances privees restent hors depot et ne sont jamais commitees.
 - Les sorties publiables utilisent l'instance synthetique ou une copro demo fictive hors Drive.
 - En local, l'environnement de test par defaut pour recette live et agents est
-  `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`; l'instance
+  `C:\Users\brice\CoproScope\instances\beauvallon_test`; l'instance
   Platanes `examples/synthetic_copro` reste reservee aux tests publics/CI et
   aux exemples partageables.
 - Le coordinateur integre les branches une par une et relance les tests.
@@ -30,12 +30,49 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
 - Tout chantier actif doit avoir une ligne vivante dans
   [`docs/presence_agents.md`](./docs/presence_agents.md), avec owner,
   worktree/branche, heartbeat et statut.
-- Quand Brice demande une "equipe agile" ou une equipe multi-agents, appliquer
+- Le tableau de travail quotidien est
+  [`docs/tableau_execution_courant.md`](./docs/tableau_execution_courant.md).
+  Le gouvernail `ORD-*` reste reserve a l'orchestrateur. Les workers ne
+  choisissent jamais dans le backlog long: ils prennent seulement un slot
+  `A_PRENDRE` publie dans le tableau d'execution du `CH-*` courant.
+- Quand Brice demande une equipe multi-agents, appliquer d'abord
+  [`docs/strategie_equipes_multi_agents.md`](./docs/strategie_equipes_multi_agents.md):
+  preflight anti-collision, choix automatique de l'equipe-type
+  `INCIDENT_STATIONNEMENT`, `FANIN_CONSOLIDATION`, `RECHERCHE_METIER`,
+  `UXUI_RECHERCHE`, `AGILE_UI_PRODUIT`, `BACKEND_DOMAINE`,
+  `RECETTE_LIVE_QA`, `INTEGRATION_RELEASE` ou `DOCTRINE_SIDEQUEST`, puis un
+  seul `CH-*`, des owners vivants uniques et des slots workers publies dans
+  `docs/tableau_execution_courant.md`. Si le routeur choisit
+  `AGILE_UI_PRODUIT`, appliquer
   [`docs/protocole_equipe_agile_agents.md`](./docs/protocole_equipe_agile_agents.md):
   coordinateur-scribe, designer/facilitateur, utilisateur novice, dev front,
-  dev back/viewmodel et QA, avec flux decale UI reelle -> image/blueprint si
-  pertinent -> qualification novice -> dev -> test produit, et comparaison
-  reguliere avec les visuels de l'enquete utilisateur.
+  dev back/viewmodel, QA et, si la capacite de threads le permet, testeur
+  expert metier juridique/compta/process chantier/syndic, avec flux decale UI
+  reelle -> visuel IA et blueprint designer -> qualification novice -> dev ->
+  test produit. A chaque iteration UI, le designer/facilitateur produit un
+  visuel genere par IA et un blueprint visuel avant le dev. Le visuel IA est une
+  image bitmap de l'ecran complet (`.png` ou `.jpg`), pas un SVG, pas une icone
+  et pas un schema partiel; le blueprint est le livrable structurel separe. Les
+  screenshots de livraison servent seulement de preuve QA apres dev et ne
+  remplacent jamais ces livrables cibles. Le coordinateur peut annuler le
+  visuel, le blueprint, ou les deux, uniquement avec justification tracee:
+  `VISUEL_IA_WAIVED`, `BLUEPRINT_WAIVED`, ou les deux. Les agents comparent
+  regulierement avec les visuels de l'enquete utilisateur. Au lancement
+  effectif, mettre a jour la heartbeat canonique
+  `relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
+  courant, plutot que creer une heartbeat concurrente; tout doublon actif doit
+  etre mis en pause. La heartbeat canonique doit laisser un check-in persistant
+  dans `docs/presence_agents.md`, meme en `DONT_NOTIFY`, sans dupliquer les
+  roles vivants. Quand un lot contient
+  `AGILE-DONE - equipe agile a fini son job` et que ses roles sont clos, la
+  heartbeat peut ouvrir le prochain `ORD-*` seulement si aucun arbitrage
+  `EN_ATTENTE_USER`, blocage non stationne ou incident de doublon n'est actif.
+  Si Brice signale que plusieurs conversations prennent la meme tache, tout
+  chainage automatique s'arrete, mais la heartbeat canonique reste active en
+  mode surveillance/reprise: pause des dispatchers concurrents, abandon/attente
+  des lots ouverts par course, check-in persistant, reprise seulement des roles
+  manquants d'un `CH-*` deja declare, puis nouveau dispatch uniquement apres
+  arbitrage explicite de Brice.
 - Quand Brice dit "lance une equipe UX/UI" avec ou sans accent sur `equipe`,
   appliquer
   [`docs/protocole_equipe_ux_ui_recherche.md`](./docs/protocole_equipe_ux_ui_recherche.md):
@@ -88,6 +125,19 @@ document, date, montant ou etat "avant / apres". Eviter les formulations comme
 "plus lourd", "en baisse", "plus eleve" ou "ameliore" si les deux bases de
 comparaison ne sont pas affichees dans le rapport.
 
+Garde de confidentialite conversationnelle pour audits et notes sensibles:
+
+- structurer le raisonnement en `fait -> preuve -> regle -> action`;
+- remplacer les personnes, organisations, lots et lieux par des roles ou alias
+  stables des la premiere reformulation, sauf necessite explicite;
+- ne pas recopier emails, telephones, adresses completes, chemins locaux, noms
+  de fichiers bruts, OCR brut, logs, secrets, tables alias -> identite ou
+  correspondances nominatives;
+- afficher un montant ou une identite seulement si c'est indispensable au
+  controle ou a une diligence concrete, puis revenir aux alias;
+- bloquer le rendu final si une donnee personnelle inutile, une piece brute, un
+  chemin local ou une allegation non sourcee reste dans le texte.
+
 Pour une nouvelle convocation d'AG, la comparaison principale doit etre faite
 entre l'AG precedente disponible au dossier et l'AG actuelle. Les documents de
 travail du conseil syndical peuvent etre cites comme pieces de circulation ou de
@@ -104,6 +154,10 @@ Il lit aussi
 [`docs/protocole_roadmap_presence_agents.md`](./docs/protocole_roadmap_presence_agents.md)
 pour rattacher son travail a un item `RM-*`, un chantier `CH-*` et une
 conversation `CONV-*`.
+
+Tout nouveau chantier doit suivre le format anti-collision
+`CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court`. Le format historique
+`CH-YYYY-NNNN` est conserve uniquement pour les chantiers deja ouverts.
 
 Avant toute modification, il declare:
 
@@ -152,7 +206,17 @@ Options utiles:
   securite;
 - `.\tools\agent-check.cmd -Security` pour ajouter Bandit haute severite et
   pip-audit;
+- `.\tools\agent-check.cmd -Orchestration` pour verifier heartbeats,
+  conversations expirees, blocages, arbitrages et relance gouvernail;
 - `.\tools\agent-check.cmd -Full` pour lancer toute la suite `unittest`.
+
+Pour surveiller seulement l'orchestration sans tests applicatifs:
+
+```powershell
+.\tools\orchestration-watch.cmd
+.\tools\orchestration-watch.cmd --emit-prompt
+.\tools\orchestration-supervise.cmd --emit-recovery-prompt
+```
 
 Le check rapide ne remplace pas la verification d'integration complete quand le
 coordinateur integre une branche, mais il donne un signal fiable avant de rendre
@@ -165,7 +229,7 @@ Copier-coller un contrat court au lancement :
 ```text
 Mission: Sprint <numero> - <objectif>
 Role/filiere: <UX | DB | QA | front | back | docs | coordinateur>
-Roadmap/chantier/conversation: RM-YYYY-NNNN / CH-YYYY-NNNN / CONV-YYYY-NNNN
+Roadmap/chantier/conversation: RM-YYYY-NNNN / CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court / CONV-YYYY-NNNN
 Branche/worktree: <branche> / <chemin>
 Tu n'es pas seul dans le codebase. Ne revert jamais les changements des autres.
 Ownership fichiers: <liste de dossiers/fichiers modifiables>
@@ -174,33 +238,66 @@ Passerelle/registre de trace: <fichier>
 Dernier point coordination lu: <fichier + heure>
 Lease ownership: <expiration + fuseau> ; heartbeat dans docs/presence_agents.md
 Donnees: pas de donnees privees dans Git ; instance privee uniquement en lecture locale.
-Donnees de test locales par defaut: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+Donnees de test locales par defaut: `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 Verification attendue: <commandes de test ou checks UI>
 Livrable final: resume, fichiers modifies, limites, tests lances.
 ```
 
 ## Methode equipe agile multi-agents
 
+Avant de supposer qu'une equipe agile standard est le bon format, appliquer le
+routeur de [`docs/strategie_equipes_multi_agents.md`](./docs/strategie_equipes_multi_agents.md).
+L'equipe agile UI produit est un cas de routage, pas le mode par defaut pour
+toute demande multi-agents.
+
 La methode canonique est
 [`docs/protocole_equipe_agile_agents.md`](./docs/protocole_equipe_agile_agents.md).
 Elle est obligatoire quand une conversation demande une equipe agile,
 des agents UX/dev/QA, ou des iterations rapides avec utilisateurs.
 
+Au lancement effectif, le coordinateur met a jour la heartbeat canonique
+`relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
+courant. Il ne cree une heartbeat separee que si Brice le demande
+explicitement; sinon tout doublon actif est mis en pause. La heartbeat canonique
+laisse un check-in persistant dans `docs/presence_agents.md`, meme en
+`DONT_NOTIFY`, et relance les roles manquants, idle, bloques ou expires sans
+dupliquer un role vivant.
+`AGILE-DONE - equipe agile a fini son job` ferme seulement le lot courant: si
+tous les roles du lot sont clos, la heartbeat choisit le prochain `ORD-*`
+actionnable du gouvernail uniquement quand aucun arbitrage `EN_ATTENTE_USER`,
+blocage non stationne ou incident de doublon n'est actif. En mode incident
+anti-chevauchement, elle ne lance aucune nouvelle equipe et reste active en
+mode surveillance/reprise: elle met en pause les dispatchers concurrents, marque
+les lots ouverts par course `ABANDONNE` ou `EN_ATTENTE_USER`, trace le verrou
+dans `docs/presence_agents.md`, relance seulement les roles manquants d'un
+`CH-*` deja declare et attend un arbitrage explicite de Brice avant tout nouveau
+`ORD-*`. Elle ne se supprime que sur demande explicite de Brice ou si le
+gouvernail ne contient vraiment plus aucun `ORD-*` actionnable, auquel cas elle
+trace le no-go et reste recadrable.
+
 Resume d'execution:
 
-1. le coordinateur rattache le travail au gouvernail `RM-*` et cree un `CH-*`;
-2. il publie son `BOT-START`, puis une ligne `CONV-*` par role actif;
+1. le coordinateur rattache le travail au gouvernail `RM-*` et cree un `CH-*`
+   horodate selon `docs/protocole_roadmap_presence_agents.md`;
+2. il publie son `BOT-START`, remplit
+   `docs/tableau_execution_courant.md` avec les slots `A_PRENDRE` du chantier,
+   puis une ligne `CONV-*` par role effectivement pris;
 3. les roles standards sont coordinateur-scribe, designer/facilitateur,
-   utilisateur novice, dev front, dev back/viewmodel et QA;
-4. le travail tourne en double flux: `N-1` teste le produit livre, `N`
-   developpe la commande validee, `N+1` prepare le visuel et la commande
-   suivante;
+   utilisateur novice, dev front, dev back/viewmodel et QA; si le budget de
+   threads le permet, ajouter un testeur expert metier
+   juridique/compta/process chantier/syndic, sinon faire reprendre sa checklist
+   par QA et le coordinateur;
+4. le travail tourne en double flux: `N-1` teste le produit livre avec
+   screenshots/captures de recette, `N` developpe la commande validee, `N+1`
+   produit le visuel IA, le blueprint cible et la commande suivante;
 5. chaque cycle nomme une UI reelle: route, ecran, modale, artefact HTML ou
    parcours local. Si l'UI manque, le premier objectif est de la rendre
    testable, pas de raisonner sur une intention abstraite;
-6. des que le sujet est visuel, nouveau, ambigu ou sensible pour un novice, le
-   designer produit une image ou un blueprint, puis le novice donne un
-   GO/NO-GO avant tout dev;
+6. a chaque iteration UI, le designer produit une image IA bitmap de l'ecran
+   complet et un blueprint visuel cible, puis le novice donne un GO/NO-GO avant
+   tout dev; l'un et/ou l'autre peuvent etre annules seulement avec
+   justification tracee, et une capture de livraison ne remplace pas cette
+   etape;
 7. le designer, le novice et la QA comparent souvent l'UI reelle aux visuels
    d'enquete utilisateur ou au visuel designer derive, et tracent les ecarts
    acceptes/refuses avant GO;
@@ -234,15 +331,47 @@ bloques sans les dupliquer, puis s'arrete quand la trace finale contient
 
 ## Ports locaux
 
-Ne pas lancer deux interfaces sur le meme port. Choisir le port explicitement dans le brief agent; ne pas scanner les ports ou les processus, et ne pas arreter automatiquement un serveur par PID. Pour une verification UI, utiliser un terminal visible et `Ctrl+C` pour l'arret.
+Ne pas lancer deux interfaces sur le meme port. Le port fait partie de
+l'ownership de l'agent au meme titre que les fichiers: il est annonce dans le
+contrat agent, reporte dans `docs/presence_agents.md`, puis libere explicitement
+dans le `BOT-END`.
 
-| Agent | Port conseille |
+Regles obligatoires:
+
+- reserver un port avant de demarrer un serveur, avec `CONV-*`, role, instance,
+  token de test et commande prevue;
+- garder le serveur dans un terminal PowerShell visible; arret par `Ctrl+C`
+  uniquement;
+- ne pas scanner les ports ou processus, ne pas tuer de PID, ne pas utiliser
+  `taskkill`, `Start-Process` cache ou ouverture navigateur automatique;
+- si le port prevu est occupe ou douteux, ne pas enqueter par scan: publier le
+  conflit dans la trace, choisir un autre port documente dans la plage de
+  secours, et mettre a jour `presence_agents.md`;
+- une URL live citee dans un test doit toujours indiquer port, instance cible et
+  token attendu;
+- a la fin du lot, dire si le serveur a ete arrete ou s'il reste volontairement
+  ouvert pour recette.
+
+Ports reserves par defaut:
+
+| Usage | Port conseille |
 |---|---:|
 | Coordinateur | 8765 |
 | UI/actions | 8766 |
 | ComptaScope | 8767 |
 | Privacy/DocOps | 8768 |
 | Demo/docs | 8769 |
+| SyndicOps | 8770 |
+| DocOps actionnable | 8771 |
+| Decision-action-preuve | 8772 |
+| WorksOps | 8773 |
+| IncidentOps | 8774 |
+| Comms/passation | 8775 |
+
+La plage `8780` a `8799` est reservee aux recettes temporaires, gates live et
+serveurs de comparaison. Chaque utilisation de cette plage doit etre nommee
+dans le point de coordination ou la trace `CONV-*`; elle ne devient jamais un
+defaut implicite.
 
 ## Perimetres qui se parallelisent bien
 
@@ -270,6 +399,11 @@ Regles supplementaires:
 - ne pas laisser les devs inventer une vue manquante sans blueprint designer;
 - ne pas lancer un dev UI sans route/ecran/artefact reel cible et, si pertinent,
   sans image designer qualifiee par le novice;
+- produire un visuel IA et un blueprint designer pour chaque iteration UI avant
+  le dev; le visuel IA est une image bitmap de l'ecran complet, jamais un SVG;
+  l'un et/ou l'autre peuvent etre annules seulement avec justification tracee;
+  les screenshots de livraison sont des preuves de recette, pas la source
+  d'intention UX;
 - comparer regulierement l'UI livree aux visuels de l'enquete utilisateur ou au
   visuel designer derive; un GO UI sans comparaison explicite est refuse sauf
   justification de non-pertinence;

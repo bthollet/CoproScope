@@ -46,6 +46,25 @@ Ne remontent pas sur GitHub:
 
 Le depot public n'accueille que la grammaire reutilisable d'`Audit360`, jamais la substance sensible d'une instance.
 
+## Confidentialite conversationnelle
+
+Une restitution `Audit360` suit toujours la chaine
+`fait -> preuve -> regle -> action`.
+
+Par defaut, les rapports et syntheses utilisent des roles ou alias locaux:
+`PERS-01`, `CS-01`, `SYNDIC-01`, `PREST-01`, `LOT-01`,
+`PIECE-AG-001`. Une identite reelle ne reste visible que si elle est
+indispensable a une diligence concrete, privee et locale.
+
+Sont exclus des sorties diffuses ou partageables: chemins locaux, emails,
+telephones, IBAN/RIB, tokens, secrets, noms de fichiers bruts, OCR brut, logs,
+tables de correspondance alias -> identite, et marqueurs `raw`, `restricted`
+ou `private`.
+
+Un constat Audit360 doit distinguer ce qui est constate, ce qui est seulement
+suppose, ce qui reste a verifier, la preuve attendue et l'action proposee. Si
+ce filtre n'est pas respecte, la sortie reste en brouillon local.
+
 ## Place dans CoproScope
 
 `Audit360` n'efface pas les autres briques. Il s'appuie sur elles.

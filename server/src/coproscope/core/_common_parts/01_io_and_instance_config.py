@@ -309,6 +309,8 @@ class InstanceConfig:
     def root(self, name: str) -> Path:
         aliases = ROOT_KEY_ALIASES.get(name, (name,))
         value = self._section_value(("racines", "roots"), aliases)
+        if isinstance(value, list):
+            value = value[0] if value else None
         if value is None:
             raise KeyError(f"Missing root '{name}' in {self.path}")
         resolved = self.resolve_path(str(value))
@@ -373,6 +375,24 @@ class InstanceConfig:
 
     def settings(self) -> dict[str, Any]:
         return self._section("parametres", "settings")
+
+    def layout_settings(self) -> dict[str, Any]:
+        layout = self.settings().get("layout") or {}
+        return dict(layout) if isinstance(layout, dict) else {}
+
+    def technical_root(self) -> Path | None:
+        value = self.layout_settings().get("technical_root")
+        return self.resolve_path(str(value)) if value else None
+
+    def physical_deposit_path(self) -> Path | None:
+        value = self.layout_settings().get("physical_deposit")
+        return self.resolve_path(str(value)) if value else None
+
+    def user_moves_allowed(self) -> bool:
+        value = self.layout_settings().get("user_moves_allowed")
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "vrai", "yes", "oui", "on"}
+        return bool(value)
 
     def docai_settings(self, mode_override: str | None = None) -> dict[str, Any]:
         settings = self.settings()

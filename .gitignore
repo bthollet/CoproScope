@@ -11,6 +11,7 @@ Thumbs.db
 **/.venv/
 server/.venv/
 server/.tmp-test/
+server/.tmp-ui-*.log
 *.egg-info/
 examples/synthetic_copro/.env.local
 examples/synthetic_copro/logs/

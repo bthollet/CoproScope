@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% set view = activity %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="act-hero" aria-labelledby="act-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="act-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.headline }}. {{ view.status.summary }}</p>
+    <div class="act-hero__actions">
+      <a class="button-link" href="#activity-blockers">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#activity-file">Voir les travaux</a>
+    </div>
+  </div>
+  <aside class="act-status" aria-label="Statut activite">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Details techniques complets exclus</small>
+  </aside>
+</section>
+
+<section class="act-summary" aria-label="Resume de l'activite">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="act-definitions-title">
+  <div class="panel-head">
+    <h3 id="act-definitions-title">Lire les statuts</h3>
+    <span>agent_activity_v1</span>
+  </div>
+  <div class="act-definitions">
+    {% for definition in view.definitions %}
+    <article>
+      <strong>{{ definition.label }}</strong>
+      <p>{{ definition.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="activity-file" aria-labelledby="act-table-title">
+  <div class="panel-head">
+    <h3 id="act-table-title">Travaux agents et heartbeats</h3>
+    <span>{{ view.activities|length }} lignes</span>
+  </div>
+  <div class="act-table" role="table" aria-label="Activite, dernier passage, prochaine relance et blocages">
+    <div class="act-row is-head" role="row">
+      <span role="columnheader">Conversation</span>
+      <span role="columnheader">Statut</span>
+      <span role="columnheader">Role</span>
+      <span role="columnheader">Dernier passage</span>
+      <span role="columnheader">Prochaine relance</span>
+      <span role="columnheader">Prochain geste</span>
+      <span role="columnheader">Blocage</span>
+      <span role="columnheader">Preuve</span>
+    </div>
+    {% for item in view.activities %}
+    <div class="act-row is-{{ item.status_group }}" role="row">
+      <strong role="cell">{{ item.conversation_id }}<small>{{ item.roadmap_id }}</small></strong>
+      <span role="cell">{{ item.status_label }}<small>{{ item.chantier_id }}</small></span>
+      <span role="cell">{{ item.role }}</span>
+      <span role="cell">{{ item.last_heartbeat_at or 'date a confirmer' }}</span>
+      <span role="cell">{{ item.next_check_at or 'aucune relance prevue' }}</span>
+      <span role="cell">{{ item.current_step }}</span>
+      <span role="cell">{{ item.blocked_by }}</span>
+      <span role="cell">{{ item.proof_summary }}<small>{{ item.trace_label }}</small></span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two" id="activity-blockers">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Blocages a regarder</h3>
+      <span>{{ view.blocked|length }}</span>
+    </div>
+    <div class="act-checks">
+      {% for item in view.blocked %}
+      <article>
+        <strong>{{ item.conversation_id }} - {{ item.blocked_by }}</strong>
+        <small>{{ item.current_step }}</small>
+      </article>
+      {% else %}
+      <article>
+        <strong>Aucun blocage dans les lignes visibles</strong>
+        <small>Continuer par le prochain lot actif ou la prochaine relecture.</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Derniers passages heartbeat</h3>
+      <span>{{ view.heartbeats|length }}</span>
+    </div>
+    <div class="act-checks">
+      {% for beat in view.heartbeats %}
+      <article>
+        <strong>{{ beat.at }} - {{ beat.label }}</strong>
+        <small>{{ beat.detail }}</small>
+      </article>
+      {% else %}
+      <article>
+        <strong>Aucun passage heartbeat lisible</strong>
+        <small>Le registre de presence reste la source de suivi.</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="grid two" id="activity-traces">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Statuts visibles</h3>
+      <span>{{ view.status_counts|length }}</span>
+    </div>
+    <div class="badge-row">
+      {% for item in view.status_counts %}
+      <span class="badge is-review">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucun statut</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Garde-fous</h3>
+      <span>Projection derivee</span>
+    </div>
+    <div class="act-checks">
+      {% for item in view.boundaries %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="act-actions-title">
+  <div class="panel-head">
+    <h3 id="act-actions-title">Actions disponibles et bloquees</h3>
+    <span>Lecture prudente</span>
+  </div>
+  <div class="act-actions">
+    {% for action in view.actions %}
+    {% if action.enabled == "true" %}
+    <a class="button-link secondary" href="{{ token_href(action.href) }}">
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </a>
+    {% else %}
+    <button type="button" disabled aria-disabled="true">
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="act-version-title">
+  <div class="panel-head">
+    <h3 id="act-version-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

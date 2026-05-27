@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% set view = messages_entrants %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="mei-hero" aria-labelledby="mei-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="mei-title">{{ view.headline }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="mei-hero__actions">
+      <a class="button-link" href="#messages">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#decisions">Voir les decisions</a>
+    </div>
+  </div>
+  <aside class="mei-status" aria-label="Statut messages entrants fictifs">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucune publication depuis CoproScope</small>
+  </aside>
+</section>
+
+<section class="mei-summary" aria-label="Resume des messages fictifs">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="mei-definitions-title">
+  <div class="panel-head">
+    <h3 id="mei-definitions-title">Mots utiles pour trier</h3>
+    <span>File de qualification</span>
+  </div>
+  <div class="mei-definitions">
+    {% for definition in view.definitions %}
+    <article>
+      <strong>{{ definition.label }}</strong>
+      <p>{{ definition.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="messages" aria-labelledby="mei-messages-title">
+  <div class="panel-head">
+    <h3 id="mei-messages-title">File de qualification</h3>
+    <span>{{ view.messages|length }} messages fictifs</span>
+  </div>
+  <div class="mei-table" role="table" aria-label="Messages entrants et qualification fictive">
+    <div class="mei-row is-head" role="row">
+      <span role="columnheader">Message</span>
+      <span role="columnheader">Source</span>
+      <span role="columnheader">Sujet</span>
+      <span role="columnheader">Pourquoi maintenant</span>
+      <span role="columnheader">Urgence</span>
+      <span role="columnheader">Diffusion</span>
+      <span role="columnheader">Preuve</span>
+      <span role="columnheader">Suite</span>
+    </div>
+    {% for message in view.messages %}
+    <div class="mei-row" role="row">
+      <strong role="cell">{{ message.id }}</strong>
+      <span role="cell">{{ message.source }}</span>
+      <span role="cell">{{ message.subject }}</span>
+      <span role="cell">{{ message.attention }}</span>
+      <span role="cell">{{ message.urgency }}</span>
+      <span role="cell">{{ message.diffusion }}</span>
+      <span role="cell">{{ message.proof }}</span>
+      <span role="cell">{{ message.next_action }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel" id="decisions">
+    <div class="panel-head">
+      <h3>Decisions avant action</h3>
+      <span>Parcours humain avant diffusion</span>
+    </div>
+    <div class="mei-checks">
+      {% for gate in view.decision_gates %}
+      <article>
+        <strong>{{ gate.label }}</strong>
+        <small>{{ gate.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Originaux et journal</h3>
+      <span>Garde-fous</span>
+    </div>
+    <div class="mei-checks">
+      {% for item in view.blocked_sources %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="actions">
+  <div class="panel-head">
+    <h3>Actions disponibles et bloquees</h3>
+    <span>Pas de suite automatique</span>
+  </div>
+  <div class="mei-actions">
+    {% for action in view.actions %}
+    <button type="button" {% if action.enabled != "true" %}disabled aria-disabled="true"{% endif %}>
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </button>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="mei-versions-title">
+  <div class="panel-head">
+    <h3 id="mei-versions-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

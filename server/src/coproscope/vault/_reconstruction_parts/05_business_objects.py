@@ -361,6 +361,16 @@ def _append_json_unique(existing_json: Any, value: str) -> str:
 
 def _target_kind(relation: str) -> str:
     normalized = relation.lower()
+    if normalized == "followed_by":
+        return "action"
+    if normalized == "expects":
+        return "expected_piece"
+    if normalized in {"proven_by", "partially_proven_by"}:
+        return "proof"
+    if normalized == "requested_via":
+        return "request"
+    if normalized == "reviewed_by":
+        return "human_validation"
     if "piece" in normalized:
         return "expected_piece"
     if "proof" in normalized or "preuve" in normalized:

@@ -1,0 +1,146 @@
+.cpr-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.cpr-hero,
+.cpr-status,
+.cpr-summary article,
+.cpr-boundaries article,
+.cpr-definitions article,
+.cpr-checks article,
+.cpr-proofs article,
+.cpr-actions button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.cpr-hero,
+.cpr-status {
+  padding: 1.2rem;
+}
+
+.cpr-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.cpr-status {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+}
+
+.cpr-status span,
+.cpr-status small,
+.cpr-summary span,
+.cpr-summary p,
+.cpr-boundaries p,
+.cpr-definitions p,
+.cpr-checks small,
+.cpr-proofs span,
+.cpr-proofs small,
+.cpr-actions small,
+.cpr-row span {
+  color: var(--muted);
+}
+
+.cpr-status strong {
+  font-size: 1.25rem;
+}
+
+.cpr-summary,
+.cpr-boundaries,
+.cpr-definitions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cpr-summary article,
+.cpr-boundaries article,
+.cpr-definitions article,
+.cpr-checks article {
+  padding: 0.85rem;
+}
+
+.cpr-summary strong {
+  display: block;
+  margin: 0.25rem 0;
+  font-size: 1.7rem;
+}
+
+.cpr-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.cpr-row {
+  display: grid;
+  grid-template-columns:
+    minmax(140px, 0.8fr) minmax(170px, 1fr) minmax(140px, 0.8fr)
+    minmax(135px, 0.8fr) minmax(120px, 0.7fr) minmax(190px, 1.1fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 920px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cpr-row.is-head {
+  font-weight: 700;
+}
+
+.cpr-checks,
+.cpr-proofs,
+.cpr-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cpr-proofs article {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+}
+
+.cpr-actions button {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.cpr-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .cpr-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .cpr-table {
+    overflow-x: visible;
+  }
+
+  .cpr-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .cpr-row.is-head {
+    display: none;
+  }
+}

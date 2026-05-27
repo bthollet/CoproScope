@@ -20,6 +20,12 @@ def _record_business_object_event(connection: sqlite3.Connection, event: Reconst
     if event.event_type == REQUEST_ACTION_RECORDED:
         _insert_request_action(connection, event, data)
         return
+    if event.event_type == PROOF_RECORDED:
+        _upsert_proof(connection, event, data)
+        return
+    if event.event_type == OBJECT_FOLLOWUP_RECORDED:
+        _insert_explicit_object_followup(connection, event, data)
+        return
     if event.event_type == COMMENT_ADDED:
         _insert_comment(connection, event, data)
         return
@@ -138,6 +144,17 @@ def _upsert_action(connection: sqlite3.Connection, event: ReconstructionEvent, d
     )
     _record_object_event_source(connection, "action", action_id, event, source_module=_source_module(event, data))
     _record_standard_links(connection, event, "action", action_id, data)
+    _record_parent_followups(
+        connection,
+        event,
+        data,
+        followup_kind="action",
+        followup_id=action_id,
+        relation="followed_by",
+        default_effect="opens",
+        summary=_first_text(data, ("title", "titre", "action", "action_a_faire")),
+        status_after=_first_text(data, ("status", "statut")) or "open",
+    )
     _upsert_expected_piece_from_action(connection, event, action_id, data)
 
 
@@ -185,6 +202,17 @@ def _upsert_expected_piece_from_action(
     )
     _record_object_event_source(connection, "expected_piece", piece_id, event, source_module=_source_module(event, data))
     _insert_object_link(connection, "action", action_id, "expects", "expected_piece", piece_id, event)
+    _record_parent_followups(
+        connection,
+        event,
+        data,
+        followup_kind="expected_piece",
+        followup_id=piece_id,
+        relation="expects",
+        default_effect="opens",
+        summary=label,
+        status_after=_first_text(data, ("piece_status", "status")) or "open",
+    )
 
 
 def _upsert_request(connection: sqlite3.Connection, event: ReconstructionEvent, data: Mapping[str, Any]) -> None:
@@ -230,6 +258,17 @@ def _upsert_request(connection: sqlite3.Connection, event: ReconstructionEvent, 
         _insert_object_link(connection, "request", request_id, "relates_to", "action", linked_action_id, event)
     if linked_piece_id:
         _insert_object_link(connection, "request", request_id, "asks_for", "expected_piece", linked_piece_id, event)
+    _record_parent_followups(
+        connection,
+        event,
+        data,
+        followup_kind="request",
+        followup_id=request_id,
+        relation="requested_via",
+        default_effect="opens",
+        summary=_first_text(data, ("subject", "sujet", "title")),
+        status_after=_first_text(data, ("status", "statut")) or "open",
+    )
 
 
 def _insert_request_action(connection: sqlite3.Connection, event: ReconstructionEvent, data: Mapping[str, Any]) -> None:
@@ -272,6 +311,17 @@ def _insert_request_action(connection: sqlite3.Connection, event: Reconstruction
             """,
             (status_after, _first_text(data, ("occurred_at", "date")) or event.created_at, event.event_hash, event.created_at, request_id),
         )
+    _record_parent_followups(
+        connection,
+        event,
+        data,
+        followup_kind="request_action",
+        followup_id=journal_id,
+        relation="updates",
+        default_effect="updates",
+        summary=_first_text(data, ("summary", "resume", "description")),
+        status_after=status_after,
+    )
 
 
 def _insert_comment(connection: sqlite3.Connection, event: ReconstructionEvent, data: Mapping[str, Any]) -> None:

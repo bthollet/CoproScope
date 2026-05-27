@@ -11,6 +11,10 @@ lance une equipe UX/UI
 
 La commande est equivalente avec ou sans accent sur `equipe`.
 
+Il s'applique aussi quand le routeur
+[`strategie_equipes_multi_agents.md`](./strategie_equipes_multi_agents.md)
+classe automatiquement le travail en `UXUI_RECHERCHE`.
+
 Il lance une recherche UX/UI visuelle, sans developpement. Le resultat attendu
 est une decision produit documentee: parcours, hypotheses, arbitrages,
 recommandations, images retenues et questions ouvertes.
@@ -46,11 +50,13 @@ Avant de lancer l'equipe, l'Orchestrateur:
    introduit une intention nouvelle;
 3. cree un `CH-*` horodate et une ligne `CONV-*` de coordination dans
    `docs/presence_agents.md`;
-4. definit le livrable de mission, par defaut
+4. publie les slots de role UX/UI dans `docs/tableau_execution_courant.md`;
+   les workers prennent ces slots et ne choisissent pas dans le backlog long;
+5. definit le livrable de mission, par defaut
    `docs/recherche_ux_ui_<date>_<slug>.md`;
-5. definit le dossier d'images retenues, par defaut
+6. definit le dossier d'images retenues, par defaut
    `docs/assets/ux-ui-recherche-<date>-<slug>/`;
-6. declare que le code applicatif, les instances privees, les secrets, les
+7. declare que le code applicatif, les instances privees, les secrets, les
    exports bruts et les passerelles hors mission sont evites.
 
 Si des outils de sous-agents sont disponibles, l'Orchestrateur lance les roles

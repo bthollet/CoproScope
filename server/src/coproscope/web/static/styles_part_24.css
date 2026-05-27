@@ -1,0 +1,147 @@
+.act-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.85fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.act-hero,
+.act-status,
+.act-summary article,
+.act-definitions article,
+.act-checks article,
+.act-actions button,
+.act-actions a {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.act-hero,
+.act-status,
+.act-summary article,
+.act-definitions article,
+.act-checks article {
+  padding: 1rem;
+}
+
+.act-hero__actions,
+.act-summary,
+.act-definitions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.act-hero__actions {
+  margin-top: 1rem;
+}
+
+.act-status,
+.act-summary article {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+}
+
+.act-status span,
+.act-status small,
+.act-summary p,
+.act-summary span,
+.act-definitions p,
+.act-checks small,
+.act-actions small,
+.act-row span,
+.act-row small {
+  color: var(--muted);
+}
+
+.act-status strong,
+.act-summary strong {
+  font-size: 1.25rem;
+}
+
+.act-summary,
+.act-definitions {
+  margin-bottom: 1rem;
+}
+
+.act-summary article,
+.act-definitions article {
+  flex: 1 1 190px;
+}
+
+.act-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.act-row {
+  display: grid;
+  grid-template-columns:
+    minmax(150px, 0.8fr) minmax(130px, 0.65fr) minmax(180px, 0.9fr)
+    minmax(135px, 0.65fr) minmax(135px, 0.65fr) minmax(230px, 1.15fr)
+    minmax(150px, 0.75fr) minmax(180px, 0.9fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-width: 1260px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.act-row.is-head {
+  font-weight: 700;
+}
+
+.act-row strong,
+.act-row small {
+  display: block;
+}
+
+.act-checks,
+.act-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.act-actions {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.act-actions button,
+.act-actions a {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 5.2rem;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.act-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .act-hero,
+  .act-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .act-table {
+    overflow-x: visible;
+  }
+
+  .act-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .act-row.is-head {
+    display: none;
+  }
+}

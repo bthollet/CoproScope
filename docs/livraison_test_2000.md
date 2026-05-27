@@ -4,7 +4,7 @@ Date : 2026-05-20
 
 Note 2026-05-21: cette checklist est une trace du jalon Platanes/20h. Les
 recettes live locales par defaut doivent maintenant utiliser
-`C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+`C:\Users\brice\CoproScope\instances\beauvallon_test`.
 
 Objectif : donner a un testeur novice un protocole court pour verifier la livraison CoproScope locale, sans importer de nouvelles donnees reelles et sans synchroniser de dossiers dangereux dans Drive ou dans le futur vault.
 
@@ -70,7 +70,7 @@ Lancer l'UI locale :
 
 ```powershell
 cd C:\Users\brice\CoproScope\coproscope
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
 
 Ouvrir ensuite :
@@ -136,7 +136,7 @@ Pour le futur vault synchronisable, seules les entrees prevues par la specificat
 
 ## Recommandations de livraison 20h
 
-- Faire la recette locale par defaut sur `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`; garder `examples\synthetic_copro` pour les tests publics/CI et demonstrations partageables.
+- Faire la recette locale par defaut sur `C:\Users\brice\CoproScope\instances\beauvallon_test`; garder `examples\synthetic_copro` pour les tests publics/CI et demonstrations partageables.
 - Afficher explicitement l'URL tokenisee au testeur et rappeler que le serveur ecoute sur `127.0.0.1`.
 - Presenter l'UI comme un cockpit local de preuve, action et memoire, pas comme un extranet de syndic.
 - Commencer par Cockpit puis Actions : c'est le chemin le plus comprehensible pour un novice.

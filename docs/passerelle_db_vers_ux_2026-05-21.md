@@ -94,6 +94,32 @@ Contrat propose pour les prochains runs:
 
 Question a suivre cote DB: faut-il creer un module applicatif `audit360` dedie dans `server/src/coproscope/modules/`, ou brancher d'abord l'import canonique dans les workers existants pour limiter le risque de collision entre agents?
 
+### Point DB-20260527-03 - Challenge metier DB par equipe agents
+
+- Source: `RM-2026-0040`, livrable `docs/challenge_db_modele_metier_2026-05-27.md`.
+- Methode: revue multidisciplinaire en lecture seule par agents backend/vault, syndic-juridique, compta, incidents-travaux et privacy/UX; aucun serveur, aucune migration, aucune donnee d'instance.
+- Verdict: le socle `event_log` / projections / `points` / `actions` / `expected_pieces` / `requests` / `request_actions` / `object_links` / `source_import_map` reste valide, mais il ne doit pas devenir un modele universel.
+- Frontiere UX obligatoire: `action` = tache humaine. Ne pas l'utiliser comme substitut de `decision`, `incident`, `works_project`, `proof`, `request_action`, `candidate_bundle`, `human_validation` ou `alert`.
+- P0 DB pour UX: creer un event/recorder `proof_recorded` ou equivalent; corriger les updates sparse; clarifier `status_changed`; normaliser les domaines publics; garder `request_action` hors du groupe metier `actions`.
+- Read models publics a ajouter progressivement: `public_requests_v1`, `public_exports_v1`, `public_export_blockers_v1` ou `public_diffusion_queue_v1`, `public_proof_capsules_v1`, puis `incident_followup_v1`, `works_project_portfolio_v1` et `compta_reconciliation_queue_v1`.
+- Regle diffusion: les read models publics consomment seulement des allowlists versionnees; les chemins, payloads, locators, brouillons, contacts, OCR/logs, blob ids, hashes et raisons privacy non biffees restent internes.
+- Comptabilite: `compta_reconciliation_queue_v1` doit porter lignes, cellules par famille, bundles candidats, validations humaines et gates rouge/orange; l'export AG est bloque en rouge et seulement brouillon avec reserve visible en orange.
+- Travaux/incidents: une action terminee ne cloture pas un incident ou un chantier; il faut objet metier, jalons et preuve de cloture ou motif `SANS_SUITE`.
+
+### Point DB-20260527-04 - Suivis multi-actions et resolution partielle livres
+
+- Source: `RM-2026-0040`, `ORD-P0-065`, chantier `CH-20260527-232031-RM-2026-0040-suivi-multi-actions`.
+- Contrat UX: un parent `point`, `incident`, `reconciliation_cell`, `reconciliation_line`, `works_project`, `milestone` ou `action` peut avoir plusieurs suivis enfants sans duplication du parent.
+- Projection livree: `object_followups_v1` via table interne `object_followups`, avec colonnes publiques `parent_kind`, `parent_id`, `followup_kind`, `followup_id`, `effect`, `summary`, `status_after`, `remaining_reason`, `occurred_at`, `visibility`.
+- Effets publics autorises: `opens`, `updates`, `partially_resolves`, `resolves`, `keeps_open`, `waives`.
+- Relations N:N canoniques via `object_links`: `followed_by`, `expects`, `partially_proven_by`, `proven_by`, `requested_via`, `reviewed_by`.
+- `proof_recorded` cible une piece/cellule/ligne/jalon/action/demande/point/incident; il peut lever l'enfant cible mais ne ferme jamais automatiquement le parent.
+- Regle UX obligatoire: afficher une levee partielle comme `partially_resolves` avec `remaining_reason`; ne pas remplacer le statut parent par `resolved` sans evenement parent explicite ou waiver/sans_suite motive.
+- Comptabilite: une facture rapprochee peut mettre une cellule en vert, mais la ligne reste orange/rouge tant que banque, decision/contrat ou validation humaine sans reserve manque.
+- Incidents/travaux: facture, photo, devis ou courrier peuvent lever un jalon; le dossier reste ouvert tant que preuve de cloture, reception ou reserve levee manque.
+- Confidentialite: le read model public masque chemins, payloads, locators, brouillons, contacts, tokens, emails, blob ids, hashes et marqueurs `raw`/`restricted`/`logs`.
+- Tests: `tests.test_vault_object_followups` couvre point a deux pieces, incident multi-actions, rapprochement compta avec reserve et anti-fuite publique; non-regression vault/read models/Audit360/projection OK.
+
 ## Questions que le fil DB peut renvoyer au fil UX
 
 ### DBUX-20260521-01 - Niveau de detail visible pour les preuves

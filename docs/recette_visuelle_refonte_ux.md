@@ -102,7 +102,7 @@ par capture manuelle ou avec le Browser app.
 Preparation recommandee:
 
 ```powershell
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root "$env:USERPROFILE\Documents\CoproScope\instances\beauvallon_test" --year 2025 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root "$env:USERPROFILE\CoproScope\instances\beauvallon_test" --year 2025 --port 8766 --token beauvallon-test-local
 ```
 
 La commande affiche une URL locale tokenisee. Ouvrir cette URL, puis tester les

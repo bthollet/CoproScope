@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% set view = governance_atelier_ag %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="agw-hero" aria-labelledby="agw-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="agw-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="agw-hero__actions">
+      <a class="button-link" href="#agw-review">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#agw-items">Relire l'ordre du jour</a>
+    </div>
+  </div>
+  <aside class="agw-status" aria-label="Statut de l'atelier fictif">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>{{ view.status.version }}</small>
+  </aside>
+</section>
+
+<section class="agw-metrics" aria-label="Synthese de l'atelier">
+  {% for item in view.summary %}
+  <article>
+    <strong>{{ item.value }}</strong>
+    <span>{{ item.label }}</span>
+    <small>{{ item.detail }}</small>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="agw-boundaries" aria-label="Limites de l'atelier">
+  {% for item in view.boundaries %}
+  <article>
+    <strong>{{ item.label }}</strong>
+    <p>{{ item.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" id="agw-items" aria-labelledby="agw-items-title">
+  <div class="panel-head">
+    <h3 id="agw-items-title">Questions, resolutions et preuves</h3>
+    <span>Projet CS</span>
+  </div>
+  <div class="agw-table" role="table" aria-label="Brouillons fictifs pour assemblee generale">
+    <div class="agw-row is-head" role="row">
+      <span role="columnheader">Sujet</span>
+      <span role="columnheader">Type</span>
+      <span role="columnheader">Statut</span>
+      <span role="columnheader">Preuve attendue</span>
+      <span role="columnheader">Prochaine action</span>
+    </div>
+    {% for item in view.agenda_items %}
+    <div class="agw-row" role="row">
+      <strong role="cell">{{ item.title }}</strong>
+      <span role="cell">{{ item.type }}</span>
+      <span role="cell">{{ item.status }}</span>
+      <span role="cell">{{ item.proof }}</span>
+      <span role="cell">{{ item.next_action }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel" id="agw-review">
+    <div class="panel-head">
+      <h3>Controle avant partage</h3>
+      <span>Humain</span>
+    </div>
+    <div class="agw-checks">
+      {% for step in view.review_steps %}
+      <article>
+        <strong>{{ step.label }}</strong>
+        <p>{{ step.detail }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>{{ view.diffusion.label }}</h3>
+      <span>{{ view.diffusion.status }}</span>
+    </div>
+    <ul class="compact-list">
+      {% for item in view.diffusion.entries %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Actions de travail</h3>
+      <span>Aucun envoi</span>
+    </div>
+    <div class="agw-actions">
+      {% for action in view.actions %}
+      <button type="button" {% if action.enabled != "true" %}disabled aria-disabled="true"{% endif %}>
+        <strong>{{ action.label }}</strong>
+        <small>{{ action.reason }}</small>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Journal de versions</h3>
+      <span>Trace locale</span>
+    </div>
+    <ul class="compact-list">
+      {% for event in view.version_log %}
+      <li>{{ event }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

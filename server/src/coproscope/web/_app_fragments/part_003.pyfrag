@@ -40,10 +40,12 @@ def create_app(
     access_token: str | None = None,
     *,
     prewarm_dashboard: bool = False,
+    instance_switcher_href: str | None = None,
 ):
     FastAPI, HTTPException, Request, HTMLResponse, RedirectResponse, Response, StaticFiles, Jinja2Templates = _require_web_stack()
 
     app = FastAPI(title="CoproScope local", docs_url=None, redoc_url=None)
+    app.state.instance = instance
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     dashboard_cache: dict[str, dict[str, object] | None] = {"model": None}
@@ -66,6 +68,12 @@ def create_app(
             if public_reconstruction_db_path(instance) is None:
                 return None
             return build_empty_public_missing_pieces_model(instance, year)
+
+    def _public_actions_model(scope: str = "", priority: str = "", status: str = "") -> dict[str, object] | None:
+        try:
+            return build_public_actions_model(instance, year, scope=scope, priority=priority, status=status)
+        except PublicReadModelUnavailable:
+            return None
 
     def _is_public_path(path: str) -> bool:
         return path in PUBLIC_PATHS or any(path.startswith(prefix) for prefix in PUBLIC_PATH_PREFIXES)
@@ -128,6 +136,7 @@ def create_app(
             "model": model,
             "ui_token_query": f"?{_token_suffix(request)}" if _token_suffix(request) else "",
             "ui_token_param": _token_suffix(request),
+            "instance_switcher_href": _url_with_token(request, instance_switcher_href) if instance_switcher_href else "",
             "pilotage_route_enabled": True,
         }
         if page in CONTEXT_BANNER_PAGES:
@@ -139,6 +148,9 @@ def create_app(
         return values
 
     def _filtered_actions(scope: str = "", priority: str = "", status: str = "") -> tuple[dict[str, object], list[dict[str, str]]]:
+        public_model = _public_actions_model(scope=scope, priority=priority, status=status)
+        if public_model is not None:
+            return public_model, list(public_model.get("action_items", []))  # type: ignore[arg-type]
         model = _dashboard_model()
         actions = filter_action_items(
             model["action_items"],  # type: ignore[arg-type]
@@ -194,7 +206,8 @@ def create_app(
     @app.get("/actions/{action_id}")
     def action_detail(request: FastAPIRequest, action_id: str):
         public_action_id = _public_action_route_id(action_id)
-        query_name = "selected" if public_action_id in _known_action_route_ids(_dashboard_model()) else "action_missing"
+        model = _public_actions_model() or _dashboard_model()
+        query_name = "selected" if public_action_id in _known_action_route_ids(model) else "action_missing"
         target = f"/actions?{urlencode({query_name: public_action_id})}"
         return RedirectResponse(_url_with_token(request, target), status_code=303)
 
@@ -211,15 +224,89 @@ def create_app(
         from .document_intake_view import template_context
 
         _require_token(request)
+        deposit_id = str(request.query_params.get("depot") or "")
+        selected = read_deposit_manifest(instance, deposit_id) if deposit_id else None
+        source = str(request.query_params.get("source") or "")
+        intake_rows, intake_sources = _document_intake_page_rows_and_sources(instance, selected, source)
         return templates.TemplateResponse(
             request=request,
             name="document_intake.html",
             context=context(
                 request,
                 "document_intake",
-                **template_context(_document_intake_preparation_rows(year)),
+                selected_deposit=selected,
+                intake_source=intake_sources["selected_source"],
+                intake_sources=intake_sources,
+                pipeline_status=_safe_form_text(request.query_params.get("status"), fallback=""),
+                **template_context(intake_rows),
             ),
         )
+
+    @app.post("/documents/ajouter/qualifier")
+    async def document_intake_qualify(request: FastAPIRequest):
+        _require_token(request)
+        form = await request.form()
+        doc_id = _document_intake_doc_id(form.get("doc_id"))
+        if not doc_id:
+            raise HTTPException(status_code=422, detail="Document invalide.")
+        document_type = _document_intake_type_value(form.get("document_type"))
+        privacy_status = _document_intake_privacy_value(form.get("privacy_status"))
+        deposit_id = str(form.get("depot") or "").strip()
+        source = _document_intake_source_value(form.get("source"))
+        updated = (
+            _save_document_intake_register_choice(instance, doc_id, document_type, privacy_status)
+            if _document_intake_is_register_source(source)
+            else _save_document_intake_manifest_choice(instance, deposit_id, doc_id, document_type, privacy_status)
+            if deposit_id
+            else False
+        )
+        if not updated:
+            raise HTTPException(status_code=404, detail="Document introuvable.")
+        _invalidate_dashboard_model_cache()
+        query = {"qualification": "updated"}
+        if deposit_id:
+            query["depot"] = deposit_id
+        if source:
+            query["source"] = source
+        status = _safe_form_text(form.get("status"), fallback="")
+        if status:
+            query["status"] = status
+        return RedirectResponse(url=_url_with_token(request, f"/documents/ajouter?{urlencode(query)}"), status_code=303)
+
+    @app.post("/documents/ajouter/rattacher")
+    async def document_intake_link(request: FastAPIRequest):
+        _require_token(request)
+        form = await request.form()
+        doc_id = _document_intake_doc_id(form.get("doc_id"))
+        if not doc_id:
+            raise HTTPException(status_code=422, detail="Document invalide.")
+        link = _document_intake_link_payload(form)
+        if not _document_intake_link_complete(link):
+            raise HTTPException(status_code=422, detail="Rattachement incomplet.")
+        deposit_id = str(form.get("depot") or "").strip()
+        source = _document_intake_source_value(form.get("source"))
+        updated = (
+            _save_document_intake_register_link(instance, doc_id, link)
+            if _document_intake_is_register_source(source)
+            else _save_document_intake_manifest_link(instance, deposit_id, doc_id, link)
+            if deposit_id
+            else False
+        )
+        if not updated:
+            raise HTTPException(status_code=404, detail="Document introuvable.")
+        _invalidate_dashboard_model_cache()
+        query = {"rattachement": "updated"}
+        if deposit_id:
+            query["depot"] = deposit_id
+        if source:
+            query["source"] = source
+        status = _safe_form_text(form.get("status"), fallback="")
+        if status:
+            query["status"] = status
+        return RedirectResponse(url=_url_with_token(request, f"/documents/ajouter?{urlencode(query)}"), status_code=303)
+
+    from .docops_feedback_route import register_docops_feedback_routes
+    register_docops_feedback_routes(app, templates, context, instance, year, _require_token, _shell_model, HTTPException, HTMLResponse, Response, _download_headers)
 
     @app.get("/documents/{doc_id}", response_class=HTMLResponse)
     def document_detail(request: FastAPIRequest, doc_id: str):
@@ -433,6 +520,7 @@ def create_app(
             ),
         )
 
+    from .feature_routes import register_feature_routes; register_feature_routes(app, templates, context, year, _require_token, HTMLResponse)
     @app.get("/gouvernance", response_class=HTMLResponse)
     def governance(request: FastAPIRequest):
         from .governance import build_governance_overview

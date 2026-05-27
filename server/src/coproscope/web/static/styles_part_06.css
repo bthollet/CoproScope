@@ -63,12 +63,24 @@
   }
 
   .cs-topbar {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) max-content;
     padding-inline: 12px;
   }
 
+  .cs-topbar-title {
+    grid-column: 1 / 2;
+    grid-row: 1;
+  }
+
+  .cs-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
   .cs-top-action {
-    width: 100%;
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
   }
 
   .cs-section-head,
@@ -83,14 +95,29 @@
   }
 
   .cs-sidebar {
-    max-height: 210px;
-    gap: 10px;
-    padding-inline: 10px;
+    gap: 8px;
+    padding: 8px 10px;
   }
 
   .cs-sidebar-brand {
-    min-height: 34px;
-    font-size: 16px;
+    min-height: 30px;
+    font-size: 14px;
+  }
+
+  .cs-sidebar .nav {
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  }
+
+  .cs-sidebar .nav a {
+    min-height: 38px;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    padding: 7px 6px;
+    text-align: center;
+  }
+
+  .cs-nav-icon {
+    display: none;
   }
 
   .cs-todo-grid,

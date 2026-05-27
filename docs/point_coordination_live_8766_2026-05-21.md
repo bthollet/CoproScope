@@ -559,7 +559,7 @@
 
 ### Decision
 
-- L'environnement de test local par defaut des agents devient `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+- L'environnement de test local par defaut des agents devient `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 - Identifiant de l'instance: `beauvallon-test`.
 - Platanes (`examples/synthetic_copro`) n'est plus la cible live/recette par defaut; il reste reserve aux tests publics/CI et aux exemples partageables.
 
@@ -567,7 +567,7 @@
 
 ```powershell
 cd C:\Users\brice\CoproScope\coproscope
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
 
 ### Signal aux agents
@@ -988,7 +988,7 @@ cd C:\Users\brice\CoproScope\coproscope
 
 ### A tester maintenant
 
-- Instance cible: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+- Instance cible: `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 - Symptôme utilisateur: depuis le site local, suspicion de base/projection a reconstruire.
 - Aucun rebuild destructif avant diagnostic, sauvegarde et GO explicite.
 
@@ -1043,12 +1043,12 @@ cd C:\Users\brice\CoproScope\coproscope
 
 ### En dev maintenant
 
-- `CONV-2026-0063` a execute le runbook sur `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+- `CONV-2026-0063` a execute le runbook sur `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 - Preflight: `doctor` OK, `vault status/verify` OK.
 - Sauvegardes verifiees:
-  - `C:\Users\brice\Documents\CoproScope\sauvegardes\beauvallon_test\20260522-122035` avant pipeline, 2188 fichiers, 0 ecart;
-  - `C:\Users\brice\Documents\CoproScope\sauvegardes\beauvallon_test\20260522-122854-post-pipeline` apres pipeline, 2195 fichiers, 0 ecart;
-  - `C:\Users\brice\Documents\CoproScope\sauvegardes\beauvallon_test\20260522-123739-post-accounting` apres compta, 2210 fichiers, 0 ecart.
+  - `C:\Users\brice\CoproScope\dev\instance_support\sauvegardes\beauvallon_test\20260522-122035` avant pipeline, 2188 fichiers, 0 ecart;
+  - `C:\Users\brice\CoproScope\dev\instance_support\sauvegardes\beauvallon_test\20260522-122854-post-pipeline` apres pipeline, 2195 fichiers, 0 ecart;
+  - `C:\Users\brice\CoproScope\dev\instance_support\sauvegardes\beauvallon_test\20260522-123739-post-accounting` apres compta, 2210 fichiers, 0 ecart.
 - Commandes lancees:
   - `pipeline run --no-copy --docai off`: OK;
   - `accounting reconstruct --year 2025`: OK, 827 factures, 601 ecritures, 827 controles, 1522 anomalies factures;

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% set view = governance_cr_cs %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="crcs-hero" aria-labelledby="crcs-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="crcs-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="crcs-hero__actions">
+      <a class="button-link" href="#validation">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#decisions">Relire decisions</a>
+    </div>
+  </div>
+  <aside class="crcs-status" aria-label="Statut du compte rendu fictif">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>{{ view.status.version }}</small>
+  </aside>
+</section>
+
+<section class="crcs-boundary" aria-label="Frontieres a ne pas confondre">
+  {% for item in view.boundary %}
+  <article>
+    <strong>{{ item.label }}</strong>
+    <p>{{ item.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Reunion et presents</h3>
+      <span>Fictif</span>
+    </div>
+    <dl class="crcs-facts">
+      <div><dt>Date</dt><dd>{{ view.meeting.date }}</dd></div>
+      <div><dt>Lieu</dt><dd>{{ view.meeting.place }}</dd></div>
+      <div><dt>Presents</dt><dd>{{ view.meeting.attendees|join(", ") }}</dd></div>
+      <div><dt>A confirmer</dt><dd>{{ view.meeting.missing|join(", ") }}</dd></div>
+    </dl>
+  </div>
+
+  <div class="panel" id="validation">
+    <div class="panel-head">
+      <h3>Validation interne</h3>
+      <span>Bloquee</span>
+    </div>
+    <div class="crcs-steps">
+      {% for step in view.validation_steps %}
+      <article>
+        <span>{{ step.status }}</span>
+        <strong>{{ step.label }}</strong>
+        <small>{{ step.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="decisions" aria-labelledby="decisions-title">
+  <div class="panel-head">
+    <h3 id="decisions-title">Decisions, actions et preuves</h3>
+    <span>{{ view.decisions|length }} lignes</span>
+  </div>
+  <div class="crcs-decision-table" role="table" aria-label="Decisions fictives du conseil syndical">
+    <div class="crcs-decision-row is-head" role="row">
+      <span role="columnheader">Sujet</span>
+      <span role="columnheader">Statut</span>
+      <span role="columnheader">Prochaine action</span>
+      <span role="columnheader">Preuve / source</span>
+    </div>
+    {% for decision in view.decisions %}
+    <div class="crcs-decision-row" role="row">
+      <strong role="cell">{{ decision.title }}</strong>
+      <span role="cell">{{ decision.status }}</span>
+      <span role="cell">{{ decision.next_action }}</span>
+      <span role="cell">{{ decision.proof }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Actions du compte rendu</h3>
+      <span>Aucun envoi</span>
+    </div>
+    <div class="crcs-actions">
+      {% for action in view.actions %}
+      <button type="button" {% if action.enabled != "true" %}disabled aria-disabled="true"{% endif %}>
+        <strong>{{ action.label }}</strong>
+        <small>{{ action.reason }}</small>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>{{ view.diffusion.label }}</h3>
+      <span>{{ view.diffusion.status }}</span>
+    </div>
+    <ul class="compact-list">
+      {% for item in view.diffusion.entries %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="versions-title">
+  <div class="panel-head">
+    <h3 id="versions-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}
