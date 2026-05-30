@@ -139,5 +139,10 @@ elle est rattachee a une action, une depense ou un point.
 - [examples/synthetic_copro/](./examples/synthetic_copro): instance fictive
   pour tests publics et demonstrations.
 
+## Licence
+
+Sauf mention contraire pour un fichier tiers, le depot CoproScope est distribue
+sous licence `AGPL-3.0-only`. Le texte complet est dans [LICENSE](./LICENSE).
+
 Pour installer et lancer techniquement CoproScope, lire
 [server/README.md](./server/README.md).

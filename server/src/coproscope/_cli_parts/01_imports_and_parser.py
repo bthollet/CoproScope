@@ -247,6 +247,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Autoriser explicitement une ecoute hors loopback; protege par jeton local.",
     )
+    ui_serve.add_argument("--recette", action="store_true", help="Activer la barre locale de remarques de test.")
     ui_open_test = ui_subparsers.add_parser(
         "open-test",
         aliases=["test-visible"],
@@ -262,6 +263,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Autoriser explicitement une ecoute hors loopback; a eviter pour les tests.",
     )
+    ui_open_test.add_argument("--recette", action="store_true", help="Activer la barre locale de remarques de test.")
 
     demo_parser = subparsers.add_parser("demo", aliases=["demonstration"], help="Fabrique de copro demo fictive.")
     demo_subparsers = demo_parser.add_subparsers(dest="demo_command", required=True)

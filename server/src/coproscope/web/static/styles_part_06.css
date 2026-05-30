@@ -105,7 +105,7 @@
   }
 
   .cs-sidebar .nav {
-    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   }
 
   .cs-sidebar .nav a {
@@ -114,6 +114,12 @@
     justify-items: center;
     padding: 7px 6px;
     text-align: center;
+  }
+
+  .cs-sidebar .nav a span:not(.cs-nav-icon):not(.cs-nav-count) {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
   }
 
   .cs-nav-icon {

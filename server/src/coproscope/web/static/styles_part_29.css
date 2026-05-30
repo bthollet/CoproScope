@@ -1,0 +1,116 @@
+.recette-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1200;
+  width: min(420px, calc(100vw - 32px));
+  color: #172026;
+  font-size: 0.92rem;
+}
+
+.recette-panel__bar,
+.recette-panel__form {
+  border: 1px solid rgba(23, 32, 38, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(23, 32, 38, 0.18);
+}
+
+.recette-panel__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+}
+
+.recette-panel__bar strong {
+  flex: 1 1 140px;
+}
+
+.recette-panel button,
+.recette-panel a {
+  min-height: 36px;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.recette-panel button {
+  border: 1px solid #48636f;
+  background: #eff7f5;
+  color: #172026;
+  cursor: pointer;
+}
+
+.recette-panel a {
+  display: inline-flex;
+  align-items: center;
+  color: #214f5c;
+  text-decoration: underline;
+}
+
+.recette-panel__form {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px;
+}
+
+.recette-panel__form[hidden] {
+  display: none;
+}
+
+.recette-panel textarea,
+.recette-panel select {
+  width: 100%;
+  margin-top: 4px;
+  border: 1px solid #9ca8ae;
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+}
+
+.recette-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recette-panel__status {
+  min-height: 1.4em;
+  margin: 0;
+  color: #214f5c;
+}
+
+.recette-zone-box {
+  position: fixed;
+  z-index: 1199;
+  border: 2px solid #c64343;
+  background: rgba(198, 67, 67, 0.08);
+  pointer-events: none;
+}
+
+.recette-is-selecting * {
+  cursor: crosshair;
+}
+
+.recette-export-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.empty-state {
+  padding: 16px 0;
+  color: #53646d;
+}
+
+@media (max-width: 640px) {
+  .recette-panel {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+  }
+}

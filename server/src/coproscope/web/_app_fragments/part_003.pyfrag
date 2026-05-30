@@ -41,6 +41,7 @@ def create_app(
     *,
     prewarm_dashboard: bool = False,
     instance_switcher_href: str | None = None,
+    recette_mode: bool = False,
 ):
     FastAPI, HTTPException, Request, HTMLResponse, RedirectResponse, Response, StaticFiles, Jinja2Templates = _require_web_stack()
 
@@ -138,6 +139,7 @@ def create_app(
             "ui_token_param": _token_suffix(request),
             "instance_switcher_href": _url_with_token(request, instance_switcher_href) if instance_switcher_href else "",
             "pilotage_route_enabled": True,
+            "recette_mode_enabled": recette_mode,
         }
         if page in CONTEXT_BANNER_PAGES:
             values["context_banner"] = build_context_banner(
@@ -178,6 +180,11 @@ def create_app(
             "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "no-store",
         }
+
+    if recette_mode:
+        from .recette_mode import register_recette_routes
+
+        register_recette_routes(app, templates, context, instance, _require_token, HTMLResponse, Response, _download_headers)
 
     @app.get("/", response_class=HTMLResponse)
     def overview(request: FastAPIRequest):

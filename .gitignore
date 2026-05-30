@@ -10,6 +10,9 @@ Thumbs.db
 .venv/
 **/.venv/
 server/.venv/
+server/build/
+server/dist/
+server/dist-*/
 server/.tmp-test/
 server/.tmp-ui-*.log
 *.log

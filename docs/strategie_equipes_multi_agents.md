@@ -130,6 +130,12 @@ elles portent une decision, un test ou un apprentissage.
 
 Pour `BACKEND_DOMAINE`, le routeur limite le parallele:
 
+- si le travail cree une nouvelle feature produit ou transverse, aucun patch de
+  code ne demarre avant un cadrage documentaire: probleme utilisateur,
+  blueprint de service ou UI, event storming ou parcours-evenements, contrat de
+  donnees, risques privacy/licence, criteres d'acceptation et GO/NO-GO dev;
+- un prototype commence avant ce gate reste un brouillon non integrable jusqu'a
+  validation explicite du cadrage;
 - un seul owner code sur le schema, le vault, les configs ou le read model;
 - les experts metier ne patchent pas; ils rendent des invariants, cas limites
   et no-go;

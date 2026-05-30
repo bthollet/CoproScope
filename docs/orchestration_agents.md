@@ -445,6 +445,19 @@ Checks UI depuis la racine :
 
 Ouvrir manuellement l'URL tokenisee affichee par `ui open-test`, puis verifier les onglets `Cockpit`, `Actions`, `Comptes`, `Documents`, `Atelier pieces`, `Confidentialite`, `Chantiers` et `Depot`. Pour les agents, preferer les tests unitaires et les clients FastAPI internes plutot que des boucles `Invoke-WebRequest`.
 
+Pour un lot desktop, packaging, installable ou recette utilisateur generale,
+remplacer autant que possible la recette serveur PowerShell par la recette de
+l'executable depuis `server/`:
+
+```powershell
+.\packaging\windows\smoke-executable.ps1 -Mode http
+.\packaging\windows\smoke-executable.ps1 -Mode window
+```
+
+Le serveur PowerShell visible reste adapte au developpement d'une route web,
+mais la preuve finale d'un executable doit citer le smoke executable, son mode
+et l'artefact teste.
+
 ## Garde-fous donnees
 
 - Ne jamais commiter `coproscope-instances/`, `raw`, `restricted`, `.env.local`, tables de correspondance ou exports prives.

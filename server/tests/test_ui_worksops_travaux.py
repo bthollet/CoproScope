@@ -131,7 +131,7 @@ class UiWorksOpsTravauxTests(unittest.TestCase):
         nav_block = re.search(r"\.cs-sidebar \.nav \{(?P<body>.*?)\}", shell_css, flags=re.DOTALL)
 
         self.assertIn("repeat(auto-fit, minmax(132px, 1fr))", shell_css)
-        self.assertIn("repeat(auto-fit, minmax(78px, 1fr))", mobile_css)
+        self.assertIn("repeat(auto-fit, minmax(118px, 1fr))", mobile_css)
         self.assertIsNotNone(nav_block)
         self.assertNotIn("overflow-x: auto", nav_block.group("body"))
 

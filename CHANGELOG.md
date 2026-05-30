@@ -4,6 +4,12 @@ All notable changes to CoproScope will be documented in this file.
 
 CoproScope follows a pragmatic pre-1.0 versioning approach while the public API, CLI and data schemas are still evolving.
 
+## Unreleased
+
+### Changed
+
+- Project license changed to AGPL-3.0-only.
+
 ## [0.1.0-alpha.1] - 2026-05-13
 
 ### Release status
@@ -33,7 +39,7 @@ It is not yet intended as a turnkey tool for non-technical users.
 - Public synthetic copro instance for tests and demonstrations.
 - Public/private sharing boundary with `share-audit` and `share-export` tooling.
 - Documentation in French describing concept, target functions, implementation plan, development state and GitHub sharing policy.
-- MPL-2.0 license for code.
+- Initial public license file for code. The current repository license is AGPL-3.0-only; see the Unreleased section.
 
 ### Changed
 

@@ -54,6 +54,7 @@ ALLOWED_FRAGMENT_HELPER_CALLS = {
 }
 
 ALLOWED_SUBPROCESS_FILES = {
+    "executable_app.py",
     "modules/instancegit.py",
     "modules/tools.py",
     "tools/orchestration_supervisor.py",
