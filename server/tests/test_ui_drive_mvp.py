@@ -25,9 +25,20 @@ FORBIDDEN_VISIBLE = (
     "private",
     "Drive OK",
     "Dossier synchronise",
+    "MVP",
+    "local-first",
+    "couche Google",
+    "index minimal",
+    "cles publiques",
+    "API Google",
+    "Controle local expurge",
+    "Publier en demonstration locale",
+    "Recuperer en demonstration locale",
     "Poste A",
     "Poste B",
     "Secret local",
+    "autres postes",
+    "autres ordinateurs",
     "autres coproprietaires",
 )
 
@@ -64,13 +75,14 @@ class UiDriveMvpTests(unittest.TestCase):
         self.assertIn(TOKEN_COOKIE_NAME, response.cookies)
         self.assertIn("styles.css?v=20260530-drive-convergence", response.text)
         self.assertIn("Drive chiffre", visible)
-        self.assertIn("Synchronisation Drive chiffree", visible)
-        self.assertIn("Test local seulement", visible)
-        self.assertIn("Etat de ce poste", visible)
-        self.assertIn("Parcours publier / recuperer", visible)
-        self.assertIn("Publier en demonstration locale", visible)
-        self.assertIn("Recuperer en demonstration locale", visible)
-        self.assertIn("Etat visible limite a ce poste", visible)
+        self.assertIn("Drive n'est pas encore relie", visible)
+        self.assertIn("Ce poste seulement", visible)
+        self.assertIn("Etat Drive", visible)
+        self.assertIn("Test sans envoi lisible", visible)
+        self.assertIn("Tester la preparation", visible)
+        self.assertIn("Tester la recuperation", visible)
+        self.assertIn("Affichage limite a cet ordinateur", visible)
+        self.assertIn("Prochaine action", visible)
         self.assertIn('href="/coffre/partage?token=drive-mvp-local"', response.text)
         self.assertIn('action="/coffre/drive/publier-test?token=drive-mvp-local"', response.text)
         self.assertIn('action="/coffre/drive/recuperer-test?token=drive-mvp-local"', response.text)
@@ -85,7 +97,7 @@ class UiDriveMvpTests(unittest.TestCase):
         self.assertEqual(published.status_code, 303)
         publish_page = client.get(published.headers["location"])
         publish_visible = _visible_text(unescape(publish_page.text))
-        self.assertIn("Publication test terminee", publish_visible)
+        self.assertIn("Preparation test terminee", publish_visible)
         self.assertIn("Changements chiffres deposes en demonstration locale", publish_visible)
         self.assertIn("Partage Google non verifie par ce test", publish_visible)
 
@@ -95,7 +107,7 @@ class UiDriveMvpTests(unittest.TestCase):
         recover_visible = _visible_text(unescape(recover_page.text))
         self.assertIn("Recuperation test terminee", recover_visible)
         self.assertIn("Changements verifies et recuperes sur ce poste", recover_visible)
-        self.assertIn("L'etat affiche est limite a ce poste", recover_visible)
+        self.assertIn("L'etat affiche est limite a cet ordinateur", recover_visible)
         for marker in FORBIDDEN_VISIBLE:
             self.assertNotIn(marker, recover_visible)
 
@@ -105,10 +117,12 @@ class UiDriveMvpTests(unittest.TestCase):
         css = (static_root / "styles_part_28.css").read_text(encoding="utf-8")
 
         self.assertIn("styles_part_28.css", manifest)
-        self.assertIn(".drive-cockpit", css)
+        self.assertIn(".drive-intro", css)
         self.assertIn(".drive-sync-bar", css)
         self.assertIn(".drive-sync-bar--ok", css)
         self.assertIn(".drive-sync-bar--error", css)
+        self.assertIn("right: 18px", css)
+        self.assertNotIn("left: calc(276px", css)
         self.assertIn("@media (max-width: 760px)", css)
 
 

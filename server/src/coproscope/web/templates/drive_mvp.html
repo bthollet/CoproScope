@@ -1,99 +1,76 @@
 {% extends "base.html" %}
 {% set view = drive_mvp %}
-{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block topbar_title %}Drive chiffre{% endblock %}
 {% block content %}
-<section class="drive-cockpit drive-hero drive-hero--{{ view.status.tone }}" aria-labelledby="drive-title">
-  <div class="drive-cockpit-title">
+<section class="drive-intro" aria-labelledby="drive-title">
+  <div>
     <p class="eyebrow">{{ view.notice }}</p>
     <h2 id="drive-title">{{ view.title }}</h2>
     <p class="lead">{{ view.status.summary }}</p>
+    <p class="drive-limit">{{ view.visible_limit }}</p>
   </div>
-  <aside class="drive-current-state" aria-label="Etat Drive de ce poste">
-    <span>Etat de ce poste</span>
+  <aside class="drive-state" aria-label="Etat Drive de cet ordinateur">
+    <span>Etat Drive</span>
     <strong>{{ view.status.label }}</strong>
     <small>Aucun document lisible n'est envoye dans Drive.</small>
   </aside>
 </section>
 
-<section class="drive-control-grid" aria-label="Controle Drive chiffre">
-  <section class="drive-folder-card drive-folder-card--{{ view.folder_setup.tone }}" aria-labelledby="drive-folder-title" data-testid="drive-folder-status">
-    <div class="drive-folder-head">
+<section class="grid two drive-main-grid" aria-label="Controle Drive chiffre">
+  <section class="panel drive-setup" aria-labelledby="drive-folder-title" data-testid="drive-folder-status">
+    <div class="panel-head">
       <div>
-        <span>{{ view.folder_setup.state }}</span>
+        <p class="eyebrow">{{ view.folder_setup.state }}</p>
         <h3 id="drive-folder-title">{{ view.folder_setup.title }}</h3>
-        <p>{{ view.folder_setup.subtitle }}</p>
       </div>
-      <strong>{{ view.folder_setup.headline }}</strong>
+      <span>{{ view.folder_setup.headline }}</span>
     </div>
     <p>{{ view.folder_setup.summary }}</p>
-    <dl class="drive-folder-facts">
-      <div><dt>Partage Google</dt><dd>{{ view.folder_setup.share_label }}. {{ view.folder_setup.share_detail }}</dd></div>
-      <div><dt>Source</dt><dd>Controle local expurge</dd></div>
+    <dl class="drive-facts">
+      <div>
+        <dt>Partage Google</dt>
+        <dd>{{ view.folder_setup.share_label }}. {{ view.folder_setup.share_detail }}</dd>
+      </div>
+      <div>
+        <dt>Limite visible</dt>
+        <dd>{{ view.visible_limit }}</dd>
+      </div>
     </dl>
   </section>
 
-  <section class="drive-instance-sync drive-instance-sync--{{ view.instance_sync.tone }}" aria-labelledby="drive-instance-sync-title" data-testid="drive-instance-sync">
-    <div class="drive-instance-sync-head">
+  <section class="panel drive-test" aria-labelledby="drive-test-title" data-testid="drive-instance-sync">
+    <div class="panel-head">
       <div>
-        <span>{{ view.instance_sync.state }}</span>
-        <h3 id="drive-instance-sync-title">{{ view.instance_sync.title }}</h3>
-        <p>{{ view.instance_sync.summary }}</p>
+        <p class="eyebrow">{{ view.instance_sync.state }}</p>
+        <h3 id="drive-test-title">{{ view.instance_sync.title }}</h3>
       </div>
-      <div class="drive-instance-sync-actions" aria-label="Actions demonstration Drive">
-        <form method="post" action="{{ token_href(view.instance_sync.publish_href) }}">
-          <button type="submit">{{ view.instance_sync.publish_label }}</button>
-        </form>
-        <form method="post" action="{{ token_href(view.instance_sync.recover_href) }}">
-          <button type="submit">{{ view.instance_sync.recover_label }}</button>
-        </form>
-      </div>
+      <span>{{ view.instance_sync.result_label }}</span>
     </div>
-    <div class="drive-instance-sync-steps" aria-label="Resultat publication recuperation">
+    <p>{{ view.instance_sync.summary }}</p>
+    <div class="drive-action-row" aria-label="Actions de test Drive">
+      <form method="post" action="{{ token_href(view.instance_sync.publish_href) }}">
+        <button class="button-link" type="submit">{{ view.instance_sync.publish_label }}</button>
+      </form>
+      <form method="post" action="{{ token_href(view.instance_sync.recover_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.instance_sync.recover_label }}</button>
+      </form>
+    </div>
+    <ol class="drive-steps" aria-label="Resultat du test local">
       {% for step in view.instance_sync.steps %}
-      <article class="drive-instance-sync-step drive-instance-sync-step--{{ step.state|lower|replace(' ', '-') }}">
+      <li class="drive-step drive-step--{{ step.state|lower|replace(' ', '-') }}">
         <span>{{ step.state }}</span>
         <strong>{{ step.label }}</strong>
-        <p>{{ step.detail }}</p>
-      </article>
+        <small>{{ step.detail }}</small>
+      </li>
       {% endfor %}
-    </div>
-    <div class="drive-instance-sync-result">
-      <strong>{{ view.instance_sync.result_label }}</strong>
-      <span>{{ view.instance_sync.share_label }}</span>
-      <span>Etat visible limite a ce poste</span>
-    </div>
+    </ol>
+    <p class="drive-result">{{ view.instance_sync.share_label }}</p>
   </section>
 </section>
 
-<section class="drive-readiness" aria-label="Etat MVP Drive">
-  {% for item in view.readiness %}
-  <article>
-    <span>{{ item.state }}</span>
-    <strong>{{ item.label }}</strong>
-    <p>{{ item.detail }}</p>
-  </article>
-  {% endfor %}
-</section>
-
-<section class="panel" aria-labelledby="drive-flow-title">
-  <div class="panel-head">
-    <h3 id="drive-flow-title">Flux des fichiers chiffres</h3>
-    <span>Mode local-first</span>
-  </div>
-  <div class="drive-flow">
-    {% for step in view.flow %}
-    <article>
-      <span>{{ step.actor }}</span>
-      <strong>{{ step.label }}</strong>
-      <p>{{ step.detail }}</p>
-    </article>
-    {% endfor %}
-  </div>
-</section>
-
-<section class="grid two">
+<section class="grid two drive-boundaries" aria-label="Frontiere entre cet ordinateur et Drive">
   {% for column in view.local_vs_drive %}
-  <div class="panel">
+  <section class="panel">
     <div class="panel-head">
       <h3>{{ column.label }}</h3>
       <span>{{ column["items"]|length }} reperes</span>
@@ -103,21 +80,24 @@
       <li>{{ item }}</li>
       {% endfor %}
     </ul>
-  </div>
+  </section>
   {% endfor %}
 </section>
 
-<section class="panel" aria-labelledby="drive-google-title">
+<section class="panel drive-next" aria-labelledby="drive-next-title">
   <div class="panel-head">
-    <h3 id="drive-google-title">Couche Google</h3>
-    <span>Acces au dossier partage</span>
+    <h3 id="drive-next-title">Prochaine action</h3>
+    <span>Pas encore de Drive reel</span>
   </div>
-  <div class="drive-google">
-    <article><strong>Compte Google</strong><p>{{ view.google_layer.account }}</p></article>
-    <article><strong>Lecture</strong><p>{{ view.google_layer.read }}</p></article>
-    <article><strong>Ecriture</strong><p>{{ view.google_layer.write }}</p></article>
-    <article><strong>Limite</strong><p>{{ view.google_layer.limits }}</p></article>
-  </div>
+  <ol class="drive-next-list">
+    {% for item in view.next_steps %}
+    <li>
+      <span>{{ item.state }}</span>
+      <strong>{{ item.label }}</strong>
+      <small>{{ item.detail }}</small>
+    </li>
+    {% endfor %}
+  </ol>
 </section>
 
 <nav class="drive-links" aria-label="Liens Drive">
