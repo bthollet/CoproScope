@@ -2,83 +2,67 @@
 {% set view = drive_mvp %}
 {% block topbar_title %}{{ view.title }}{% endblock %}
 {% block content %}
-<section class="drive-hero drive-hero--{{ view.status.tone }}" aria-labelledby="drive-title">
-  <div>
+<section class="drive-cockpit drive-hero drive-hero--{{ view.status.tone }}" aria-labelledby="drive-title">
+  <div class="drive-cockpit-title">
     <p class="eyebrow">{{ view.notice }}</p>
     <h2 id="drive-title">{{ view.title }}</h2>
     <p class="lead">{{ view.status.summary }}</p>
+  </div>
+  <aside class="drive-current-state" aria-label="Etat Drive de ce poste">
+    <span>Etat de ce poste</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucun document lisible n'est envoye dans Drive.</small>
+  </aside>
+</section>
 
-    <section class="drive-folder-card drive-folder-card--{{ view.folder_setup.tone }}" aria-labelledby="drive-folder-title" data-testid="drive-folder-status">
-      <div class="drive-folder-head">
-        <div>
-          <span>{{ view.folder_setup.state }}</span>
-          <h3 id="drive-folder-title">{{ view.folder_setup.title }}</h3>
-          <p>{{ view.folder_setup.subtitle }}</p>
-        </div>
-        <strong>{{ view.folder_setup.headline }}</strong>
+<section class="drive-control-grid" aria-label="Controle Drive chiffre">
+  <section class="drive-folder-card drive-folder-card--{{ view.folder_setup.tone }}" aria-labelledby="drive-folder-title" data-testid="drive-folder-status">
+    <div class="drive-folder-head">
+      <div>
+        <span>{{ view.folder_setup.state }}</span>
+        <h3 id="drive-folder-title">{{ view.folder_setup.title }}</h3>
+        <p>{{ view.folder_setup.subtitle }}</p>
       </div>
-      <p>{{ view.folder_setup.summary }}</p>
-      <dl class="drive-folder-facts">
-        <div><dt>Partage Google</dt><dd>{{ view.folder_setup.share_label }}. {{ view.folder_setup.share_detail }}</dd></div>
-        <div><dt>Source</dt><dd>Controle local expurge</dd></div>
-      </dl>
-      <div class="drive-folder-checks" aria-label="Controles du dossier Drive">
-        {% for check in view.folder_setup.checks %}
-        <article>
-          <span>{{ check.state }}</span>
-          <strong>{{ check.label }}</strong>
-          <p>{{ check.detail }}</p>
-        </article>
-        {% endfor %}
-      </div>
-    </section>
+      <strong>{{ view.folder_setup.headline }}</strong>
+    </div>
+    <p>{{ view.folder_setup.summary }}</p>
+    <dl class="drive-folder-facts">
+      <div><dt>Partage Google</dt><dd>{{ view.folder_setup.share_label }}. {{ view.folder_setup.share_detail }}</dd></div>
+      <div><dt>Source</dt><dd>Controle local expurge</dd></div>
+    </dl>
+  </section>
 
-    <section class="drive-instance-sync drive-instance-sync--{{ view.instance_sync.tone }}" aria-labelledby="drive-instance-sync-title" data-testid="drive-instance-sync">
-      <div class="drive-instance-sync-head">
-        <div>
-          <span>{{ view.instance_sync.state }}</span>
-          <h3 id="drive-instance-sync-title">{{ view.instance_sync.title }}</h3>
-          <p>{{ view.instance_sync.summary }}</p>
-        </div>
-        <div class="drive-instance-sync-actions" aria-label="Actions demonstration Drive">
-          <form method="post" action="{{ token_href(view.instance_sync.publish_href) }}">
-            <button type="submit">{{ view.instance_sync.publish_label }}</button>
-          </form>
-          <form method="post" action="{{ token_href(view.instance_sync.recover_href) }}">
-            <button type="submit">{{ view.instance_sync.recover_label }}</button>
-          </form>
-        </div>
+  <section class="drive-instance-sync drive-instance-sync--{{ view.instance_sync.tone }}" aria-labelledby="drive-instance-sync-title" data-testid="drive-instance-sync">
+    <div class="drive-instance-sync-head">
+      <div>
+        <span>{{ view.instance_sync.state }}</span>
+        <h3 id="drive-instance-sync-title">{{ view.instance_sync.title }}</h3>
+        <p>{{ view.instance_sync.summary }}</p>
       </div>
-      <div class="drive-instance-sync-steps" aria-label="Resultat publication recuperation">
-        {% for step in view.instance_sync.steps %}
-        <article class="drive-instance-sync-step drive-instance-sync-step--{{ step.state|lower|replace(' ', '-') }}">
-          <span>{{ step.state }}</span>
-          <strong>{{ step.label }}</strong>
-          <p>{{ step.detail }}</p>
-        </article>
-        {% endfor %}
+      <div class="drive-instance-sync-actions" aria-label="Actions demonstration Drive">
+        <form method="post" action="{{ token_href(view.instance_sync.publish_href) }}">
+          <button type="submit">{{ view.instance_sync.publish_label }}</button>
+        </form>
+        <form method="post" action="{{ token_href(view.instance_sync.recover_href) }}">
+          <button type="submit">{{ view.instance_sync.recover_label }}</button>
+        </form>
       </div>
-      <div class="drive-instance-sync-result">
-        <strong>{{ view.instance_sync.result_label }}</strong>
-        <span>{{ view.instance_sync.share_label }}</span>
-        <span>Etat visible limite a ce poste</span>
-      </div>
-    </section>
-
-    <div class="drive-actions" aria-label="Actions Google Drive finales">
-      {% for action in view.primary_actions %}
-      <button type="button" disabled aria-disabled="true">
-        <strong>{{ action.label }}</strong>
-        <span>{{ action.reason }}</span>
-      </button>
+    </div>
+    <div class="drive-instance-sync-steps" aria-label="Resultat publication recuperation">
+      {% for step in view.instance_sync.steps %}
+      <article class="drive-instance-sync-step drive-instance-sync-step--{{ step.state|lower|replace(' ', '-') }}">
+        <span>{{ step.state }}</span>
+        <strong>{{ step.label }}</strong>
+        <p>{{ step.detail }}</p>
+      </article>
       {% endfor %}
     </div>
-  </div>
-  <aside class="drive-status" aria-label="Statut Drive">
-    <span>{{ view.status.source }}</span>
-    <strong>{{ view.status.label }}</strong>
-    <small>Aucun document clair ni secret n'est envoye dans Drive.</small>
-  </aside>
+    <div class="drive-instance-sync-result">
+      <strong>{{ view.instance_sync.result_label }}</strong>
+      <span>{{ view.instance_sync.share_label }}</span>
+      <span>Etat visible limite a ce poste</span>
+    </div>
+  </section>
 </section>
 
 <section class="drive-readiness" aria-label="Etat MVP Drive">
@@ -147,11 +131,18 @@
     <span class="drive-sync-icon drive-sync-icon--{{ view.sync_status_bar.icon }}" aria-hidden="true">
       {% if view.sync_status_bar.icon == "cloud" %}
       <svg viewBox="0 0 24 24" focusable="false"><path d="M7.6 18.5h9.1a4.1 4.1 0 0 0 .6-8.1 5.7 5.7 0 0 0-10.8-1.6 4.9 4.9 0 0 0 1.1 9.7Z" /></svg>
+      {% elif view.sync_status_bar.icon == "gear" %}
+      <svg viewBox="0 0 24 24" focusable="false"><path d="M12 15.3a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6Z" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1-1.9 3.2-.2-.1a1.7 1.7 0 0 0-1.9-.1 7.6 7.6 0 0 1-1.2.7 1.6 1.6 0 0 0-1 1.5v.3H9.8v-.3a1.6 1.6 0 0 0-1-1.5 7.6 7.6 0 0 1-1.2-.7 1.7 1.7 0 0 0-1.9.1l-.2.1-1.9-3.2.1-.1A1.6 1.6 0 0 0 4 15a7 7 0 0 1 0-1.4 1.6 1.6 0 0 0-.3-1.8l-.1-.1 1.9-3.2.2.1a1.7 1.7 0 0 0 1.9.1c.4-.3.8-.5 1.2-.7a1.6 1.6 0 0 0 1-1.5v-.3h3.8v.3a1.6 1.6 0 0 0 1 1.5c.4.2.8.4 1.2.7a1.7 1.7 0 0 0 1.9-.1l.2-.1 1.9 3.2-.1.1a1.6 1.6 0 0 0-.3 1.8 7 7 0 0 1 0 1.4Z" /></svg>
+      {% elif view.sync_status_bar.icon == "error" %}
+      <svg viewBox="0 0 24 24" focusable="false"><path d="M12 8v5" /><path d="M12 17h.01" /><path d="M10.2 4.4 2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.8 4.4a2 2 0 0 0-3.6 0Z" /></svg>
       {% else %}
       <svg viewBox="0 0 24 24" focusable="false"><path d="M7 7.5a7 7 0 0 1 10.3.2l1.1 1.2" /><path d="M18.5 5.2v3.9h-3.9" /><path d="M17 16.5a7 7 0 0 1-10.3-.2l-1.1-1.2" /><path d="M5.5 18.8v-3.9h3.9" /></svg>
       {% endif %}
     </span>
-    <strong>{{ view.sync_status_bar.label }}</strong>
+    <span class="drive-sync-copy">
+      <small>Drive</small>
+      <strong>{{ view.sync_status_bar.label }}</strong>
+    </span>
   </summary>
   <div class="drive-sync-popover" aria-label="Details etat Drive">
     <strong>Etat Drive detaille</strong>

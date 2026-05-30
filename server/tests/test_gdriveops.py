@@ -4,8 +4,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
-from coproscope.modules import gdriveops
+from coproscope.modules import drive_instance_sync, gdriveops
 
 
 class _FakeRequest:
@@ -207,6 +208,54 @@ class GoogleDriveOAuthBootstrapTests(unittest.TestCase):
         self.assertNotIn(canary, serialized)
         self.assertNotIn(str(root), serialized)
         self.assertNotIn("token_drive_file", serialized)
+
+    def test_prepare_and_upload_accept_instance_cspkg_without_cleartext(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = root / "sync" / "packages" / f"{'a' * 64}.cspkg"
+            token = root / "token_drive_file.json"
+            package.parent.mkdir(parents=True)
+            package.write_text('{"ciphertext":"only"}', encoding="utf-8")
+            token.write_text(json.dumps({"scopes": [gdriveops.DRIVE_FILE_SCOPE]}), encoding="utf-8")
+            service = _FakeDriveService()
+
+            prepared = gdriveops.prepare_encrypted_drive_smoke(sync_root=root / "sync", encrypted_path=package, token_path=token)
+            uploaded = gdriveops.upload_encrypted_drive_smoke(
+                sync_root=root / "sync",
+                encrypted_path=package,
+                token_path=token,
+                drive_service=service,
+                media_factory=lambda path: {"file_name": path.name},
+            )
+
+        serialized = json.dumps({"prepared": prepared, "uploaded": uploaded}, ensure_ascii=True)
+        self.assertEqual(prepared["status"], "prepared")
+        self.assertEqual(prepared["encrypted_candidate"]["sync_contract"]["packet_kind"], "encrypted_instance_package")
+        self.assertTrue(prepared["encrypted_candidate"]["sync_contract"]["remote_name"].endswith(".cspkg"))
+        self.assertEqual(uploaded["status"], "uploaded")
+        self.assertEqual(service.files_api.created[1]["appProperties"]["coproscope_surface"], "encrypted-instance-package")
+        self.assertNotIn(str(root), serialized)
+        self.assertNotIn("token_drive_file", serialized)
+
+    def test_prepare_accepts_cspkg_produced_by_instance_sync(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            token = root / "token_drive_file.json"
+            token.write_text(json.dumps({"scopes": [gdriveops.DRIVE_FILE_SCOPE]}), encoding="utf-8")
+            published = drive_instance_sync.publish_instance_update(
+                instance=SimpleNamespace(instance_id="copro-fictive"),
+                sync_root=root / "sync",
+                local_state_root=root / "poste-a-local",
+            )
+
+            prepared = gdriveops.prepare_encrypted_drive_smoke(sync_root=root / "sync", token_path=token)
+
+        serialized = json.dumps({"published": published, "prepared": prepared}, ensure_ascii=True)
+        self.assertEqual(published["status"], "published")
+        self.assertEqual(prepared["status"], "prepared")
+        self.assertEqual(prepared["encrypted_candidate"]["sync_contract"]["packet_kind"], "encrypted_instance_package")
+        self.assertIn("packages/", prepared["encrypted_candidate"]["relative_path"])
+        self.assertNotIn(str(root), serialized)
 
     def test_prepare_smoke_rejects_invalid_collaboration_parent_hash(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

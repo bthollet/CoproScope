@@ -27,6 +27,8 @@ FORBIDDEN_VISIBLE = (
     "Dossier synchronise",
     "Poste A",
     "Poste B",
+    "Secret local",
+    "autres coproprietaires",
 )
 
 
@@ -63,6 +65,8 @@ class UiDriveMvpTests(unittest.TestCase):
         self.assertIn("styles.css?v=20260530-drive-convergence", response.text)
         self.assertIn("Drive chiffre", visible)
         self.assertIn("Synchronisation Drive chiffree", visible)
+        self.assertIn("Test local seulement", visible)
+        self.assertIn("Etat de ce poste", visible)
         self.assertIn("Parcours publier / recuperer", visible)
         self.assertIn("Publier en demonstration locale", visible)
         self.assertIn("Recuperer en demonstration locale", visible)
@@ -91,7 +95,7 @@ class UiDriveMvpTests(unittest.TestCase):
         recover_visible = _visible_text(unescape(recover_page.text))
         self.assertIn("Recuperation test terminee", recover_visible)
         self.assertIn("Changements verifies et recuperes sur ce poste", recover_visible)
-        self.assertIn("CoproScope ne montre pas l'etat des autres coproprietaires", recover_visible)
+        self.assertIn("L'etat affiche est limite a ce poste", recover_visible)
         for marker in FORBIDDEN_VISIBLE:
             self.assertNotIn(marker, recover_visible)
 
@@ -101,8 +105,10 @@ class UiDriveMvpTests(unittest.TestCase):
         css = (static_root / "styles_part_28.css").read_text(encoding="utf-8")
 
         self.assertIn("styles_part_28.css", manifest)
-        self.assertIn(".drive-hero", css)
+        self.assertIn(".drive-cockpit", css)
         self.assertIn(".drive-sync-bar", css)
+        self.assertIn(".drive-sync-bar--ok", css)
+        self.assertIn(".drive-sync-bar--error", css)
         self.assertIn("@media (max-width: 760px)", css)
 
 

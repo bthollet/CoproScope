@@ -58,7 +58,7 @@ def build_drive_mvp_view(instance: Any, year: int, result: Mapping[str, object] 
     panel = _panel(result)
     return {
         "title": "Synchronisation Drive chiffree",
-        "notice": "Demonstration locale disponible. Aucun envoi Google reel depuis cet ecran.",
+        "notice": "Test local seulement. Aucun envoi Google reel.",
         "status": _page_status(),
         "folder_setup": folder,
         "instance_sync": panel,
@@ -68,23 +68,23 @@ def build_drive_mvp_view(instance: Any, year: int, result: Mapping[str, object] 
             _item("A verifier", "Dossier Google Drive", folder["summary"]),
             _item(str(panel["state"]), "Demonstration locale", str(panel["summary"])),
             _item("A brancher", "Droits Google", "Les droits du dossier seront lus seulement via Google Drive."),
-            _item("Local", "Etat visible", "Cet ecran montre ce poste, pas les postes des autres coproprietaires."),
+            _item("Local", "Etat visible", "Cet ecran montre seulement ce poste."),
         ],
         "flow": [
             _flow("Ce poste", "Prepare le fichier chiffre", "CoproScope chiffre localement avant depot."),
             _flow("Google Drive", "Transporte les fichiers", "Drive ne voit que des fichiers chiffres."),
-            _flow("Tes appareils autorises", "Verifient puis recuperent", "Chaque appareil controle localement avant adoption."),
+            _flow("Ce poste", "Verifie puis recupere", "La copie lisible reste sur ce poste."),
         ],
         "sync_status_bar": _status_bar(panel),
         "local_vs_drive": [
-            {"label": "Reste sur ce poste", "items": ["Secret local", "Copie lisible", "Etat de recuperation", "Cache temporaire"]},
+            {"label": "Reste sur ce poste", "items": ["Cle locale", "Copie lisible", "Etat de recuperation", "Cache temporaire"]},
             {"label": "Peut aller dans Drive", "items": ["Fichiers chiffres", "Index minimal", "Preuves de controle", "Cles publiques"]},
         ],
         "google_layer": {
             "account": "Chaque personne utilise son compte Google pour acceder au dossier partage.",
             "read": "Lecture Drive = recevoir les fichiers chiffres.",
             "write": "Ecriture Drive = deposer des fichiers chiffres.",
-            "limits": "CoproScope ne montre pas l'etat des autres coproprietaires.",
+            "limits": "L'ecran affiche seulement l'etat local de ce poste.",
         },
         "links": [{"label": "Retour coffre et partage", "href": "/coffre/partage"}],
         "shell_model": _shell_model(instance, year),
@@ -158,19 +158,32 @@ def _status_bar(panel: Mapping[str, object]) -> dict[str, object]:
                 "Ce poste publie seulement des fichiers chiffres.",
                 "Ce poste recupere apres verification locale.",
                 "Partage Google non verifie par ce test.",
-                "Aucun etat d'un autre coproprietaire n'est affiche.",
+                "L'etat affiche est limite a ce poste.",
+            ],
+        }
+    if panel.get("tone") == "error":
+        return {
+            "state": "error",
+            "icon": "error",
+            "label": "Drive bloque",
+            "summary": str(panel["summary"]),
+            "aria_label": "Etat Drive bloque, ouvrir les details",
+            "details": [
+                str(panel["result_label"]),
+                str(panel["share_label"]),
+                "La copie lisible reste sur ce poste.",
             ],
         }
     return {
-        "state": "working",
-        "icon": "sync",
-        "label": "Drive a configurer",
+        "state": "setup",
+        "icon": "gear",
+        "label": "A configurer",
         "summary": "Le vrai dossier Drive reste a choisir.",
         "aria_label": "Etat Drive a configurer, ouvrir les details",
         "details": [
             "Aucun dossier Drive reel n'est choisi.",
             "La demonstration locale peut etre lancee sur ce poste.",
-            "Aucun document lisible ni secret n'est envoye dans Drive.",
+            "Aucun document lisible ni cle locale n'est envoye dans Drive.",
         ],
     }
 
@@ -186,7 +199,7 @@ def _page_status() -> dict[str, str]:
     return {
         "tone": "review",
         "label": "Dossier Drive a choisir",
-        "summary": "La page permet de tester le chiffrement local sans annoncer un vrai partage Google.",
+        "summary": "Testez seulement la production et la recuperation de fichiers chiffres sur ce poste.",
         "source": "Controle local expurge",
     }
 
