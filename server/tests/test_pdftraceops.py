@@ -5,11 +5,17 @@ import types
 import unittest
 import hashlib
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from coproscope.modules.annotationops import non_destructive_sidecar_plan, normalize_annotation, validate_annotation
+from coproscope.modules.annotationops import event_payload, non_destructive_sidecar_plan, normalize_annotation, validate_annotation
 from coproscope.modules.pdftraceops import (
+    DOCUMENT_HASH_MATCH,
+    DOCUMENT_HASH_MISMATCH,
     PUBLIC_TEXT_EXCERPT_MASK,
+    PROOF_STATUS_CANDIDATE,
     SOURCE_ENGINE_PYMUPDF,
+    TEXT_STATUS_REVIEW_REQUIRED,
+    TEXT_STATUS_RECOGNIZED,
     build_text_map_from_words,
     build_zone_trace_candidate,
     candidate_to_annotation_row,
@@ -51,13 +57,18 @@ class PdfTraceOpsTests(unittest.TestCase):
         self.assertEqual(candidate.page_label, "1")
         self.assertEqual(candidate.selected_text, "travaux votee")
         self.assertTrue(candidate.selected_text_hash.startswith("sha256:"))
+        self.assertTrue(candidate.anchor_hash.startswith("sha256:"))
+        self.assertEqual(candidate.text_status, TEXT_STATUS_RECOGNIZED)
         self.assertEqual(candidate.sort_index, "00000|0.200000|0.325000")
         position = zotero_position(candidate)
         self.assertEqual(position["pageIndex"], 0)
         self.assertEqual(position["pageLabel"], "1")
         self.assertEqual(position["rects"][0]["x"], 0.325)
         self.assertEqual(position["rects"][1]["width"], 0.15)
-        self.assertEqual(candidate_to_public_dict(candidate)["selected_text_excerpt"], PUBLIC_TEXT_EXCERPT_MASK)
+        payload = candidate_to_public_dict(candidate)
+        self.assertEqual(payload["proof_status"], PROOF_STATUS_CANDIDATE)
+        self.assertEqual(payload["selected_text_excerpt"], PUBLIC_TEXT_EXCERPT_MASK)
+        self.assertEqual(payload["user_notice"]["proof"], "Preuve candidate a verifier")
 
     def test_candidate_becomes_valid_non_destructive_annotation_row(self) -> None:
         text_map = build_text_map_from_words(
@@ -91,6 +102,10 @@ class PdfTraceOpsTests(unittest.TestCase):
         self.assertEqual(annotation.anchor.page, 3)
         self.assertEqual(annotation.anchor.zone.x, 0.1)
         self.assertEqual(annotation.anchor.zone.width, 0.32)
+        self.assertEqual(row["diffusion"], "non_diffusable")
+        self.assertEqual(row["anchor_hash"], candidate.anchor_hash)
+        self.assertEqual(len(row["rects"]), 2)
+        self.assertEqual(event_payload(annotation)["diffusion"], "non_diffusable")
         self.assertFalse(non_destructive_sidecar_plan(annotation)["source_write_allowed"])
 
     def test_private_path_text_is_masked_from_public_payload(self) -> None:
@@ -142,6 +157,59 @@ class PdfTraceOpsTests(unittest.TestCase):
         self.assertIn("extrait masque", payload["selected_text_excerpt"])
         self.assertNotIn("test@example.com", rendered)
         self.assertNotIn("token=abc123", rendered)
+
+    def test_same_phrase_twice_has_same_text_hash_and_distinct_anchor(self) -> None:
+        text_map = build_text_map_from_words(
+            document_ref="DOC-DUPLICATE",
+            document_hash=HASH,
+            pages=[
+                {
+                    "page_index": 0,
+                    "words": [
+                        {"text": "appel", "x": 0.1, "y": 0.1, "width": 0.1, "height": 0.03},
+                        {"text": "fonds", "x": 0.22, "y": 0.1, "width": 0.1, "height": 0.03},
+                        {"text": "appel", "x": 0.1, "y": 0.5, "width": 0.1, "height": 0.03},
+                        {"text": "fonds", "x": 0.22, "y": 0.5, "width": 0.1, "height": 0.03},
+                    ],
+                }
+            ],
+        )
+
+        first, second = find_text_traces(text_map, "appel fonds", max_candidates=2)
+
+        self.assertEqual(first.selected_text_hash, second.selected_text_hash)
+        self.assertNotEqual(first.anchor_hash, second.anchor_hash)
+        self.assertNotEqual(first.sort_index, second.sort_index)
+
+    def test_multiline_selection_keeps_detailed_rectangles_in_sidecar_row(self) -> None:
+        text_map = build_text_map_from_words(
+            document_ref="DOC-MULTILINE",
+            document_hash=HASH,
+            pages=[
+                {
+                    "page_index": 0,
+                    "words": [
+                        {"text": "appel", "x": 0.1, "y": 0.2, "width": 0.1, "height": 0.04},
+                        {"text": "fonds", "x": 0.1, "y": 0.35, "width": 0.1, "height": 0.04},
+                    ],
+                }
+            ],
+        )
+        candidate = find_text_traces(text_map, "appel fonds")[0]
+
+        row = candidate_to_annotation_row(
+            candidate,
+            comment="Relire la selection sur deux lignes.",
+            author_ref="user:cs-demo",
+            created_at="2026-05-31T01:45:00Z",
+            point_ref="POINT-MULTILINE-1",
+            action_ref="ACT-MULTILINE-1",
+            proof_ref="PROOF-MULTILINE-1",
+        )
+
+        self.assertEqual(len(row["rects"]), 2)
+        self.assertEqual(row["zone"]["y"], 0.2)
+        self.assertEqual(row["zone"]["height"], 0.19)
 
     def test_document_ref_rejects_path_or_sensitive_marker(self) -> None:
         for document_ref in (r"C:\Users\Example\demo.pdf", "DOC token=abc123", "raw/DOC-1", "DOC.private", "DOC:raw"):
@@ -198,6 +266,20 @@ class PdfTraceOpsTests(unittest.TestCase):
         self.assertEqual(validate_annotation(annotation), tuple())
         self.assertFalse(non_destructive_sidecar_plan(annotation)["source_write_allowed"])
 
+    def test_zone_trace_clamps_zone_inside_page(self) -> None:
+        candidate = build_zone_trace_candidate(
+            document_ref="DOC-SCAN-CLAMP",
+            document_hash=HASH,
+            page_index=0,
+            zone={"x": 0.9, "y": 0.95, "width": 0.4, "height": 0.2},
+        )
+
+        rect = candidate_to_public_dict(candidate)["zotero_position"]["rects"][0]
+
+        self.assertEqual(rect["x"], 0.9)
+        self.assertEqual(rect["width"], 0.1)
+        self.assertEqual(rect["height"], 0.05)
+
     def test_extract_pdf_text_map_uses_pymupdf_words_without_exposing_source_path(self) -> None:
         original_fitz = sys.modules.get("fitz")
         sys.modules["fitz"] = _fake_fitz_module()
@@ -219,6 +301,47 @@ class PdfTraceOpsTests(unittest.TestCase):
         rendered = str(payload)
         self.assertNotIn(r"C:\Users", rendered)
         self.assertNotIn("raw", rendered.lower())
+
+    def test_extract_pdf_text_map_checks_hash_and_does_not_write_source(self) -> None:
+        original_fitz = sys.modules.get("fitz")
+        sys.modules["fitz"] = _fake_fitz_module()
+        try:
+            with TemporaryDirectory() as tmp:
+                pdf_path = Path(tmp) / "demo.pdf"
+                pdf_path.write_bytes(b"%PDF-1.7 demo")
+                original_bytes = pdf_path.read_bytes()
+                expected_hash = _file_hash(original_bytes)
+
+                text_map = extract_pdf_text_map(pdf_path, document_ref="DOC-DEMO-HASH", document_hash=expected_hash)
+
+                self.assertEqual(text_map.document_hash_status, DOCUMENT_HASH_MATCH)
+                self.assertEqual(pdf_path.read_bytes(), original_bytes)
+        finally:
+            if original_fitz is None:
+                sys.modules.pop("fitz", None)
+            else:
+                sys.modules["fitz"] = original_fitz
+
+    def test_hash_mismatch_marks_candidate_as_review_required(self) -> None:
+        original_fitz = sys.modules.get("fitz")
+        sys.modules["fitz"] = _fake_fitz_module()
+        try:
+            with TemporaryDirectory() as tmp:
+                pdf_path = Path(tmp) / "demo.pdf"
+                pdf_path.write_bytes(b"%PDF-1.7 changed")
+                text_map = extract_pdf_text_map(pdf_path, document_ref="DOC-DEMO-MISMATCH", document_hash=HASH)
+        finally:
+            if original_fitz is None:
+                sys.modules.pop("fitz", None)
+            else:
+                sys.modules["fitz"] = original_fitz
+
+        candidate = find_text_traces(text_map, "Appel")[0]
+        payload = candidate_to_public_dict(candidate)
+
+        self.assertEqual(text_map.document_hash_status, DOCUMENT_HASH_MISMATCH)
+        self.assertEqual(candidate.text_status, TEXT_STATUS_REVIEW_REQUIRED)
+        self.assertIn("fichier a change", payload["selected_text_excerpt"])
 
 
 def _fake_fitz_module() -> types.SimpleNamespace:
@@ -246,7 +369,17 @@ def _fake_fitz_module() -> types.SimpleNamespace:
         def close(self) -> None:
             return None
 
+        def save(self, *_args, **_kwargs) -> None:
+            raise AssertionError("source PDF must not be saved")
+
+        write = save
+        saveIncr = save
+
     return types.SimpleNamespace(open=lambda _path: Document())
+
+
+def _file_hash(content: bytes) -> str:
+    return "sha256:" + hashlib.sha256(content).hexdigest()
 
 
 if __name__ == "__main__":
