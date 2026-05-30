@@ -43,10 +43,10 @@ CoproScope peut servir de support pour:
 La strategie Drive est un point cle pour un partenaire: elle permet d'imaginer
 un usage collectif sans faire de Drive un coffre de documents clairs.
 
-![Strategie cible Drive](../assets/showcase/drive-strategie-cible.svg)
+![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
-Ouvrir l'infographie:
-[strategie cible Drive](../assets/showcase/drive-strategie-cible.svg)
+Ouvrir le visuel:
+[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
 Le cap est lisible:
 

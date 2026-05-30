@@ -11,7 +11,7 @@ Le produit ne remplace ni un syndic, ni une comptabilite officielle, ni une
 validation juridique. Il aide a relier les documents, demandes, decisions,
 depenses, preuves, actions et restitutions partageables.
 
-![Strategie cible Drive CoproScope](./docs/assets/showcase/drive-strategie-cible.svg)
+![Coffre et partage Drive chiffre](./docs/assets/showcase/coffre-partage-drive-chiffre.png)
 
 ## Choisir Son Entree
 
@@ -48,8 +48,6 @@ document -> preuve -> point a verifier -> action -> decision -> memoire -> parta
 Drive n'est pas le cerveau du produit. Dans la cible, CoproScope garde le
 travail clair en local, controle ce qui peut etre prepare, chiffre le paquet,
 puis utilise Drive comme transport vers les personnes autorisees.
-
-![Garde-fous avant partage Drive](./docs/assets/showcase/drive-garde-fous-partage.svg)
 
 Lire la page detaillee:
 [Strategie Drive et confidentialite](./docs/public/confiance-confidentialite.md)

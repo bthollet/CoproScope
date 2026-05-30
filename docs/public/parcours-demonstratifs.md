@@ -18,13 +18,10 @@ Le partage Drive cible doit etre comprehensible par une personne non technique:
 ce qui reste local, ce qui est controle, ce qui est chiffre, ce qui part, et ce
 qui bloque.
 
-![Strategie cible Drive](../assets/showcase/drive-strategie-cible.svg)
+![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
-![Garde-fous avant partage Drive](../assets/showcase/drive-garde-fous-partage.svg)
-
-Ouvrir les infographies:
-[strategie cible Drive](../assets/showcase/drive-strategie-cible.svg) |
-[garde-fous avant partage](../assets/showcase/drive-garde-fous-partage.svg)
+Ouvrir le visuel:
+[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
 Le parcours cible:
 

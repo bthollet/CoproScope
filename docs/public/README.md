@@ -18,10 +18,10 @@ documents. Elle manque souvent d'un chemin clair pour comprendre ce que les
 documents prouvent, ce qu'il manque, quelle action faire maintenant et comment
 partager prudemment.
 
-![Strategie cible Drive](../assets/showcase/drive-strategie-cible.svg)
+![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
-Ouvrir l'infographie:
-[strategie cible Drive](../assets/showcase/drive-strategie-cible.svg)
+Ouvrir le visuel:
+[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
 ## Pour Qui
 
@@ -58,11 +58,6 @@ La cible CoproScope est plus simple a expliquer:
 - le paquet partage est chiffre;
 - Drive transporte le paquet;
 - les personnes autorisees lisent apres verification locale.
-
-![Garde-fous avant partage Drive](../assets/showcase/drive-garde-fous-partage.svg)
-
-Ouvrir l'infographie:
-[garde-fous avant partage](../assets/showcase/drive-garde-fous-partage.svg)
 
 ## Ce Que L'On Peut Voir
 
