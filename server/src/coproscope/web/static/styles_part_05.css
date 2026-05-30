@@ -490,9 +490,11 @@
   .cs-sidebar {
     position: relative;
     width: 100%;
-    max-height: 260px;
+    max-height: none;
     min-height: 0;
-    overflow-x: hidden;
+    overflow: visible;
+    gap: 10px;
+    padding: 10px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, .14);
   }
 
@@ -502,21 +504,44 @@
   }
 
   .cs-sidebar .nav {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 6px;
     width: 100%;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
   }
 
   .cs-nav-section {
-    flex: 0 0 190px;
+    display: contents;
     min-width: 0;
   }
 
+  .cs-nav-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .cs-sidebar .nav a {
-    min-height: 36px;
-    padding-block: 6px;
+    min-width: 0;
+    min-height: 38px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .cs-sidebar .nav a span:not(.cs-nav-icon):not(.cs-nav-count) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .cs-nav-count {
+    display: none;
   }
 
   .cs-share-card {

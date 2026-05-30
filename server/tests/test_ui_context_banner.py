@@ -13,7 +13,7 @@ from coproscope.web.context_banner import build_context_banner
 ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE_DIR = ROOT / "server" / "src" / "coproscope" / "web" / "templates"
 PARTIAL = TEMPLATE_DIR / "_context_banner.html"
-DOC = ROOT / "docs" / "bandeau_contexte_coffre_role_sync.md"
+DOC = ROOT / "docs" / "archive" / "notes_integration" / "bandeau_contexte_coffre_role_sync.md"
 
 
 class UiContextBannerTests(unittest.TestCase):

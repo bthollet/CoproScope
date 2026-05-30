@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% set view = rapprochement %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="cs-comptes-page" aria-labelledby="rappro-title">
+  <header class="cs-page-header cs-comptes-header">
+    <div>
+      <p class="eyebrow">ComptaScope - {{ view.read_model_name }}</p>
+      <h2 id="rappro-title">{{ view.title }}</h2>
+      <p class="lead">{{ view.status.summary }}</p>
+    </div>
+    <div class="cs-header-tools" aria-label="Actions rapprochement">
+      <span class="cs-status-badge">{{ view.status.label }}</span>
+      <a class="cs-primary-action" href="{{ token_href('/comptes') }}">Controle des comptes</a>
+    </div>
+  </header>
+
+  <section class="cs-comptes-kpis" aria-label="Indicateurs rapprochement">
+    {% for metric in view.summary %}
+    <a class="cs-comptes-kpi cs-tone-{{ 'danger' if loop.index == 1 else 'warn' if loop.index in [2, 4] else 'ok' }}" href="#rappro-file">
+      <span>{{ metric.label }}</span>
+      <strong>{{ metric.value }}</strong>
+      <small>{{ metric.detail }}</small>
+    </a>
+    {% endfor %}
+  </section>
+
+  <section class="panel" aria-labelledby="rappro-definitions-title">
+    <div class="panel-head">
+      <h3 id="rappro-definitions-title">Quatre sources a relier</h3>
+      <span>{{ view.notice }}</span>
+    </div>
+    <div class="cs-card-list">
+      {% for definition in view.definitions %}
+      <article class="cs-followup-card">
+        <strong>{{ definition.label }}</strong>
+        <p>{{ definition.detail }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="grid two" id="rappro-file">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>File de validation humaine</h3>
+        <span>{{ view['items']|length }} lignes</span>
+      </div>
+      <div class="cs-card-list" role="list" aria-label="Lignes de rapprochement">
+        {% for item in view['items'] %}
+        <a role="listitem" class="cs-followup-card cs-card-tone-{{ item.tone }}{% if item.id == view.selected_id %} is-selected{% endif %}" href="{{ token_href(item.href) }}">
+          <strong>{{ item.title }}</strong>
+          <small>{{ item.subtitle }}</small>
+          <span class="badge is-review">{{ item.status_label }}</span>
+          <p>{{ item.suggestion.next_action }}</p>
+        </a>
+        {% else %}
+        <article class="cs-followup-card">
+          <strong>Aucune ligne de rapprochement</strong>
+          <p>{{ view.notice }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Detail ligne</h3>
+        <span>{{ view.selected.status_label if view.selected else 'Aucune selection' }}</span>
+      </div>
+      {% if view.selected %}
+      {% set item = view.selected %}
+      <article class="cs-focus-card cs-card-tone-{{ item.tone }}">
+        <p class="eyebrow">{{ item.id }} - {{ item.source_label }}</p>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.subtitle }}</p>
+        <div class="badge-row">
+          <span class="badge is-review">{{ item.suggestion.strength }}</span>
+          <span class="badge is-public">{{ item.diffusion }}</span>
+        </div>
+      </article>
+
+      <div class="cs-card-list">
+        {% for cell in item.cells %}
+        <article class="cs-followup-card cs-card-tone-{{ 'danger' if cell.status == 'missing_source' else 'warn' if cell.status in ['candidate', 'conflict'] else 'ok' }}">
+          <strong>{{ cell.kind }}</strong>
+          <small>{{ cell.status_label }}</small>
+          <p>{{ cell.label }}</p>
+          <p>{{ cell.detail }}</p>
+        </article>
+        {% endfor %}
+      </div>
+
+      <section class="panel" aria-labelledby="rappro-suggestion-title">
+        <div class="panel-head">
+          <h3 id="rappro-suggestion-title">Suggestion et suite</h3>
+          <span>Decision separee</span>
+        </div>
+        <p>{{ item.suggestion.reason or 'Rapprochement a relire.' }}</p>
+        <p><strong>Prochaine action:</strong> {{ item.suggestion.next_action }}</p>
+        {% if item.question_syndic %}
+        <p><strong>Question syndic:</strong> {{ item.question_syndic }}</p>
+        {% endif %}
+        {% if item.copy_text %}
+        <p><strong>Brouillon a copier, aucun envoi automatique:</strong> {{ item.copy_text }}</p>
+        {% endif %}
+      </section>
+
+      <section class="panel" aria-labelledby="rappro-validation-title">
+        <div class="panel-head">
+          <h3 id="rappro-validation-title">Validation humaine</h3>
+          <span>{{ item.validation.decision_label if item.validation else 'A tracer' }}</span>
+        </div>
+        {% if item.validation %}
+        <p>{{ item.validation.decision_label }} - {{ item.validation.created_at }}</p>
+        {% if item.validation.note %}
+        <p>{{ item.validation.note }}</p>
+        {% endif %}
+        {% endif %}
+        <form class="cs-search cs-registry-search" action="{{ token_href('/comptes/rapprochement/validation') }}" method="post">
+          {% if ui_token_param %}
+          <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+          {% endif %}
+          <input type="hidden" name="review_id" value="{{ item.id }}">
+          <label>
+            <span>Note courte</span>
+            <input type="text" name="note" placeholder="Reserve ou piece attendue">
+          </label>
+          <div class="badge-row" role="group" aria-label="Decisions de rapprochement">
+            {% for action in view.actions %}
+            <button class="button-link secondary" type="submit" name="decision" value="{{ action.key }}">{{ action.label }}</button>
+            {% endfor %}
+          </div>
+        </form>
+      </section>
+      {% else %}
+      <p>{{ view.notice }}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="grid two">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Decisions avant AG</h3>
+        <span>Garde-fous</span>
+      </div>
+      <div class="cs-card-list">
+        {% for gate in view.decision_gates %}
+        <article class="cs-followup-card">
+          <strong>{{ gate.label }}</strong>
+          <p>{{ gate.detail }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Diffusion</h3>
+        <span>Sources derivees</span>
+      </div>
+      <div class="cs-card-list">
+        {% for item in view.boundaries %}
+        <article class="cs-followup-card">
+          <strong>{{ item.label }}</strong>
+          <p>{{ item.detail }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="rappro-version-title">
+    <div class="panel-head">
+      <h3 id="rappro-version-title">Journal de versions</h3>
+      <span>Trace locale</span>
+    </div>
+    <ul class="compact-list">
+      {% for event in view.version_log %}
+      <li>{{ event }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+</section>
+{% endblock %}

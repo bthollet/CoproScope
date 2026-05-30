@@ -2,7 +2,8 @@
 param(
     [switch]$Full,
     [switch]$Ui,
-    [switch]$Security
+    [switch]$Security,
+    [switch]$Orchestration
 )
 
 Set-StrictMode -Version Latest
@@ -56,6 +57,22 @@ if (-not (Test-Path -LiteralPath $python)) {
 
 Write-Host "Repository: $repoRoot"
 Write-Host "Python:     $python"
+
+if ($Orchestration) {
+    Invoke-Step "Orchestration supervisor preview" {
+        Invoke-Native -FilePath $python -Arguments @(
+            ".\tools\orchestration_supervisor.py",
+            "--emit-recovery-prompt"
+        )
+    }
+
+    Invoke-Step "Orchestration watchdog preview" {
+        Invoke-Native -FilePath $python -Arguments @(
+            ".\tools\orchestration_watchdog.py",
+            "--emit-prompt"
+        )
+    }
+}
 
 Invoke-Step "Git status" {
     $statusLines = @(git status --short)
@@ -138,6 +155,22 @@ if ($Security) {
         finally {
             Pop-Location
         }
+    }
+}
+
+if ($Orchestration) {
+    Invoke-Step "Orchestration supervisor" {
+        Invoke-Native -FilePath $python -Arguments @(
+            ".\tools\orchestration_supervisor.py",
+            "--strict"
+        )
+    }
+
+    Invoke-Step "Orchestration watchdog" {
+        Invoke-Native -FilePath $python -Arguments @(
+            ".\tools\orchestration_watchdog.py",
+            "--strict"
+        )
     }
 }
 

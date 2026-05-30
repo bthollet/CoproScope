@@ -120,7 +120,186 @@
   background: #fbfcff;
 }
 
+.instance-switch-page {
+  min-height: 100vh;
+  background: #f4f7fb;
+}
+
+.instance-switch-topbar {
+  align-items: center;
+}
+
+.instance-switch-main {
+  display: grid;
+  gap: 18px;
+  width: min(1080px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0;
+}
+
+.instance-switch-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.instance-choice {
+  color: inherit;
+}
+
+.instance-choice.active {
+  border-color: var(--accent);
+  background: #f0fdf8;
+}
+
+.instance-switch-link {
+  border: 1px solid #cfd8e5;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #ffffff;
+  color: #1d5fd8;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-trust-badges,
+.cs-workflow-grid,
+.cs-docops-track {
+  display: grid;
+  gap: 10px;
+}
+
+.cs-trust-badges {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-top: 14px;
+}
+
+.cs-trust-badges span {
+  border: 1px solid #cfd8e5;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #ffffff;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.cs-drop-form {
+  align-items: stretch;
+}
+
+.cs-dropzone {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-height: 150px;
+  align-content: center;
+  justify-items: center;
+  border: 2px dashed #7aa7e8;
+  border-radius: 8px;
+  padding: 24px;
+  background: #f7fbff;
+  color: #101828;
+  text-align: center;
+  cursor: pointer;
+}
+
+.cs-dropzone:focus-within,
+.cs-dropzone:hover {
+  border-color: #1d5fd8;
+  background: #eef6ff;
+}
+
+.cs-dropzone-icon {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 999px;
+  background: #1d5fd8;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.cs-dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cs-upload-help {
+  color: #475467;
+}
+
+.cs-workflow-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.cs-workflow-step,
+.cs-docops-track-step {
+  min-width: 0;
+  border: 1px solid #d7e0ec;
+  border-left: 4px solid #1d5fd8;
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.cs-workflow-step strong {
+  display: block;
+  color: #101828;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.cs-workflow-step span,
+.cs-docops-track-step span {
+  display: block;
+  color: #101828;
+  font-weight: 760;
+}
+
+.cs-workflow-step small,
+.cs-docops-track-step strong {
+  display: block;
+  margin-top: 4px;
+  color: #475467;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.cs-docops-track {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cs-docops-track-step.is-done,
+.cs-docops-track-step.is-idle {
+  border-left-color: #13976b;
+  background: #f0fdf8;
+}
+
+.cs-docops-track-step.is-current {
+  border-left-color: #f28705;
+  background: #fffaf2;
+}
+
+.cs-docops-track-step.is-blocked {
+  border-left-color: #df2f24;
+  background: #fff7f5;
+}
+
 @media (max-width: 1080px) {
+  .cs-workflow-grid,
+  .cs-docops-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .cs-reprise-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -135,6 +314,17 @@
 }
 
 @media (max-width: 700px) {
+  .cs-trust-badges,
+  .cs-workflow-grid,
+  .cs-docops-track {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-dropzone {
+    min-height: 132px;
+    padding: 18px;
+  }
+
   .cs-reprise-hero {
     flex-direction: column;
   }

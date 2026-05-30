@@ -11,6 +11,12 @@ Une copropriete manipule des documents tres heterogenes :
 - factures et devis parfois diffusables apres retraitement ;
 - releves bancaires, impayes, contentieux, donnees personnelles ou secrets a proteger.
 
+La doctrine produit est l'ouverture par defaut aux coproprietaires. Un document
+n'est pas sensible parce qu'il est technique, volumineux, lie a des travaux ou
+difficile a lire. Il devient restreint seulement si une interdiction est etayee
+ou si un blocage est justifie par le conseil syndical, par exemple pour une
+negociation commerciale en cours ou un contentieux.
+
 CoproScope doit donc distinguer :
 
 1. le document brut ;
@@ -93,11 +99,11 @@ La configuration par defaut introduit des colleges indicatifs, par exemple :
 | College | Idee |
 |---|---|
 | `C1_Occupants_Usagers` | Informations utiles aux occupants/usagers. |
-| `C2_Coproprietaires` | Pieces communicables ou utiles aux coproprietaires. |
-| `C4_Conseil_Syndical` | Travail du conseil syndical. |
+| `C2_Coproprietaires` | Pieces communicables aux coproprietaires, college par defaut. |
+| `C4_Conseil_Syndical` | Blocage ou travail du conseil syndical justifie et trace. |
 | `C8_Restreint_Critique` | Pieces sensibles : contentieux, impayes, banque, donnees critiques. |
 
-Ces colleges ne remplacent pas une validation juridique. Ils aident a rendre visible le risque avant diffusion.
+Ces colleges ne remplacent pas une validation juridique. Ils aident a rendre visible le risque avant diffusion. La prudence seule ne suffit pas a bloquer une piece: il faut un signal ou une justification.
 
 ## Dans le pipeline
 

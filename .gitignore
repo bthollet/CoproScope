@@ -11,6 +11,9 @@ Thumbs.db
 **/.venv/
 server/.venv/
 server/.tmp-test/
+server/.tmp-ui-*.log
+*.log
+*.pid
 *.egg-info/
 examples/synthetic_copro/.env.local
 examples/synthetic_copro/logs/
@@ -36,3 +39,7 @@ token.json
 **/oauth/*.json
 **/.oauth/
 **/.secrets/
+
+# Local reprise dossiers may contain private-instance probes or raw working
+# traces. Keep them local unless a specific file is sanitized and moved out.
+docs/dossiers_p0_reprise_2026-05-28/

@@ -40,6 +40,9 @@
 {% set accounting_guide = model.accounting.guide if model.accounting is defined and model.accounting.guide is defined else {} %}
 {% set accounting_missing_items = accounting_guide.p1|default([], true) %}
 {% set accounting_fallback_active = not missing_items and accounting_missing_items %}
+{% set example_missing_items = model.ux.pieces.empty_state.examples|default([], true) if model.ux is defined and model.ux.pieces is defined and model.ux.pieces.empty_state is defined else [] %}
+{% set fallback_example = example_missing_items[0]|default({}, true) %}
+{% set fallback_example_id = fallback_example.id|default('UX-PIECE-COMP-C2B3F479', true) %}
 {% set display_missing_items = missing_items if missing_items else accounting_missing_items %}
 {% set selected_missing = missing_view.selected|default(display_missing_items[0]|default({}, true), true) %}
 {% set missing_total = missing_summary.total|default(display_missing_items|length, true) %}
@@ -58,12 +61,13 @@
       <p>Je comprends quelle piece manque, pourquoi elle compte et comment la demander.</p>
     </div>
     <div class="cs-reprise-actions" aria-label="Actions pieces manquantes">
+      <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance?scope=pieces&piece_detail=' ~ fallback_example_id) }}">Creer demandes syndic</a>
       {% if display_missing_items %}
-      <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance?scope=pieces') }}">Creer demandes syndic</a>
       <a class="cs-reprise-secondary" href="{{ token_href('/pieces?proof=missing&diffusion=prive-fictif') }}">Voir pieces privees</a>
       {% else %}
       <a class="cs-reprise-secondary" href="{{ token_href('/pieces') }}">Voir toutes les pieces</a>
       {% endif %}
+      <a class="cs-reprise-secondary" href="{{ token_href('/depot?intent=proof&status=reponse-recue&return=pieces&piece_detail=' ~ fallback_example_id) }}">Ajouter reponse recue</a>
       <a class="cs-reprise-secondary" href="{{ token_href('/depot?intent=proof&return=pieces') }}">Ajouter depuis le depot</a>
     </div>
   </header>
@@ -248,6 +252,9 @@
     <span class="sr-only">Aucune piece manquante affichee pour le moment</span>
     <p>La projection locale ne remonte pas encore de piece a demander. Vous pouvez relire toutes les pieces ou revenir au cockpit.</p>
     <div class="cs-reprise-actions">
+      <a class="cs-reprise-primary" href="{{ token_href('/demandes/relance?scope=pieces&piece_detail=' ~ fallback_example_id) }}">Creer demandes syndic</a>
+      <a class="cs-reprise-secondary" href="{{ token_href('/depot?intent=proof&status=reponse-recue&return=pieces&piece_detail=' ~ fallback_example_id) }}">Ajouter reponse recue</a>
+      <a class="cs-reprise-secondary" href="{{ token_href('/pieces/' ~ fallback_example_id) }}">Detail piece/preuve</a>
       <a class="cs-reprise-secondary" href="{{ token_href('/pieces') }}">Voir toutes les pieces</a>
       <a class="cs-reprise-primary" href="{{ token_href('/') }}">Retour au cockpit</a>
     </div>

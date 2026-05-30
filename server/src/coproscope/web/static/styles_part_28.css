@@ -1,0 +1,337 @@
+.drive-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(240px, 0.7fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.drive-hero,
+.drive-status,
+.drive-readiness article,
+.drive-flow article,
+.drive-google article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 1rem;
+}
+
+.drive-actions,
+.drive-instance-sync-steps,
+.drive-folder-checks,
+.drive-readiness,
+.drive-flow,
+.drive-google {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.drive-hero > *,
+.drive-actions > *,
+.drive-instance-sync-steps > *,
+.drive-folder-checks > *,
+.drive-readiness > *,
+.drive-flow > *,
+.drive-google > * {
+  min-width: 0;
+}
+
+.drive-folder-card,
+.drive-instance-sync {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.drive-folder-head,
+.drive-instance-sync-head {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.drive-folder-head h3,
+.drive-folder-head p,
+.drive-instance-sync-head h3,
+.drive-instance-sync-head p {
+  margin: 0.15rem 0 0;
+}
+
+.drive-folder-head > strong {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.drive-folder-facts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.drive-folder-facts div {
+  display: grid;
+  gap: 0.15rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.drive-folder-facts dd {
+  margin: 0;
+}
+
+.drive-folder-checks,
+.drive-instance-sync-steps,
+.drive-actions {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.drive-folder-checks article,
+.drive-instance-sync-step {
+  display: grid;
+  gap: 0.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+}
+
+.drive-instance-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.drive-instance-sync-actions form {
+  margin: 0;
+}
+
+.drive-instance-sync-actions button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: #13705e;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.drive-actions button {
+  width: 100%;
+  min-height: 88px;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--muted-surface);
+  color: var(--text);
+  overflow-wrap: anywhere;
+  text-align: left;
+  cursor: not-allowed;
+}
+
+.drive-instance-sync-result {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  border: 1px solid rgba(19, 112, 94, 0.25);
+  border-radius: 8px;
+  padding: 0.65rem;
+  background: #f1fbf7;
+}
+
+.drive-instance-sync-step span,
+.drive-instance-sync-result strong {
+  color: #1e7a4b;
+  font-weight: 800;
+}
+
+.drive-instance-sync-step--bloque span {
+  color: #b53535;
+}
+
+.drive-instance-sync-step--a-lancer span {
+  color: #925a0a;
+}
+
+.drive-actions span,
+.drive-folder-card p,
+.drive-folder-card dd,
+.drive-folder-card span,
+.drive-instance-sync p,
+.drive-instance-sync span,
+.drive-status span,
+.drive-status small,
+.drive-readiness span,
+.drive-readiness p,
+.drive-flow span,
+.drive-flow p,
+.drive-google p {
+  color: var(--muted);
+}
+
+.drive-status {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+}
+
+.drive-status strong {
+  font-size: 1.2rem;
+}
+
+.drive-readiness {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  margin-bottom: 1rem;
+}
+
+.drive-flow {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.drive-google {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.drive-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.drive-sync-bar {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 24;
+  max-width: min(420px, calc(100vw - 28px));
+}
+
+.drive-sync-bar summary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem 0.45rem 0.55rem;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(16, 24, 40, 0.18);
+  cursor: pointer;
+  list-style: none;
+}
+
+.drive-sync-bar summary::-webkit-details-marker {
+  display: none;
+}
+
+.drive-sync-icon {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 999px;
+}
+
+.drive-sync-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.drive-sync-bar--ok .drive-sync-icon {
+  background: #e7f7ee;
+  color: #1e7a4b;
+}
+
+.drive-sync-bar--working .drive-sync-icon {
+  background: #fff4dc;
+  color: #925a0a;
+}
+
+.drive-sync-bar--working .drive-sync-icon svg {
+  animation: drive-sync-spin 1.6s linear infinite;
+}
+
+.drive-sync-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: grid;
+  width: min(420px, calc(100vw - 28px));
+  gap: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(16, 24, 40, 0.2);
+}
+
+.drive-sync-popover p,
+.drive-sync-popover ul {
+  margin: 0;
+  color: var(--muted);
+}
+
+.drive-sync-spacer {
+  min-height: 64px;
+}
+
+@keyframes drive-sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .drive-hero,
+  .drive-folder-head,
+  .drive-instance-sync-head,
+  .drive-instance-sync-actions,
+  .drive-instance-sync-steps,
+  .drive-instance-sync-result,
+  .drive-actions,
+  .drive-folder-checks,
+  .drive-readiness,
+  .drive-flow,
+  .drive-google {
+    grid-template-columns: 1fr;
+  }
+
+  .drive-instance-sync-actions {
+    justify-content: stretch;
+  }
+
+  .drive-instance-sync-actions button {
+    width: 100%;
+  }
+
+  .drive-folder-head > strong {
+    text-align: left;
+  }
+
+  .drive-sync-bar {
+    right: 10px;
+    bottom: 8px;
+    max-width: min(360px, calc(100vw - 20px));
+  }
+
+  .drive-sync-bar summary strong {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}

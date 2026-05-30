@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
+  <title id="title">Blueprint file de qualification des messages recus</title>
+  <desc id="desc">Maquette UX decisionnelle pour qualifier des messages recus de coproprietaires avant toute suite humaine.</desc>
+  <rect width="1600" height="980" fill="#f6f7f4"/>
+  <rect x="40" y="32" width="1520" height="86" rx="10" fill="#263238"/>
+  <text x="72" y="72" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#ffffff">Messages recus des coproprietaires</text>
+  <text x="72" y="100" font-family="Arial, sans-serif" font-size="18" fill="#d7e2df">Classez les messages, gardez la preuve, preparez une suite. Rien n'est envoye sans validation.</text>
+  <g font-family="Arial, sans-serif" font-size="16" font-weight="700">
+    <rect x="1020" y="52" width="132" height="34" rx="17" fill="#e6a33a"/><text x="1042" y="75" fill="#263238">A qualifier</text>
+    <rect x="1164" y="52" width="148" height="34" rx="17" fill="#d95f59"/><text x="1186" y="75" fill="#ffffff">Urgent a verifier</text>
+    <rect x="1326" y="52" width="98" height="34" rx="17" fill="#5b6f95"/><text x="1348" y="75" fill="#ffffff">Sensible</text>
+    <rect x="1436" y="52" width="92" height="34" rx="17" fill="#6aa36f"/><text x="1455" y="75" fill="#ffffff">En attente</text>
+  </g>
+  <rect x="40" y="148" width="342" height="788" rx="12" fill="#ffffff" stroke="#cfd8d3" stroke-width="2"/>
+  <text x="68" y="188" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#263238">File de travail</text>
+  <text x="68" y="216" font-family="Arial, sans-serif" font-size="15" fill="#60706a">Groupee par decision a prendre</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="68" y="246" width="286" height="112" rx="10" fill="#fff4df" stroke="#e6a33a" stroke-width="2"/>
+    <text x="88" y="278" font-size="17" font-weight="700" fill="#263238">A traiter maintenant</text>
+    <text x="88" y="306" font-size="15" fill="#47544f">Fuite signalee - photo recue</text>
+    <text x="88" y="332" font-size="14" fill="#7a4f00">Pourquoi: risque degat des eaux</text>
+    <rect x="68" y="374" width="286" height="100" rx="10" fill="#eef4fb" stroke="#5b6f95" stroke-width="2"/>
+    <text x="88" y="406" font-size="17" font-weight="700" fill="#263238">A relire avant diffusion</text>
+    <text x="88" y="434" font-size="15" fill="#47544f">Message nominatif conflictuel</text>
+    <text x="88" y="458" font-size="14" fill="#4d5e81">Original restreint</text>
+    <rect x="68" y="490" width="286" height="100" rx="10" fill="#f3f7ee" stroke="#6aa36f" stroke-width="2"/>
+    <text x="88" y="522" font-size="17" font-weight="700" fill="#263238">En attente de piece</text>
+    <text x="88" y="550" font-size="15" fill="#47544f">Demande charges ascenseur</text>
+    <text x="88" y="574" font-size="14" fill="#3f7047">Preuve manquante</text>
+    <rect x="68" y="606" width="286" height="100" rx="10" fill="#f8eeee" stroke="#d95f59" stroke-width="2"/>
+    <text x="88" y="638" font-size="17" font-weight="700" fill="#263238">Non rattache</text>
+    <text x="88" y="666" font-size="15" fill="#47544f">Reponse syndic recue</text>
+    <text x="88" y="690" font-size="14" fill="#93413c">Lier a la demande initiale</text>
+  </g>
+  <rect x="412" y="148" width="580" height="788" rx="12" fill="#ffffff" stroke="#cfd8d3" stroke-width="2"/>
+  <text x="444" y="188" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#263238">Comprendre et classer</text>
+  <text x="444" y="218" font-family="Arial, sans-serif" font-size="16" fill="#60706a">Cinq decisions visibles avant toute action</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="444" y="252" width="516" height="76" rx="10" fill="#f6f7f4" stroke="#d7ddd9"/>
+    <text x="468" y="280" font-size="16" font-weight="700" fill="#263238">1. Pourquoi maintenant ?</text>
+    <text x="468" y="306" font-size="15" fill="#47544f">Risque concret, echeance, incident ou simple classement.</text>
+    <rect x="444" y="348" width="516" height="76" rx="10" fill="#f6f7f4" stroke="#d7ddd9"/>
+    <text x="468" y="376" font-size="16" font-weight="700" fill="#263238">2. Quelle nature ?</text>
+    <text x="468" y="402" font-size="15" fill="#47544f">Question, signalement, piece recue, reponse syndic, sensible.</text>
+    <rect x="444" y="444" width="516" height="76" rx="10" fill="#f6f7f4" stroke="#d7ddd9"/>
+    <text x="468" y="472" font-size="16" font-weight="700" fill="#263238">3. Quelle preuve existe ?</text>
+    <text x="468" y="498" font-size="15" fill="#47544f">Piece recue, preuve utilisable, trace de diligence ou manque.</text>
+    <rect x="444" y="540" width="516" height="76" rx="10" fill="#f6f7f4" stroke="#d7ddd9"/>
+    <text x="468" y="568" font-size="16" font-weight="700" fill="#263238">4. Qui peut voir ?</text>
+    <text x="468" y="594" font-size="15" fill="#47544f">Interne CS, syndic, synthese diffusable, pieces, restreint.</text>
+    <rect x="444" y="636" width="516" height="76" rx="10" fill="#f6f7f4" stroke="#d7ddd9"/>
+    <text x="468" y="664" font-size="16" font-weight="700" fill="#263238">5. Quelle suite humaine ?</text>
+    <text x="468" y="690" font-size="15" fill="#47544f">Choisir la suite, lier dossier, demander piece, preparer reponse.</text>
+    <rect x="444" y="754" width="244" height="58" rx="8" fill="#263238"/>
+    <text x="486" y="791" font-size="17" font-weight="700" fill="#ffffff">Choisir la suite</text>
+    <rect x="708" y="754" width="252" height="58" rx="8" fill="#ffffff" stroke="#263238" stroke-width="2"/>
+    <text x="756" y="791" font-size="17" font-weight="700" fill="#263238">Lier a un dossier</text>
+  </g>
+  <rect x="1022" y="148" width="538" height="788" rx="12" fill="#ffffff" stroke="#cfd8d3" stroke-width="2"/>
+  <text x="1054" y="188" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#263238">Suite humaine</text>
+  <text x="1054" y="218" font-family="Arial, sans-serif" font-size="16" fill="#60706a">Aucun envoi ni diffusion automatique</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="1054" y="252" width="472" height="88" rx="10" fill="#f8eeee" stroke="#d95f59" stroke-width="2"/>
+    <text x="1080" y="282" font-size="17" font-weight="700" fill="#263238">Original restreint</text>
+    <text x="1080" y="310" font-size="15" fill="#47544f">Faire une synthese neutre avant tout partage.</text>
+    <rect x="1054" y="364" width="472" height="88" rx="10" fill="#fff4df" stroke="#e6a33a" stroke-width="2"/>
+    <text x="1080" y="394" font-size="17" font-weight="700" fill="#263238">Brouillon non envoye</text>
+    <text x="1080" y="422" font-size="15" fill="#47544f">Statut attendu: a relire, valide hors outil, trace ajoutee.</text>
+    <rect x="1054" y="476" width="472" height="88" rx="10" fill="#eef4fb" stroke="#5b6f95" stroke-width="2"/>
+    <text x="1080" y="506" font-size="17" font-weight="700" fill="#263238">A transmettre au syndic</text>
+    <text x="1080" y="534" font-size="15" fill="#47544f">Si engagement fournisseur, assurance, contentieux ou LRAR.</text>
+    <rect x="1054" y="588" width="472" height="88" rx="10" fill="#f3f7ee" stroke="#6aa36f" stroke-width="2"/>
+    <text x="1080" y="618" font-size="17" font-weight="700" fill="#263238">Classer avec motif</text>
+    <text x="1080" y="646" font-size="15" fill="#47544f">Sans suite, hors mandat, preuve manquante, reponse notee.</text>
+    <line x1="1054" y1="724" x2="1526" y2="724" stroke="#cfd8d3" stroke-width="2"/>
+    <text x="1054" y="762" font-size="18" font-weight="700" fill="#263238">Journal</text>
+    <text x="1054" y="792" font-size="15" fill="#47544f">Message recu -> qualifie -> rattache -> suite -> cloture</text>
+  </g>
+  <text x="52" y="960" font-family="Arial, sans-serif" font-size="14" fill="#60706a">Donnees fictives. Blueprint de decision UX/UI, pas une interface livree.</text>
+</svg>

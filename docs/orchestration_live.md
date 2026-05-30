@@ -141,7 +141,7 @@ Exports/API a surveiller:
 
 ```powershell
 cd C:\Users\brice\CoproScope\coproscope
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
 
 Le terminal qui lance cette commande est la preuve serveur visible. Le navigateur
@@ -197,5 +197,5 @@ No-go si:
 ## Message de lancement pour agents
 
 ```text
-Travailler dans C:\Users\brice\CoproScope\coproscope. Commencer par git status --short. Ne reverter aucune modification d'autrui. Declarer ownership avant edition. Base stable documentee: suite complete 279 tests OK, aucune validation navigateur a inventer. Choisir un lot terminable depuis docs/agent_backlog_continu.md, respecter son ownership, garder les limites coffre/sync/export visibles, et terminer avec fichiers modifies, tests, limites et go/no-go integration.
+Travailler dans C:\Users\brice\CoproScope\coproscope. Commencer par git status --short. Ne reverter aucune modification d'autrui. Declarer ownership avant edition. Base stable documentee: suite complete 279 tests OK, aucune validation navigateur a inventer. Choisir un lot terminable depuis docs/archive/roadmaps_anciennes/agent_backlog_continu.md, respecter son ownership, garder les limites coffre/sync/export visibles, et terminer avec fichiers modifies, tests, limites et go/no-go integration.
 ```

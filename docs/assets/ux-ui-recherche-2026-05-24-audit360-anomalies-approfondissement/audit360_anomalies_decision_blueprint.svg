@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" role="img" aria-labelledby="title desc">
+  <title id="title">CoproScope Point a verifier - decision humaine</title>
+  <desc id="desc">Blueprint de l'ecran qui relie un nouveau document, un impact propose, la validation humaine et la timeline probatoire.</desc>
+  <rect width="1440" height="960" fill="#f5f6f7"/>
+  <rect x="48" y="36" width="1344" height="80" rx="8" fill="#ffffff" stroke="#d8dde3"/>
+  <text x="72" y="84" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#20242a">Point a verifier</text>
+  <rect x="330" y="58" width="250" height="34" rx="17" fill="#fff3cd" stroke="#d6a700"/>
+  <text x="350" y="81" font-family="Arial, sans-serif" font-size="15" fill="#6a4a00">Validation humaine requise</text>
+  <text x="1058" y="82" font-family="Arial, sans-serif" font-size="14" fill="#68707a">Donnees synthetiques - pas de piece brute</text>
+
+  <rect x="48" y="144" width="285" height="600" rx="8" fill="#ffffff" stroke="#d8dde3"/>
+  <text x="72" y="180" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#20242a">Points a verifier</text>
+  <rect x="72" y="210" width="238" height="92" rx="8" fill="#fff9e8" stroke="#e0b84a"/>
+  <text x="92" y="238" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Preuve attendue</text>
+  <text x="92" y="264" font-family="Arial, sans-serif" font-size="13" fill="#555d66">Facture liee a une ecriture</text>
+  <text x="92" y="286" font-family="Arial, sans-serif" font-size="12" fill="#876700">A traiter</text>
+  <rect x="72" y="324" width="238" height="92" rx="8" fill="#eef8f7" stroke="#6eb8b0"/>
+  <text x="92" y="352" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Document utile recu</text>
+  <text x="92" y="378" font-family="Arial, sans-serif" font-size="13" fill="#555d66">Peut aider, a verifier</text>
+  <text x="92" y="400" font-family="Arial, sans-serif" font-size="12" fill="#0f6f68">A confirmer</text>
+  <rect x="72" y="438" width="238" height="92" rx="8" fill="#fff0f0" stroke="#d87777"/>
+  <text x="92" y="466" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Documents contradictoires</text>
+  <text x="92" y="492" font-family="Arial, sans-serif" font-size="13" fill="#555d66">Deux sources divergent</text>
+  <text x="92" y="514" font-family="Arial, sans-serif" font-size="12" fill="#9a2e2e">Revue humaine</text>
+
+  <rect x="365" y="144" width="565" height="600" rx="8" fill="#ffffff" stroke="#d8dde3"/>
+  <text x="393" y="184" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#20242a">Fiche pivot</text>
+  <rect x="393" y="210" width="228" height="34" rx="17" fill="#eef1f5"/>
+  <text x="413" y="233" font-family="Arial, sans-serif" font-size="14" fill="#38414a">Etat actuel: preuve attendue</text>
+  <text x="393" y="292" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#20242a">Pourquoi cela compte</text>
+  <text x="393" y="320" font-family="Arial, sans-serif" font-size="14" fill="#555d66">Ce point peut changer le suivi CS, une demande syndic ou une reserve.</text>
+  <text x="393" y="376" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#20242a">Ce que l'on sait</text>
+  <text x="393" y="404" font-family="Arial, sans-serif" font-size="14" fill="#555d66">Signal detecte, famille qualifiee, exercice et perimetre a confirmer.</text>
+  <text x="393" y="460" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#20242a">Ce qui manque</text>
+  <text x="393" y="488" font-family="Arial, sans-serif" font-size="14" fill="#555d66">Preuve de quoi, source officielle, limite, validateur et reserve.</text>
+  <rect x="393" y="548" width="232" height="44" rx="8" fill="#2f6fdf"/>
+  <text x="421" y="576" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Demander une piece</text>
+  <rect x="644" y="548" width="220" height="44" rx="8" fill="#ffffff" stroke="#b8c0ca"/>
+  <text x="671" y="576" font-family="Arial, sans-serif" font-size="15" fill="#2f3842">Soumettre au syndic</text>
+
+  <rect x="960" y="144" width="432" height="600" rx="8" fill="#ffffff" stroke="#d8dde3"/>
+  <text x="988" y="184" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#20242a">Nouveau document recu</text>
+  <rect x="988" y="212" width="356" height="72" rx="8" fill="#eef8f7" stroke="#6eb8b0"/>
+  <text x="1010" y="240" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Ce document change quoi ?</text>
+  <text x="1010" y="264" font-family="Arial, sans-serif" font-size="13" fill="#0f6f68">Impact propose: preuve candidate recue</text>
+  <text x="988" y="330" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Preuve de quoi ?</text>
+  <rect x="988" y="348" width="356" height="40" rx="6" fill="#f8fafc" stroke="#d8dde3"/>
+  <text x="1006" y="373" font-family="Arial, sans-serif" font-size="13" fill="#555d66">A renseigner avant validation</text>
+  <text x="988" y="422" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Limite constatee</text>
+  <rect x="988" y="440" width="356" height="40" rx="6" fill="#f8fafc" stroke="#d8dde3"/>
+  <text x="1006" y="465" font-family="Arial, sans-serif" font-size="13" fill="#555d66">Preuve partielle, source ou periode</text>
+  <text x="988" y="514" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Validateur humain</text>
+  <rect x="988" y="532" width="356" height="40" rx="6" fill="#f8fafc" stroke="#d8dde3"/>
+  <text x="1006" y="557" font-family="Arial, sans-serif" font-size="13" fill="#555d66">Referent CS, syndic, AG ou revue restreinte</text>
+  <rect x="988" y="612" width="158" height="44" rx="8" fill="#2f6fdf"/>
+  <text x="1010" y="640" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Valider avec reserve</text>
+  <rect x="1160" y="612" width="94" height="44" rx="8" fill="#ffffff" stroke="#b8c0ca"/>
+  <text x="1180" y="640" font-family="Arial, sans-serif" font-size="14" fill="#2f3842">Corriger</text>
+  <rect x="1266" y="612" width="78" height="44" rx="8" fill="#ffffff" stroke="#b8c0ca"/>
+  <text x="1284" y="640" font-family="Arial, sans-serif" font-size="14" fill="#2f3842">Refuser</text>
+
+  <rect x="48" y="784" width="1344" height="132" rx="8" fill="#ffffff" stroke="#d8dde3"/>
+  <text x="72" y="822" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#20242a">Timeline probatoire courte</text>
+  <line x1="120" y1="868" x2="1280" y2="868" stroke="#c7ced6" stroke-width="3"/>
+  <g font-family="Arial, sans-serif" font-size="13" fill="#20242a">
+    <circle cx="160" cy="868" r="13" fill="#eef1f5" stroke="#7c8793"/><text x="125" y="902">Signal detecte</text>
+    <circle cx="420" cy="868" r="13" fill="#fff3cd" stroke="#d6a700"/><text x="374" y="902">Preuve attendue</text>
+    <circle cx="680" cy="868" r="13" fill="#eef8f7" stroke="#6eb8b0"/><text x="640" y="902">Document recu</text>
+    <circle cx="940" cy="868" r="13" fill="#e8f0ff" stroke="#2f6fdf"/><text x="890" y="902">Decision humaine</text>
+    <circle cx="1200" cy="868" r="13" fill="#edf7ed" stroke="#5b9d5b"/><text x="1175" y="902">Suivi</text>
+  </g>
+</svg>

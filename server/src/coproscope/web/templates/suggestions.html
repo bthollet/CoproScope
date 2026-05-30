@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% set view = suggestions %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="sug-hero" aria-labelledby="sug-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="sug-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.headline }}. {{ view.status.summary }}</p>
+    <div class="sug-hero__actions">
+      <a class="button-link" href="#suggestions-file">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#suggestion-actions">Voir les suites</a>
+    </div>
+  </div>
+  <aside class="sug-status" aria-label="Statut Suggestions utiles">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucune creation depuis cette page</small>
+  </aside>
+</section>
+
+<section class="sug-summary" aria-label="Resume des suggestions">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="sug-definitions-title">
+  <div class="panel-head">
+    <h3 id="sug-definitions-title">Mots utiles pour relire</h3>
+    <span>SuggestionOps</span>
+  </div>
+  <div class="sug-definitions">
+    {% for definition in view.definitions %}
+    <article>
+      <strong>{{ definition.label }}</strong>
+      <p>{{ definition.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="suggestions-file" aria-labelledby="sug-cards-title">
+  <div class="panel-head">
+    <h3 id="sug-cards-title">Suggestions affichables</h3>
+    <span>{{ view.cards|length }} cartes</span>
+  </div>
+  <div class="sug-cards">
+    {% for card in view.cards %}
+    <article>
+      <div class="panel-head">
+        <strong>{{ card.title }}</strong>
+        <span class="badge is-public">{{ card.destination_label }}</span>
+      </div>
+      <p>{{ card.why }}</p>
+      <dl class="compact-list">
+        <dt>Source</dt><dd>{{ card.source }}</dd>
+        <dt>Preuve</dt><dd>{{ card.proof }}</dd>
+        <dt>Revue</dt><dd>{{ card.diffusion }} - confiance {{ card.confidence }}</dd>
+        <dt>Suite proposee</dt><dd>{{ card.next_action }}</dd>
+        <dt>Destinations possibles</dt><dd>{{ card.available_destinations }}</dd>
+      </dl>
+      <small>{{ card.source_label }} - aucun effet automatique</small>
+    </article>
+    {% else %}
+    <article>
+      <strong>Aucune suggestion affichable</strong>
+      <p>Il faut une source, une preuve et une revue humaine acceptee.</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="sug-table-title">
+  <div class="panel-head">
+    <h3 id="sug-table-title">File de revue</h3>
+    <span>{{ view.suggestions|length }} lignes</span>
+  </div>
+  <div class="sug-table" role="table" aria-label="Suggestions, preuves, revue et prochaine action">
+    <div class="sug-row is-head" role="row">
+      <span role="columnheader">Suggestion</span>
+      <span role="columnheader">Source</span>
+      <span role="columnheader">Preuve</span>
+      <span role="columnheader">Revue</span>
+      <span role="columnheader">Destination</span>
+      <span role="columnheader">Suite</span>
+    </div>
+    {% for item in view.suggestions %}
+    <div class="sug-row" role="row">
+      <strong role="cell">{{ item.title }}<small>{{ item.suggestion_id }} - {{ item.source_label }}</small></strong>
+      <span role="cell">{{ item.source }}<small>{{ item.status_label }}</small></span>
+      <span role="cell">{{ item.proof }}</span>
+      <span role="cell">{{ item.review_label }}</span>
+      <span role="cell">{{ item.destination_label }}</span>
+      <span role="cell">{{ item.next_action }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Revues humaines</h3>
+      <span>{{ view.review_counts|length }}</span>
+    </div>
+    <div class="badge-row">
+      {% for item in view.review_counts %}
+      <span class="badge is-review">{{ item.label }}: {{ item.count }}</span>
+      {% else %}
+      <span class="badge is-review">aucune revue</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Garde-fous</h3>
+      <span>Sans automatisme</span>
+    </div>
+    <div class="sug-checks">
+      {% for item in view.boundaries %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="suggestion-actions" aria-labelledby="sug-actions-title">
+  <div class="panel-head">
+    <h3 id="sug-actions-title">Actions disponibles et bloquees</h3>
+    <span>Validation humaine</span>
+  </div>
+  <div class="sug-actions">
+    {% for action in view.actions %}
+    {% if action.enabled == "true" %}
+    <a class="button-link secondary" href="{{ token_href(action.href) }}">
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </a>
+    {% else %}
+    <button type="button" disabled aria-disabled="true">
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="sug-version-title">
+  <div class="panel-head">
+    <h3 id="sug-version-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

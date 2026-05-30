@@ -341,6 +341,50 @@ class PublicReadModelTests(unittest.TestCase):
         self.assertIn("Aucune piece manquante affichee pour le moment", text)
         self.assertIn("La projection locale ne remonte pas encore de piece a demander", text)
 
+    def test_actions_route_uses_public_read_model_without_dashboard_build(self) -> None:
+        self._build_public_db()
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+            from coproscope.web.app import create_app
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+
+        with mock.patch(
+            "coproscope.web.app.build_dashboard_model",
+            side_effect=AssertionError("actions route must not build dashboard with public projection"),
+        ):
+            client = TestClient(create_app(self.instance, 2025))
+            response = client.get("/actions?priority=P1")
+            detail = client.get("/actions/ACT-PUBLIC-ASSURANCE", follow_redirects=False)
+
+        text = unescape(response.text)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Demander l'attestation assurance 2026", text)
+        self.assertIn("Attestation assurance 2026", text)
+        self.assertIn("Conseil syndical uniquement", text)
+        self.assertNotIn("payload_json", text)
+        self.assertNotIn("token=local-secret", text)
+        self.assertEqual(detail.status_code, 303)
+        self.assertIn("selected=ACT-PUBLIC-ASSURANCE", detail.headers["location"])
+
+    def test_actions_route_uses_empty_public_model_when_projection_is_absent(self) -> None:
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+            from coproscope.web.app import create_app
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+
+        with mock.patch(
+            "coproscope.web.app.build_dashboard_model",
+            side_effect=AssertionError("actions route must not fall back to dashboard when vault is configured"),
+        ):
+            client = TestClient(create_app(self.instance, 2025))
+            response = client.get("/actions?priority=P1")
+
+        text = unescape(response.text)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Aucune resolution ne correspond a ce filtre", text)
+
     def test_serve_does_not_prewarm_dashboard(self) -> None:
         try:
             from coproscope.web import app as web_app

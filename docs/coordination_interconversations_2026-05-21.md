@@ -12,7 +12,7 @@ Il ne remplace pas les fils metier. Il arbitre les dependances, les ownerships e
 | --- | --- | --- |
 | `docs/passerelle_db_vers_ux_2026-05-21.md` | 20:56 | Fil DB actif; reponses UXDB completees et question DBUX ouverte. |
 | `docs/point_coordination_live_8766_2026-05-21.md` | 20:48 | Fil live/UX aligne; prochaine vague memoire/passation. |
-| `docs/journal_cycles_ux_2026-05-21.md` | 20:48 | Journal UX a jour; `150 tests OK` est le dernier vert annonce. |
+| `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md` | 20:48 | Journal UX a jour; `150 tests OK` est le dernier vert annonce. |
 | `docs/passerelle_ux_vers_db_2026-05-21.md` | 20:20 | Besoins UX transmis au fil DB; ne pas modifier sans demande UX. |
 | `docs/passerelle_ux_db_2026-05-21.md` | 20:20 | Convention de pont UX/DB creee. |
 
@@ -90,7 +90,7 @@ Statut: ACTIF
 
 Ownership: observation des passerelles; aucune modification des passerelles UX/DB.
 
-Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md` et `docs/journal_cycles_ux_2026-05-21.md` modifies vers 21:15. Le cycle memoire/actions/pieces/relance est livre en QA finale. Le live 8766 annonce health OK, `34 tests cibles OK`, suite UI `155 tests OK` et captures finales.
+Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md` et `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md` modifies vers 21:15. Le cycle memoire/actions/pieces/relance est livre en QA finale. Le live 8766 annonce health OK, `34 tests cibles OK`, suite UI `155 tests OK` et captures finales.
 
 Decision: passer le prochain cycle en double flux sur l'export passation verifiable, mais garder un arbitrage explicite avant dev: `/exports/passation` devient-il l'apercu HTML principal ou reste-t-il une redirection texte temporaire?
 
@@ -126,7 +126,7 @@ Statut: ACTIF
 
 Ownership: observation des passerelles, registres et fichiers sensibles; aucune correction applicative.
 
-Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md`, `docs/journal_cycles_ux_2026-05-21.md` et `docs/registre_cycles_refonte_ux.md` modifies vers 21:31. Le cycle export passation est annonce livre: `/exports/passation` est devenu un apercu HTML testable; relance syndic renforcee; live 8766 health OK; `17 tests OK` relance/actions/pieces/live, `23 tests OK` export/memoire/securite, suite UI `155 tests OK`.
+Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md`, `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md` et `docs/registre_cycles_refonte_ux.md` modifies vers 21:31. Le cycle export passation est annonce livre: `/exports/passation` est devenu un apercu HTML testable; relance syndic renforcee; live 8766 health OK; `17 tests OK` relance/actions/pieces/live, `23 tests OK` export/memoire/securite, suite UI `155 tests OK`.
 
 Decision: signal de livraison positif, mais vigilance coordination maintenue.
 
@@ -146,7 +146,7 @@ Statut: ACTIF
 
 Ownership: observation des passerelles, registres et fichiers sensibles; aucune correction applicative.
 
-Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md` et `docs/journal_cycles_ux_2026-05-21.md` modifies vers 21:38. Le micro-cycle `relance confirmation` est annonce livre: `/demandes/relance?sent=1` affiche maintenant la trace fictive date/canal/note; suite UI `155 tests OK`.
+Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md` et `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md` modifies vers 21:38. Le micro-cycle `relance confirmation` est annonce livre: `/demandes/relance?sent=1` affiche maintenant la trace fictive date/canal/note; suite UI `155 tests OK`.
 
 Decision: le correctif produit est positif, mais la regle zero interconversations n'est pas encore completement adoptee.
 
@@ -182,7 +182,7 @@ Statut: ACTIF
 
 Ownership: observation des passerelles, registres et fichiers sensibles; aucune correction applicative.
 
-Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md` et `docs/journal_cycles_ux_2026-05-21.md` modifies vers 21:52. Le point live annonce la fermeture des P1 export/relance: `sent=1` nu bloque, exports TXT/JSON `scope=event` reels, live 8766 PID `38040`, tests `6 + 16 + 156 OK`.
+Dernieres traces: `docs/point_coordination_live_8766_2026-05-21.md` et `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md` modifies vers 21:52. Le point live annonce la fermeture des P1 export/relance: `sent=1` nu bloque, exports TXT/JSON `scope=event` reels, live 8766 PID `38040`, tests `6 + 16 + 156 OK`.
 
 Decision: le risque produit du point 21:48 est fonctionnellement leve par les tests et le point live, mais la dette de coordination reste a surveiller.
 
@@ -190,7 +190,7 @@ Bon signal coordination: `docs/protocole_roadmap_presence_agents.md`, `docs/road
 
 Risque de coordination: la conversation `CONV-2026-0001` declare un ownership documentaire et est cloturee, mais les changements applicatifs recents (`app.py`, `relance_syndic_view.py`) n'ont pas encore de ligne `CONV-*` visible. Pour les prochains changements code, le registre de presence doit faire foi avant edition.
 
-Tests/preuves: `docs/qa_cycle_n_exports_passation_apercu_2026-05-21.md` resolution 21:46; `6 tests OK`, `16 tests OK`, `156 tests OK`.
+Tests/preuves: `docs/archive/recettes_ux/qa_cycle_n_exports_passation_apercu_2026-05-21.md` resolution 21:46; `6 tests OK`, `16 tests OK`, `156 tests OK`.
 
 Prochain mouvement: verifier au prochain passage qu'aucun nouveau fichier sensible ne bouge sans ligne active dans `docs/presence_agents.md`.
 
@@ -232,9 +232,9 @@ POINT-20260521-2248 - Coordination environnement test
 
 Statut: INTEGRE
 
-Decision: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test` devient la cible de recette/live par defaut pour les agents locaux. Platanes (`examples/synthetic_copro`) reste la cible des tests publics/CI et des exemples partageables.
+Decision: `C:\Users\brice\CoproScope\instances\beauvallon_test` devient la cible de recette/live par defaut pour les agents locaux. Platanes (`examples/synthetic_copro`) reste la cible des tests publics/CI et des exemples partageables.
 
-Fichiers impactes: `AGENTS.md`, `docs/orchestration_agents.md`, `docs/orchestration_live.md`, `docs/recette_visuelle_refonte_ux.md`, `docs/passerelle_ux_db_2026-05-21.md`, `docs/point_coordination_live_8766_2026-05-21.md`, `docs/presence_agents.md`.
+Fichiers impactes: `AGENTS.md`, `docs/orchestration_agents.md`, `docs/orchestration_live.md`, `docs/archive/recettes_ux/recette_visuelle_refonte_ux.md`, `docs/passerelle_ux_db_2026-05-21.md`, `docs/point_coordination_live_8766_2026-05-21.md`, `docs/presence_agents.md`.
 
 Tests/preuves: `doctor` OK sur `beauvallon-test`; `vault verify` OK sur le coffre copie.
 

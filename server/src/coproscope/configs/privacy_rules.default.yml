@@ -1,6 +1,7 @@
 {
   "version": 1,
-  "default_college": "C4_Conseil_Syndical",
+  "default_college": "C2_Coproprietaires",
+  "default_confidence": "medium",
   "review_confidence_threshold": "medium",
   "public_path_markers": ["examples/synthetic_copro", "diffusable", "communicable", "publication"],
   "path_rules": [
@@ -8,6 +9,14 @@
       "markers": ["_RESTREINT", "restreint", "impayes", "recouvrement", "banque", "rib", "contentieux", "avocat", "procedure"],
       "raw_max_college": "C8_Restreint_Critique",
       "restriction_reasons": ["RGPD", "contentieux", "finance"],
+      "confidence": "high"
+    },
+    {
+      "markers": ["negociation", "consultation_des_entreprises", "appel_offres", "offres_concurrentes", "mise_en_concurrence"],
+      "raw_max_college": "C4_Conseil_Syndical",
+      "derivative_max_college": "C2_Coproprietaires",
+      "publication_form": "metadata_only",
+      "restriction_reasons": ["negociation_commerciale"],
       "confidence": "high"
     },
     {
@@ -31,15 +40,13 @@
   ],
   "document_type_rules": [
     {
-      "document_types": ["Reglement_Copropriete", "EDD", "Convocation_AG", "PV_AG", "Contrat_Syndic", "Contrat_Assurance", "Diagnostic_Technique"],
+      "document_types": ["Reglement_Copropriete", "EDD", "Convocation_AG", "PV_AG", "Contrat_Syndic", "Contrat_Assurance", "Diagnostic_Technique", "Dossier_ITE_Travaux"],
       "raw_max_college": "C2_Coproprietaires",
       "confidence": "medium"
     },
     {
       "document_types": ["Facture", "Devis", "Annexe_Comptable"],
-      "raw_max_college": "C4_Conseil_Syndical",
-      "derivative_max_college": "C2_Coproprietaires",
-      "publication_form": "redaction_required",
+      "raw_max_college": "C2_Coproprietaires",
       "confidence": "medium"
     },
     {
@@ -61,6 +68,8 @@
     "sante",
     "handicap",
     "revenu fiscal",
-    "avis d'imposition"
+    "avis d'imposition",
+    "negociation commerciale",
+    "appel d'offres"
   ]
 }

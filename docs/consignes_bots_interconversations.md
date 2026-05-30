@@ -25,11 +25,17 @@ Avant toute modification, lire dans cet ordre:
 1. `AGENTS.md`;
 2. `docs/orchestration_agents.md`;
 3. `docs/protocole_roadmap_presence_agents.md`;
-4. le gouvernail unique `docs/roadmap_backlog_central.md`;
-5. `docs/presence_agents.md`;
-6. le dernier point dans `docs/point_coordination_live_8766_2026-05-21.md`;
-7. `docs/coordination_interconversations_2026-05-21.md`;
-8. la passerelle du lot: UX, DB, QA, dev ou registre.
+4. `docs/tableau_execution_courant.md`;
+5. le gouvernail unique `docs/roadmap_backlog_central.md` seulement si le bot
+   est l'orchestrateur ou si son slot le cite comme contexte;
+6. `docs/presence_agents.md`;
+7. le dernier point dans `docs/point_coordination_live_8766_2026-05-21.md`;
+8. `docs/coordination_interconversations_2026-05-21.md`;
+9. la passerelle du lot: UX, DB, QA, dev ou registre.
+
+Un worker ne choisit jamais son travail dans le gouvernail. Il prend seulement
+un slot `A_PRENDRE` publie dans `docs/tableau_execution_courant.md`. S'il n'y
+en a pas, il reste en lecture seule et attend l'orchestrateur.
 
 Puis publier ou ajouter dans le livrable un bloc court:
 
@@ -54,8 +60,14 @@ Prochaine action:
 
 - Le gouvernail unique des demandes, priorites et imports d'anciens plans est
   `docs/roadmap_backlog_central.md`. Aucun autre document ne fait roadmap.
+- Le tableau de travail courant est `docs/tableau_execution_courant.md`. Il ne
+  contient pas une deuxieme backlog; il contient seulement les slots de role du
+  `CH-*` actif.
 - Le registre officiel des conversations et chantiers actifs est
   `docs/presence_agents.md`.
+- Les nouveaux chantiers utilisent le format anti-collision
+  `CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court`. Le format historique
+  `CH-YYYY-NNNN` est accepte seulement pour les chantiers deja ouverts.
 - Un worktree ou une branche ne prouve pas a lui seul qu'un chantier est actif:
   la ligne `CONV-*` fait foi pour la coordination.
 - Si une conversation commence a modifier le depot sans `RM-*`, `CH-*` et
@@ -101,6 +113,33 @@ Un bot ne marque pas un bloc comme accepte sans:
 - Les donnees fictives doivent etre marquees `FICTIF` ou `demo`.
 - Les chemins locaux absolus, raw/restricted, OCR/logs, emails personnels et pieces jointes brutes restent hors projections publiques.
 - Un export passation est un derive, jamais une source de verite.
+
+## Confidentialite conversationnelle
+
+Pour tout audit, contentieux, coproprietaire, AG, travaux sensibles ou document
+brut, le bot applique la chaine `fait -> preuve -> regle -> action`.
+
+Regles:
+
+- parler en roles, pieces, periodes, statuts et montants agreges par defaut;
+- utiliser des alias stables dans la conversation: `PERS-01`, `CS-01`,
+  `SYNDIC-01`, `PREST-01`, `LOT-01`, `PIECE-AG-001`;
+- ne garder une identite reelle que si elle est indispensable a une diligence
+  concrete, locale et privee;
+- ne jamais recopier chemin local, email, telephone, IBAN/RIB, token, secret,
+  nom de fichier brut, extrait OCR brut, table de correspondance, log,
+  `raw`, `restricted`, `private` ou `file://`;
+- distinguer explicitement `constate`, `suppose` et `a verifier`.
+
+Checklist avant rendu final:
+
+- aucune donnee personnelle inutile;
+- aucune piece brute ou citation longue de source brute;
+- aucune allegation sans source ou reserve;
+- chaque diffusion dit `CS seulement`, `a verifier avant partage`, `bloquee`
+  ou `diffusable apres controle`;
+- si une fuite reste visible, le livrable reste brouillon local et le statut
+  doit etre `BLOQUE` ou `EN_ATTENTE_USER`.
 
 ## Livrable de fin
 

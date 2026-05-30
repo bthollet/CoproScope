@@ -32,7 +32,7 @@
 
 ### Commande prete
 
-- Commande de reprise deja disponible: `docs/commandes_reprise_live_8766.md`.
+- Commande de reprise deja disponible: `docs/commandes/commandes_reprise_live_8766.md`.
 - Prochaine commande dev a stabiliser: `P0 demandes/depot`, avant de repartir sur l'alignement profond `actions -> comptes -> memoire`.
 - Format exige pour la commande suivante: objectif utilisateur, structure visuelle, composants, donnees, interactions, etats vides, criteres d'acceptation, tests attendus.
 
@@ -46,7 +46,7 @@
 - Dev back: terminer la route POST `/demandes` et le raccord registre.
 - Dev front: verifier les CTA depot/document et les libelles novice.
 - QA: relancer les tests cibles `requests`, `document_intake`, `depot`, `actions`, puis la suite UI complete.
-- Coordinateur-scribe: consigner le resultat du prochain point dans `docs/journal_cycles_ux_2026-05-21.md`.
+- Coordinateur-scribe: consigner le resultat du prochain point dans `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md`.
 
 ## Etat des agents
 
@@ -67,8 +67,8 @@
 ## Rappel des preuves visuelles existantes
 
 - Capture de reference apres reprise: `docs/assets/ux-livraison-reelle-2026-05-21-8766-apres-reprise/`.
-- Planche de preuve visuelle: `docs/planche_preuve_visuelle_live_8766.md`.
-- Diagnostic visuel: `docs/ecarts_visuels_live_vs_canva_2026-05-21.md`.
+- Planche de preuve visuelle: `docs/archive/recettes_ux/planche_preuve_visuelle_live_8766.md`.
+- Diagnostic visuel: `docs/archive/recettes_ux/ecarts_visuels_live_vs_canva_2026-05-21.md`.
 
 ## Historique avant ce point
 
@@ -90,7 +90,7 @@
 - Bloc P0 relance/demandes/depot livre et teste.
 - Prochain bloc recommande: pieces manquantes puis detail action, en partant
   des PNG designer N+2 et de
-  `docs/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
+  `docs/archive/recettes_ux/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
 - Retour novice ajoute: relance validee; `Pieces manquantes` refusee tant que
   la liste n'est pas remplie/coherente. Image prioritaire:
   `docs/assets/ux-visuels-fictifs-2026-05-21/09_pieces_manquantes_n2_liste_coherente.png`.
@@ -144,7 +144,7 @@
 
 ### Commande prete
 
-- Commande pieces/detail action: `docs/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
+- Commande pieces/detail action: `docs/archive/recettes_ux/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
 - Detail action `/actions/{id}` existe et redirige vers la fiche selectionnee avec token.
 
 ### Agents idle a relancer
@@ -280,7 +280,7 @@
 - Coordinateur interconversations actif.
 - Note de coordination creee: `docs/coordination_interconversations_2026-05-21.md`.
 - Dernier signal DB: `docs/passerelle_db_vers_ux_2026-05-21.md` modifie a 20:56 avec reponses UXDB et question `DBUX-20260521-01`.
-- Dernier signal UX/live: ce point live et `docs/journal_cycles_ux_2026-05-21.md` modifies a 20:48 avec `150 tests OK`.
+- Dernier signal UX/live: ce point live et `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md` modifies a 20:48 avec `150 tests OK`.
 
 ### Regles appliquees
 
@@ -559,7 +559,7 @@
 
 ### Decision
 
-- L'environnement de test local par defaut des agents devient `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+- L'environnement de test local par defaut des agents devient `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 - Identifiant de l'instance: `beauvallon-test`.
 - Platanes (`examples/synthetic_copro`) n'est plus la cible live/recette par defaut; il reste reserve aux tests publics/CI et aux exemples partageables.
 
@@ -567,7 +567,7 @@
 
 ```powershell
 cd C:\Users\brice\CoproScope\coproscope
-.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\Documents\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
+.\server\.venv\Scripts\python.exe -m coproscope.cli ui open-test --instance-root C:\Users\brice\CoproScope\instances\beauvallon_test --year 2025 --host 127.0.0.1 --port 8766 --token beauvallon-test-local
 ```
 
 ### Signal aux agents
@@ -988,7 +988,7 @@ cd C:\Users\brice\CoproScope\coproscope
 
 ### A tester maintenant
 
-- Instance cible: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+- Instance cible: `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 - Symptôme utilisateur: depuis le site local, suspicion de base/projection a reconstruire.
 - Aucun rebuild destructif avant diagnostic, sauvegarde et GO explicite.
 
@@ -1043,12 +1043,12 @@ cd C:\Users\brice\CoproScope\coproscope
 
 ### En dev maintenant
 
-- `CONV-2026-0063` a execute le runbook sur `C:\Users\brice\Documents\CoproScope\instances\beauvallon_test`.
+- `CONV-2026-0063` a execute le runbook sur `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 - Preflight: `doctor` OK, `vault status/verify` OK.
 - Sauvegardes verifiees:
-  - `C:\Users\brice\Documents\CoproScope\sauvegardes\beauvallon_test\20260522-122035` avant pipeline, 2188 fichiers, 0 ecart;
-  - `C:\Users\brice\Documents\CoproScope\sauvegardes\beauvallon_test\20260522-122854-post-pipeline` apres pipeline, 2195 fichiers, 0 ecart;
-  - `C:\Users\brice\Documents\CoproScope\sauvegardes\beauvallon_test\20260522-123739-post-accounting` apres compta, 2210 fichiers, 0 ecart.
+  - `C:\Users\brice\CoproScope\dev\instance_support\sauvegardes\beauvallon_test\20260522-122035` avant pipeline, 2188 fichiers, 0 ecart;
+  - `C:\Users\brice\CoproScope\dev\instance_support\sauvegardes\beauvallon_test\20260522-122854-post-pipeline` apres pipeline, 2195 fichiers, 0 ecart;
+  - `C:\Users\brice\CoproScope\dev\instance_support\sauvegardes\beauvallon_test\20260522-123739-post-accounting` apres compta, 2210 fichiers, 0 ecart.
 - Commandes lancees:
   - `pipeline run --no-copy --docai off`: OK;
   - `accounting reconstruct --year 2025`: OK, 827 factures, 601 ecritures, 827 controles, 1522 anomalies factures;

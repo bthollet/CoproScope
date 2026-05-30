@@ -48,6 +48,8 @@
       <dd>{{ card.proof_source }}</dd>
       <dt>Seuil</dt>
       <dd>{{ card.threshold }}</dd>
+      <dt>Confiance</dt>
+      <dd>{{ card.confidence_label }}</dd>
       <dt>Prochaine action</dt>
       <dd>{{ card.next_action }}</dd>
       <dt>Diffusion</dt>
@@ -55,6 +57,9 @@
       <dt>Rattachement</dt>
       <dd>{{ card.attachment_label }}</dd>
     </dl>
+    <div class="badge-row">
+      <a class="button-link secondary" href="{{ token_href(card.action_href) }}">{{ card.action_label }}</a>
+    </div>
     {% if card.owner or card.due_at %}
     <small>{{ card.owner }}{% if card.owner and card.due_at %} - {% endif %}{{ card.due_at }}</small>
     {% endif %}

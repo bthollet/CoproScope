@@ -24,6 +24,8 @@ POINT_CREATED: Final = "point_created"
 ACTION_CREATED: Final = "action_created"
 REQUEST_CREATED: Final = "request_created"
 REQUEST_ACTION_RECORDED: Final = "request_action_recorded"
+PROOF_RECORDED: Final = "proof_recorded"
+OBJECT_FOLLOWUP_RECORDED: Final = "object_followup_recorded"
 STATUS_CHANGED: Final = "status_changed"
 DIFFUSION_DECIDED: Final = "diffusion_decided"
 REDACTION_COMPLETED: Final = "redaction_completed"
@@ -55,6 +57,8 @@ EVENT_TYPES_V1: Final[tuple[str, ...]] = (
     ACTION_CREATED,
     REQUEST_CREATED,
     REQUEST_ACTION_RECORDED,
+    PROOF_RECORDED,
+    OBJECT_FOLLOWUP_RECORDED,
     STATUS_CHANGED,
     DIFFUSION_DECIDED,
     REDACTION_COMPLETED,
@@ -144,6 +148,8 @@ __all__ = [
     "PLUGIN_ACTIVATED",
     "PLUGIN_RESULT_RECORDED",
     "POINT_CREATED",
+    "PROOF_RECORDED",
+    "OBJECT_FOLLOWUP_RECORDED",
     "RECOVERY_KEY_REGISTERED",
     "REDACTION_COMPLETED",
     "REPLICA_CHECKED",

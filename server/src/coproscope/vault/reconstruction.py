@@ -10,6 +10,7 @@ _PART_FILES = (
     '04_recorders.py',
     '05_business_objects.py',
     '06_audit360_imports.py',
+    '07_followups.py',
 )
 
 for _part_file in _PART_FILES:

@@ -3,20 +3,56 @@
   "preuves": [
     {
       "preuve_id": "PRV-001",
-      "lot": "AG",
-      "libelle_attendu": "PV signes et annexes",
-      "type_document": "PV_AG",
-      "criticite": "P1"
+      "lot": "Referentiel_Copropriete",
+      "libelle_attendu": "Reglement de copropriete",
+      "type_document": "Reglement_Copropriete",
+      "criticite": "P0"
     },
     {
       "preuve_id": "PRV-002",
+      "lot": "Referentiel_Copropriete",
+      "libelle_attendu": "Etat descriptif de division",
+      "type_document": "EDD",
+      "criticite": "P0"
+    },
+    {
+      "preuve_id": "PRV-003",
+      "lot": "Referentiel_Copropriete",
+      "libelle_attendu": "Carnet d'entretien ou diagnostic technique",
+      "type_document": "Carnet_Entretien",
+      "criticite": "P1",
+      "fraicheur_mois": 60
+    },
+    {
+      "preuve_id": "PRV-004",
       "lot": "AG",
       "libelle_attendu": "Convocations AG et annexes",
       "type_document": "Convocation_AG",
       "criticite": "P1"
     },
     {
-      "preuve_id": "PRV-003",
+      "preuve_id": "PRV-005",
+      "lot": "AG",
+      "libelle_attendu": "PV signes et annexes",
+      "type_document": "PV_AG",
+      "criticite": "P1"
+    },
+    {
+      "preuve_id": "PRV-006",
+      "lot": "AG",
+      "libelle_attendu": "Feuilles de presence et pouvoirs",
+      "type_document": "Feuille_Presence_AG",
+      "criticite": "P2"
+    },
+    {
+      "preuve_id": "PRV-007",
+      "lot": "Conseil_Syndical",
+      "libelle_attendu": "Comptes rendus du conseil syndical",
+      "type_document": "CR_CS",
+      "criticite": "P2"
+    },
+    {
+      "preuve_id": "PRV-008",
       "lot": "Syndic",
       "libelle_attendu": "Contrat syndic en cours",
       "type_document": "Contrat_Syndic",
@@ -24,7 +60,31 @@
       "fraicheur_mois": 36
     },
     {
-      "preuve_id": "PRV-004",
+      "preuve_id": "PRV-009",
+      "lot": "Assurance",
+      "libelle_attendu": "Contrat assurance immeuble",
+      "type_document": "Contrat_Assurance",
+      "criticite": "P0",
+      "fraicheur_mois": 24
+    },
+    {
+      "preuve_id": "PRV-010",
+      "lot": "Assurance",
+      "libelle_attendu": "Attestation assurance en cours",
+      "type_document": "Attestation_Assurance",
+      "criticite": "P1",
+      "fraicheur_mois": 12
+    },
+    {
+      "preuve_id": "PRV-011",
+      "lot": "Contrats",
+      "libelle_attendu": "Contrats fournisseurs et maintenance actifs",
+      "type_document": "Contrat_Fournisseur",
+      "criticite": "P1",
+      "fraicheur_mois": 36
+    },
+    {
+      "preuve_id": "PRV-012",
       "lot": "Comptes",
       "libelle_attendu": "Annexes comptables completes",
       "type_document": "Annexe_Comptable",
@@ -32,17 +92,105 @@
       "fraicheur_mois": 24
     },
     {
-      "preuve_id": "PRV-005",
+      "preuve_id": "PRV-013",
+      "lot": "Comptes",
+      "libelle_attendu": "Budget previsionnel vote ou propose",
+      "type_document": "Budget_Previsionnel",
+      "criticite": "P1",
+      "fraicheur_mois": 24
+    },
+    {
+      "preuve_id": "PRV-014",
+      "lot": "Comptes",
+      "libelle_attendu": "Etat des depenses de l'exercice",
+      "type_document": "Etat_Depenses",
+      "criticite": "P1",
+      "fraicheur_mois": 24
+    },
+    {
+      "preuve_id": "PRV-015",
+      "lot": "Comptes_Restreints",
+      "libelle_attendu": "Impayes traites uniquement en synthese restreinte",
+      "type_document": "Impayes",
+      "criticite": "P0",
+      "fraicheur_mois": 12
+    },
+    {
+      "preuve_id": "PRV-016",
+      "lot": "Comptes_Restreints",
+      "libelle_attendu": "Rapprochement bancaire en donnees restreintes",
+      "type_document": "Releve_Bancaire",
+      "criticite": "P0",
+      "fraicheur_mois": 12
+    },
+    {
+      "preuve_id": "PRV-017",
       "lot": "Factures_Fournisseurs",
       "libelle_attendu": "Factures et preuves de service fait",
       "type_document": "Facture",
       "criticite": "P1"
     },
     {
-      "preuve_id": "PRV-006",
+      "preuve_id": "PRV-018",
+      "lot": "Factures_Fournisseurs",
+      "libelle_attendu": "Devis et offres conservees",
+      "type_document": "Devis",
+      "criticite": "P1"
+    },
+    {
+      "preuve_id": "PRV-019",
+      "lot": "Travaux",
+      "libelle_attendu": "Dossier travaux vote et suivi",
+      "type_document": "Dossier_Travaux",
+      "criticite": "P0"
+    },
+    {
+      "preuve_id": "PRV-020",
       "lot": "ITE_Travaux",
-      "libelle_attendu": "Chronologie et devis travaux",
+      "libelle_attendu": "Chronologie et devis travaux ITE",
       "type_document": "Dossier_ITE_Travaux",
+      "criticite": "P0"
+    },
+    {
+      "preuve_id": "PRV-021",
+      "lot": "Travaux",
+      "libelle_attendu": "Reception et reserves de travaux",
+      "type_document": "Reception_Travaux",
+      "criticite": "P1"
+    },
+    {
+      "preuve_id": "PRV-022",
+      "lot": "Incidents",
+      "libelle_attendu": "Photos ou declarations d'incident contextualisees",
+      "type_document": "Photo_Incident",
+      "criticite": "P1"
+    },
+    {
+      "preuve_id": "PRV-023",
+      "lot": "Incidents",
+      "libelle_attendu": "Dossier sinistre assurance si incident declare",
+      "type_document": "Declaration_Assurance",
+      "criticite": "P1"
+    },
+    {
+      "preuve_id": "PRV-024",
+      "lot": "Communication",
+      "libelle_attendu": "Courriers et reponses syndic",
+      "type_document": "Courrier",
+      "criticite": "P2"
+    },
+    {
+      "preuve_id": "PRV-025",
+      "lot": "Communication",
+      "libelle_attendu": "Preuves d'envoi et accuses de reception",
+      "type_document": "Preuve_Envoi",
+      "criticite": "P1"
+    },
+    {
+      "preuve_id": "PRV-026",
+      "lot": "Contentieux",
+      "libelle_attendu": "Pieces contentieuses conservees en acces restreint",
+      "type_document": "Contentieux_Nominatif",
       "criticite": "P0"
     }
   ]

@@ -2,6 +2,22 @@ from __future__ import annotations
 
 from ._runtime import *
 
+_GENERATED_ACTION_SOURCE_LIMITS = {
+    "ComptaScope": 30,
+    "PrivacyOps": 30,
+    "DocOps": 30,
+    "DecisionOps": 40,
+    "IncidentOps": 40,
+}
+
+_GENERATED_ACTION_SOURCE_HREFS = {
+    "ComptaScope": "/comptes",
+    "PrivacyOps": "/confidentialite",
+    "DocOps": "/documents",
+    "DecisionOps": "/chantiers",
+    "IncidentOps": "/chantiers",
+}
+
 def _stable_action_id(prefix: str, index: int, *parts: str) -> str:
     raw = "|".join(part for part in parts if part).strip()
     if raw:
@@ -273,6 +289,67 @@ def _action_rank(action: dict[str, str]) -> tuple[int, int, str]:
     )
 
 
+def _action_dedupe_key(action: dict[str, str]) -> tuple[str, ...]:
+    action_id = action.get("id") or action.get("action_id")
+    if action_id:
+        return ("id", action_id)
+    return (
+        "business",
+        action.get("source", ""),
+        action.get("domain", ""),
+        action.get("title", ""),
+        action.get("evidence", ""),
+        action.get("next_step", ""),
+    )
+
+
+def _aggregate_action_for_source(source: str, omitted: list[dict[str, str]]) -> dict[str, str]:
+    sample = omitted[0] if omitted else {}
+    domain = sample.get("domain") or "general"
+    domain_label = sample.get("domain_label") or "Actions"
+    priority = "P1" if any(row.get("priority") in {"P0", "P1"} for row in omitted) else "P2"
+    return _action(
+        f"{source} - signaux regroupes",
+        source,
+        priority,
+        f"{len(omitted)} lignes de controle restent visibles dans le module source, sans creer autant d'actions a suivre.",
+        _GENERATED_ACTION_SOURCE_HREFS.get(source, sample.get("href", "/actions")),
+        action_id=_stable_action_id("ACT-GROUP", 0, source, domain, str(len(omitted))),
+        status="a_revoir",
+        domain=domain,
+        domain_label=domain_label,
+        owner="Conseil syndical",
+        next_step="Ouvrir le module source et traiter par lot avant de creer une action explicite.",
+        evidence=f"Synthese {source}",
+    )
+
+
+def _limit_generated_action_items(actions: list[dict[str, str]]) -> list[dict[str, str]]:
+    seen: set[tuple[str, ...]] = set()
+    kept_counts: dict[str, int] = {}
+    omitted_by_source: dict[str, list[dict[str, str]]] = {}
+    limited: list[dict[str, str]] = []
+    for action in sorted(actions, key=_action_rank):
+        key = _action_dedupe_key(action)
+        if key in seen:
+            continue
+        seen.add(key)
+        source = action.get("source") or "Actions"
+        limit = _GENERATED_ACTION_SOURCE_LIMITS.get(source, 40)
+        count = kept_counts.get(source, 0)
+        if count < limit:
+            kept_counts[source] = count + 1
+            limited.append(action)
+            continue
+        omitted_by_source.setdefault(source, []).append(action)
+    limited.extend(
+        _aggregate_action_for_source(source, omitted)
+        for source, omitted in omitted_by_source.items()
+        if omitted
+    )
+    return sorted(limited, key=_action_rank)
+
+
 def _build_action_items(
     documents: dict[str, object],
     accounting: dict[str, object],
@@ -300,4 +377,4 @@ def _build_action_items(
         actions.extend(_document_actions(doc_rows))
     actions.extend(_decision_actions(decisions))
     actions.extend(_incident_actions(incidents))
-    return sorted(actions, key=_action_rank)
+    return _limit_generated_action_items(actions)

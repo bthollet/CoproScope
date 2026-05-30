@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1024" viewBox="0 0 1440 1024" role="img" aria-label="Blueprint CR CS validation interne">
+  <rect width="1440" height="1024" fill="#f5f6f4"/>
+  <rect x="0" y="0" width="1440" height="58" fill="#22312f"/>
+  <text x="28" y="36" font-family="Arial, sans-serif" font-size="18" fill="#ffffff">Gouvernance &gt; Reunion CS &gt; Compte rendu</text>
+  <rect x="1010" y="13" width="188" height="32" rx="5" fill="#e9f4ee"/>
+  <text x="1030" y="34" font-family="Arial, sans-serif" font-size="13" fill="#235642">En relecture CS</text>
+  <rect x="1215" y="13" width="170" height="32" rx="5" fill="#ffffff" opacity="0.92"/>
+  <text x="1240" y="34" font-family="Arial, sans-serif" font-size="13" fill="#22312f">Version v0.3</text>
+
+  <rect x="24" y="76" width="1392" height="48" rx="7" fill="#fff7e0" stroke="#d5a935"/>
+  <text x="48" y="106" font-family="Arial, sans-serif" font-size="15" fill="#4d3a00">Compte rendu du conseil syndical - document interne. Ne vaut pas PV d'AG, convocation officielle ni signature qualifiee.</text>
+
+  <rect x="24" y="148" width="265" height="832" rx="8" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="48" y="186" font-family="Arial, sans-serif" font-size="18" fill="#202927">Reunion</text>
+  <text x="48" y="216" font-family="Arial, sans-serif" font-size="13" fill="#5b6965">Exemple fictif - 18 juin 2026</text>
+  <rect x="48" y="242" width="217" height="76" rx="6" fill="#f7faf8" stroke="#d8ddd9"/>
+  <text x="64" y="270" font-family="Arial, sans-serif" font-size="14" fill="#202927">Presents</text>
+  <text x="64" y="294" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">President CS, secretaire, membre finances</text>
+  <rect x="48" y="336" width="217" height="74" rx="6" fill="#fffaf0" stroke="#e5b84a"/>
+  <text x="64" y="364" font-family="Arial, sans-serif" font-size="14" fill="#202927">Excuses</text>
+  <text x="64" y="388" font-family="Arial, sans-serif" font-size="12" fill="#8a5a00">1 role a confirmer</text>
+  <text x="48" y="452" font-family="Arial, sans-serif" font-size="16" fill="#202927">Ordre du jour</text>
+  <rect x="48" y="474" width="217" height="62" rx="6" fill="#eaf4ef" stroke="#3f7d62"/>
+  <text x="64" y="500" font-family="Arial, sans-serif" font-size="13" fill="#202927">Travaux toiture</text>
+  <text x="64" y="520" font-family="Arial, sans-serif" font-size="12" fill="#3f7d62">Decision + action</text>
+  <rect x="48" y="548" width="217" height="62" rx="6" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="64" y="574" font-family="Arial, sans-serif" font-size="13" fill="#202927">Questions comptes</text>
+  <text x="64" y="594" font-family="Arial, sans-serif" font-size="12" fill="#8a5a00">Preuve a verifier</text>
+  <rect x="48" y="622" width="217" height="62" rx="6" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="64" y="648" font-family="Arial, sans-serif" font-size="13" fill="#202927">Preparation AG</text>
+  <text x="64" y="668" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">Proposition a suivre</text>
+
+  <rect x="313" y="148" width="756" height="832" rx="8" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="344" y="188" font-family="Arial, sans-serif" font-size="24" fill="#202927">Compte rendu du conseil syndical</text>
+  <text x="344" y="216" font-family="Arial, sans-serif" font-size="14" fill="#5b6965">Statut, preuve, prochaine action, version et diffusion visibles sans ouvrir d'annexe.</text>
+  <rect x="344" y="246" width="694" height="38" rx="5" fill="#eef6f1"/>
+  <text x="363" y="270" font-family="Arial, sans-serif" font-size="13" fill="#235642">Prochaine action: demander relecture a 2 membres CS avant validation interne</text>
+
+  <rect x="344" y="318" width="694" height="48" fill="#f2f4f3"/>
+  <text x="360" y="347" font-family="Arial, sans-serif" font-size="12" fill="#4a5552">Sujet</text>
+  <text x="480" y="347" font-family="Arial, sans-serif" font-size="12" fill="#4a5552">Constat</text>
+  <text x="620" y="347" font-family="Arial, sans-serif" font-size="12" fill="#4a5552">Decision CS</text>
+  <text x="780" y="347" font-family="Arial, sans-serif" font-size="12" fill="#4a5552">Action</text>
+  <text x="910" y="347" font-family="Arial, sans-serif" font-size="12" fill="#4a5552">Preuve</text>
+
+  <rect x="344" y="366" width="694" height="112" fill="#ffffff" stroke="#e1e5e2"/>
+  <text x="360" y="398" font-family="Arial, sans-serif" font-size="13" fill="#202927">Travaux toiture</text>
+  <text x="480" y="398" font-family="Arial, sans-serif" font-size="13" fill="#202927">Devis a comparer</text>
+  <text x="620" y="398" font-family="Arial, sans-serif" font-size="13" fill="#202927">Demander 3 devis</text>
+  <text x="780" y="398" font-family="Arial, sans-serif" font-size="13" fill="#202927">Demande syndic</text>
+  <rect x="910" y="382" width="96" height="28" rx="4" fill="#eaf4ef" stroke="#3f7d62"/>
+  <text x="925" y="401" font-family="Arial, sans-serif" font-size="11" fill="#235642">Piece source</text>
+  <text x="780" y="430" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">Resp: a attribuer - echeance: a fixer</text>
+
+  <rect x="344" y="478" width="694" height="112" fill="#fffaf0" stroke="#e5b84a"/>
+  <text x="360" y="510" font-family="Arial, sans-serif" font-size="13" fill="#202927">Questions comptes</text>
+  <text x="480" y="510" font-family="Arial, sans-serif" font-size="13" fill="#202927">Point non tranche</text>
+  <text x="620" y="510" font-family="Arial, sans-serif" font-size="13" fill="#202927">A relire avant AG</text>
+  <text x="780" y="510" font-family="Arial, sans-serif" font-size="13" fill="#202927">Controle CS</text>
+  <rect x="910" y="494" width="118" height="28" rx="4" fill="#fff0d2" stroke="#e5b84a"/>
+  <text x="925" y="513" font-family="Arial, sans-serif" font-size="11" fill="#8a5a00">Preuve a verifier</text>
+  <text x="780" y="542" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">Bloque validation si non clarifie</text>
+
+  <rect x="344" y="616" width="220" height="44" rx="6" fill="#2f6f5e"/>
+  <text x="390" y="644" font-family="Arial, sans-serif" font-size="14" fill="#ffffff">Demander relecture</text>
+  <rect x="580" y="616" width="220" height="44" rx="6" fill="#ffffff" stroke="#2f6f5e"/>
+  <text x="625" y="644" font-family="Arial, sans-serif" font-size="14" fill="#2f6f5e">Valider version interne</text>
+  <rect x="816" y="616" width="222" height="44" rx="6" fill="#ffffff" stroke="#6c7780"/>
+  <text x="864" y="644" font-family="Arial, sans-serif" font-size="14" fill="#4a5552">Verifier avant partage</text>
+
+  <rect x="344" y="706" width="694" height="210" rx="6" fill="#fbfcfb" stroke="#d8ddd9"/>
+  <text x="368" y="740" font-family="Arial, sans-serif" font-size="16" fill="#202927">Journal versions et validations</text>
+  <text x="368" y="770" font-family="Arial, sans-serif" font-size="13" fill="#5b6965">v0.1 creee - brouillon interne</text>
+  <text x="368" y="798" font-family="Arial, sans-serif" font-size="13" fill="#5b6965">v0.2 relue - correction demandee</text>
+  <text x="368" y="826" font-family="Arial, sans-serif" font-size="13" fill="#5b6965">v0.3 en relecture - preuve comptes a verifier</text>
+  <text x="368" y="854" font-family="Arial, sans-serif" font-size="13" fill="#8a5a00">Toute correction apres validation ouvrira une nouvelle version.</text>
+
+  <rect x="1093" y="148" width="323" height="832" rx="8" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="1120" y="188" font-family="Arial, sans-serif" font-size="19" fill="#202927">Controle avant validation</text>
+  <rect x="1120" y="222" width="268" height="116" rx="6" fill="#f7faf8" stroke="#d8ddd9"/>
+  <text x="1140" y="252" font-family="Arial, sans-serif" font-size="14" fill="#202927">Validation interne CS</text>
+  <text x="1140" y="278" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">2 validateurs attendus</text>
+  <text x="1140" y="302" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">Ne vaut pas signature qualifiee</text>
+  <rect x="1120" y="362" width="268" height="132" rx="6" fill="#fffaf0" stroke="#e5b84a"/>
+  <text x="1140" y="392" font-family="Arial, sans-serif" font-size="14" fill="#202927">Blocages</text>
+  <text x="1140" y="418" font-family="Arial, sans-serif" font-size="12" fill="#8a5a00">Preuve comptes a verifier</text>
+  <text x="1140" y="442" font-family="Arial, sans-serif" font-size="12" fill="#8a5a00">Responsable travaux a attribuer</text>
+  <text x="1140" y="466" font-family="Arial, sans-serif" font-size="12" fill="#8a5a00">Diffusion non revue</text>
+  <rect x="1120" y="518" width="268" height="132" rx="6" fill="#fff0f0" stroke="#dd7777"/>
+  <text x="1140" y="548" font-family="Arial, sans-serif" font-size="14" fill="#202927">Qui pourra voir ce document</text>
+  <text x="1140" y="574" font-family="Arial, sans-serif" font-size="12" fill="#7a2c2c">Interne CS pour l'instant</text>
+  <text x="1140" y="598" font-family="Arial, sans-serif" font-size="12" fill="#7a2c2c">Export bloque avant revue</text>
+  <text x="1140" y="622" font-family="Arial, sans-serif" font-size="12" fill="#7a2c2c">Pieces sensibles a exclure ou biffer</text>
+  <rect x="1120" y="674" width="268" height="96" rx="6" fill="#f7faf8" stroke="#d8ddd9"/>
+  <text x="1140" y="704" font-family="Arial, sans-serif" font-size="14" fill="#202927">Actions creees</text>
+  <text x="1140" y="730" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">Demande syndic - a attribuer</text>
+  <text x="1140" y="754" font-family="Arial, sans-serif" font-size="12" fill="#5b6965">Controle CS - echeance a fixer</text>
+  <rect x="1120" y="870" width="268" height="46" rx="6" fill="#22312f"/>
+  <text x="1172" y="899" font-family="Arial, sans-serif" font-size="14" fill="#ffffff">Preparer revue diffusion</text>
+</svg>

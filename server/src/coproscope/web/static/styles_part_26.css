@@ -1,0 +1,172 @@
+.rol-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.85fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.rol-hero,
+.rol-status,
+.rol-summary article,
+.rol-boundaries article,
+.rol-definitions article,
+.rol-cards article,
+.rol-commissions article,
+.rol-checks article,
+.rol-actions button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.rol-hero,
+.rol-status,
+.rol-summary article,
+.rol-boundaries article,
+.rol-definitions article,
+.rol-cards article,
+.rol-commissions article,
+.rol-checks article {
+  padding: 1rem;
+}
+
+.rol-hero__actions,
+.rol-summary,
+.rol-boundaries,
+.rol-definitions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.rol-hero__actions {
+  margin-top: 1rem;
+}
+
+.rol-status,
+.rol-summary article {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+}
+
+.rol-status span,
+.rol-status small,
+.rol-summary span,
+.rol-summary p,
+.rol-boundaries p,
+.rol-definitions p,
+.rol-cards span,
+.rol-cards small,
+.rol-cards em,
+.rol-commissions span,
+.rol-commissions small,
+.rol-checks small,
+.rol-actions small,
+.rol-row span,
+.rol-row small {
+  color: var(--muted);
+}
+
+.rol-status strong,
+.rol-summary strong {
+  font-size: 1.25rem;
+}
+
+.rol-summary,
+.rol-boundaries,
+.rol-definitions {
+  margin-bottom: 1rem;
+}
+
+.rol-summary article,
+.rol-boundaries article,
+.rol-definitions article {
+  flex: 1 1 190px;
+}
+
+.rol-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.75rem;
+}
+
+.rol-cards article,
+.rol-commissions article,
+.rol-checks article {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.rol-cards em {
+  font-style: normal;
+}
+
+.rol-commissions,
+.rol-checks,
+.rol-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rol-table {
+  display: grid;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.rol-row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1fr) repeat(5, minmax(84px, 0.45fr))
+    minmax(230px, 1.2fr);
+  gap: 0.6rem;
+  align-items: start;
+  min-width: 980px;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.rol-row.is-head {
+  font-weight: 700;
+}
+
+.rol-actions {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.rol-actions button {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 5.2rem;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--text);
+}
+
+.rol-actions button[disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .rol-hero,
+  .rol-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .rol-table {
+    overflow-x: visible;
+  }
+
+  .rol-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .rol-row.is-head {
+    display: none;
+  }
+}

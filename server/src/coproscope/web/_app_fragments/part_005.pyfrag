@@ -1,0 +1,342 @@
+from dataclasses import dataclass
+from http.cookies import SimpleCookie
+from urllib.parse import parse_qs
+
+from ..core.common import load_instance
+
+
+INSTANCE_SELECTOR_COOKIE_NAME = "coproscope_instance_id"
+
+
+@dataclass(frozen=True)
+class InstanceChoice:
+    choice_id: str
+    instance: InstanceConfig
+
+
+def _path_key(path: Path) -> str:
+    return os.path.normcase(str(path.resolve(strict=False)))
+
+
+def _default_instance_registry_root(instance: InstanceConfig) -> Path:
+    instance_root = instance.instance_root.resolve(strict=False)
+    if instance_root.name.lower() == "instance" and instance_root.parent.parent != instance_root.parent:
+        return instance_root.parent.parent
+    return instance_root.parent
+
+
+def _candidate_instance_files(registry_root: Path) -> list[Path]:
+    if not registry_root.exists() or not registry_root.is_dir():
+        return []
+    candidates: list[Path] = []
+    for child in sorted(registry_root.iterdir(), key=lambda item: item.name.lower()):
+        if not child.is_dir():
+            continue
+        direct = child / "instance.yml"
+        nested = child / "instance" / "instance.yml"
+        if direct.exists():
+            candidates.append(direct)
+        elif nested.exists():
+            candidates.append(nested)
+    return candidates
+
+
+def _load_instance_candidate(path: Path) -> InstanceConfig | None:
+    try:
+        return load_instance(str(path), None)
+    except (Exception, SystemExit):
+        return None
+
+
+def _instance_choice_slug(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+    return slug or "instance"
+
+
+def _dedupe_instance_choices(instances: list[InstanceConfig]) -> list[InstanceChoice]:
+    seen_paths: set[str] = set()
+    used_choice_ids: set[str] = set()
+    choices: list[InstanceChoice] = []
+    for candidate in instances:
+        candidate_path_key = _path_key(candidate.path)
+        if candidate_path_key in seen_paths:
+            continue
+        seen_paths.add(candidate_path_key)
+        base_choice_id = _instance_choice_slug(candidate.instance_id)
+        choice_id = base_choice_id
+        suffix = _instance_choice_slug(candidate.instance_root.parent.name or candidate.instance_root.name)
+        index = 2
+        while choice_id in used_choice_ids:
+            if index == 2 and suffix and suffix != base_choice_id:
+                choice_id = f"{base_choice_id}-{suffix}"
+                index += 1
+            else:
+                choice_id = f"{base_choice_id}-{index}"
+                index += 1
+        used_choice_ids.add(choice_id)
+        choices.append(InstanceChoice(choice_id=choice_id, instance=candidate))
+    return choices
+
+
+def discover_local_instances(
+    instance: InstanceConfig,
+    registry_root: str | Path | None = None,
+) -> list[InstanceChoice]:
+    root_value = registry_root or os.environ.get("COPROSCOPE_INSTANCES_ROOT")
+    root = Path(root_value).expanduser().resolve(strict=False) if root_value else _default_instance_registry_root(instance)
+    candidates = [_path_key(path) for path in _candidate_instance_files(root)]
+    anchor_key = _path_key(instance.path)
+    if anchor_key not in candidates:
+        candidates.insert(0, anchor_key)
+
+    loaded_instances: list[InstanceConfig] = []
+    for candidate in candidates:
+        loaded = instance if candidate == anchor_key else _load_instance_candidate(Path(candidate))
+        if loaded is not None:
+            loaded_instances.append(loaded)
+    return _dedupe_instance_choices(loaded_instances)
+
+
+def _choice_id_for_instance(choices: list[InstanceChoice], instance: InstanceConfig) -> str:
+    anchor_key = _path_key(instance.path)
+    for choice in choices:
+        if _path_key(choice.instance.path) == anchor_key:
+            return choice.choice_id
+    return choices[0].choice_id
+
+
+def _scope_cookies(scope: dict[str, object]) -> dict[str, str]:
+    cookie = SimpleCookie()
+    for raw_name, raw_value in scope.get("headers", []):  # type: ignore[assignment]
+        if bytes(raw_name).lower() != b"cookie":
+            continue
+        try:
+            cookie.load(bytes(raw_value).decode("latin-1"))
+        except Exception:
+            return {}
+    return {name: morsel.value for name, morsel in cookie.items()}
+
+
+def _selected_choice_id_from_scope(
+    scope: dict[str, object],
+    available_choice_ids: set[str],
+    default_choice_id: str,
+) -> str:
+    raw_query = bytes(scope.get("query_string", b"")).decode("latin-1")
+    query = parse_qs(raw_query, keep_blank_values=True)
+    query_choice = next(iter(query.get("instance") or query.get("coffre") or []), "")
+    if query_choice in available_choice_ids:
+        return query_choice
+    cookie_choice = _scope_cookies(scope).get(INSTANCE_SELECTOR_COOKIE_NAME, "")
+    if cookie_choice in available_choice_ids:
+        return cookie_choice
+    return default_choice_id
+
+
+def _selector_request_has_valid_token(request: FastAPIRequest, access_token: str | None) -> bool:
+    if not access_token:
+        return False
+    supplied = (
+        request.query_params.get("token")
+        or request.headers.get("x-coproscope-token", "")
+        or request.cookies.get(TOKEN_COOKIE_NAME, "")
+    )
+    return bool(supplied and secrets.compare_digest(str(supplied), access_token))
+
+
+def _selector_request_authorized(request: FastAPIRequest, access_token: str | None) -> bool:
+    return not access_token or _selector_request_has_valid_token(request, access_token)
+
+
+def _selector_url_with_token(request: FastAPIRequest, path: str, access_token: str | None) -> str:
+    if not _selector_request_has_valid_token(request, access_token):
+        return path
+    separator = "&" if "?" in path else "?"
+    return f"{path}{separator}token={quote(access_token or '')}"
+
+
+def _set_selector_cookies(response: Response, request: FastAPIRequest, access_token: str | None) -> None:
+    if access_token and _selector_request_has_valid_token(request, access_token):
+        response.set_cookie(TOKEN_COOKIE_NAME, access_token, httponly=True, samesite="lax", secure=False)
+
+
+def _render_instance_selector_html(
+    choices: list[InstanceChoice],
+    selected_choice_id: str,
+    request: FastAPIRequest,
+    access_token: str | None,
+) -> str:
+    cards: list[str] = []
+    for choice in choices:
+        active = choice.choice_id == selected_choice_id
+        href = _selector_url_with_token(
+            request,
+            f"/instances/select?instance={quote(choice.choice_id)}",
+            access_token,
+        )
+        active_badge = "<span>Active</span>" if active else ""
+        card_class = "module-card instance-choice active" if active else "module-card instance-choice"
+        action_label = "Ouvrir" if not active else "Revenir"
+        cards.append(
+            "\n".join(
+                [
+                    f'<a class="{card_class}" href="{html.escape(href)}">',
+                    f"  <strong>{html.escape(choice.instance.display_name)}</strong>",
+                    f"  <small>{html.escape(choice.instance.instance_id)}</small>",
+                    f"  {active_badge}",
+                    f'  <span class="button-link secondary">{action_label}</span>',
+                    "</a>",
+                ]
+            )
+        )
+
+    return "\n".join(
+        [
+            "<!doctype html>",
+            '<html lang="fr">',
+            "<head>",
+            '  <meta charset="utf-8">',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1">',
+            "  <title>CoproScope - Choisir l'instance</title>",
+            '  <link rel="stylesheet" href="/static/styles.css">',
+            "</head>",
+            '<body class="instance-switch-page">',
+            '  <header class="topbar instance-switch-topbar">',
+            "    <div>",
+            '      <p class="eyebrow">CoproScope local</p>',
+            "      <h1>Choisir l'instance</h1>",
+            "    </div>",
+            '    <div class="instance-meta">',
+            f"      <span>{len(choices)} instances locales</span>",
+            "    </div>",
+            "  </header>",
+            '  <main class="instance-switch-main">',
+            '    <section class="panel">',
+            '      <div class="panel-head">',
+            "        <h2>Coffres disponibles</h2>",
+            "      </div>",
+            '      <div class="module-grid instance-switch-grid">',
+            "\n".join(cards),
+            "      </div>",
+            "    </section>",
+            "  </main>",
+            "</body>",
+            "</html>",
+        ]
+    )
+
+
+class _InstanceSelectorDispatcher:
+    def __init__(
+        self,
+        selector_app,
+        subapps: dict[str, object],
+        choices: list[InstanceChoice],
+        default_choice_id: str,
+    ) -> None:
+        self.selector_app = selector_app
+        self.subapps = subapps
+        self.instance_choices = choices
+        self.default_choice_id = default_choice_id
+        self.available_choice_ids = set(subapps)
+
+    async def __call__(self, scope, receive, send):  # type: ignore[no-untyped-def]
+        if scope.get("type") == "lifespan":
+            await self.subapps[self.default_choice_id](scope, receive, send)  # type: ignore[operator]
+            return
+        path = str(scope.get("path") or "")
+        if path == "/instances" or path == "/instances/" or path.startswith("/instances/"):
+            await self.selector_app(scope, receive, send)
+            return
+        choice_id = _selected_choice_id_from_scope(scope, self.available_choice_ids, self.default_choice_id)
+        await self.subapps[choice_id](scope, receive, send)  # type: ignore[operator]
+
+
+def create_instance_selector_app(
+    instance: InstanceConfig,
+    year: int = 2025,
+    access_token: str | None = None,
+    *,
+    registry_root: str | Path | None = None,
+    prewarm_dashboard: bool = False,
+    discovered_instances: list[InstanceChoice] | None = None,
+):
+    FastAPI, _HTTPException, _Request, HTMLResponse, RedirectResponse, Response, _StaticFiles, _Jinja2Templates = _require_web_stack()
+    choices = discovered_instances or discover_local_instances(instance, registry_root=registry_root)
+    if len(choices) < 2:
+        return create_app(instance, year, access_token=access_token, prewarm_dashboard=prewarm_dashboard)
+
+    default_choice_id = _choice_id_for_instance(choices, instance)
+    subapps = {
+        choice.choice_id: create_app(
+            choice.instance,
+            year,
+            access_token=access_token,
+            prewarm_dashboard=prewarm_dashboard and choice.choice_id == default_choice_id,
+            instance_switcher_href="/instances",
+        )
+        for choice in choices
+    }
+    selector_app = FastAPI(title="CoproScope instance selector", docs_url=None, redoc_url=None)
+
+    @selector_app.get("/instances", response_class=HTMLResponse)
+    @selector_app.get("/instances/", response_class=HTMLResponse)
+    def instance_selector(request: FastAPIRequest):
+        if not _selector_request_authorized(request, access_token):
+            return Response("Jeton local requis.", status_code=403, media_type="text/plain; charset=utf-8")
+        selected_choice_id = request.cookies.get(INSTANCE_SELECTOR_COOKIE_NAME, default_choice_id)
+        if selected_choice_id not in subapps:
+            selected_choice_id = default_choice_id
+        response = HTMLResponse(_render_instance_selector_html(choices, selected_choice_id, request, access_token))
+        _set_selector_cookies(response, request, access_token)
+        return response
+
+    @selector_app.get("/instances/select")
+    def select_instance(request: FastAPIRequest, instance: str):
+        if not _selector_request_authorized(request, access_token):
+            return Response("Jeton local requis.", status_code=403, media_type="text/plain; charset=utf-8")
+        if instance not in subapps:
+            return Response("Instance inconnue.", status_code=404, media_type="text/plain; charset=utf-8")
+        response = RedirectResponse(_selector_url_with_token(request, "/", access_token), status_code=303)
+        response.set_cookie(INSTANCE_SELECTOR_COOKIE_NAME, instance, httponly=True, samesite="lax", secure=False)
+        _set_selector_cookies(response, request, access_token)
+        return response
+
+    return _InstanceSelectorDispatcher(selector_app, subapps, choices, default_choice_id)
+
+
+def serve(
+    instance: InstanceConfig,
+    year: int = 2025,
+    host: str = "127.0.0.1",
+    port: int = 8765,
+    *,
+    access_token: str | None = None,
+    unsafe_lan: bool = False,
+) -> None:
+    if host not in LOOPBACK_HOSTS and not unsafe_lan:
+        raise ValueError("Refusing to expose the UI outside loopback without --unsafe-lan.")
+    access_token = access_token or _ui_token()
+    try:
+        import uvicorn  # type: ignore
+    except ImportError as exc:  # pragma: no cover - depends on optional extra
+        raise RuntimeError(
+            "Uvicorn is missing. Install UI dependencies with: python -m pip install -e .[ui]"
+        ) from exc
+
+    choices = discover_local_instances(instance)
+    print(f"CoproScope UI token URL: http://{host}:{port}/?token={quote(access_token)}")
+    if len(choices) > 1:
+        print(f"CoproScope instance selector: http://{host}:{port}/instances?token={quote(access_token)}")
+    uvicorn.run(
+        create_instance_selector_app(
+            instance,
+            year,
+            access_token=access_token,
+            discovered_instances=choices,
+        ),
+        host=host,
+        port=port,
+        log_level="info",
+        ws="none",
+    )

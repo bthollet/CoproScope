@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-label="Blueprint Compte rendu CS">
+  <rect width="1440" height="900" fill="#f7f8f6"/>
+  <rect x="0" y="0" width="1440" height="64" fill="#24322f"/>
+  <text x="32" y="40" font-family="Arial, sans-serif" font-size="22" fill="#ffffff">Compte rendu du conseil syndical</text>
+  <rect x="1138" y="16" width="260" height="32" rx="4" fill="#d9eadb"/>
+  <text x="1160" y="38" font-family="Arial, sans-serif" font-size="14" fill="#21483d">Pret a validation interne</text>
+  <rect x="28" y="92" width="300" height="760" rx="8" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="54" y="130" font-family="Arial, sans-serif" font-size="18" fill="#202927">Ordre du jour</text>
+  <rect x="54" y="158" width="248" height="70" rx="6" fill="#eef6f1" stroke="#3f7d62"/>
+  <text x="72" y="186" font-family="Arial, sans-serif" font-size="15" fill="#202927">Travaux toiture</text>
+  <text x="72" y="208" font-family="Arial, sans-serif" font-size="13" fill="#48645b">Decision + action creee</text>
+  <rect x="54" y="244" width="248" height="70" rx="6" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="72" y="272" font-family="Arial, sans-serif" font-size="15" fill="#202927">Questions comptes</text>
+  <text x="72" y="294" font-family="Arial, sans-serif" font-size="13" fill="#8a5a00">Responsable manquant</text>
+  <rect x="54" y="330" width="248" height="70" rx="6" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="72" y="358" font-family="Arial, sans-serif" font-size="15" fill="#202927">Preparation AG</text>
+  <text x="72" y="380" font-family="Arial, sans-serif" font-size="13" fill="#48645b">A archiver en memoire</text>
+  <rect x="356" y="92" width="644" height="760" rx="8" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="390" y="132" font-family="Arial, sans-serif" font-size="26" fill="#202927">Reunion CS - 18 juin 2026</text>
+  <text x="390" y="162" font-family="Arial, sans-serif" font-size="14" fill="#5d6a66">Participants, decisions, actions et preuves rattachees</text>
+  <rect x="390" y="194" width="576" height="80" rx="6" fill="#fbfcfb" stroke="#d8ddd9"/>
+  <text x="414" y="226" font-family="Arial, sans-serif" font-size="15" fill="#202927">Presents et roles</text>
+  <text x="414" y="250" font-family="Arial, sans-serif" font-size="13" fill="#48645b">President CS, membre finances, secretaire de seance</text>
+  <rect x="390" y="300" width="576" height="124" rx="6" fill="#eef6f1" stroke="#3f7d62"/>
+  <text x="414" y="332" font-family="Arial, sans-serif" font-size="16" fill="#202927">Decision</text>
+  <text x="414" y="362" font-family="Arial, sans-serif" font-size="14" fill="#334">Demander trois devis toiture et verifier l'echeance avant AG.</text>
+  <rect x="414" y="382" width="134" height="24" rx="4" fill="#ffffff" stroke="#3f7d62"/>
+  <text x="428" y="399" font-family="Arial, sans-serif" font-size="12" fill="#2f6f5e">preuve OK</text>
+  <rect x="390" y="450" width="576" height="118" rx="6" fill="#fff8e8" stroke="#e5b84a"/>
+  <text x="414" y="482" font-family="Arial, sans-serif" font-size="16" fill="#202927">Action creee</text>
+  <text x="414" y="512" font-family="Arial, sans-serif" font-size="14" fill="#334">Responsable: a confirmer - echeance: 30 juin 2026.</text>
+  <rect x="390" y="602" width="174" height="42" rx="6" fill="#2f6f5e"/>
+  <text x="424" y="628" font-family="Arial, sans-serif" font-size="14" fill="#ffffff">Valider version</text>
+  <rect x="580" y="602" width="174" height="42" rx="6" fill="#ffffff" stroke="#2f6f5e"/>
+  <text x="618" y="628" font-family="Arial, sans-serif" font-size="14" fill="#2f6f5e">Creer actions</text>
+  <rect x="1028" y="92" width="384" height="760" rx="8" fill="#ffffff" stroke="#d8ddd9"/>
+  <text x="1058" y="132" font-family="Arial, sans-serif" font-size="20" fill="#202927">Validation et memoire</text>
+  <rect x="1058" y="166" width="324" height="100" rx="6" fill="#fbfcfb" stroke="#d8ddd9"/>
+  <text x="1078" y="198" font-family="Arial, sans-serif" font-size="15" fill="#202927">Version</text>
+  <text x="1078" y="224" font-family="Arial, sans-serif" font-size="13" fill="#48645b">v1.0 - figer avant validation</text>
+  <rect x="1058" y="288" width="324" height="124" rx="6" fill="#eef6f1" stroke="#3f7d62"/>
+  <text x="1078" y="320" font-family="Arial, sans-serif" font-size="15" fill="#202927">Validateurs internes</text>
+  <text x="1078" y="346" font-family="Arial, sans-serif" font-size="13" fill="#48645b">2 requis - 1 restant</text>
+  <text x="1078" y="372" font-family="Arial, sans-serif" font-size="13" fill="#48645b">Ne vaut pas signature qualifiee</text>
+  <rect x="1058" y="434" width="324" height="116" rx="6" fill="#fff0f0" stroke="#dd7777"/>
+  <text x="1078" y="466" font-family="Arial, sans-serif" font-size="15" fill="#202927">Diffusion</text>
+  <text x="1078" y="492" font-family="Arial, sans-serif" font-size="13" fill="#7a2c2c">Interne CS par defaut</text>
+  <text x="1078" y="518" font-family="Arial, sans-serif" font-size="13" fill="#7a2c2c">Revue requise avant export</text>
+  <rect x="1058" y="760" width="324" height="46" rx="6" fill="#24322f"/>
+  <text x="1140" y="789" font-family="Arial, sans-serif" font-size="15" fill="#ffffff">Archiver en memoire</text>
+</svg>

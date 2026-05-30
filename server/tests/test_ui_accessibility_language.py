@@ -12,7 +12,7 @@ WEB = SERVER / "src" / "coproscope" / "web"
 BASE_HTML = SERVER / "src" / "coproscope" / "web" / "templates" / "base.html"
 STYLES_CSS = SERVER / "src" / "coproscope" / "web" / "static" / "styles.css"
 LANGUAGE_DOC = ROOT / "docs" / "accessibilite_registre_langage.md"
-QA_DOC = ROOT / "docs" / "qa_ux_accessibilite_securite.md"
+QA_DOC = ROOT / "docs" / "archive" / "recettes_ux" / "qa_ux_accessibilite_securite.md"
 
 MAIN_TEMPLATE_TARGETS = (
     WEB / "templates" / "overview.html",

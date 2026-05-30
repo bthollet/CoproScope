@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% set view = coffre_partage %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="coffre-hero" aria-labelledby="coffre-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="coffre-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="coffre-hero__actions">
+      <a class="button-link" href="#avant-partage">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#droits">Relire droits</a>
+      <a class="button-link secondary" href="{{ token_href('/coffre/drive') }}">Tester Drive chiffre</a>
+    </div>
+  </div>
+  <aside class="coffre-status" aria-label="Statut du coffre fictif">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucune invitation ou export n'est actif.</small>
+  </aside>
+</section>
+
+<section class="coffre-model" aria-label="Modele mental du coffre">
+  {% for item in view.mental_model %}
+  <article>
+    <strong>{{ item.label }}</strong>
+    <p>{{ item.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="grid two" id="avant-partage">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Avant de partager</h3>
+      <span>{{ view.before_share|length }} controles</span>
+    </div>
+    <div class="coffre-gates">
+      {% for gate in view.before_share %}
+      <article>
+        <span>{{ gate.status }}</span>
+        <strong>{{ gate.label }}</strong>
+        <small>{{ gate.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Actions sensibles</h3>
+      <span>Bloquees</span>
+    </div>
+    <div class="coffre-actions">
+      {% for action in view.actions %}
+      <button type="button" disabled aria-disabled="true">
+        <strong>{{ action.label }}</strong>
+        <small>{{ action.reason }}</small>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="droits" aria-labelledby="droits-title">
+  <div class="panel-head">
+    <h3 id="droits-title">Personnes et droits separes</h3>
+    <span>Droit sensible: Peut gerer les acces</span>
+  </div>
+  <div class="coffre-rights-table" role="table" aria-label="Droits fictifs du coffre">
+    <div class="coffre-rights-row is-head" role="row">
+      <span role="columnheader">Personne</span>
+      {% for right in view.rights %}
+      <span role="columnheader">{{ right }}</span>
+      {% endfor %}
+      <span role="columnheader">Statut</span>
+    </div>
+    {% for member in view.members %}
+    <div class="coffre-rights-row" role="row">
+      <strong role="cell">{{ member.label }}</strong>
+      {% for right in view.rights %}
+      <span role="cell">{{ "Oui" if right in member.rights else "Non" }}</span>
+      {% endfor %}
+      <span role="cell">{{ member.status }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Invitation, retrait et recuperation</h3>
+      <span>A verifier</span>
+    </div>
+    <div class="coffre-state-list">
+      <article>
+        <strong>{{ view.states.invitation.label }}</strong>
+        <p>{{ view.states.invitation.detail }}</p>
+      </article>
+      <article>
+        <strong>{{ view.states.revocation.label }}</strong>
+        <p>{{ view.states.revocation.detail }}</p>
+      </article>
+      <article>
+        <strong>{{ view.states.recovery.label }}</strong>
+        <p>{{ view.states.recovery.detail }}</p>
+      </article>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>{{ view.states.conflict.label }}</h3>
+      <span>Conflit</span>
+    </div>
+    <p>{{ view.states.conflict.detail }}</p>
+    <ul class="compact-list">
+      {% for event in view.audit_trail %}
+      <li>{{ event }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

@@ -2,66 +2,276 @@
   "version": 1,
   "regles": [
     {
-      "lot": "Syndic",
-      "type_document": "Contrat_Syndic",
-      "priorite": 100,
-      "motifs_nom_fichier": ["contrat.*syndic", "mandat.*syndic"],
-      "mots_cles": ["contrat de syndic", "mandat de syndic", "honoraires du syndic"]
+      "lot": "Referentiel_Copropriete",
+      "type_document": "Reglement_Copropriete",
+      "priorite": 115,
+      "motifs_nom_fichier": ["reglement.*copro", "rc_copro"],
+      "mots_cles": ["reglement de copropriete", "destination de l'immeuble", "parties communes"]
+    },
+    {
+      "lot": "Referentiel_Copropriete",
+      "type_document": "EDD",
+      "priorite": 112,
+      "motifs_nom_fichier": ["etat.*descriptif.*division", "\\bedd\\b"],
+      "mots_cles": ["etat descriptif de division", "tantiemes", "lots privatifs"]
+    },
+    {
+      "lot": "Referentiel_Copropriete",
+      "type_document": "Carnet_Entretien",
+      "priorite": 108,
+      "motifs_nom_fichier": ["carnet.*entretien"],
+      "mots_cles": ["carnet d'entretien", "entretien de l'immeuble"]
+    },
+    {
+      "lot": "Referentiel_Copropriete",
+      "type_document": "Diagnostic_Technique",
+      "priorite": 104,
+      "motifs_nom_fichier": ["diagnostic", "\\bdtg\\b", "\\bdpe\\b"],
+      "mots_cles": ["diagnostic technique", "diagnostic de performance energetique", "amiante"]
     },
     {
       "lot": "AG",
       "type_document": "Convocation_AG",
-      "priorite": 90,
-      "motifs_nom_fichier": ["convocation", "ordre du jour"],
+      "priorite": 100,
+      "motifs_nom_fichier": ["convocation", "ordre.*jour"],
       "mots_cles": ["convocation", "ordre du jour", "assemblee generale"]
     },
     {
       "lot": "AG",
       "type_document": "PV_AG",
-      "priorite": 85,
-      "motifs_nom_fichier": ["pv.*ag", "proces.*verbal"],
-      "mots_cles": ["proces-verbal", "assemblee generale", "resolution"]
+      "priorite": 98,
+      "motifs_nom_fichier": ["pv.*ag", "proces.*verbal", "proces_verbal"],
+      "mots_cles": ["proces-verbal", "proces verbal", "assemblee generale", "resolution adoptee"]
+    },
+    {
+      "lot": "AG",
+      "type_document": "Annexe_AG",
+      "priorite": 94,
+      "motifs_nom_fichier": ["annexe.*ag", "annexe.*assemblee"],
+      "mots_cles": ["annexe a la convocation", "annexe ag", "document joint a l'assemblee"]
+    },
+    {
+      "lot": "AG",
+      "type_document": "Feuille_Presence_AG",
+      "priorite": 92,
+      "motifs_nom_fichier": ["feuille.*presence", "pouvoirs"],
+      "mots_cles": ["feuille de presence", "pouvoirs", "mandats de vote"]
+    },
+    {
+      "lot": "Conseil_Syndical",
+      "type_document": "CR_CS",
+      "priorite": 90,
+      "motifs_nom_fichier": ["cr.*cs", "conseil.*syndical"],
+      "mots_cles": ["compte rendu du conseil syndical", "conseil syndical"]
+    },
+    {
+      "lot": "Syndic",
+      "type_document": "Contrat_Syndic",
+      "priorite": 88,
+      "motifs_nom_fichier": ["contrat.*syndic", "mandat.*syndic"],
+      "mots_cles": ["contrat de syndic", "mandat de syndic", "honoraires du syndic"]
+    },
+    {
+      "lot": "Assurance",
+      "type_document": "Contrat_Assurance",
+      "priorite": 86,
+      "motifs_nom_fichier": ["contrat.*assurance", "police.*assurance"],
+      "mots_cles": ["contrat d'assurance", "police d'assurance", "assurance multirisque immeuble"]
+    },
+    {
+      "lot": "Assurance",
+      "type_document": "Attestation_Assurance",
+      "priorite": 84,
+      "motifs_nom_fichier": ["(?<!demande_)attestation.*assurance"],
+      "mots_cles": ["attestation d'assurance", "attestation multirisque"]
+    },
+    {
+      "lot": "Contrats",
+      "type_document": "Contrat_Maintenance",
+      "priorite": 82,
+      "motifs_nom_fichier": ["maintenance", "entretien.*contrat"],
+      "mots_cles": ["contrat de maintenance", "contrat d'entretien", "prestataire"]
+    },
+    {
+      "lot": "Contrats",
+      "type_document": "Contrat_Fournisseur",
+      "priorite": 80,
+      "motifs_nom_fichier": ["contrat.*fournisseur", "prestation"],
+      "mots_cles": ["contrat de prestation", "conditions particulieres", "fournisseur"]
     },
     {
       "lot": "Comptes",
       "type_document": "Annexe_Comptable",
-      "priorite": 80,
-      "motifs_nom_fichier": ["annexe", "budget", "etat_financier"],
-      "mots_cles": ["annexe", "etat financier", "budget previsionnel", "charges et produits"]
+      "priorite": 78,
+      "motifs_nom_fichier": ["annexe.*comptable", "annexe", "etat_financier"],
+      "mots_cles": ["annexe comptable", "etat financier", "charges et produits"]
+    },
+    {
+      "lot": "Comptes",
+      "type_document": "Budget_Previsionnel",
+      "priorite": 76,
+      "motifs_nom_fichier": ["budget", "budget.*previsionnel"],
+      "mots_cles": ["budget previsionnel", "budget vote", "budget propose"]
+    },
+    {
+      "lot": "Comptes",
+      "type_document": "Etat_Depenses",
+      "priorite": 74,
+      "motifs_nom_fichier": ["etat.*depenses", "depenses"],
+      "mots_cles": ["etat des depenses", "liste des depenses", "charges de l'exercice"]
+    },
+    {
+      "lot": "Comptes",
+      "type_document": "Grand_Livre",
+      "priorite": 72,
+      "motifs_nom_fichier": ["grand.*livre"],
+      "mots_cles": ["grand livre", "journal comptable", "compte comptable"]
+    },
+    {
+      "lot": "Comptes",
+      "type_document": "Appel_Fonds",
+      "priorite": 70,
+      "motifs_nom_fichier": ["appel.*fonds", "appel.*charges"],
+      "mots_cles": ["appel de fonds", "appel de charges", "quote-part"]
+    },
+    {
+      "lot": "Comptes",
+      "type_document": "Fonds_Travaux",
+      "priorite": 68,
+      "motifs_nom_fichier": ["fonds.*travaux"],
+      "mots_cles": ["fonds travaux", "fonds alur"]
+    },
+    {
+      "lot": "Comptes_Restreints",
+      "type_document": "Impayes",
+      "priorite": 66,
+      "motifs_nom_fichier": ["impaye", "impayes", "recouvrement"],
+      "mots_cles": ["impayes", "recouvrement", "coproprietaire debiteur"]
+    },
+    {
+      "lot": "Comptes_Restreints",
+      "type_document": "Releve_Bancaire",
+      "priorite": 64,
+      "motifs_nom_fichier": ["releve.*bancaire", "banque", "rib"],
+      "mots_cles": ["releve bancaire", "iban", "compte bancaire"]
     },
     {
       "lot": "Factures_Fournisseurs",
       "type_document": "Facture",
-      "priorite": 75,
+      "priorite": 62,
       "motifs_nom_fichier": ["facture"],
       "mots_cles": ["facture", "net a payer", "total ttc"]
     },
     {
       "lot": "Factures_Fournisseurs",
+      "type_document": "Avoir",
+      "priorite": 60,
+      "motifs_nom_fichier": ["avoir"],
+      "mots_cles": ["avoir", "credit facture"]
+    },
+    {
+      "lot": "Factures_Fournisseurs",
+      "type_document": "Note_Honoraires",
+      "priorite": 58,
+      "motifs_nom_fichier": ["honoraires", "note.*honoraires"],
+      "mots_cles": ["note d'honoraires", "honoraires"]
+    },
+    {
+      "lot": "Factures_Fournisseurs",
       "type_document": "Devis",
-      "priorite": 70,
+      "priorite": 56,
       "motifs_nom_fichier": ["devis"],
       "mots_cles": ["devis", "bon pour accord"]
     },
     {
-      "lot": "Contrats",
-      "type_document": "Contrat_Assurance",
-      "priorite": 65,
-      "motifs_nom_fichier": ["(?<!demande_)attestation.*assurance", "contrat.*assurance", "police.*assurance"],
-      "mots_cles": ["contrat d'assurance", "police d'assurance"]
+      "lot": "Travaux",
+      "type_document": "Dossier_Travaux",
+      "priorite": 54,
+      "motifs_nom_fichier": ["travaux", "chantier"],
+      "mots_cles": ["dossier travaux", "chantier", "maitrise d'oeuvre"]
     },
     {
       "lot": "ITE_Travaux",
       "type_document": "Dossier_ITE_Travaux",
-      "priorite": 60,
+      "priorite": 53,
       "motifs_nom_fichier": ["ite", "ravalement", "toiture", "ventilation"],
       "mots_cles": ["ite", "isolation thermique", "ravalement", "maitrise d'oeuvre"]
     },
     {
+      "lot": "Travaux",
+      "type_document": "Marche_Travaux",
+      "priorite": 52,
+      "motifs_nom_fichier": ["marche.*travaux", "contrat.*travaux"],
+      "mots_cles": ["marche de travaux", "ordre de service", "cahier des clauses"]
+    },
+    {
+      "lot": "Travaux",
+      "type_document": "Ordre_Service",
+      "priorite": 50,
+      "motifs_nom_fichier": ["ordre.*service", "\\bos\\b"],
+      "mots_cles": ["ordre de service", "demarrage des travaux"]
+    },
+    {
+      "lot": "Travaux",
+      "type_document": "Reception_Travaux",
+      "priorite": 48,
+      "motifs_nom_fichier": ["reception.*travaux", "proces.*verbal.*reception"],
+      "mots_cles": ["reception des travaux", "proces-verbal de reception", "levee des reserves"]
+    },
+    {
+      "lot": "Travaux",
+      "type_document": "DOE_Travaux",
+      "priorite": 46,
+      "motifs_nom_fichier": ["\\bdoe\\b", "dossier.*ouvrages.*executes"],
+      "mots_cles": ["dossier des ouvrages executes", "garantie de parfait achevement"]
+    },
+    {
+      "lot": "Incidents",
+      "type_document": "Photo_Incident",
+      "priorite": 44,
+      "motifs_nom_fichier": ["photo.*incident", "infiltration", "degat"],
+      "mots_cles": ["photo d'incident", "infiltration", "degat des eaux"]
+    },
+    {
+      "lot": "Incidents",
+      "type_document": "Declaration_Assurance",
+      "priorite": 42,
+      "motifs_nom_fichier": ["declaration.*sinistre", "sinistre"],
+      "mots_cles": ["declaration de sinistre", "sinistre assurance"]
+    },
+    {
+      "lot": "Contentieux",
+      "type_document": "Contentieux_Nominatif",
+      "priorite": 40,
+      "motifs_nom_fichier": ["contentieux", "avocat", "procedure"],
+      "mots_cles": ["contentieux", "avocat", "mise en demeure", "assignation"]
+    },
+    {
       "lot": "Communication",
       "type_document": "Communication",
-      "priorite": 40,
-      "motifs_nom_fichier": ["mail", "email", "e-mail", "courriel", "relance", "note"],
+      "priorite": 96,
+      "motifs_nom_fichier": ["mail", "email", "e-mail", "courriel", "echange"],
+      "mots_cles": ["email recu", "courriel", "message du syndic", "trace locale"]
+    },
+    {
+      "lot": "Communication",
+      "type_document": "Courrier",
+      "priorite": 38,
+      "motifs_nom_fichier": ["courrier", "lettre"],
+      "mots_cles": ["courrier", "lettre", "destinataire"]
+    },
+    {
+      "lot": "Communication",
+      "type_document": "Preuve_Envoi",
+      "priorite": 36,
+      "motifs_nom_fichier": ["preuve.*envoi", "accuse.*reception", "lrar"],
+      "mots_cles": ["preuve d'envoi", "accuse de reception", "lettre recommandee"]
+    },
+    {
+      "lot": "Communication",
+      "type_document": "Communication",
+      "priorite": 30,
+      "motifs_nom_fichier": ["mail", "email", "e-mail", "courriel", "relance", "note", "reponse"],
       "mots_cles": ["mail", "email", "e-mail", "courriel", "relance", "demande", "reponse"]
     }
   ]

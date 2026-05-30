@@ -10,9 +10,9 @@ Ce document met en oeuvre le protocole de refonte UX issu des visuels
 d'enquete utilisateur. Il sert de mode operatoire pour garder trois flux actifs
 en permanence:
 
-- un ecran livre a tester;
+- une UI reelle livree a tester;
 - un bloc en developpement;
-- le visuel ou blueprint suivant en enquete.
+- le visuel IA et le blueprint suivant en enquete.
 
 Source de verite UX:
 
@@ -20,6 +20,23 @@ Source de verite UX:
 - `docs/assets/etude-utilisateurs/registre-decisions-actions-preuves.png`
 - `docs/assets/etude-utilisateurs/controle-comptes-guide.png`
 - `docs/assets/etude-utilisateurs/memoire-copropriete.png`
+
+Les visuels designer generes pour les cycles suivants completent ces sources,
+mais ne les remplacent pas. A chaque cycle UI, les agents comparent l'UI reelle
+au visuel d'enquete le plus proche ou au visuel designer derive, puis tracent
+les ecarts acceptes, refuses ou reportes.
+
+Un screenshot de livraison ne remplace pas le visuel designer: il sert a la
+recette apres dev. Pour chaque iteration UI, le designer produit en amont un
+visuel genere par IA et un blueprint cible, qualifies par le membre CS novice
+avant toute commande dev. Le coordinateur peut annuler le visuel IA, le
+blueprint, ou les deux, uniquement avec justification tracee:
+`VISUEL_IA_WAIVED`, `BLUEPRINT_WAIVED`, ou les deux. Le visuel retenu est
+reference par chemin dans le point de coordination, idealement sous
+`docs/assets/...`; il s'agit d'une image bitmap de l'ecran complet (`.png` ou
+`.jpg`), pas d'un SVG, d'une icone, d'une illustration abstraite ou d'un schema
+partiel. Le blueprint est reference par chemin ou section de note; les
+screenshots de livraison sont archives separement comme preuves de recette.
 
 ## Principe de pipeline
 
@@ -30,11 +47,17 @@ trois niveaux suivants doivent etre renseignes:
 |---|---|---|---|
 | Cycle N-1 | Test du produit livre | QA + membre CS novice | Acceptation, corrections mineures ou retour dev |
 | Cycle N | Developpement | Front + back/viewmodel | Route livree, tests cibles, limites connues |
-| Cycle N+1 | Enquete sur image | Designer de service + membre CS novice | Commande dev validee pour le bloc suivant |
+| Cycle N+1 | Visuel IA et blueprint cible | Designer de service + membre CS novice | Commande dev validee pour le bloc suivant |
 
 Objectif operationnel: les testeurs ont toujours quelque chose sous la dent
 pendant que les devs travaillent, et les devs ont toujours une commande
 stabilisee pendant que le designer prepare la suivante.
+
+Regle obligatoire: le cycle ne part jamais d'une intention abstraite. Il nomme
+une route, un ecran, une modale, un artefact HTML ou un parcours local. Si le
+sujet est visuel, nouveau, ambigu ou sensible pour le novice, le designer
+genere une image IA et un blueprint et le membre CS novice les qualifie avant
+tout developpement.
 
 ## Cadence obligatoire
 
@@ -42,8 +65,9 @@ Point de coordination toutes les 10 minutes, dans ce format exact:
 
 - **A tester maintenant**: route livree, scenario novice, criteres critiques.
 - **En dev maintenant**: bloc, owners front/back, risque principal.
-- **En enquete maintenant**: image ou visuel recree, questions utilisateur.
+- **En enquete maintenant**: visuel IA et blueprint cible, questions utilisateur.
 - **Commande prete**: ticket dev valide pour le prochain bloc.
+- **Comparaison visuels enquete**: ecarts UI reelle vs visuel source ou derive.
 - **Decision requise**: arbitrage produit, UX, donnees ou securite.
 - **Prochain mouvement**: action concrete avant le prochain point.
 
@@ -56,6 +80,10 @@ Le heartbeat Codex actif `coordination-refonte-ux-coproscope` utilise ce format.
 Entree:
 
 - capture Canva existante ou visuel recree par le designer;
+- visuel IA cible bitmap de l'ecran complet produit pour l'iteration, sauf
+  `VISUEL_IA_WAIVED` justifie;
+- blueprint cible produit pour l'iteration, sauf `BLUEPRINT_WAIVED` justifie;
+- route ou capture UI reelle a comparer si elle existe deja;
 - contexte metier de copropriete;
 - conclusions d'enquete utilisateur: preuve + action + memoire.
 
@@ -73,6 +101,7 @@ Sortie:
 - composants a corriger;
 - vocabulaire a utiliser et vocabulaire a bannir;
 - parcours nominal et parcours d'echec;
+- ecarts avec le visuel d'enquete ou le visuel designer derive;
 - premiere version de la commande dev.
 
 ### 2. Commande dev
@@ -80,6 +109,10 @@ Sortie:
 La commande dev est obligatoire avant tout developpement. Elle contient:
 
 - objectif utilisateur;
+- UI reelle cible: route, ecran, modale, artefact ou parcours;
+- visuel source ou derive a comparer;
+- visuel IA cible bitmap de l'ecran complet, ou `VISUEL_IA_WAIVED` justifie;
+- blueprint cible de l'iteration, ou `BLUEPRINT_WAIVED` justifie;
 - structure visuelle;
 - composants;
 - donnees necessaires;
@@ -99,10 +132,15 @@ Responsabilites:
 - dev back/viewmodel: projection `model.ux.*`, compteurs, listes, details,
   liens tokenises;
 - QA: tests routes, securite, langage novice, DOM, responsive.
+- QA et novice: comparaison par blocs avec le visuel source ou derive.
 
 Garde-fous:
 
 - ne pas inventer un visuel manquant cote dev;
+- ne pas remplacer le visuel IA et le blueprint amont par une capture de
+  livraison;
+- ne pas produire le visuel IA comme SVG, schema partiel ou illustration
+  abstraite;
 - ne pas revenir a l'ancienne UX par facilite technique;
 - ne pas afficher un compteur non cliquable;
 - ne pas livrer une carte critique sans preuve/source, prochaine action et
@@ -121,7 +159,8 @@ Controle QA:
 - structure DOM attendue;
 - langage novice;
 - accessibilite minimale;
-- comparaison visuelle par blocs avec l'image cible.
+- comparaison visuelle par blocs avec l'image cible ou le visuel d'enquete le
+  plus proche.
 
 Controle membre CS novice:
 
@@ -301,6 +340,16 @@ Acceptance:
 ## No-go
 
 - Aucun developpement ne demarre sans commande dev validee.
+- Aucun developpement UI ne demarre sans UI reelle cible.
+- Une UI nouvelle, visuelle, dense ou sensible part en dev sans image IA et
+  blueprint designer qualifies par le novice, sauf annulation explicite de l'un
+  et/ou de l'autre.
+- Une iteration UI part en dev avec seulement des screenshots de livraison et
+  sans visuel IA et blueprint amont ni waiver justifie.
+- Le visuel IA est un SVG, un schema partiel ou une illustration abstraite au
+  lieu d'une image bitmap de l'ecran complet.
+- Une livraison UI est acceptee sans comparaison au visuel d'enquete ou au
+  visuel designer derive.
 - Testeur teste une maquette au lieu d'une route livree.
 - Designer laisse les devs inventer une vue manquante.
 - Un compteur n'ouvre rien.

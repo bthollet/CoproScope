@@ -13,29 +13,41 @@ toutes les pieces primaires du dossier Beauvallon reel.
 
 La sortie obligatoire est une comparaison documentee entre:
 
-- le dossier actuel reel: `C:\Users\brice\CoproScope`;
-- le dossier test reconstruit: `C:\Users\brice\Documents\CoproScope\instances\beauvallon_reconstruction_sim_20260523`.
+- le dossier actuel reel: `<instance-privee-source-hors-git>`;
+- le dossier test reconstruit: `<instance-simulation-hors-git>`.
 
 Aucun verdict de succes ne peut etre donne sans rapport de comparaison reel/test.
 
 ## Instance et sources
 
-Instance test vide cible:
+Conteneur de simulation cible:
 
 ```text
-C:\Users\brice\Documents\CoproScope\instances\beauvallon_reconstruction_sim_20260523
+<conteneur-simulation-hors-git>
 ```
 
-Copie de travail des pieces primaires a creer par l'equipe, apres manifeste:
+Instance CoproScope cible:
 
 ```text
-C:\Users\brice\Documents\CoproScope\sources\beauvallon_primary_copy_20260523
+<instance-simulation-hors-git>
+```
+
+Docs de travail, manifests et matrices:
+
+```text
+<docs-travail-simulation-hors-git>
+```
+
+Copie de travail des pieces primaires creee par l'equipe:
+
+```text
+<copie-primaire-simulation-hors-git>
 ```
 
 Source reelle a traiter en lecture seule:
 
 ```text
-C:\Users\brice\CoproScope
+<instance-privee-source-hors-git>
 ```
 
 Sont exclus de la copie primaire sauf decision explicite du coordinateur:
@@ -48,6 +60,8 @@ Sont exclus de la copie primaire sauf decision explicite du coordinateur:
 
 Le principe: copier les sources probatoires primaires, puis laisser CoproScope
 recreer inventaires, textes, registres, projections, rapports et read models.
+Pour la simulation, les documents ne sont pas preclasses dans l'instance: ils
+entrent dans `instance\200_INBOX`, puis CoproScope refait le tri.
 
 ## Definition de fini
 

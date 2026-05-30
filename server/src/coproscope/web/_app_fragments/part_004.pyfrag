@@ -13,8 +13,11 @@
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         run_light_pipeline(instance, manifest)
         _invalidate_dashboard_model_cache()
+        redirect_path = f"/depot?depot={manifest['deposit_id']}&status=uploaded"
+        if depot_context.get("return") == "document_intake":
+            redirect_path = f"/documents/ajouter?depot={manifest['deposit_id']}&status=uploaded"
         return RedirectResponse(
-            url=_url_with_token(request, f"/depot?depot={manifest['deposit_id']}&status=uploaded"),
+            url=_url_with_token(request, redirect_path),
             status_code=303,
         )
 
@@ -289,4 +292,5 @@ def serve(
         host=host,
         port=port,
         log_level="info",
+        ws="none",
     )

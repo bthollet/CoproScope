@@ -23,10 +23,10 @@ def _workstreams(decisions: dict[str, object], incidents: dict[str, object]) -> 
             "items": decisions.get("items", [])[:5] if isinstance(decisions.get("items"), list) else [],
         },
         {
-            "label": "WorksOps",
-            "status": STATUS_NOT_STARTED,
+            "label": "Travaux suivis",
+            "status": STATUS_WORKING,
             "detail": "Suivre devis, assurances, reception, garanties et ecarts travaux.",
-            "next": "A lancer depuis les decisions AG et les pieces travaux deja reperees.",
+            "next": "Ouvrir Travaux suivis pour verifier preuve manquante, blocage et partage possible.",
             "items": [],
         },
         {
@@ -226,7 +226,7 @@ def build_dashboard_model(instance: InstanceConfig, year: int = 2025) -> dict[st
         _module(
             "Chantiers produit",
             STATUS_WORKING,
-            "WorksOps, IncidentOps, CommsOps, passation.",
+            "Travaux suivis, IncidentOps, CommsOps, passation.",
             "/chantiers",
         ),
         _module(

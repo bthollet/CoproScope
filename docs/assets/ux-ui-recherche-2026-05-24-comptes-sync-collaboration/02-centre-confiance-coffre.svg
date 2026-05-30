@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Centre de confiance du coffre CoproScope</title>
+  <desc id="desc">Blueprint retenu pour separer coffre local, transport Drive, membres, droits et appareils avant invitation.</desc>
+  <rect width="1440" height="900" fill="#f7f8fa"/>
+  <rect x="0" y="0" width="1440" height="72" fill="#172026"/>
+  <text x="40" y="44" font-family="Arial, sans-serif" font-size="24" fill="#ffffff">Coffre et partage</text>
+  <text x="1110" y="43" font-family="Arial, sans-serif" font-size="14" fill="#d9e2ec">Derniere verification: a faire</text>
+
+  <rect x="40" y="96" width="1360" height="96" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="64" y="130" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#102a43">Vous travaillez dans ce coffre</text>
+  <text x="64" y="160" font-family="Arial, sans-serif" font-size="15" fill="#334e68">Les documents lisibles restent sur cet ordinateur. Drive transporte seulement un coffre chiffre.</text>
+  <rect x="1088" y="118" width="240" height="48" rx="6" fill="#1f2933"/>
+  <text x="1112" y="148" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Verifier avant partage</text>
+
+  <rect x="40" y="224" width="410" height="280" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="64" y="262" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">1. Sur cet ordinateur</text>
+  <text x="64" y="296" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Profil local: President CS</text>
+  <text x="64" y="326" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Coffre local chiffre: present</text>
+  <text x="64" y="356" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Documents lisibles: restent locaux</text>
+  <rect x="64" y="386" width="322" height="50" rx="6" fill="#e6f4ea"/>
+  <text x="84" y="417" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#1f6f3d">Rien de lisible ne part sans revue</text>
+
+  <rect x="515" y="224" width="410" height="280" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="539" y="262" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">2. Transport Drive</text>
+  <text x="539" y="296" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Compte Drive: a confirmer</text>
+  <text x="539" y="326" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Coffre envoye: non</text>
+  <text x="539" y="356" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Fichiers a verifier: conflits, partiels, copies</text>
+  <rect x="539" y="386" width="322" height="50" rx="6" fill="#fff8e6"/>
+  <text x="559" y="417" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#8a5a00">Partage bloque jusqu'a verification</text>
+
+  <rect x="990" y="224" width="410" height="280" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="1014" y="262" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">3. Acces des personnes</text>
+  <text x="1014" y="296" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Membres: 2 actifs, 1 invite</text>
+  <text x="1014" y="326" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Droits: lire, ajouter, valider, exporter</text>
+  <text x="1014" y="356" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Recuperation: gardien a confirmer</text>
+  <rect x="1014" y="386" width="322" height="50" rx="6" fill="#eef2f7"/>
+  <text x="1034" y="417" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#243b53">Choisir les droits, sans envoyer</text>
+
+  <rect x="40" y="540" width="650" height="268" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="64" y="578" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">Checklist avant invitation</text>
+  <text x="88" y="620" font-family="Arial, sans-serif" font-size="15" fill="#243b53">□ Coffre chiffre verifie</text>
+  <text x="88" y="660" font-family="Arial, sans-serif" font-size="15" fill="#243b53">□ Aucun document lisible dans Drive</text>
+  <text x="88" y="700" font-family="Arial, sans-serif" font-size="15" fill="#243b53">□ Compte Drive confirme</text>
+  <text x="88" y="740" font-family="Arial, sans-serif" font-size="15" fill="#243b53">□ Droits de la personne relus en clair</text>
+  <text x="88" y="780" font-family="Arial, sans-serif" font-size="15" fill="#243b53">□ Appareil autorise ou a confirmer</text>
+
+  <rect x="750" y="540" width="650" height="268" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="774" y="578" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">Membres et appareils</text>
+  <line x1="774" y1="608" x2="1358" y2="608" stroke="#d9e2ec"/>
+  <text x="774" y="642" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#243b53">President CS</text>
+  <text x="974" y="642" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Lit, ajoute, valide, exporte</text>
+  <text x="1242" y="642" font-family="Arial, sans-serif" font-size="14" fill="#1f6f3d">Ordinateur autorise</text>
+  <text x="774" y="690" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#243b53">Membre CS</text>
+  <text x="974" y="690" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Lit, commente, ajoute preuve</text>
+  <text x="1242" y="690" font-family="Arial, sans-serif" font-size="14" fill="#8a5a00">Appareil a confirmer</text>
+  <text x="774" y="738" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#243b53">Ancien appareil</text>
+  <text x="974" y="738" font-family="Arial, sans-serif" font-size="14" fill="#334e68">Ne doit plus recevoir les prochaines versions</text>
+  <text x="1242" y="738" font-family="Arial, sans-serif" font-size="14" fill="#b42318">Retirer</text>
+
+  <rect x="40" y="836" width="1360" height="34" rx="6" fill="#fcebea" stroke="#f5c2c7"/>
+  <text x="64" y="858" font-family="Arial, sans-serif" font-size="14" fill="#b42318">Invitation bloquee: verifiez le coffre chiffre et les droits avant tout partage.</text>
+</svg>

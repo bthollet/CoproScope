@@ -31,6 +31,43 @@
   </div>
 </section>
 
+<section class="cs-card-band" aria-labelledby="onboarding-first-success-title">
+  <div class="cs-section-head">
+    <div>
+      <p class="eyebrow">Premiere ouverture</p>
+      <h3 id="onboarding-first-success-title">Premier succes conseille</h3>
+      <p class="hint">Choisissez une action simple, creez une trace locale, puis gardez la prochaine etape visible.</p>
+    </div>
+    <a class="cs-mini-link" href="{{ token_href('/demandes') }}#nouvelle-demande">Creer une trace locale</a>
+  </div>
+  <div class="cs-todo-grid" aria-label="Intentions de premier succes">
+    <a class="cs-todo-card cs-tone-ok" href="{{ token_href('/demandes') }}#nouvelle-demande">
+      <span class="cs-card-icon" aria-hidden="true">+</span>
+      <span class="cs-card-number">1</span>
+      <strong>Demander une piece ou relancer le syndic</strong>
+      <small>Rien n'est envoye automatiquement. La demande reste une trace locale.</small>
+    </a>
+    <a class="cs-todo-card cs-tone-danger" href="{{ token_href('/actions?priority=P1') }}">
+      <span class="cs-card-icon" aria-hidden="true">!</span>
+      <span class="cs-card-number">2</span>
+      <strong>Traiter une priorite</strong>
+      <small>Pourquoi, Preuve ou source, prochaine action et Prudence diffusion.</small>
+    </a>
+    <a class="cs-todo-card cs-tone-warn" href="{{ token_href('/documents/ajouter') }}">
+      <span class="cs-card-icon" aria-hidden="true">doc</span>
+      <span class="cs-card-number">3</span>
+      <strong>Ajouter ou rattacher un document</strong>
+      <small>Depot local, confidentialite, rattachement et Trace gardee pour la passation.</small>
+    </a>
+    <a class="cs-todo-card cs-tone-info" href="{{ token_href('/exports/passation') }}">
+      <span class="cs-card-icon" aria-hidden="true">mem</span>
+      <span class="cs-card-number">4</span>
+      <strong>Transmettre ou reprendre la memoire</strong>
+      <small>Apercu prudent: verifier les blocages avant tout partage.</small>
+    </a>
+  </div>
+</section>
+
 <section class="cs-card-band" aria-labelledby="todo-title">
   <div class="cs-section-head">
     <h3 id="todo-title">A traiter</h3>

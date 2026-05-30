@@ -13,6 +13,14 @@ def _path_state(path: Path) -> str:
     return "MISSING"
 
 
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except ValueError:
+        return False
+
+
 def _bool_setting(value: object) -> bool:
     if isinstance(value, str):
         return value.strip().lower() not in {"0", "false", "faux", "no", "non", "off"}
@@ -70,6 +78,60 @@ def _append_instance_git_status(instance: InstanceConfig, lines: list[str]) -> i
     return issues
 
 
+def _append_layout_doctrine_status(instance: InstanceConfig, lines: list[str]) -> int:
+    issues = 0
+    layout = instance.layout_settings()
+    lines.append("")
+    lines.append("Doctrine arborescence:")
+    if not layout:
+        lines.append("- statut: non configuree; mode instance legacy conserve")
+        return issues
+
+    technical_root = instance.technical_root()
+    physical_deposit = instance.physical_deposit_path()
+    user_moves_allowed = instance.user_moves_allowed()
+    lines.append("- identite_documentaire: sha256 + manifeste + doc_id; chemin visible non canonique")
+    lines.append(f"- mouvements_utilisateur: {'AUTORISES' if user_moves_allowed else 'figes'}")
+
+    if technical_root is None:
+        lines.append("- racine_technique: CONFIG_MANQUANTE")
+        issues += 1
+    else:
+        state = _path_state(technical_root)
+        lines.append(f"- racine_technique: {state} -> {technical_root}")
+        if state != "OK":
+            issues += 1
+
+    if physical_deposit is None:
+        lines.append("- depot_physique: CONFIG_MANQUANTE")
+        if user_moves_allowed:
+            issues += 1
+    else:
+        state = _path_state(physical_deposit)
+        lines.append(f"- depot_physique: {state} -> {physical_deposit}")
+        if state != "OK":
+            issues += 1
+        if technical_root is not None and _is_relative_to(physical_deposit, technical_root):
+            lines.append("- depot_physique: ERREUR_DANS_RACINE_TECHNIQUE")
+            issues += 1
+
+    if technical_root is not None:
+        for root_name in ["system", "outputs", "staging", "logs"]:
+            root_path = instance.root(root_name)
+            if not _is_relative_to(root_path, technical_root):
+                lines.append(f"- racine_{root_name}: HORS_RACINE_TECHNIQUE -> {root_path}")
+                issues += 1
+        for register_name in ["documents", "duplicates", "manifest", "requests", "ag", "findings", "kpi"]:
+            try:
+                register_path = instance.register(register_name)
+            except KeyError:
+                continue
+            if not _is_relative_to(register_path, technical_root):
+                lines.append(f"- registre_{register_name}: HORS_RACINE_TECHNIQUE -> {register_path}")
+                issues += 1
+    return issues
+
+
 def run_doctor(instance: InstanceConfig, run: RunContext) -> int:
     issues = 0
     politique_linguistique = instance.politique_linguistique()
@@ -114,6 +176,8 @@ def run_doctor(instance: InstanceConfig, run: RunContext) -> int:
             lines.append(f"- {register_labels[register_name]}: CONFIG_MANQUANTE")
             continue
         lines.append(f"- {register_labels[register_name]}: {register_path}")
+
+    issues += _append_layout_doctrine_status(instance, lines)
 
     lines.append("")
     lines.append("Dependances:")

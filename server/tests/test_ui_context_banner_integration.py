@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE_DIR = ROOT / "server" / "src" / "coproscope" / "web" / "templates"
 BASE_HTML = TEMPLATE_DIR / "base.html"
 STYLES_CSS = ROOT / "server" / "src" / "coproscope" / "web" / "static" / "styles.css"
-DOC = ROOT / "docs" / "integration_bandeau_contexte.md"
+DOC = ROOT / "docs" / "archive" / "notes_integration" / "integration_bandeau_contexte.md"
 
 
 class UiContextBannerIntegrationTests(unittest.TestCase):

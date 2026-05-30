@@ -13,6 +13,7 @@ from .public_actions_read_model import (
     PUBLIC_ACTIONS_COLUMNS,
     PUBLIC_ACTIONS_SCHEMA_VERSION,
     PUBLIC_ACTIONS_VIEW,
+    build_public_actions_template_model,
     read_public_actions_v1,
 )
 
@@ -143,6 +144,21 @@ def build_public_missing_pieces_model(instance: InstanceConfig, year: int) -> di
 
 def build_empty_public_missing_pieces_model(instance: InstanceConfig, year: int) -> dict[str, object]:
     return _missing_pieces_template_model(instance, year, [])
+
+
+def build_public_actions_model(
+    instance: InstanceConfig,
+    year: int,
+    *,
+    scope: str = "",
+    priority: str = "",
+    status: str = "",
+) -> dict[str, object]:
+    db_path = public_reconstruction_db_path(instance)
+    if db_path is None:
+        raise PublicReadModelUnavailable("public reconstruction database is not configured")
+    rows = read_public_actions_v1(db_path, scope=scope, priority=priority, status=status)
+    return build_public_actions_template_model(instance, year, rows)
 
 
 def _require_public_missing_pieces_source_tables(connection: sqlite3.Connection) -> None:

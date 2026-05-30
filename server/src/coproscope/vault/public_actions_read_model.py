@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
+from ..core.common import InstanceConfig
 from . import reconstruction
 
 
@@ -106,6 +107,46 @@ def read_public_actions_v1(
             connection.close()
     except (OSError, ValueError, sqlite3.Error, _ActionsReadModelUnavailable):
         return []
+
+
+def build_public_actions_template_model(
+    instance: InstanceConfig,
+    year: int,
+    rows: list[dict[str, object]],
+) -> dict[str, object]:
+    items = [_template_public_action_item(row) for row in rows]
+    summary = _public_actions_summary(items)
+    return {
+        "instance": {"id": instance.instance_id, "name": instance.display_name, "root": "", "year": year},
+        "ux": {
+            "shell": {
+                "app_title": "CoproScope",
+                "page_title": "Actions a traiter",
+                "active_page": "actions",
+                "search_placeholder": "Rechercher decision, action, preuve...",
+                "notification_count": 0,
+                "sharing_mode_label": "Mode prive local",
+                "sharing_mode_status": "Aucune synchronisation externe lancee",
+                "top_actions": [{"label": "Nouvelle demande", "href": "/demandes", "kind": "primary", "icon": "+"}],
+            },
+            "priority_views": {
+                "late_actions": {"summary": {}, "filters": {}, "items": items},
+                "syndic_followups": {"summary": {}, "tabs": [], "items": [], "selected": {}},
+            },
+            "registre": {},
+        },
+        "action_items": items,
+        "actions": items,
+        "action_summary": summary,
+        "piece_workshop": {
+            "summary": {"total": 0, "with_local_proof": 0, "without_local_proof": len(items)},
+            "items": [],
+        },
+        "accounting": {"guide": {"p1": [], "p2": [], "ok": []}},
+        "kpis": {"actions": len(items), "doc_requests": "", "decisions": "", "privacy_reviews": ""},
+        "public_read_model": PUBLIC_ACTIONS_VIEW,
+        "public_read_model_version": PUBLIC_ACTIONS_SCHEMA_VERSION,
+    }
 
 
 def _require_public_actions_projection(connection: sqlite3.Connection) -> None:
@@ -211,6 +252,62 @@ def _public_action_row(row: dict[str, Any]) -> dict[str, object]:
         "read_model_version": PUBLIC_ACTIONS_SCHEMA_VERSION,
     }
     return {key: safe[key] for key in PUBLIC_ACTIONS_COLUMNS}
+
+
+def _template_public_action_item(row: dict[str, object]) -> dict[str, object]:
+    item = dict(row)
+    item["action_id"] = row["id"]
+    item["owner_label"] = row["owner"]
+    item["proof_expected"] = row["evidence"]
+    item["expected_proof"] = row["evidence"]
+    item["diffusion"] = {"label": row["diffusion_label"], "reason": "Relire le public autorise avant partage."}
+    item["proof"] = {"label": row["evidence"]}
+    item["pieces"] = []
+    item["proofs"] = []
+    item["followups"] = []
+    item["history"] = []
+    item["progress_pct"] = 0
+    item["followup_href"] = row["request_href"]
+    item["piece_href"] = row["proof_href"]
+    return item
+
+
+def _public_actions_summary(rows: list[dict[str, object]]) -> dict[str, object]:
+    by_domain = _public_action_counter(rows, "domain")
+    return {
+        "total": len(rows),
+        "preview_count": min(len(rows), 13),
+        "accounting": by_domain.get("comptes", 0),
+        "privacy": by_domain.get("confidentialite", 0),
+        "documents": by_domain.get("documents", 0),
+        "decisions": by_domain.get("decisions", 0),
+        "incidents": by_domain.get("incidents", 0),
+        "by_domain": by_domain,
+        "by_priority": _public_action_counter(rows, "priority"),
+        "by_status": _public_action_counter(rows, "status"),
+        "scope_counts": {
+            "tous": len(rows),
+            "comptes": _public_scope_count(rows, "comptes"),
+            "confidentialite": _public_scope_count(rows, "confidentialite"),
+            "documents": _public_scope_count(rows, "documents"),
+            "decisions": _public_scope_count(rows, "decisions"),
+            "incidents": _public_scope_count(rows, "incidents"),
+            "syndic": _public_scope_count(rows, "syndic"),
+            "ag": _public_scope_count(rows, "ag"),
+        },
+    }
+
+
+def _public_action_counter(rows: list[dict[str, object]], field: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        key = str(row.get(field) or "non renseigne")
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def _public_scope_count(rows: list[dict[str, object]], scope: str) -> int:
+    return len([row for row in rows if row.get("domain") == scope or row.get("channel") == scope])
 
 
 def _table_names(connection: sqlite3.Connection) -> set[str]:

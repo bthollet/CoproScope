@@ -6,6 +6,7 @@ def _reset_schema(connection: sqlite3.Connection) -> None:
     connection.executescript(
         """
         DROP TABLE IF EXISTS source_import_map;
+        DROP TABLE IF EXISTS object_followups;
         DROP TABLE IF EXISTS object_links;
         DROP TABLE IF EXISTS object_event_sources;
         DROP TABLE IF EXISTS proof_capsules;
@@ -371,6 +372,39 @@ def _reset_schema(connection: sqlite3.Connection) -> None:
         CREATE INDEX idx_source_import_map_object ON source_import_map(object_kind, object_id);
         CREATE INDEX idx_status_observations_object ON status_observations(object_id, field, created_at);
         CREATE INDEX idx_conflicts_object ON conflicts(object_id, status);
+        """
+    )
+    _ensure_object_followups_schema(connection)
+
+
+def _ensure_object_followups_schema(connection: sqlite3.Connection) -> None:
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS object_followups (
+            row_id TEXT PRIMARY KEY,
+            parent_kind TEXT NOT NULL,
+            parent_id TEXT NOT NULL,
+            followup_kind TEXT NOT NULL,
+            followup_id TEXT NOT NULL,
+            effect TEXT NOT NULL,
+            summary TEXT,
+            status_after TEXT,
+            remaining_reason TEXT,
+            occurred_at TEXT NOT NULL,
+            visibility TEXT,
+            event_id TEXT NOT NULL,
+            event_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE (parent_kind, parent_id, followup_kind, followup_id, event_id),
+            FOREIGN KEY (event_id) REFERENCES event_log(event_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_object_followups_parent
+            ON object_followups(parent_kind, parent_id, occurred_at, event_id);
+        CREATE INDEX IF NOT EXISTS idx_object_followups_followup
+            ON object_followups(followup_kind, followup_id);
+        CREATE INDEX IF NOT EXISTS idx_object_followups_effect
+            ON object_followups(effect, status_after);
         """
     )
 

@@ -38,8 +38,18 @@ class UiSecurityRouteTests(unittest.TestCase):
         for path in [
             "/",
             "/actions",
+            "/suggestions",
+            "/comptes/rapprochement",
             "/exports/actions.csv",
             "/exports/actions.md",
+            "/documents/ajouter",
+            "/messages/entrants",
+            "/incidents",
+            "/contrats",
+            "/pilotage/activite",
+            "/gouvernance/compte-rendu-cs",
+            "/gouvernance/atelier-ag",
+            "/gouvernance/roles-commissions",
             "/depot",
             "/api/model",
             "/exports/local.zip",
@@ -50,7 +60,24 @@ class UiSecurityRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(TOKEN_COOKIE_NAME, response.cookies)
 
-        for path in ["/actions", "/exports/actions.csv", "/exports/actions.md", "/depot", "/api/model", "/exports/local.zip"]:
+        for path in [
+            "/actions",
+            "/suggestions",
+            "/comptes/rapprochement",
+            "/exports/actions.csv",
+            "/exports/actions.md",
+            "/documents/ajouter",
+            "/messages/entrants",
+            "/incidents",
+            "/contrats",
+            "/pilotage/activite",
+            "/gouvernance/compte-rendu-cs",
+            "/gouvernance/atelier-ag",
+            "/gouvernance/roles-commissions",
+            "/depot",
+            "/api/model",
+            "/exports/local.zip",
+        ]:
             self.assertEqual(client.get(path).status_code, 200, path)
 
         fresh_client = self._client(access_token="local-secret")

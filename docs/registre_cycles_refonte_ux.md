@@ -15,7 +15,7 @@ commande et le Cycle N+2 est enquete.
 
 Cycle 8 est ouvert comme anticipation produit fini apres Cycle 7: il ne lance
 pas de code applicatif, il ordonne les vues, contrats et tests restants dans
-`docs/backlog_produit_fini_refonte_ux.md`.
+`docs/archive/roadmaps_anciennes/backlog_produit_fini_refonte_ux.md`.
 
 ## Regle interconversations obligatoire
 
@@ -152,7 +152,7 @@ que la commande n'est pas prete.
 | Commande maintenant | Cycle 4 Memoire exploite en front; Cycle 6 Pieces manquantes reste pret; Cycle 5 est pris en back; Cycle 8A Boite de reprise est livre | designer + coordinateur | COMMANDE_PRETE / EN_DEV_BACK | Servir la prochaine commande courte a chaque couloir libere |
 | Preparation suivante | Cycle 8A - Boite de reprise | designer Cycle 8 + novice transversal | COMMANDE_PRETE | Commande exploitable et criteres novice prets, sans code applicatif |
 | Anticipation produit fini | Backlog produit fini apres Cycle 7 | coordinateur + designer Cycle 8 + novice transversal | FILE_ATTENTE / EN_ENQUETE | Detail piece/preuve, diffusion, export et tests navigateur prets a distribuer |
-| Commande reference | Cycle 2 - Registre decisions/actions/preuves | Designer service + integrateur-scribe | PRETE | Voir `docs/commande_cycle2_registre_actions_preuves.md` |
+| Commande reference | Cycle 2 - Registre decisions/actions/preuves | Designer service + integrateur-scribe | PRETE | Voir `docs/commandes/commande_cycle2_registre_actions_preuves.md` |
 | Decision requise | Aucun arbitrage bloquant identifie | Coordinateur + QA | OUVERT | Go/no-go Memoire attendu des que la route visible existe |
 
 ## Vague actuelle
@@ -191,7 +191,7 @@ que la commande n'est pas prete.
 | 5 | Vues manquantes apres Memoire | Inventaire priorise | `A_DEFINIR` | EN_DEV_BACK | Premiere vue manquante priorisee avec blueprint et criteres QA |
 | 6 | Pieces manquantes | Commande prete | `/pieces?proof=missing` | COMMANDE_PRETE | Demander ou lier une piece depuis chaque ligne |
 | 7 | Relance syndic | Design en cours | `/demandes` | EN_ENQUETE | Message prepare, statut d'envoi ou copie explicite |
-| 8 | Anticipation produit fini apres Cycle 7 | Backlog ordonne | `docs/backlog_produit_fini_refonte_ux.md` | COMMANDE_PRETE | `Cycle 8A - Boite de reprise` livre; vues, contrats et tests manquants priorises sans toucher au code applicatif |
+| 8 | Anticipation produit fini apres Cycle 7 | Backlog ordonne | `docs/archive/roadmaps_anciennes/backlog_produit_fini_refonte_ux.md` | COMMANDE_PRETE | `Cycle 8A - Boite de reprise` livre; vues, contrats et tests manquants priorises sans toucher au code applicatif |
 | 9 | Detail piece/preuve | Visuel a recreer | `/pieces?selected=...` ou `/documents?selected=...` | FILE_ATTENTE | Fiche piece/preuve avec apercu, rattachements, historique et diffusion |
 | 10 | Detail action/memoire | Captures finales cycle memoire | `/actions/{id}` et `/chantiers/{event_id}` | ACCEPTE / EN_QA | Decision/action/evenement relie aux documents, preuves et restrictions, avec etats introuvables token-safe |
 | 11 | Arbitrage diffusion | Visuel a recreer | `/privacy?review=...` | FILE_ATTENTE | Dire qui peut voir, sous quelle forme, et bloquer les bruts interdits |
@@ -200,7 +200,7 @@ que la commande n'est pas prete.
 
 ## Backlog produit fini - Cycle 8
 
-Source detaillee: `docs/backlog_produit_fini_refonte_ux.md`.
+Source detaillee: `docs/archive/roadmaps_anciennes/backlog_produit_fini_refonte_ux.md`.
 
 | Ordre | Objet | Vue/contrat/test manquant | Role qui peut prendre si libere |
 |---:|---|---|---|

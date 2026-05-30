@@ -28,6 +28,7 @@ from .modules import (
     gdriveops,
     gristops,
     incidentops,
+    instance_layout,
     instancegit,
     privacyops,
     strategy,
@@ -95,7 +96,8 @@ SUBCOMMAND_ALIASES = {
     },
     "audit360_command": {"preparer-anonymise": "prepare-anonymized"},
     "drive_command": {"authentifier": "auth", "statut": "status", "fumee": "smoke"},
-    "instance_command": {"initialiser-git": "git-init", "statut-git": "git-status"},
+    "instance_command": {"initialiser-git": "git-init", "statut-git": "git-status", "arborescence": "layout"},
+    "instance_layout_command": {"planifier": "plan"},
 }
 
 
@@ -324,11 +326,24 @@ def build_parser() -> argparse.ArgumentParser:
     drive_smoke = drive_subparsers.add_parser(
         "smoke",
         aliases=["fumee"],
-        help="Preparer un smoke Drive chiffre sans tenter d'upload.",
+        help="Preparer ou executer un smoke Drive chiffre.",
     )
     drive_smoke.add_argument("--sync-root", required=True, help="Surface vault chiffree candidate pour Drive.")
     drive_smoke.add_argument("--encrypted-path", help="Fichier chiffre candidat; par defaut, premier blob/snapshot trouve.")
     drive_smoke.add_argument("--token-path", help="Chemin du token utilisateur local, hors Git.")
+    drive_smoke.add_argument("--upload", action="store_true", help="Executer l'upload Drive apres le gate anti-fuite.")
+    drive_smoke.add_argument("--folder-name", default=gdriveops.DEFAULT_SMOKE_FOLDER_NAME, help="Dossier Drive smoke a creer/reutiliser.")
+    drive_smoke.add_argument("--cleartext-canary", help="Marqueur clair a refuser dans le candidat chiffre; jamais affiche.")
+    drive_smoke.add_argument(
+        "--generation",
+        type=int,
+        default=gdriveops.DEFAULT_SYNC_GENERATION,
+        help="Generation du paquet chiffre pour detection de conflit collaboratif.",
+    )
+    drive_smoke.add_argument(
+        "--parent-sha256",
+        help="Hash parent attendu; vide pour la premiere generation, jamais un chemin ou un secret.",
+    )
 
     instance_parser = subparsers.add_parser("instance", aliases=["instances"], parents=[instance_parent], help="Gestion locale d'une instance CoproScope.")
     instance_subparsers = instance_parser.add_subparsers(dest="instance_command", required=True)
@@ -353,6 +368,19 @@ def build_parser() -> argparse.ArgumentParser:
         aliases=["statut-git"],
         parents=[instance_parent],
         help="Verifier qu'une instance est un depot Git local sans remote GitHub.",
+    )
+    instance_layout_parser = instance_subparsers.add_parser(
+        "layout",
+        aliases=["arborescence"],
+        parents=[instance_parent],
+        help="Planifier une arborescence d'instance novice sans modifier les fichiers.",
+    )
+    instance_layout_subparsers = instance_layout_parser.add_subparsers(dest="instance_layout_command", required=True)
+    instance_layout_subparsers.add_parser(
+        "plan",
+        aliases=["planifier"],
+        parents=[instance_parent],
+        help="Afficher le dry-run JSON de l'arborescence novice recommandee.",
     )
 
     ag_parser = subparsers.add_parser("ag", aliases=["assemblee-generale"], parents=[instance_parent], help="Commandes du module AG.")

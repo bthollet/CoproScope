@@ -1,0 +1,202 @@
+from __future__ import annotations
+
+import re
+import shutil
+import tempfile
+import unittest
+from html import unescape
+from pathlib import Path
+from unittest.mock import patch
+
+from coproscope.core.common import load_instance, read_csv, write_csv
+from coproscope.modules.accounting import COMPTASCOPE_REVIEW_FIELDS
+from coproscope.web.app import TOKEN_COOKIE_NAME, create_app
+from coproscope.web.compta_rapprochement_view import (
+    READ_MODEL_NAME,
+    build_compta_reconciliation_view,
+)
+
+
+REQUIRED_LABELS = (
+    "Rapprochement compta",
+    READ_MODEL_NAME,
+    "File de validation humaine",
+    "Comptabilite",
+    "Banque",
+    "Facture",
+    "Decision / devis",
+    "Suggestion et suite",
+    "Validation humaine",
+    "Valider avec reserve",
+    "Brouillon a copier, aucun envoi automatique",
+)
+
+FORBIDDEN_VISIBLE_MARKERS = (
+    "C:\\",
+    "file://",
+    "/Users/",
+    "/home/",
+    "raw/",
+    "restricted/",
+    "logs/",
+    "private/",
+    "secretValue",
+    "Envoyer automatiquement",
+)
+
+
+class UiComptesRapprochementTests(unittest.TestCase):
+    def setUp(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        source_example = repo_root / "examples" / "synthetic_copro"
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.instance_root = Path(self.tempdir.name) / "instance"
+        shutil.copytree(source_example, self.instance_root)
+        self.instance = load_instance(str(self.instance_root / "instance.yml"), None)
+        self.accounting_dir = self.instance.artifact("accounting_dir")
+        self.accounting_dir.mkdir(parents=True, exist_ok=True)
+        self._seed_review_rows()
+
+    def tearDown(self) -> None:
+        self.tempdir.cleanup()
+
+    def _client(self, access_token: str | None = None):
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+        return TestClient(create_app(self.instance, 2025, access_token=access_token))
+
+    def test_view_model_builds_public_queue_from_comptascope_review_rows(self) -> None:
+        view = build_compta_reconciliation_view(instance=self.instance, year=2025)
+        visible = str(view)
+
+        self.assertEqual(view["read_model_name"], READ_MODEL_NAME)
+        self.assertEqual(len(view["items"]), 2)
+        self.assertEqual(view["items"][0]["id"], "REV-2025-001")
+        self.assertEqual([cell["kind"] for cell in view["items"][0]["cells"]], ["Comptabilite", "Banque", "Facture", "Decision / devis"])
+        self.assertIn("Brouillon a copier", view["items"][0]["copy_text"])
+        for marker in FORBIDDEN_VISIBLE_MARKERS:
+            self.assertNotIn(marker, visible)
+
+    def test_route_is_token_guarded_and_novice_readable(self) -> None:
+        client = self._client(access_token="local-secret")
+
+        forbidden = client.get("/comptes/rapprochement")
+        self.assertEqual(forbidden.status_code, 403)
+        self.assertNotIn("Rapprochement compta", forbidden.text)
+
+        response = client.get("/comptes/rapprochement?token=local-secret")
+        text = unescape(response.text)
+        visible = _visible_text(text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(TOKEN_COOKIE_NAME, response.cookies)
+        self.assertIn('aria-current="page"', response.text)
+        self.assertIn('href="/comptes?token=local-secret"', response.text)
+        self.assertIn('action="/comptes/rapprochement/validation?token=local-secret"', response.text)
+        for label in REQUIRED_LABELS:
+            self.assertIn(label, text)
+        for marker in FORBIDDEN_VISIBLE_MARKERS:
+            self.assertNotIn(marker, visible)
+
+    def test_route_accepts_header_token_and_skips_dashboard_model(self) -> None:
+        from coproscope.web import app as web_app
+
+        with patch.object(web_app, "build_dashboard_model", side_effect=AssertionError("dedicated view")):
+            response = self._client(access_token="local-secret").get(
+                "/comptes/rapprochement",
+                headers={"x-coproscope-token": "local-secret"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Rapprochement compta", response.text)
+
+    def test_validation_post_appends_human_trace_without_private_note_leak(self) -> None:
+        client = self._client(access_token="local-secret")
+        response = client.post(
+            "/comptes/rapprochement/validation?token=local-secret",
+            data={
+                "review_id": "REV-2025-001",
+                "decision": "validated_with_reserve",
+                "note": r"Reserve depuis C:\\Users\\demo\\raw\\secret.txt",
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("/comptes/rapprochement?selected=REV-2025-001", response.headers["location"])
+        _, rows = read_csv(self.accounting_dir / "compta_human_validations_2025.csv")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["decision"], "validated_with_reserve")
+        self.assertEqual(rows[0]["decision_label"], "Valide avec reserve")
+        self.assertNotIn("C:\\", rows[0]["note"])
+        self.assertNotIn("raw", rows[0]["note"].lower())
+
+        follow_up = client.get(response.headers["location"])
+        text = unescape(follow_up.text)
+        self.assertEqual(follow_up.status_code, 200)
+        self.assertIn("Valide avec reserve", text)
+        self.assertNotIn("C:\\", _visible_text(text))
+        self.assertNotIn("raw", _visible_text(text).lower())
+
+    def _seed_review_rows(self) -> None:
+        write_csv(
+            self.accounting_dir / "controle_comptes_guide_2025.csv",
+            COMPTASCOPE_REVIEW_FIELDS,
+            [
+                _review_row(
+                    review_id="REV-2025-001",
+                    priorite="P1",
+                    fournisseur="Ascenseur FICTIF",
+                    numero_facture="FAC-001",
+                    doc_id="DOC-FAC-001",
+                    date_facture="2025-02-10",
+                    ttc="1200.00",
+                    niveau_preuve="facture extraite",
+                    statut_rapprochement="NON_RAPPROCHE",
+                    libelle_statut="A traiter avant AG",
+                    motif="Aucun mouvement compatible n'est rattache.",
+                    prochaine_action="Demander mouvement bancaire et decision ou devis.",
+                    question_syndic="Pouvez-vous transmettre le mouvement bancaire et le devis associe ?",
+                    bloc_copiable="Brouillon a copier, aucun envoi automatique: merci de transmettre le mouvement et la justification.",
+                ),
+                _review_row(
+                    review_id="REV-2025-002",
+                    priorite="P2",
+                    fournisseur="Nettoyage FICTIF",
+                    numero_facture="FAC-002",
+                    doc_id="DOC-FAC-002",
+                    date_facture="2025-03-05",
+                    ttc="480.00",
+                    niveau_preuve="facture et ligne candidate",
+                    statut_rapprochement="CANDIDAT_MONTANT_FAMILLE",
+                    libelle_statut="A confirmer",
+                    ligne_depense_candidate="DEP-2025-002",
+                    reference_depense="REF-2025-002",
+                    libelle_depense="Entretien parties communes",
+                    montant_depense="480.00",
+                    ecriture_candidate="Ligne entretien candidate",
+                    compte_candidate="615",
+                    motif="Montant exact mais libelle a relire.",
+                    prochaine_action="Confirmer le fournisseur avant validation.",
+                ),
+            ],
+        )
+
+
+def _review_row(**updates: str) -> dict[str, str]:
+    row = {field: "" for field in COMPTASCOPE_REVIEW_FIELDS}
+    row.update({key: str(value) for key, value in updates.items()})
+    row["exercice"] = row.get("exercice") or "2025"
+    return row
+
+
+def _visible_text(html: str) -> str:
+    without_scripts = re.sub(r"<(script|style)\b.*?</\1>", " ", html, flags=re.IGNORECASE | re.DOTALL)
+    without_tags = re.sub(r"<[^>]+>", " ", without_scripts)
+    return " ".join(without_tags.split())
+
+
+if __name__ == "__main__":
+    unittest.main()

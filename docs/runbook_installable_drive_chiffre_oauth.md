@@ -12,9 +12,11 @@ Checklist release noob et anti-fuite:
 
 ## Decision produit
 
-Le partage Drive est un transport de fichiers deja chiffres, pas une source de
+Le partage Drive est un transport de paquets deja chiffres, pas une source de
 verite. CoproScope doit produire localement la surface synchronisable du coffre,
-la verifier, puis envoyer uniquement cette surface chiffree dans Drive.
+la verifier, puis envoyer uniquement cette surface chiffree dans Drive avec un
+contrat de synchronisation compatible collaboration directe: generation, parent
+attendu, hash, reprise et conflit explicite.
 
 Le parcours utilisateur vise:
 
@@ -25,6 +27,11 @@ Le parcours utilisateur vise:
 5. valider l'autorisation;
 6. voir `Drive connecte - coffre chiffre synchronise`;
 7. copier un lien ou inviter une personne, sans jamais choisir un fichier brut.
+
+La cible produit n'est pas un export ponctuel. Deux utilisateurs autorises
+doivent pouvoir echanger des paquets chiffres et voir la mise a jour ou un
+conflit clair. La V1 peut rester prudente, mais elle doit deja eviter les noms
+metier, les ecrasements silencieux et les surfaces impossibles a reprendre.
 
 Interdits UX:
 
@@ -43,6 +50,9 @@ Frontiere de ce runbook:
 - aucun bouton de partage final ne doit etre considere GO tant que la checklist
   n'a pas un verdict explicite `GO`;
 - toute incertitude sur la surface envoyee a Drive doit bloquer l'upload.
+- tout raccourci qui empeche la collaboration directe future est un no-go:
+  pas d'export manuel unique, pas de overwrite silencieux, pas de paquet sans
+  generation ni parent verifiable.
 
 ## Ce que Brice doit faire maintenant
 
@@ -105,18 +115,54 @@ Ordre obligatoire:
   - stocke le token hors Git, dans le profil utilisateur;
   - affiche un message lisible en cas de refus/revocation.
 - commande `coprocs drive smoke`:
-  - cree un dossier Drive de test `CoproScope Dev`;
-  - envoie un petit fichier chiffre fictif;
-  - relit ses metadonnees autorisees;
-  - supprime ou archive le fichier de test selon option.
-- commande disponible maintenant:
+  - prepare le smoke sans reseau par defaut;
+  - verifie que le candidat vient de la surface vault synchronisable;
+  - refuse les dossiers lisibles, caches, bruts, logs, secrets et chemins
+    instables;
+  - peut verifier un canari clair attendu avec `--cleartext-canary`, et bloque
+    si ce marqueur apparait encore dans le blob/snapshot chiffre sans jamais
+    afficher le marqueur;
+  - ajoute un contrat de sync expurge: protocole, type de paquet, generation,
+    parent attendu, hash, nom distant opaque et politique de conflit;
+  - retourne seulement un manifeste expurge: chemin relatif vault, taille, hash
+    et etat du scope `drive.file`.
+- commande disponible maintenant pour la preparation:
 
 ```powershell
 .\.venv\Scripts\python.exe -m coproscope.cli drive smoke --sync-root <surface_sync_chiffree>
 ```
 
   Cette commande prepare le smoke, verifie le gate anti-fuite et n'appelle pas
-  encore Drive. Le champ `upload_attempted` doit rester `false`.
+  Drive. Le champ `upload_attempted` doit rester `false`.
+- verification canari sans reseau:
+
+```powershell
+.\.venv\Scripts\python.exe -m coproscope.cli drive smoke --sync-root <surface_sync_chiffree> --cleartext-canary <marqueur_test>
+```
+
+  Le marqueur doit etre choisi comme canari de test, pas comme donnee reelle.
+  La sortie ne doit jamais afficher ce marqueur; elle indique seulement si le
+  gate bloque ou si le candidat reste pret.
+- verification du contrat collaboratif sans reseau:
+
+```powershell
+.\.venv\Scripts\python.exe -m coproscope.cli drive smoke --sync-root <surface_sync_chiffree> --generation 2 --parent-sha256 <hash_parent_64_hex>
+```
+
+  La sortie doit contenir un `sync_contract` expurge. Elle ne doit jamais
+  contenir de chemin local, token, secret, identifiant Drive brut, nom de
+  copropriete ou contenu clair.
+- commande de smoke upload developpeur:
+
+```powershell
+.\.venv\Scripts\python.exe -m coproscope.cli drive smoke --sync-root <surface_sync_chiffree> --upload
+```
+
+  Cette commande envoie un seul blob ou snapshot deja chiffre, apres le meme
+  gate anti-fuite, avec un nom distant opaque derive du hash et des proprietes
+  Drive expurgees pour le protocole, la generation et le parent attendu. La
+  sortie doit rester redigee: pas de token, secret, chemin OAuth, chemin local
+  absolu ou identifiant Drive brut.
 
 ### Installable noob
 
@@ -153,7 +199,10 @@ Avant d'appeler Drive:
 4. verifier signature/hash si disponible;
 5. ecrire un manifeste local lisible: quoi a ete envoye, taille, hash, date,
    jamais le contenu clair;
-6. afficher `Pret a partager` seulement apres ce gate.
+6. ecrire un manifeste de sync compatible collaboration directe: protocole,
+   generation, parent, hash, nom distant opaque, reprise et politique de conflit;
+7. bloquer toute sync qui ecraserait silencieusement un paquet parent different;
+8. afficher `Pret a partager` seulement apres ce gate.
 
 La surface Drive doit exclure en toutes circonstances:
 
@@ -186,6 +235,9 @@ Messages bloquants minimum:
   opaque, mais jamais contenu metier clair dans Drive.
 - Nommage distant: noms opaques ou techniques, sans copropriete, personne,
   document, statut ou chemin local.
+- Mode collaboration directe: definir le protocole minimal de paquets chiffres
+  immuables, generation, parent, index/manifest de tete, conflit et reprise
+  avant de promettre un partage multi-personnes.
 - Cles et invitations: qui peut dechiffrer quoi, comment revoquer un acces,
   comment recuperer sans stocker de secret clair dans Drive.
 - Support: diagnostic expurge par defaut, sans chemins prives, noms de
@@ -206,6 +258,8 @@ GO seulement si:
 - le bouton de partage reste inactif tant que le gate anti-fuite n'est pas vert;
 - les erreurs de chiffrement, signature, hash, compte ou scope bloquent
   l'upload.
+- deux sessions/appareils autorises peuvent echanger un paquet chiffre et voir
+  la mise a jour ou un conflit explicite, jamais un ecrasement muet.
 
 NO-GO immediat si:
 
@@ -213,6 +267,8 @@ NO-GO immediat si:
 - le scope Drive est plus large que le besoin sans decision tracee;
 - un fichier lisible de copropriete peut arriver dans Drive;
 - un diagnostic support expose des donnees metier claires;
+- la sync ecrase silencieusement un autre appareil ou pretend collaborer sans
+  detection de conflit;
 - le test novice exige repo, Python, PowerShell ou vocabulaire OAuth/API.
 
 ## References Google verifiees
@@ -248,6 +304,10 @@ NO-GO immediat si:
   - fallback possible: Drive Desktop comme dossier transport, moins fluide et
     plus difficile a expliquer.
 - Partage multi-personnes:
-  - MVP: un utilisateur publie des fichiers chiffres;
-  - etape suivante: invitation d'un autre coproprietaire avec procedure de cle
-    comprensible et recuperation testee.
+  - Cadrage collaboration directe: paquets chiffres compatibles reprise, avec
+    generation, parent, hash, conflit explicite, retrait d'acces et
+    recuperation testee.
+  - MVP: un utilisateur publie des paquets chiffres, pas un export clair;
+  - etape suivante: invitation d'un autre coproprietaire avec procedure de cle,
+    detection de conflit et retrait d'acces;
+    puis recuperation testee.

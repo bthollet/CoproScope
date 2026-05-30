@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" role="img" aria-label="Blueprint Audit360 anomalies et nouveaux documents">
+  <rect width="1440" height="960" fill="#f6f7f8"/>
+  <rect x="48" y="38" width="1344" height="72" rx="8" fill="#ffffff" stroke="#d6d9de"/>
+  <text x="72" y="80" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" fill="#20242a">CoproScope Audit360 - Atelier anomalies</text>
+  <text x="1110" y="80" font-family="Inter, Arial, sans-serif" font-size="16" fill="#59616d">A valider humainement</text>
+
+  <rect x="48" y="130" width="320" height="690" rx="8" fill="#ffffff" stroke="#d6d9de"/>
+  <text x="72" y="166" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#20242a">File des points a verifier</text>
+  <rect x="72" y="192" width="272" height="94" rx="6" fill="#fff7e6" stroke="#e7b95b"/>
+  <text x="92" y="222" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Preuve attendue</text>
+  <text x="92" y="248" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Controle facture / exercice</text>
+  <text x="92" y="270" font-family="Inter, Arial, sans-serif" font-size="13" fill="#7a4d00">Dernier changement: document recu</text>
+  <rect x="72" y="304" width="272" height="94" rx="6" fill="#eef9f6" stroke="#7fc7b3"/>
+  <text x="92" y="334" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Levee proposee</text>
+  <text x="92" y="360" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Validation humaine requise</text>
+  <text x="92" y="382" font-family="Inter, Arial, sans-serif" font-size="13" fill="#247263">Preuve candidate disponible</text>
+  <rect x="72" y="416" width="272" height="94" rx="6" fill="#fff0f0" stroke="#e59797"/>
+  <text x="92" y="446" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Criticite relevee</text>
+  <text x="92" y="472" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Conflit de sources</text>
+  <text x="92" y="494" font-family="Inter, Arial, sans-serif" font-size="13" fill="#9a3030">Action CS a preparer</text>
+
+  <rect x="392" y="130" width="620" height="690" rx="8" fill="#ffffff" stroke="#d6d9de"/>
+  <text x="424" y="168" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="700" fill="#20242a">Fiche pivot: point a verifier</text>
+  <text x="424" y="198" font-family="Inter, Arial, sans-serif" font-size="15" fill="#59616d">Un dossier concret, pas un verdict automatique.</text>
+  <rect x="424" y="230" width="248" height="126" rx="6" fill="#f7f9fb" stroke="#d6d9de"/>
+  <text x="444" y="260" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Pourquoi cela compte</text>
+  <text x="444" y="288" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Impact concret pour le CS.</text>
+  <text x="444" y="312" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Pas d'accusation automatique.</text>
+  <rect x="700" y="230" width="280" height="126" rx="6" fill="#f7f9fb" stroke="#d6d9de"/>
+  <text x="720" y="260" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Ce que l'on sait</text>
+  <text x="720" y="288" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Source, date, controle, limite.</text>
+  <text x="720" y="312" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Preuve locale ou candidate.</text>
+  <rect x="424" y="382" width="248" height="126" rx="6" fill="#f7f9fb" stroke="#d6d9de"/>
+  <text x="444" y="412" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Ce qui manque</text>
+  <text x="444" y="440" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Preuve de quoi exactement.</text>
+  <text x="444" y="464" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Qui peut confirmer.</text>
+  <rect x="700" y="382" width="280" height="126" rx="6" fill="#f7f9fb" stroke="#d6d9de"/>
+  <text x="720" y="412" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Prochaine action</text>
+  <text x="720" y="440" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Demander piece / valider.</text>
+  <text x="720" y="464" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Motif obligatoire.</text>
+  <rect x="424" y="548" width="556" height="190" rx="6" fill="#fbfcfd" stroke="#d6d9de"/>
+  <text x="444" y="580" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#20242a">Timeline probatoire</text>
+  <line x1="460" y1="650" x2="930" y2="650" stroke="#b9bec6" stroke-width="4"/>
+  <circle cx="460" cy="650" r="12" fill="#59616d"/><text x="436" y="690" font-family="Inter, Arial, sans-serif" font-size="13" fill="#59616d">Signal</text>
+  <circle cx="580" cy="650" r="12" fill="#e7b95b"/><text x="532" y="690" font-family="Inter, Arial, sans-serif" font-size="13" fill="#59616d">Preuve attendue</text>
+  <circle cx="710" cy="650" r="12" fill="#247263"/><text x="672" y="690" font-family="Inter, Arial, sans-serif" font-size="13" fill="#59616d">Document recu</text>
+  <circle cx="830" cy="650" r="12" fill="#3b6ea8"/><text x="786" y="690" font-family="Inter, Arial, sans-serif" font-size="13" fill="#59616d">Decision humaine</text>
+  <circle cx="930" cy="650" r="12" fill="#2f8a57"/><text x="902" y="690" font-family="Inter, Arial, sans-serif" font-size="13" fill="#59616d">Suivi</text>
+
+  <rect x="1036" y="130" width="356" height="690" rx="8" fill="#ffffff" stroke="#d6d9de"/>
+  <text x="1064" y="168" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#20242a">Nouveau document</text>
+  <rect x="1064" y="204" width="300" height="110" rx="6" fill="#f7f9fb" stroke="#d6d9de"/>
+  <text x="1084" y="236" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Impact propose</text>
+  <text x="1084" y="264" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Preuve candidate recue</text>
+  <text x="1084" y="288" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Levee partielle possible</text>
+  <rect x="1064" y="340" width="300" height="146" rx="6" fill="#fff7e6" stroke="#e7b95b"/>
+  <text x="1084" y="372" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">Validation humaine requise</text>
+  <text x="1084" y="402" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Verifier la preuve de quoi.</text>
+  <text x="1084" y="426" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Ajouter motif et reserve.</text>
+  <rect x="1084" y="446" width="112" height="28" rx="5" fill="#20242a"/>
+  <text x="1100" y="466" font-family="Inter, Arial, sans-serif" font-size="13" fill="#ffffff">Confirmer</text>
+  <rect x="1210" y="446" width="112" height="28" rx="5" fill="#ffffff" stroke="#b9bec6"/>
+  <text x="1228" y="466" font-family="Inter, Arial, sans-serif" font-size="13" fill="#20242a">Refuser</text>
+  <rect x="1064" y="520" width="300" height="156" rx="6" fill="#fff0f0" stroke="#e59797"/>
+  <text x="1084" y="552" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#20242a">A ne pas faire</text>
+  <text x="1084" y="582" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Pas de score IA de verite.</text>
+  <text x="1084" y="606" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Pas de levee automatique.</text>
+  <text x="1084" y="630" font-family="Inter, Arial, sans-serif" font-size="14" fill="#59616d">Pas de chemin ou brut visible.</text>
+</svg>

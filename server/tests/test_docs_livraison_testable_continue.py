@@ -8,7 +8,7 @@ class LivraisonTestableContinueDocTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.repo_root = Path(__file__).resolve().parents[2]
-        cls.doc_path = cls.repo_root / "docs" / "livraison_testable_continue.md"
+        cls.doc_path = cls.repo_root / "docs" / "archive" / "recettes_ux" / "livraison_testable_continue.md"
         cls.text = cls.doc_path.read_text(encoding="utf-8")
         cls.normalized = cls.text.lower()
 

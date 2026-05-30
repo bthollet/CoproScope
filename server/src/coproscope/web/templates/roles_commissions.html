@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% set view = roles_commissions %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="rol-hero" aria-labelledby="rol-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="rol-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="rol-hero__actions">
+      <a class="button-link" href="#droits">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#actions">Voir actions bloquees</a>
+    </div>
+  </div>
+  <aside class="rol-status" aria-label="Statut des roles et commissions fictifs">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucun droit reel applique</small>
+  </aside>
+</section>
+
+<section class="rol-summary" aria-label="Resume roles et commissions">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="rol-boundaries" aria-label="Limites de la page roles et commissions">
+  {% for item in view.boundaries %}
+  <article>
+    <strong>{{ item.label }}</strong>
+    <p>{{ item.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="rol-definitions-title">
+  <div class="panel-head">
+    <h3 id="rol-definitions-title">Mots utiles</h3>
+    <span>Definitions courtes</span>
+  </div>
+  <div class="rol-definitions">
+    {% for item in view.definitions %}
+    <article>
+      <strong>{{ item.label }}</strong>
+      <p>{{ item.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="rol-profils-title">
+  <div class="panel-head">
+    <h3 id="rol-profils-title">Profils synthetiques</h3>
+    <span>{{ view.profiles|length }} profils</span>
+  </div>
+  <div class="rol-cards">
+    {% for profile in view.profiles %}
+    <article>
+      <span>{{ profile.id }}</span>
+      <strong>{{ profile.label }}</strong>
+      <p>{{ profile.scope }}</p>
+      <small>{{ profile.responsibility }}</small>
+      <em>{{ profile.status }}</em>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Commissions et referents</h3>
+      <span>Responsabilites</span>
+    </div>
+    <div class="rol-commissions">
+      {% for commission in view.commissions %}
+      <article>
+        <strong>{{ commission.label }}</strong>
+        <span>Referent: {{ commission.referent }}</span>
+        <p>{{ commission.scope }}</p>
+        <small>{{ commission.production }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Productions avant diffusion</h3>
+      <span>Gates humains</span>
+    </div>
+    <div class="rol-checks">
+      {% for gate in view.production_gates %}
+      <article>
+        <strong>{{ gate.label }}</strong>
+        <small>{{ gate.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="droits" aria-labelledby="rol-droits-title">
+  <div class="panel-head">
+    <h3 id="rol-droits-title">Droits par ressource</h3>
+    <span>Validation humaine</span>
+  </div>
+  <div class="rol-table" role="table" aria-label="Matrice fictive des droits par ressource">
+    <div class="rol-row is-head" role="row">
+      <span role="columnheader">Ressource</span>
+      {% for right in view.right_labels %}
+      <span role="columnheader">{{ right }}</span>
+      {% endfor %}
+      <span role="columnheader">Limite visible</span>
+    </div>
+    {% for row in view.rights_matrix %}
+    <div class="rol-row" role="row">
+      <strong role="cell">{{ row.resource }}</strong>
+      {% for right in view.right_labels %}
+      <span role="cell">{{ "Oui" if right in row.rights else "Non" }}</span>
+      {% endfor %}
+      <small role="cell">{{ row.caution }}</small>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="actions">
+  <div class="panel-head">
+    <h3>Actions bloquees</h3>
+    <span>Aucun automatisme</span>
+  </div>
+  <div class="rol-actions">
+    {% for action in view.actions %}
+    <button type="button" disabled aria-disabled="true">
+      <strong>{{ action.label }}</strong>
+      <small>{{ action.reason }}</small>
+    </button>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="rol-versions-title">
+  <div class="panel-head">
+    <h3 id="rol-versions-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}
