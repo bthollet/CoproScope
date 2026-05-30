@@ -15,6 +15,9 @@ SOURCE_ENGINE_PYMUPDF = "pymupdf_text_map"
 SOURCE_ENGINE_MANUAL = "manual_pdf_pointer"
 ZOTERO_POSITION_KIND = "zotero_pdf_position_compatible"
 NO_SOURCE_WRITE_NOTICE = "source_pdf_is_never_modified"
+TEXT_STATUS_CONFIRMED = "confirme"
+TEXT_STATUS_UNCONFIRMED = "non_confirme"
+TEXT_STATUS_REVIEW_REQUIRED = "a_verifier"
 
 _HASH_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$", re.IGNORECASE)
 _SPACE_RE = re.compile(r"\s+")
@@ -64,6 +67,7 @@ class PdfTraceCandidate:
     source_engine: str
     confidence: str = "text_coordinates"
     private_excerpt_blocked: bool = False
+    text_status: str = TEXT_STATUS_CONFIRMED
 
 
 def extract_pdf_text_map(
@@ -171,6 +175,38 @@ def find_text_traces(
     return tuple(candidates)
 
 
+def build_zone_trace_candidate(
+    *,
+    document_ref: str,
+    document_hash: str,
+    page_index: int,
+    zone: Mapping[str, Any],
+    page_label: str = "",
+    source_engine: str = SOURCE_ENGINE_MANUAL,
+    confidence: str = "zone_only",
+) -> PdfTraceCandidate:
+    _validate_document_identity(document_ref, document_hash)
+    safe_page_index = _positive_int(page_index, default=0)
+    rect = _rect_from_zone(safe_page_index, zone)
+    anchor_hash = _hash_text(
+        f"{document_ref}|{_normalize_hash(document_hash)}|{safe_page_index}|"
+        f"{rect.x}|{rect.y}|{rect.width}|{rect.height}"
+    )
+    return PdfTraceCandidate(
+        document_ref=document_ref,
+        document_hash=_normalize_hash(document_hash),
+        page_index=safe_page_index,
+        page_label=page_label or str(safe_page_index + 1),
+        rects=(rect,),
+        selected_text="",
+        selected_text_hash=anchor_hash,
+        sort_index=f"{safe_page_index:05d}|{rect.y:.6f}|{rect.x:.6f}",
+        source_engine=source_engine,
+        confidence=confidence,
+        text_status=TEXT_STATUS_UNCONFIRMED,
+    )
+
+
 def candidate_to_annotation_row(
     candidate: PdfTraceCandidate,
     *,
@@ -219,6 +255,7 @@ def candidate_to_public_dict(candidate: PdfTraceCandidate) -> dict[str, Any]:
         "document_hash": candidate.document_hash,
         "source_engine": candidate.source_engine,
         "confidence": candidate.confidence,
+        "text_status": candidate.text_status,
         "selected_text_hash": candidate.selected_text_hash,
         "selected_text_excerpt": _public_excerpt(candidate),
         "private_excerpt_blocked": candidate.private_excerpt_blocked,
@@ -347,6 +384,21 @@ def _word_from_mapping(page_index: int, width: float, height: float, word: Mappi
     )
 
 
+def _rect_from_zone(page_index: int, zone: Mapping[str, Any]) -> PdfTextRect:
+    x = _round(_clamp(_float(zone.get("x"), 0.0)))
+    y = _round(_clamp(_float(zone.get("y"), 0.0)))
+    rect_width = _round(_clamp(_float(zone.get("width", zone.get("w")), 0.0)))
+    rect_height = _round(_clamp(_float(zone.get("height", zone.get("h")), 0.0)))
+    return PdfTextRect(
+        page_index=page_index,
+        text="",
+        x=x,
+        y=y,
+        width=rect_width,
+        height=rect_height,
+    )
+
+
 def _as_words(value: object) -> tuple[Mapping[str, Any], ...]:
     if not isinstance(value, Iterable) or isinstance(value, (str, bytes)):
         return tuple()
@@ -393,6 +445,8 @@ def _hash_text(value: str) -> str:
 def _public_excerpt(candidate: PdfTraceCandidate, limit: int = 120) -> str:
     if candidate.private_excerpt_blocked:
         return "[extrait masque: contenu local ou sensible]"
+    if not candidate.selected_text.strip() or candidate.text_status != TEXT_STATUS_CONFIRMED:
+        return "Texte non confirme: seule la zone est gardee."
     text = _SPACE_RE.sub(" ", candidate.selected_text.strip())
     if len(text) <= limit:
         return text
@@ -444,8 +498,12 @@ __all__ = [
     "SCHEMA_VERSION",
     "SOURCE_ENGINE_MANUAL",
     "SOURCE_ENGINE_PYMUPDF",
+    "TEXT_STATUS_CONFIRMED",
+    "TEXT_STATUS_REVIEW_REQUIRED",
+    "TEXT_STATUS_UNCONFIRMED",
     "ZOTERO_POSITION_KIND",
     "build_text_map_from_words",
+    "build_zone_trace_candidate",
     "candidate_to_annotation_row",
     "candidate_to_public_dict",
     "extract_pdf_text_map",

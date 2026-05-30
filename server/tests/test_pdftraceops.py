@@ -9,6 +9,7 @@ from coproscope.modules.annotationops import non_destructive_sidecar_plan, norma
 from coproscope.modules.pdftraceops import (
     SOURCE_ENGINE_PYMUPDF,
     build_text_map_from_words,
+    build_zone_trace_candidate,
     candidate_to_annotation_row,
     candidate_to_public_dict,
     extract_pdf_text_map,
@@ -111,6 +112,35 @@ class PdfTraceOpsTests(unittest.TestCase):
         self.assertIn("extrait masque", payload["selected_text_excerpt"])
         self.assertNotIn(r"C:\Users", rendered)
         self.assertNotIn("secret.pdf", rendered)
+
+    def test_zone_trace_keeps_scanned_page_area_without_confirmed_text(self) -> None:
+        candidate = build_zone_trace_candidate(
+            document_ref="DOC-SCAN-1",
+            document_hash=HASH,
+            page_index=4,
+            page_label="Annexe 5",
+            zone={"x": 0.2, "y": 0.3, "width": 0.25, "height": 0.1},
+        )
+
+        payload = candidate_to_public_dict(candidate)
+        row = candidate_to_annotation_row(
+            candidate,
+            comment="Zone a relire: le texte n'est pas confirme.",
+            author_ref="user:cs-demo",
+            created_at="2026-05-31T01:25:00Z",
+            point_ref="POINT-SCAN-1",
+            action_ref="ACT-RELIRE-1",
+            proof_ref="PROOF-SCAN-1",
+        )
+        annotation = normalize_annotation(row)
+
+        self.assertEqual(payload["text_status"], "non_confirme")
+        self.assertIn("Texte non confirme", payload["selected_text_excerpt"])
+        self.assertEqual(payload["coproscope_anchor"]["page"], 5)
+        self.assertEqual(payload["zotero_position"]["pageIndex"], 4)
+        self.assertEqual(payload["zotero_position"]["rects"][0]["width"], 0.25)
+        self.assertEqual(validate_annotation(annotation), tuple())
+        self.assertFalse(non_destructive_sidecar_plan(annotation)["source_write_allowed"])
 
     def test_extract_pdf_text_map_uses_pymupdf_words_without_exposing_source_path(self) -> None:
         original_fitz = sys.modules.get("fitz")

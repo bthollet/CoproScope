@@ -153,15 +153,16 @@ Les termes `CS`, `AG`, `append-only`, `read model` ou equivalents restent hors
 premier niveau UI; on parle de conseil syndical, assemblee generale, journal
 local et controles locaux.
 
-Complement recette issu de `CC-IT-018`: des qu'un executable CoproScope existe,
-la preuve finale d'une route ComptaScope se fait dans cet executable, pas
-seulement sur le serveur de developpement. Le smoke Windows doit pouvoir cibler
-la route reelle avec `-ProbePath /comptes/rapprochement` et des textes visibles
-comme `Controle des comptes`, `Sources du controle` et `Lignes a controler`.
-Une recette serveur peut aider a iterer vite, mais elle ne suffit plus pour
-dire que le module est integre. Les frottements vus dans la fenetre executable
-ou dans le navigateur integre, par exemple une navigation qui coupe les mots,
-sont a corriger avant de donner un lien de recettage.
+Complement recette issu de `CC-IT-018`: des qu'un `CoproScope.exe` existe, la
+preuve finale de la route ComptaScope se fait dans cet executable CoproScope,
+pas dans un executable separe et pas seulement sur le serveur de developpement.
+Le smoke Windows doit pouvoir cibler la route reelle avec
+`-ProbePath /comptes/rapprochement` et des textes visibles comme
+`Controle des comptes`, `Sources du controle` et `Lignes a controler`. Une
+recette serveur peut aider a iterer vite, mais elle ne suffit plus pour dire
+que le module est integre. Les frottements vus dans la fenetre executable ou
+dans le navigateur integre, par exemple une navigation qui coupe les mots, sont
+a corriger avant de donner un lien de recettage.
 
 ## Limites
 

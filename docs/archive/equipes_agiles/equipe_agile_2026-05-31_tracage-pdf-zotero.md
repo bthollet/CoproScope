@@ -160,3 +160,34 @@ Wording novice retenu:
   plus tard.
 - Toute preuve reste candidate tant qu'un humain ne l'a pas validee.
 - Toute ancre devient `a verifier` si le hash du PDF ne correspond plus.
+
+## Resultat backend V1
+
+Statut: `PRET_A_INTEGRER`.
+
+Livraison:
+
+- module `server/src/coproscope/modules/pdftraceops.py`;
+- tests `server/tests/test_pdftraceops.py`;
+- carte de mots PDF texte via PyMuPDF quand disponible;
+- recherche de phrase dans une page;
+- position compatible lecteur type Zotero: `pageIndex`, `pageLabel`, `rects`,
+  `sortIndex`;
+- conversion vers annotation sidecar CoproScope;
+- masquage d'extrait si un chemin local est detecte;
+- trace de zone seule avec texte `non_confirme` pour scan ou vision future.
+
+Preuves:
+
+- `.\.venv\Scripts\python.exe -m unittest tests.test_pdftraceops -v`: 5 OK;
+- `.\.venv\Scripts\python.exe -m unittest tests.test_annotationops -v`: 6 OK;
+- `.\.venv\Scripts\python.exe ..\tools\check_code_line_limit.py`: OK;
+- `git diff --check` cible: OK;
+- nouveaux fichiers controles sans espaces finaux.
+
+Limites:
+
+- pas encore de route UI;
+- pas encore de lecteur PDF integre;
+- pas encore de visuel IA, blueprint UI dedie ou qualification novice;
+- pas de copie de code Zotero.
