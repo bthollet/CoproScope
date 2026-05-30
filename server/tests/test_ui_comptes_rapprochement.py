@@ -105,6 +105,9 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn('action="/comptes/rapprochement/validation?token=local-secret"', response.text)
         self.assertIn('<details class="panel cs-rappro-detail" open>', response.text)
         self.assertIn('<summary class="panel-head cs-rappro-detail-summary">', response.text)
+        self.assertNotIn("Decision avant rapport", text)
+        self.assertNotIn("<h3>Diffusion</h3>", response.text)
+        self.assertNotIn("Historique local", text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
         self.assertNotIn(READ_MODEL_NAME, visible)

@@ -164,6 +164,13 @@ que le module est integre. Les frottements vus dans la fenetre executable ou
 dans le navigateur integre, par exemple une navigation qui coupe les mots, sont
 a corriger avant de donner un lien de recettage.
 
+Complement UI issu de `CC-IT-019`: une iteration utile peut retirer des blocs.
+Les tableaux bas de page `Decision avant rapport`, `Diffusion` et
+`Historique local` ont ete supprimes de la route Controle des comptes, car ils
+repetaient les garde-fous sans guider l'action principale. La regle
+generalisable est de garder les garde-fous au plus pres de la ligne controlee
+et de tester explicitement l'absence du bruit retire.
+
 ## Limites
 
 - Pas de saisie comptable complete.

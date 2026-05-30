@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -15,11 +15,24 @@ SOURCE_ENGINE_PYMUPDF = "pymupdf_text_map"
 SOURCE_ENGINE_MANUAL = "manual_pdf_pointer"
 ZOTERO_POSITION_KIND = "zotero_pdf_position_compatible"
 NO_SOURCE_WRITE_NOTICE = "source_pdf_is_never_modified"
-TEXT_STATUS_CONFIRMED = "confirme"
+TEXT_STATUS_RECOGNIZED = "texte_reconnu"
+TEXT_STATUS_CONFIRMED = TEXT_STATUS_RECOGNIZED
 TEXT_STATUS_UNCONFIRMED = "non_confirme"
 TEXT_STATUS_REVIEW_REQUIRED = "a_verifier"
+PROOF_STATUS_CANDIDATE = "preuve_candidate"
+DOCUMENT_HASH_MATCH = "hash_conforme"
+DOCUMENT_HASH_MISMATCH = "hash_a_verifier"
+DOCUMENT_HASH_NOT_CHECKED = "hash_non_verifie"
+PUBLIC_TEXT_EXCERPT_MASK = "Texte repere: extrait masque par defaut."
 
 _HASH_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$", re.IGNORECASE)
+_DOC_REF_RE = re.compile(r"^[A-Za-z0-9_.:#-]+$")
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}")
+_PHONE_RE = re.compile(r"(?<!\d)(?:\+?\d[\d .-]{7,}\d)(?!\d)")
+_SENSITIVE_MARKER_RE = re.compile(
+    r"(^|[\s&?;.:#/\\_-])(?:token|secret|client_secret|password|passwd|api[_-]?key|oauth|raw|restricted|private)(=|:|[\s/\\._:-]|$)",
+    re.IGNORECASE,
+)
 _SPACE_RE = re.compile(r"\s+")
 
 
@@ -52,6 +65,7 @@ class PdfTextMap:
     document_hash: str
     source_engine: str
     pages: tuple[PdfPageTextMap, ...]
+    document_hash_status: str = DOCUMENT_HASH_MATCH
 
 
 @dataclass(frozen=True)
@@ -63,11 +77,14 @@ class PdfTraceCandidate:
     rects: tuple[PdfTextRect, ...]
     selected_text: str
     selected_text_hash: str
+    anchor_hash: str
     sort_index: str
     source_engine: str
     confidence: str = "text_coordinates"
     private_excerpt_blocked: bool = False
     text_status: str = TEXT_STATUS_CONFIRMED
+    proof_status: str = PROOF_STATUS_CANDIDATE
+    document_hash_status: str = DOCUMENT_HASH_MATCH
 
 
 def extract_pdf_text_map(
@@ -84,6 +101,8 @@ def extract_pdf_text_map(
         raise RuntimeError("PyMuPDF/fitz indisponible pour la carte visuelle PDF.") from exc
 
     _validate_document_identity(document_ref, document_hash)
+    source_hash = _file_sha256(path) if path.is_file() else ""
+    hash_status = _document_hash_status(document_hash, source_hash)
     document = fitz.open(str(path))
     try:
         pages: list[PdfPageTextMap] = []
@@ -108,11 +127,14 @@ def extract_pdf_text_map(
             )
     finally:
         document.close()
+    if source_hash and path.is_file() and _file_sha256(path) != source_hash:
+        hash_status = DOCUMENT_HASH_MISMATCH
     return PdfTextMap(
         document_ref=document_ref,
         document_hash=_normalize_hash(document_hash),
         source_engine=SOURCE_ENGINE_PYMUPDF,
         pages=tuple(pages),
+        document_hash_status=hash_status,
     )
 
 
@@ -122,6 +144,7 @@ def build_text_map_from_words(
     document_hash: str,
     pages: Iterable[Mapping[str, Any]],
     source_engine: str = SOURCE_ENGINE_MANUAL,
+    document_hash_status: str = DOCUMENT_HASH_MATCH,
 ) -> PdfTextMap:
     _validate_document_identity(document_ref, document_hash)
     mapped_pages: list[PdfPageTextMap] = []
@@ -145,6 +168,7 @@ def build_text_map_from_words(
         document_hash=_normalize_hash(document_hash),
         source_engine=source_engine,
         pages=tuple(mapped_pages),
+        document_hash_status=document_hash_status,
     )
 
 
@@ -199,7 +223,8 @@ def build_zone_trace_candidate(
         page_label=page_label or str(safe_page_index + 1),
         rects=(rect,),
         selected_text="",
-        selected_text_hash=anchor_hash,
+        selected_text_hash=_hash_text(""),
+        anchor_hash=anchor_hash,
         sort_index=f"{safe_page_index:05d}|{rect.y:.6f}|{rect.x:.6f}",
         source_engine=source_engine,
         confidence=confidence,
@@ -331,6 +356,7 @@ def _candidate_from_words(
 ) -> PdfTraceCandidate:
     selected_text = " ".join(word.text for word in words)
     first = min(words, key=lambda rect: (rect.y, rect.x))
+    private_excerpt_blocked = _contains_sensitive_text(selected_text)
     return PdfTraceCandidate(
         document_ref=text_map.document_ref,
         document_hash=text_map.document_hash,
@@ -338,10 +364,28 @@ def _candidate_from_words(
         page_label=page.page_label,
         rects=words,
         selected_text=selected_text,
-        selected_text_hash=_hash_text(selected_text),
+        selected_text_hash=_anchor_hash(text_map, page, words) if private_excerpt_blocked else _hash_text(selected_text),
         sort_index=f"{page.page_index:05d}|{first.y:.6f}|{first.x:.6f}",
         source_engine=text_map.source_engine,
-        private_excerpt_blocked=contains_private_path(selected_text),
+        private_excerpt_blocked=private_excerpt_blocked,
+    )
+
+
+def _anchor_hash(text_map: PdfTextMap, page: PdfPageTextMap, rects: Sequence[PdfTextRect]) -> str:
+    zone = union_zone(rects)
+    return _hash_text(
+        "|".join(
+            (
+                text_map.document_ref,
+                text_map.document_hash,
+                str(page.page_index),
+                page.page_label,
+                str(zone["x"]),
+                str(zone["y"]),
+                str(zone["width"]),
+                str(zone["height"]),
+            )
+        )
     )
 
 
@@ -424,8 +468,8 @@ def _page_search_index(words: Sequence[PdfTextRect]) -> tuple[str, tuple[tuple[P
 
 
 def _validate_document_identity(document_ref: str, document_hash: str) -> None:
-    if not document_ref or contains_private_path(document_ref):
-        raise ValueError("document_ref logique requis, sans chemin local")
+    if not document_ref or not _DOC_REF_RE.match(document_ref) or _contains_sensitive_text(document_ref):
+        raise ValueError("document_ref logique requis, sans chemin local ni marqueur sensible")
     if not _HASH_RE.match(str(document_hash or "")):
         raise ValueError("document_hash sha256 requis")
 
@@ -447,10 +491,25 @@ def _public_excerpt(candidate: PdfTraceCandidate, limit: int = 120) -> str:
         return "[extrait masque: contenu local ou sensible]"
     if not candidate.selected_text.strip() or candidate.text_status != TEXT_STATUS_CONFIRMED:
         return "Texte non confirme: seule la zone est gardee."
-    text = _SPACE_RE.sub(" ", candidate.selected_text.strip())
-    if len(text) <= limit:
-        return text
-    return text[: limit - 1].rstrip() + "..."
+    return PUBLIC_TEXT_EXCERPT_MASK
+
+
+def _contains_sensitive_text(value: str) -> bool:
+    text = _SPACE_RE.sub(" ", str(value or "").strip())
+    if not text:
+        return False
+    if contains_private_path(text):
+        return True
+    if _EMAIL_RE.search(text):
+        return True
+    if any(_looks_like_phone(match.group(0)) for match in _PHONE_RE.finditer(text)):
+        return True
+    return bool(_SENSITIVE_MARKER_RE.search(text))
+
+
+def _looks_like_phone(value: str) -> bool:
+    digits = re.sub(r"\D", "", value)
+    return len(digits) >= 9
 
 
 def _search_text(value: str) -> str:
@@ -495,6 +554,7 @@ __all__ = [
     "PdfTraceCandidate",
     "PdfTextMap",
     "PdfTextRect",
+    "PUBLIC_TEXT_EXCERPT_MASK",
     "SCHEMA_VERSION",
     "SOURCE_ENGINE_MANUAL",
     "SOURCE_ENGINE_PYMUPDF",

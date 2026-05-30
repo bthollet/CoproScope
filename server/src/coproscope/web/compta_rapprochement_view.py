@@ -151,22 +151,6 @@ def build_compta_reconciliation_view(
         "selected_id": selected_id,
         "actions": DECISION_ACTIONS,
         "status_counts": _status_counts(items),
-        "decision_gates": [
-            _entry("Suggestion locale", "Le faisceau propose n'est pas une preuve ni une ecriture officielle."),
-            _entry("Reserve visible", "Une reserve reste lisible jusqu'au rapport d'assemblee."),
-            _entry("Question externe", "Le brouillon se copie hors CoproScope; aucun envoi n'est declenche."),
-            _entry("Rapport bloque", "Les lignes rouges ne partent pas en rapport confirme."),
-        ],
-        "boundaries": [
-            _entry("Donnees derivees", "Aucun original comptable, bancaire ou facture n'est servi ici."),
-            _entry("Trace locale", "La validation ajoute une ligne horodatee sans modifier la comptabilite."),
-            _entry("References opaques", "Les identifiants restent courts et sans chemin local."),
-        ],
-        "version_log": [
-            "Guide ComptaScope expose depuis les controles comptables locaux.",
-            "Traces humaines stockees dans un journal local non reecrit.",
-            "Envois syndic, ecritures comptables officielles et rapport automatique bloques.",
-        ],
         "shell_model": _shell_model(year),
     }
 

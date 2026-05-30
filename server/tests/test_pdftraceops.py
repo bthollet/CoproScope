@@ -3,10 +3,12 @@ from __future__ import annotations
 import sys
 import types
 import unittest
+import hashlib
 from pathlib import Path
 
 from coproscope.modules.annotationops import non_destructive_sidecar_plan, normalize_annotation, validate_annotation
 from coproscope.modules.pdftraceops import (
+    PUBLIC_TEXT_EXCERPT_MASK,
     SOURCE_ENGINE_PYMUPDF,
     build_text_map_from_words,
     build_zone_trace_candidate,
@@ -55,6 +57,7 @@ class PdfTraceOpsTests(unittest.TestCase):
         self.assertEqual(position["pageLabel"], "1")
         self.assertEqual(position["rects"][0]["x"], 0.325)
         self.assertEqual(position["rects"][1]["width"], 0.15)
+        self.assertEqual(candidate_to_public_dict(candidate)["selected_text_excerpt"], PUBLIC_TEXT_EXCERPT_MASK)
 
     def test_candidate_becomes_valid_non_destructive_annotation_row(self) -> None:
         text_map = build_text_map_from_words(
@@ -112,6 +115,59 @@ class PdfTraceOpsTests(unittest.TestCase):
         self.assertIn("extrait masque", payload["selected_text_excerpt"])
         self.assertNotIn(r"C:\Users", rendered)
         self.assertNotIn("secret.pdf", rendered)
+
+    def test_sensitive_text_markers_are_never_exposed_in_public_payload(self) -> None:
+        text_map = build_text_map_from_words(
+            document_ref="DOC-SENSITIVE-HINT",
+            document_hash=HASH,
+            pages=[
+                {
+                    "page_index": 0,
+                    "words": [
+                        {"text": "contact", "x": 0.1, "y": 0.1, "width": 0.1, "height": 0.04},
+                        {"text": "test@example.com", "x": 0.2, "y": 0.1, "width": 0.2, "height": 0.04},
+                        {"text": "token=abc123", "x": 0.4, "y": 0.1, "width": 0.2, "height": 0.04},
+                    ],
+                }
+            ],
+        )
+        candidate = find_text_traces(text_map, "test@example.com token=abc123")[0]
+        raw_text_hash = "sha256:" + hashlib.sha256("test@example.com token=abc123".encode("utf-8")).hexdigest()
+
+        payload = candidate_to_public_dict(candidate)
+        rendered = str(payload)
+
+        self.assertTrue(payload["private_excerpt_blocked"])
+        self.assertNotEqual(payload["selected_text_hash"], raw_text_hash)
+        self.assertIn("extrait masque", payload["selected_text_excerpt"])
+        self.assertNotIn("test@example.com", rendered)
+        self.assertNotIn("token=abc123", rendered)
+
+    def test_document_ref_rejects_path_or_sensitive_marker(self) -> None:
+        for document_ref in (r"C:\Users\Example\demo.pdf", "DOC token=abc123", "raw/DOC-1", "DOC.private", "DOC:raw"):
+            with self.subTest(document_ref=document_ref):
+                with self.assertRaises(ValueError):
+                    build_text_map_from_words(document_ref=document_ref, document_hash=HASH, pages=[])
+
+    def test_annotation_comment_with_private_data_is_not_event_ready(self) -> None:
+        candidate = build_zone_trace_candidate(
+            document_ref="DOC-SCAN-COMMENT-1",
+            document_hash=HASH,
+            page_index=0,
+            zone={"x": 0.2, "y": 0.3, "width": 0.25, "height": 0.1},
+        )
+        row = candidate_to_annotation_row(
+            candidate,
+            comment="Relire avec test@example.com avant partage.",
+            author_ref="user:cs-demo",
+            created_at="2026-05-31T01:35:00Z",
+            point_ref="POINT-COMMENT-1",
+            action_ref="ACT-RELIRE-COMMENT-1",
+            proof_ref="PROOF-SCAN-COMMENT-1",
+        )
+        issues = validate_annotation(normalize_annotation(row))
+
+        self.assertTrue(any(issue.field.endswith("comment") for issue in issues))
 
     def test_zone_trace_keeps_scanned_page_area_without_confirmed_text(self) -> None:
         candidate = build_zone_trace_candidate(

@@ -142,48 +142,5 @@
     </details>
   </section>
 
-  <section class="grid two">
-    <div class="panel">
-      <div class="panel-head">
-        <h3>Decision avant rapport d'assemblee</h3>
-        <span>Garde-fous</span>
-      </div>
-      <div class="cs-card-list">
-        {% for gate in view.decision_gates %}
-        <article class="cs-followup-card">
-          <strong>{{ gate.label }}</strong>
-          <p>{{ gate.detail }}</p>
-        </article>
-        {% endfor %}
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h3>Diffusion</h3>
-        <span>Sans brut ni source officielle manquante</span>
-      </div>
-      <div class="cs-card-list">
-        {% for item in view.boundaries %}
-        <article class="cs-followup-card">
-          <strong>{{ item.label }}</strong>
-          <p>{{ item.detail }}</p>
-        </article>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" aria-labelledby="rappro-version-title">
-    <div class="panel-head">
-      <h3 id="rappro-version-title">Historique local</h3>
-      <span>Trace locale</span>
-    </div>
-    <ul class="compact-list">
-      {% for event in view.version_log %}
-      <li>{{ event }}</li>
-      {% endfor %}
-    </ul>
-  </section>
 </section>
 {% endblock %}
