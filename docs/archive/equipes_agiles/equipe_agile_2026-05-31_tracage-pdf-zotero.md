@@ -6,10 +6,9 @@ Ordre: `ORD-P1-043`
 Chantier: `CH-20260531-011534-RM-2026-0045-pdf-trace-page-map`
 Conversation: `CONV-2026-1912`
 
-Statut courant: dev gele apres recadrage. Le module technique deja esquisse
-reste un brouillon local non integrable tant que le cadrage documentaire
-`docs/archive/audits_recherches/cadrage_tracage_pdf_zotero_2026-05-31.md`
-n'est pas relu ou accepte.
+Statut courant: cadrage relu; dev backend V1 reouvert uniquement pour la
+brique interne de carte PDF texte. L'UI reste en NO-GO avant visuel IA,
+blueprint UI dedie et qualification novice.
 
 ## Objectif
 
@@ -118,8 +117,9 @@ Creer une brique pure `pdftraceops` qui:
 - ne lit ni n'ecrit aucune instance privee;
 - ne modifie jamais le PDF.
 
-Cette commande est candidate, pas encore executable: elle ne doit repartir en
-dev qu'apres validation du cadrage et choix explicite de la coupe V1.
+Cette commande est executable depuis la revue de cadrage du 2026-05-31 01:25.
+Elle reste bornee au backend interne: pas de route UI, pas de lecteur PDF
+integre, pas de copie de code Zotero.
 
 ## Criteres d'acceptation iteration 1
 

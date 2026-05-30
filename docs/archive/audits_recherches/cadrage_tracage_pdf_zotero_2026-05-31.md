@@ -303,3 +303,35 @@ Le dev peut reprendre seulement si les points suivants sont vrais:
 - les brouillons deja crees sont relus comme drafts, pas integres par inertie;
 - si l'iteration devient UI, un visuel IA bitmap et un blueprint UI dedie sont
   produits puis qualifies par novice avant dev.
+
+## Revue cadrage et decision V1
+
+Revue coordinateur du 2026-05-31 01:25:
+
+| Point du gate | Etat |
+|---|---|
+| Probleme utilisateur | OK. |
+| Perimetre / hors perimetre | OK pour une V1 interne. |
+| Blueprint de service | OK. |
+| Blueprint UI | Pose comme cible, mais pas suffisant pour dev UI. |
+| Event storming | OK. |
+| Contrat de donnees | OK pour une V1 sidecar. |
+| Risques privacy/licence | OK, avec interdiction de copie Zotero en V1. |
+| Tests attendus | OK pour backend; incomplet pour UI. |
+
+Decision:
+
+- GO backend V1 limite a une brique interne de carte visuelle PDF texte;
+- GO pour relire et corriger les brouillons `pdftraceops` au lieu de les
+  integrer par inertie;
+- NO-GO UI tant qu'un visuel IA bitmap, un blueprint UI dedie et une
+  qualification novice ne sont pas produits;
+- NO-GO integration directe de code Zotero dans cette tranche.
+
+Commande backend autorisee:
+
+```text
+Construire une ancre PDF texte non destructive:
+document + hash -> mots positionnes -> trace candidate -> position compatible
+lecteur type Zotero -> annotation sidecar CoproScope.
+```
