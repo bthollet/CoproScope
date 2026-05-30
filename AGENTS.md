@@ -37,13 +37,12 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   ou blueprint UI selon le cas, event storming ou parcours-evenements, contrat
   de donnees, risques privacy/licence, criteres d'acceptation, tests attendus et
   gate GO/NO-GO avant dev. Si ces elements manquent, les devs restent en
-  lecture seule; tout code deja esquisse est marque brouillon non integrable
-  jusqu'a validation du cadrage.
+  lecture seule; tout code deja esquisse reste hors validation produit jusqu'a
+  reprise de la sequence correcte.
 - Apres ce cadrage, une nouvelle feature doit mobiliser une equipe d'agents
   selon `docs/strategie_equipes_multi_agents.md`. Le fait qu'un fichier ait un
   owner unique ne remplace pas l'equipe: expert domaine, QA/privacy, novice ou
-  designer selon le routage doivent rendre un retour trace. Sans cette
-  mobilisation, le lot reste a requalifier et ne peut pas etre marque
+  designer selon le routage doivent rendre un retour trace avant tout statut
   `PRET_A_INTEGRER`.
 - Le gouvernail roadmap unique est
   [`docs/roadmap_backlog_central.md`](./docs/roadmap_backlog_central.md).
