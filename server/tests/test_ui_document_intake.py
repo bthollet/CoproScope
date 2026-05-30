@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE_DIR = REPO_ROOT / "server" / "src" / "coproscope" / "web" / "templates"
 VIEW_PATH = REPO_ROOT / "server" / "src" / "coproscope" / "web" / "document_intake_view.py"
 TEMPLATE_PATH = TEMPLATE_DIR / "document_intake.html"
-DOC_PATH = REPO_ROOT / "docs" / "integration_ui_ajout_document.md"
+DOC_PATH = REPO_ROOT / "docs" / "archive" / "notes_integration" / "integration_ui_ajout_document.md"
 
 
 class DocumentIntakeUiModelTests(unittest.TestCase):

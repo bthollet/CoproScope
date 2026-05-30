@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / "server" / "src" / "coproscope" / "web"
-DOC = ROOT / "docs" / "qa_post_279_tests.md"
+DOC = ROOT / "docs" / "archive" / "recettes_ux" / "qa_post_279_tests.md"
 
 TEMPLATE_TARGETS = (
     WEB / "templates" / "governance.html",

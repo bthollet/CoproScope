@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE_DIR = REPO_ROOT / "server" / "src" / "coproscope" / "web" / "templates"
 ANNOTATION_VIEW_PATH = REPO_ROOT / "server" / "src" / "coproscope" / "web" / "annotation_view.py"
 ANNOTATION_TEMPLATE_PATH = TEMPLATE_DIR / "annotations.html"
-DOC_PATH = REPO_ROOT / "docs" / "integration_ui_annotations.md"
+DOC_PATH = REPO_ROOT / "docs" / "archive" / "notes_integration" / "integration_ui_annotations.md"
 HASH = "sha256:" + "a" * 64
 
 
