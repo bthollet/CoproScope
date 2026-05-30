@@ -18,17 +18,24 @@ from coproscope.web.compta_rapprochement_view import (
 
 
 REQUIRED_LABELS = (
-    "Rapprochement compta",
-    READ_MODEL_NAME,
-    "File de validation humaine",
+    "Controle des comptes",
+    "Sources du controle",
+    "Lignes a controler",
+    "Controle humain ouvert",
+    "Relues ou reservees",
+    "Traces locales du conseil",
     "Comptabilite",
     "Banque",
     "Facture",
     "Decision / devis",
-    "Suggestion et suite",
-    "Validation humaine",
-    "Valider avec reserve",
-    "Brouillon a copier, aucun envoi automatique",
+    "Question syndic et suite",
+    "Trace conseil syndical",
+    "Marquer comme relu par le conseil",
+    "Garder une reserve visible",
+    "Question syndic a relire et copier, aucun envoi automatique",
+    "Banque et grand livre restent a fournir",
+    "Grand livre non fourni",
+    "Elle ne valide pas un paiement ni la comptabilite officielle",
 )
 
 FORBIDDEN_VISIBLE_MARKERS = (
@@ -36,6 +43,7 @@ FORBIDDEN_VISIBLE_MARKERS = (
     "file://",
     "/Users/",
     "/home/",
+    "Read model",
     "raw/",
     "restricted/",
     "logs/",
@@ -84,7 +92,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
 
         forbidden = client.get("/comptes/rapprochement")
         self.assertEqual(forbidden.status_code, 403)
-        self.assertNotIn("Rapprochement compta", forbidden.text)
+        self.assertNotIn("Controle des comptes", forbidden.text)
 
         response = client.get("/comptes/rapprochement?token=local-secret")
         text = unescape(response.text)
@@ -95,8 +103,11 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn('aria-current="page"', response.text)
         self.assertIn('href="/comptes?token=local-secret"', response.text)
         self.assertIn('action="/comptes/rapprochement/validation?token=local-secret"', response.text)
+        self.assertIn('<details class="panel cs-rappro-detail" open>', response.text)
+        self.assertIn('<summary class="panel-head cs-rappro-detail-summary">', response.text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
+        self.assertNotIn(READ_MODEL_NAME, visible)
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
 
@@ -110,7 +121,19 @@ class UiComptesRapprochementTests(unittest.TestCase):
             )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Rapprochement compta", response.text)
+        self.assertIn("Controle des comptes", response.text)
+
+    def test_right_detail_panel_is_foldable(self) -> None:
+        response = self._client(access_token="local-secret").get("/comptes/rapprochement?token=local-secret")
+        static_root = Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static"
+        css = (static_root / "styles_part_07.css").read_text(encoding="utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("<details", response.text)
+        self.assertIn("cs-rappro-detail", response.text)
+        self.assertIn("cs-rappro-detail-summary", response.text)
+        self.assertIn(".cs-rappro-detail:not([open])", css)
+        self.assertIn("cursor: pointer", css)
 
     def test_validation_post_appends_human_trace_without_private_note_leak(self) -> None:
         client = self._client(access_token="local-secret")
@@ -129,14 +152,15 @@ class UiComptesRapprochementTests(unittest.TestCase):
         _, rows = read_csv(self.accounting_dir / "compta_human_validations_2025.csv")
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["decision"], "validated_with_reserve")
-        self.assertEqual(rows[0]["decision_label"], "Valide avec reserve")
+        self.assertEqual(rows[0]["decision_label"], "Reserve visible")
         self.assertNotIn("C:\\", rows[0]["note"])
         self.assertNotIn("raw", rows[0]["note"].lower())
 
         follow_up = client.get(response.headers["location"])
         text = unescape(follow_up.text)
         self.assertEqual(follow_up.status_code, 200)
-        self.assertIn("Valide avec reserve", text)
+        self.assertIn("Reserve visible", text)
+        self.assertIn("Elle ne valide pas un paiement ni la comptabilite officielle", text)
         self.assertNotIn("C:\\", _visible_text(text))
         self.assertNotIn("raw", _visible_text(text).lower())
 
@@ -155,7 +179,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
                     ttc="1200.00",
                     niveau_preuve="facture extraite",
                     statut_rapprochement="NON_RAPPROCHE",
-                    libelle_statut="A traiter avant AG",
+                    libelle_statut="A traiter avant assemblee",
                     motif="Aucun mouvement compatible n'est rattache.",
                     prochaine_action="Demander mouvement bancaire et decision ou devis.",
                     question_syndic="Pouvez-vous transmettre le mouvement bancaire et le devis associe ?",

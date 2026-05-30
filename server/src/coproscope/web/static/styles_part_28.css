@@ -1,98 +1,146 @@
-.drive-intro {
+.drive-page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
   gap: 1rem;
-  align-items: stretch;
-  margin-bottom: 1rem;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 1.2rem;
-  background: var(--surface);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
-.drive-intro h2 {
-  margin: 0;
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 760;
+.drive-page *,
+.drive-status-dock,
+.drive-status-popover {
+  box-sizing: border-box;
 }
 
-.drive-intro .lead {
-  max-width: 760px;
-  margin-top: .35rem;
-}
-
-.drive-limit {
-  margin: .6rem 0 0;
-  color: var(--muted);
-  font-weight: 680;
-}
-
-.drive-state {
+.drive-config,
+.drive-test,
+.drive-boundary-panel,
+.drive-next {
   display: grid;
-  align-content: center;
-  gap: .35rem;
-  border-left: 1px solid var(--line);
-  padding-left: 1rem;
+  gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
-.drive-state span,
-.drive-state small,
-.drive-facts dd,
-.drive-step small,
-.drive-next-list small,
-.drive-result {
-  color: var(--muted);
-}
-
-.drive-state strong {
-  font-size: 1.2rem;
-}
-
-.drive-main-grid {
-  align-items: start;
-}
-
-.drive-setup .panel-head,
-.drive-test .panel-head {
+.drive-config-head,
+.drive-test-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: .75rem;
+  gap: 1rem;
   align-items: start;
-}
-
-.drive-setup .panel-head > *,
-.drive-test .panel-head > * {
   min-width: 0;
 }
 
-.drive-setup p,
-.drive-test p {
-  margin-top: 0;
+.drive-config-head > *,
+.drive-test-head > * {
+  min-width: 0;
 }
 
-.drive-facts {
-  display: grid;
-  gap: .65rem;
-  margin: 1rem 0 0;
-}
-
-.drive-facts div {
-  display: grid;
-  gap: .2rem;
-  border-top: 1px solid var(--line);
-  padding-top: .65rem;
-}
-
-.drive-facts dd {
+.drive-config h2 {
   margin: 0;
+  font-size: 24px;
+  font-weight: 760;
+  line-height: 1.18;
+}
+
+.drive-config .lead,
+.drive-test p {
+  max-width: 100%;
+  margin-top: .35rem;
+}
+
+.drive-config-state {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: .5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .35rem .55rem;
+  background: var(--surface);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.drive-state-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #925a0a;
+}
+
+.drive-state-dot--ok {
+  background: var(--accent);
+}
+
+.drive-state-dot--error {
+  background: #b53535;
+}
+
+.drive-config-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+}
+
+.drive-config-list div {
+  display: grid;
+  gap: .25rem;
+  padding: .8rem .9rem 0 0;
+  min-width: 0;
+}
+
+.drive-config-list dt,
+.drive-boundary-grid strong {
+  font-weight: 760;
+}
+
+.drive-config-list dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.drive-test-head span {
+  color: var(--muted);
+  font-weight: 680;
+  text-align: right;
 }
 
 .drive-action-row {
   display: flex;
   flex-wrap: wrap;
   gap: .65rem;
-  margin: .9rem 0;
+}
+
+.drive-real-sync {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: .75rem;
+  min-width: 0;
+}
+
+.drive-real-sync form {
+  margin: 0;
+}
+
+.drive-real-sync small,
+.drive-watch-note {
+  color: var(--muted);
+  min-width: 0;
+}
+
+.drive-real-sync button:disabled {
+  background: #eef2f1;
+  border-color: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .drive-action-row form {
@@ -106,8 +154,8 @@
 .drive-steps,
 .drive-next-list {
   display: grid;
-  gap: .6rem;
-  margin: .9rem 0 0;
+  gap: .65rem;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -120,7 +168,7 @@
 .drive-next-list li {
   display: grid;
   gap: .25rem;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
   padding-top: .65rem;
 }
 
@@ -131,8 +179,7 @@
   font-weight: 780;
 }
 
-.drive-step--ok span,
-.drive-next-list span {
+.drive-step--ok span {
   color: var(--accent);
 }
 
@@ -140,16 +187,34 @@
   color: #b53535;
 }
 
+.drive-step small,
+.drive-next-list small,
 .drive-result {
-  margin: .9rem 0 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: .65rem .75rem;
-  background: #f8faf9;
+  color: var(--muted);
 }
 
-.drive-boundaries {
-  align-items: stretch;
+.drive-result {
+  margin: 0;
+  border-top: 1px solid var(--border);
+  padding-top: .7rem;
+}
+
+.drive-boundary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: .85rem;
+}
+
+.drive-boundary-grid ul {
+  margin-top: .45rem;
+}
+
+.drive-watch-note {
+  margin: 0;
+  border-top: 1px solid var(--border);
+  padding-top: .75rem;
 }
 
 .drive-next-list {
@@ -160,48 +225,44 @@
   display: flex;
   flex-wrap: wrap;
   gap: .65rem;
-  margin-top: 1rem;
 }
 
-.drive-sync-bar {
+.drive-status-dock {
   position: fixed;
   right: 18px;
-  bottom: 14px;
+  bottom: 16px;
   z-index: 30;
-  max-width: min(300px, calc(100vw - 36px));
 }
 
-.drive-sync-bar summary {
-  display: inline-flex;
-  min-height: 34px;
-  max-width: 100%;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--line);
+.drive-status-dock summary {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 4px 9px 4px 5px;
+  padding: 0;
   background: #ffffff;
-  box-shadow: 0 8px 18px rgba(16, 24, 40, .14);
+  box-shadow: 0 8px 18px rgba(16, 24, 40, .16);
   cursor: pointer;
   list-style: none;
 }
 
-.drive-sync-bar summary::-webkit-details-marker {
+.drive-status-dock summary::-webkit-details-marker {
   display: none;
 }
 
-.drive-sync-icon {
+.drive-status-icon {
   display: inline-grid;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   border-radius: 7px;
 }
 
-.drive-sync-icon svg {
-  width: 18px;
-  height: 18px;
+.drive-status-icon svg {
+  width: 19px;
+  height: 19px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -209,136 +270,109 @@
   stroke-linejoin: round;
 }
 
-.drive-sync-copy {
-  display: grid;
-  min-width: 0;
-  line-height: 1.05;
-}
-
-.drive-sync-copy small {
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.drive-sync-copy strong {
-  color: var(--ink);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-
-.drive-sync-bar--ok .drive-sync-icon {
+.drive-status-dock--ok .drive-status-icon {
   background: #e7f7ee;
   color: var(--accent);
 }
 
-.drive-sync-bar--setup .drive-sync-icon,
-.drive-sync-bar--working .drive-sync-icon {
+.drive-status-dock--setup .drive-status-icon,
+.drive-status-dock--working .drive-status-icon {
   background: #fff4dc;
   color: #925a0a;
 }
 
-.drive-sync-bar--error .drive-sync-icon {
+.drive-status-dock--error .drive-status-icon {
   background: #fdecec;
   color: #b53535;
 }
 
-.drive-sync-bar--working .drive-sync-icon svg {
-  animation: drive-sync-spin 1.6s linear infinite;
+.drive-status-dock--working .drive-status-icon svg {
+  animation: drive-status-spin 1.6s linear infinite;
 }
 
-.drive-sync-popover {
+.drive-status-popover {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
   display: grid;
   width: min(360px, calc(100vw - 36px));
   gap: 8px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   background: #ffffff;
   box-shadow: 0 18px 44px rgba(16, 24, 40, .2);
 }
 
-.drive-sync-popover p,
-.drive-sync-popover ul {
+.drive-status-popover p,
+.drive-status-popover ul {
   margin: 0;
   color: var(--muted);
 }
 
-.drive-sync-popover ul {
+.drive-status-popover ul {
   padding-left: 18px;
 }
 
-.drive-sync-spacer {
-  min-height: 48px;
+.drive-status-spacer {
+  min-height: 56px;
 }
 
-@keyframes drive-sync-spin {
+@keyframes drive-status-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
 @media (max-width: 980px) {
-  .drive-intro,
+  .drive-config-list,
   .drive-steps,
   .drive-next-list {
     grid-template-columns: 1fr;
   }
 
-  .drive-state {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding: .8rem 0 0;
+  .drive-boundary-grid {
+    grid-template-columns: 1fr;
   }
 
-  .drive-sync-bar {
+  .drive-status-dock {
     right: 12px;
-    max-width: min(300px, calc(100vw - 24px));
+    bottom: 12px;
   }
 
-  .drive-sync-popover {
+  .drive-status-popover {
     width: min(360px, calc(100vw - 24px));
   }
 }
 
 @media (max-width: 760px) {
-  .drive-intro {
-    padding: 1rem;
+  .drive-config-head,
+  .drive-test-head {
+    grid-template-columns: 1fr;
   }
 
-  .drive-setup .panel-head,
-  .drive-test .panel-head {
-    grid-template-columns: 1fr;
+  .drive-config-state {
+    justify-self: start;
+  }
+
+  .drive-test-head span {
+    text-align: left;
   }
 
   .drive-action-row {
     display: grid;
   }
 
-  .drive-action-row button {
+  .drive-real-sync {
+    display: grid;
+  }
+
+  .drive-action-row button,
+  .drive-real-sync button {
     width: 100%;
   }
 
-  .drive-sync-bar {
-    position: static;
-    max-width: none;
-    margin-top: 1rem;
-  }
-
-  .drive-sync-bar summary {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .drive-sync-popover {
-    position: static;
-    width: auto;
-    margin-top: .5rem;
-  }
-
-  .drive-sync-spacer {
-    min-height: 0;
+  .drive-status-popover {
+    width: min(320px, calc(100vw - 24px));
   }
 }

@@ -3,7 +3,8 @@
   .cs-comptes-filters form,
   .cs-comptes-layout,
   .cs-comptes-grid,
-  .cs-comptes-guide {
+  .cs-comptes-guide,
+  .cs-rappro-source-grid {
     grid-template-columns: 1fr;
   }
 
@@ -64,7 +65,8 @@
   }
 
   .cs-summary-grid,
-  .cs-focus-grid {
+  .cs-focus-grid,
+  .cs-rappro-source-grid {
     grid-template-columns: 1fr;
   }
 

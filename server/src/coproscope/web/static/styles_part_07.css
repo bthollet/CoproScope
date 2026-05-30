@@ -391,6 +391,46 @@
   gap: 12px;
 }
 
+.cs-rappro-detail {
+  align-self: start;
+}
+
+.cs-rappro-source-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cs-rappro-source-grid .cs-followup-card {
+  min-height: 112px;
+}
+
+.cs-rappro-detail-summary {
+  cursor: pointer;
+}
+
+.cs-rappro-detail-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cs-rappro-detail-summary::after {
+  content: "v";
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  color: #475467;
+  font-weight: 760;
+}
+
+.cs-rappro-detail:not([open]) {
+  padding-bottom: 14px;
+}
+
+.cs-rappro-detail:not([open]) .cs-rappro-detail-summary::after {
+  content: ">";
+}
+
 .cs-comptes-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -514,7 +554,8 @@
   }
 
   .cs-summary-grid,
-  .cs-focus-grid {
+  .cs-focus-grid,
+  .cs-rappro-source-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

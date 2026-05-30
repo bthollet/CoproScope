@@ -58,10 +58,54 @@ def _dispatch(args: argparse.Namespace) -> int:
                     generation=args.generation,
                     parent_sha256=args.parent_sha256,
                 )
+        elif args.drive_command == "pull-package":
+            service = gdrive_transport.build_drive_service(token_path=args.token_path)
+            result = gdrive_transport.download_latest_encrypted_instance_package(
+                drive_service=service,
+                folder_id=args.folder_id,
+                sync_root=args.sync_root,
+            )
+        elif args.drive_command == "sync-now":
+            instance = load_instance(args.instance, args.instance_root)
+            service = gdrive_transport.build_drive_service(token_path=args.token_path)
+            result = drive_sync_now.sync_now(
+                instance=instance,
+                drive_service=service,
+                folder_id=args.folder_id,
+                sync_root=args.sync_root,
+                local_state_root=args.local_state_root,
+            )
+        elif args.drive_command == "watch-once":
+            instance = load_instance(args.instance, args.instance_root)
+            service = gdrive_transport.build_drive_service(token_path=args.token_path)
+            result = drive_watch.watch_once(
+                instance=instance,
+                drive_service=service,
+                folder_id=args.folder_id,
+                sync_root=args.sync_root,
+                local_state_root=args.local_state_root,
+                local_change_marker=args.local_change_marker,
+            )
+        elif args.drive_command == "watch-loop":
+            instance = load_instance(args.instance, args.instance_root)
+            service = gdrive_transport.build_drive_service(token_path=args.token_path)
+            result = drive_watch_loop.watch_loop(
+                instance=instance,
+                drive_service=service,
+                folder_id=args.folder_id,
+                sync_root=args.sync_root,
+                local_state_root=args.local_state_root,
+                local_change_marker=args.local_change_marker,
+                interval_seconds=args.interval_seconds,
+                max_cycles=args.max_cycles,
+            )
+        elif args.drive_command == "folder-rights":
+            service = gdrive_transport.build_drive_service(token_path=args.token_path)
+            result = gdrive_rights.inspect_drive_folder_rights(drive_service=service, folder_id=args.folder_id)
         else:
             return 1
         print(json.dumps(result, indent=2, ensure_ascii=True))
-        return 0 if result.get("status") in {"ok", "ready", "prepared", "uploaded"} else 1
+        return 0 if result.get("status") in {"ok", "ready", "prepared", "uploaded", "downloaded", "idle", "synced", "inspected", "limited", "completed"} else 1
     if args.command == "vault":
         roots = vault_core.roots_from_args(args)
         if args.vault_command == "init":
