@@ -38,6 +38,8 @@ def register_drive_mvp_routes(
         result = drive_ui_state.sync_now_from_instance(
             instance=instance,
             drive_service_factory=getattr(app.state, "drive_service_factory", None),
+            media_factory=getattr(app.state, "drive_media_factory", None),
+            media_downloader_factory=getattr(app.state, "drive_media_downloader_factory", None),
         )
         return _redirect(app, request, result)
 

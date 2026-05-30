@@ -137,6 +137,7 @@ class UiDriveMvpTests(unittest.TestCase):
         service = _FakeDriveService()
         app = create_app(self.instance, 2025, access_token="drive-mvp-local")
         app.state.drive_service_factory = lambda token_path=None: service
+        app.state.drive_media_factory = lambda path: {"content": path.read_bytes()}
         try:
             from fastapi.testclient import TestClient
         except ImportError as exc:
@@ -155,6 +156,7 @@ class UiDriveMvpTests(unittest.TestCase):
         self.assertIn("Dossier Google configure", visible)
         self.assertIn("Drive pret", visible)
         self.assertEqual(len(service.files_api.created), 1)
+        self.assertNotEqual(service.files_api.created[0]["size"], "0")
         self.assertNotIn("fake-google-folder-id-secret", serialized)
         self.assertNotIn(str(sync), serialized)
         self.assertNotIn(str(token), serialized)
@@ -192,12 +194,14 @@ class _FakeRequest:
 
 
 class _FakeCreateRequest:
-    def __init__(self, created: list[dict[str, object]], body: dict[str, object]) -> None:
+    def __init__(self, created: list[dict[str, object]], body: dict[str, object], media_body: object) -> None:
         self.created = created
         self.body = body
+        self.media_body = media_body
 
     def execute(self) -> dict[str, object]:
-        item = {"id": f"fake-file-{len(self.created) + 1}", "name": self.body.get("name", ""), "size": "1"}
+        content = bytes(self.media_body.get("content", b"")) if isinstance(self.media_body, dict) else b""
+        item = {"id": f"fake-file-{len(self.created) + 1}", "name": self.body.get("name", ""), "size": str(len(content))}
         self.created.append(item)
         return item
 
@@ -213,7 +217,7 @@ class _FakeDriveFiles:
         return _FakeRequest()
 
     def create(self, *, body: dict[str, object], media_body: object, fields: str) -> _FakeCreateRequest:
-        return _FakeCreateRequest(self.created, body)
+        return _FakeCreateRequest(self.created, body, media_body)
 
 
 class _FakeDriveService:

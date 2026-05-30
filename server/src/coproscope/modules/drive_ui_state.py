@@ -56,6 +56,8 @@ def sync_now_from_instance(
     *,
     instance: Any,
     drive_service_factory: Callable[..., Any] | None = None,
+    media_factory: Callable[[Path], object] | None = None,
+    media_downloader_factory: Callable[[Any], bytes] | None = None,
 ) -> dict[str, object]:
     config = resolve_drive_ui_config(instance)
     state = inspect_drive_ui_state(instance)
@@ -69,6 +71,8 @@ def sync_now_from_instance(
         folder_id=config.folder_id,
         sync_root=config.sync_root,
         local_state_root=config.local_state_root,
+        media_factory=media_factory,
+        media_downloader_factory=media_downloader_factory,
     )
     return _ui_sync_result(result)
 
