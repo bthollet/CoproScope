@@ -6,15 +6,14 @@ La documentation est separee en trois niveaux:
 2. developpeurs et contributeurs;
 3. archives, journaux et traces de conception.
 
-Le but est simple: un lecteur non technique doit comprendre la valeur du projet
-avant de voir une commande. Les commandes restent disponibles, mais elles ne
-sont pas le parcours principal.
+Le README racine reste la vitrine principale:
+[README GitHub](../README.md).
 
 ## Entrees Principales
 
 | Profil | Lire |
 |---|---|
-| Relecture rapide dans Codex | [Vitrine Markdown](./public/vitrine.md) |
+| Relecture rapide dans Codex | [README vitrine GitHub](../README.md) |
 | Coproprietaire ou conseil syndical | [Decouvrir CoproScope](./public/README.md) |
 | Sponsor, collectivite, association | [Sponsors et partenaires](./public/sponsors-et-partenaires.md) |
 | Futur utilisateur qui veut voir les ecrans | [Parcours demonstratifs](./public/parcours-demonstratifs.md) |
@@ -26,7 +25,7 @@ sont pas le parcours principal.
 
 | Question | Page |
 |---|---|
-| Ou lire la vitrine navigable sans HTML ? | [Vitrine Markdown](./public/vitrine.md) |
+| Ou lire la vitrine principale ? | [README vitrine GitHub](../README.md) |
 | A quoi sert CoproScope ? | [README public](./public/README.md) |
 | Quels parcours sont vises ? | [Parcours demonstratifs](./public/parcours-demonstratifs.md) |
 | Pourquoi une institution pourrait soutenir le projet ? | [Sponsors et partenaires](./public/sponsors-et-partenaires.md) |

@@ -1,7 +1,7 @@
 # Parcours Demonstratifs
 
 Navigation:
-[Vitrine Markdown](./vitrine.md) |
+[README GitHub](../../README.md) |
 [Decouvrir](./README.md) |
 [Drive et confidentialite](./confiance-confidentialite.md) |
 [Sponsors](./sponsors-et-partenaires.md) |

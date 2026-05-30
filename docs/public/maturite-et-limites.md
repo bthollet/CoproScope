@@ -1,7 +1,7 @@
 # Maturite Et Limites
 
 Navigation:
-[Vitrine Markdown](./vitrine.md) |
+[README GitHub](../../README.md) |
 [Decouvrir](./README.md) |
 [Parcours](./parcours-demonstratifs.md) |
 [Drive et confidentialite](./confiance-confidentialite.md) |

@@ -3,7 +3,6 @@
 Navigation:
 [README GitHub](../../README.md) |
 [Index docs](../README.md) |
-[Vitrine Markdown](./vitrine.md) |
 [Parcours](./parcours-demonstratifs.md) |
 [Drive et confidentialite](./confiance-confidentialite.md) |
 [Sponsors](./sponsors-et-partenaires.md) |

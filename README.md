@@ -1,12 +1,11 @@
 # CoproScope
 
-> Transformer un dossier de copropriete opaque en preuves, actions et memoire
-> transmissible.
+> La copropriete lisible: preuves, actions, memoire, partage prudent.
 
 CoproScope est un projet open source local-first pour aider des
-coproprietaires, conseils syndicaux, syndics benevoles et acteurs
-d'accompagnement a comprendre ce qui se passe dans une copropriete sans devenir
-experts.
+coproprietaires, conseils syndicaux, syndics benevoles, associations,
+collectivites et partenaires a comprendre un dossier de copropriete sans devoir
+devenir experts.
 
 Le produit ne remplace ni un syndic, ni une comptabilite officielle, ni une
 validation juridique. Il aide a relier les documents, demandes, decisions,
@@ -14,7 +13,18 @@ depenses, preuves, actions et restitutions partageables.
 
 ![Strategie cible Drive CoproScope](./docs/assets/showcase/drive-strategie-cible.svg)
 
-## Pourquoi
+## Choisir Son Entree
+
+| Vous etes | Lire | Ce que vous y trouvez |
+|---|---|---|
+| Coproprietaire, conseil syndical, futur utilisateur | [Decouvrir CoproScope](./docs/public/README.md) | Promesse, usages, limites, vocabulaire simple. |
+| Sponsor, collectivite, association | [Sponsors et partenaires](./docs/public/sponsors-et-partenaires.md) | Interet collectif, prevention, autonomie, soutenabilite. |
+| Lecteur qui veut voir les parcours | [Parcours demonstratifs](./docs/public/parcours-demonstratifs.md) | Comptes, preuves, demandes, Drive cible, points a verifier. |
+| Lecteur inquiet sur les donnees | [Strategie Drive et confidentialite](./docs/public/confiance-confidentialite.md) | Coffre local, Drive chiffre, controle avant partage. |
+| Lecteur qui veut l'etat reel | [Maturite et limites](./docs/public/maturite-et-limites.md) | Ce qui existe, ce qui reste a stabiliser, ce qui n'est pas promis. |
+| Developpeur ou contributeur | [Documentation developpeurs](./docs/developpeurs/README.md) | Installation, tests, architecture, publication prudente. |
+
+## Le Probleme
 
 Dans beaucoup de coproprietes, l'information existe deja, mais elle est:
 
@@ -31,20 +41,9 @@ CoproScope cherche a rendre visible la chaine:
 document -> preuve -> point a verifier -> action -> decision -> memoire -> partage prudent
 ```
 
-## Pour Qui
+## Ce Que CoproScope Montre
 
-| Public | Ce que CoproScope doit lui apporter |
-|---|---|
-| Coproprietaire novice | Comprendre les priorites sans apprendre tout le droit de la copropriete. |
-| Conseil syndical | Suivre preuves, demandes, comptes, decisions et passation. |
-| Syndic benevole | Tenir un mandat avec obligations, traces, messages et prudence. |
-| Association ou collectivite | Accompagner des habitants avec une methode reproductible. |
-| Sponsor ou partenaire | Soutenir un outil d'autonomie, de preuve et de confiance. |
-| Developpeur | Contribuer a un noyau local-first, teste et documente. |
-
-## Ce Que CoproScope Aide A Faire
-
-### Gerer Drive Comme Un Transport Chiffre
+### Drive Comme Transport Chiffre
 
 Drive n'est pas le cerveau du produit. Dans la cible, CoproScope garde le
 travail clair en local, controle ce qui peut etre prepare, chiffre le paquet,
@@ -52,14 +51,10 @@ puis utilise Drive comme transport vers les personnes autorisees.
 
 ![Garde-fous avant partage Drive](./docs/assets/showcase/drive-garde-fous-partage.svg)
 
-L'interface cible doit dire simplement:
+Lire la page detaillee:
+[Strategie Drive et confidentialite](./docs/public/confiance-confidentialite.md)
 
-- ce qui reste dans le coffre local;
-- ce qui va partir dans Drive;
-- pourquoi l'envoi est autorise;
-- ce qui bloque le partage en cas de doute.
-
-### Controler Les Comptes Sans Se Pretendre Comptable
+### Comptes Lisibles Sans Se Pretendre Comptable
 
 ![Matrice de controle des comptes](./docs/assets/showcase/controle-comptes-matrice.png)
 
@@ -67,30 +62,22 @@ CoproScope aide a voir les sources disponibles, les sources absentes et les
 questions a poser. Une ligne n'est pas declaree vraie sans preuve et validation
 humaine.
 
-### Ouvrir Une Preuve Avec Son Contexte
+### Preuve Avec Contexte
 
 ![Preuve document PDF](./docs/assets/showcase/preuve-document-pdf.png)
 
 Une piece doit dire ce qu'elle prouve, ce qu'elle ne prouve pas, et pourquoi
 elle est rattachee a une action, une depense ou un point.
 
-### Demander, Relancer, Transmettre
+## Ce Que Le Projet Apporte
 
-Une absence de piece devient une demande suivie. Une decision devient une
-action. Une action garde sa preuve attendue. La passation ne repose plus sur la
-memoire d'une seule personne.
-
-## Lire Selon Votre Profil
-
-| Vous voulez | Commencer ici |
+| Besoin | Reponse CoproScope |
 |---|---|
-| Relire la vitrine en Markdown dans Codex | [Vitrine Markdown](./docs/public/vitrine.md) |
-| Comprendre CoproScope sans technique | [Decouvrir CoproScope](./docs/public/README.md) |
-| Voir les parcours en images | [Parcours demonstratifs](./docs/public/parcours-demonstratifs.md) |
-| Evaluer l'interet pour une institution ou un sponsor | [Sponsors et partenaires](./docs/public/sponsors-et-partenaires.md) |
-| Comprendre Drive, partage et confidentialite | [Strategie Drive et confidentialite](./docs/public/confiance-confidentialite.md) |
-| Voir ce qui existe vraiment | [Maturite et limites](./docs/public/maturite-et-limites.md) |
-| Installer, tester ou contribuer | [Documentation developpeurs](./docs/developpeurs/README.md) |
+| Comprendre vite | Une lecture par preuves, points a verifier et prochaines actions. |
+| Controler sans surpromettre | Des questions guidees, des reserves visibles, une validation humaine. |
+| Demander et relancer | Une piece manquante devient une demande suivie, pas une remarque perdue. |
+| Partager prudemment | Les sorties passent par revue, biffage si besoin et controle avant partage. |
+| Transmettre | La memoire ne repose plus uniquement sur une personne ou un dossier eparpille. |
 
 ## Maturite Reelle
 
@@ -113,6 +100,17 @@ memoire d'une seule personne.
 - pas un SaaS multi-tenant pret a vendre;
 - pas un coffre cloud de documents bruts;
 - pas une IA qui decide seule.
+
+## Aller Plus Loin
+
+| Sujet | Lien |
+|---|---|
+| Index complet de la documentation | [docs/README.md](./docs/README.md) |
+| Parcours publics | [docs/public](./docs/public/README.md) |
+| Parcours demonstratifs | [docs/public/parcours-demonstratifs.md](./docs/public/parcours-demonstratifs.md) |
+| Sponsors et partenaires | [docs/public/sponsors-et-partenaires.md](./docs/public/sponsors-et-partenaires.md) |
+| Drive et confidentialite | [docs/public/confiance-confidentialite.md](./docs/public/confiance-confidentialite.md) |
+| Developpeurs | [docs/developpeurs/README.md](./docs/developpeurs/README.md) |
 
 ## Structure Du Depot
 

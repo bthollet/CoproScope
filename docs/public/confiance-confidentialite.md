@@ -1,7 +1,7 @@
 # Strategie Drive Et Confidentialite
 
 Navigation:
-[Vitrine Markdown](./vitrine.md) |
+[README GitHub](../../README.md) |
 [Decouvrir](./README.md) |
 [Parcours](./parcours-demonstratifs.md) |
 [Sponsors](./sponsors-et-partenaires.md) |
