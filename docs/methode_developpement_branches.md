@@ -34,9 +34,8 @@ Avant tout code applicatif, le cadrage doit contenir:
 
 Si ces elements ne sont pas prets, les devs restent en lecture seule.
 
-Si du code a deja ete esquisse avant ce gate, il doit etre marque comme
-brouillon non integrable. Il peut aider a comprendre, mais il ne devient pas la
-source de verite de la feature.
+Si du code a deja ete esquisse avant ce gate, il reste hors validation produit
+tant que la sequence de cadrage et d'equipe n'a pas ete reprise.
 
 ## Quand le code peut commencer
 
@@ -53,9 +52,9 @@ Le code commence seulement quand:
 - le GO dev vient d'une synthese d'equipe, meme si un seul owner ecrit le code;
 - aucune collision vivante ne bloque le perimetre.
 
-Un owner solo peut implementer apres le GO, mais il ne peut pas remplacer
-l'equipe. Si une nouvelle feature est codee sans mobilisation d'agents, elle
-reste `A_REQUALIFIER` ou `EN_ATTENTE_USER`, pas `PRET_A_INTEGRER`.
+Un owner unique peut implementer apres le GO, mais il ne remplace pas les
+roles d'equipe prevus par la doctrine. Une nouvelle feature ne passe pas
+`PRET_A_INTEGRER` sans retours d'equipe traces.
 
 Pour une iteration UI, ajouter les gates du protocole agile:
 
