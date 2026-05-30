@@ -1,125 +1,127 @@
 # CoproScope
 
-> Rendre la copropriete lisible pour celles et ceux qui la subissent, la financent et doivent parfois la defendre.
+> Transformer un dossier de copropriete opaque en preuves, actions et memoire
+> transmissible.
 
-CoproScope est un projet local-first pour outiller des coproprietaires novices, des collectifs d'habitants et les institutions qui ont interet a ce qu'ils soient mieux armes. L'objectif n'est pas de leur demander de devenir experts, ni de leur faire ouvrir un terminal. L'objectif est de transformer un dossier opaque en parcours clair: quoi regarder, quelle preuve existe, quelle action est possible, que peut-on partager sans risque.
+CoproScope est un projet open source local-first pour aider des
+coproprietaires, conseils syndicaux, syndics benevoles et acteurs
+d'accompagnement a comprendre ce qui se passe dans une copropriete sans devenir
+experts.
 
-Ce n'est pas un extranet de syndic. Ce n'est pas une comptabilite officielle. Ce n'est pas un chatbot qui decide. C'est une couche **preuve + action + memoire** qui doit aider a comprendre, verifier, relancer, transmettre et expliquer.
+Le produit ne remplace ni un syndic, ni une comptabilite officielle, ni une
+validation juridique. Il aide a relier les documents, demandes, decisions,
+depenses, preuves, actions et restitutions partageables.
 
-![Concept cockpit coproprietaires](./docs/assets/etude-utilisateurs/cockpit-conseil-syndical.png)
+![Strategie cible Drive CoproScope](./docs/assets/showcase/drive-strategie-cible.svg)
 
-## Le Public
+## Pourquoi
 
-### Coproprietaires Novices
+Dans beaucoup de coproprietes, l'information existe deja, mais elle est:
 
-Le produit doit d'abord parler a quelqu'un qui ne sait pas encore lire une convocation d'assemblee generale, un etat de depenses, un contrat de syndic ou une relance technique.
+- dispersee entre documents, mails, Drive, extranet, tableurs et memoires
+  personnelles;
+- difficile a lire pour des coproprietaires non experts;
+- fragile quand un benevole fatigue ou passe la main;
+- sensible a partager sans revue ni validation;
+- rarement reliee a une action concrete.
 
-Il doit repondre sans jargon a quatre questions:
+CoproScope cherche a rendre visible la chaine:
 
-1. Qu'est-ce qui demande mon attention ?
-2. Quelle preuve avons-nous ?
-3. Quelle action est possible maintenant ?
-4. Que peut-on partager, avec qui, et sous quelle forme ?
+```text
+document -> preuve -> point a verifier -> action -> decision -> memoire -> partage prudent
+```
 
-### Institutions Et Acteurs D'Accompagnement
+## Pour Qui
 
-CoproScope doit aussi etre lisible par les acteurs qui ont interet a ce que les coproprietaires soient mieux outilles: collectivites, associations, observatoires, dispositifs d'accompagnement, acteurs de l'habitat, mediation, prevention des coproprietes fragiles.
-
-Pour eux, l'interet n'est pas le code. L'interet est de disposer d'un cadre reproductible pour rendre une situation plus comprehensible, mieux prouvee, moins dependante d'une seule personne et plus facile a transmettre.
-
-### Conseil Syndical
-
-Le conseil syndical reste un relais d'usage naturel, surtout quand il existe et qu'il porte les demandes, les controles et la passation. Mais il n'est pas la cible unique. Le produit doit rester comprehensible par un coproprietaire qui n'a jamais ete elu.
-
-## Ce Que L'UX Doit Faire
-
-L'enquete utilisateur a clarifie un point simple: le probleme n'est pas seulement de stocker des documents. Le probleme est de relier une piece, une demande, une decision, une depense, une preuve, une action et une restitution diffusable.
-
-L'interface doit donc rendre visibles:
-
-| Moment | Ce que l'utilisateur doit comprendre |
+| Public | Ce que CoproScope doit lui apporter |
 |---|---|
-| Arrivee | Les sujets prioritaires, sans devoir fouiller le dossier. |
-| Piece ou document | Pourquoi c'est utile, ce que cela prouve, ce qui manque. |
-| Demande au syndic | Ce qui a ete demande, depuis quand, avec quelle suite attendue. |
-| Comptes | Les questions a poser, sans pretendre remplacer la comptabilite officielle. |
-| AG | Les decisions, actions et preuves a suivre apres le vote. |
-| Diffusion | Ce qui est partageable, restreint, biffe ou a garder local. |
-| Passation | Ce que le prochain collectif doit pouvoir reprendre sans repartir de zero. |
+| Coproprietaire novice | Comprendre les priorites sans apprendre tout le droit de la copropriete. |
+| Conseil syndical | Suivre preuves, demandes, comptes, decisions et passation. |
+| Syndic benevole | Tenir un mandat avec obligations, traces, messages et prudence. |
+| Association ou collectivite | Accompagner des habitants avec une methode reproductible. |
+| Sponsor ou partenaire | Soutenir un outil d'autonomie, de preuve et de confiance. |
+| Developpeur | Contribuer a un noyau local-first, teste et documente. |
 
-## Concepts D'Interface
+## Ce Que CoproScope Aide A Faire
 
-Les visuels suivants sont des directions UX issues de l'enquete et des cycles de conception. Ils servent a guider le produit; ils ne doivent pas masquer la maturite reelle.
+### Gerer Drive Comme Un Transport Chiffre
 
-### Cockpit D'Attention
+Drive n'est pas le cerveau du produit. Dans la cible, CoproScope garde le
+travail clair en local, controle ce qui peut etre prepare, chiffre le paquet,
+puis utilise Drive comme transport vers les personnes autorisees.
 
-Une vue qui montre les retards, pieces manquantes, echeances, risques et prochaines actions.
+![Garde-fous avant partage Drive](./docs/assets/showcase/drive-garde-fous-partage.svg)
 
-![Cockpit d'attention coproprietaire](./docs/assets/etude-utilisateurs/cockpit-conseil-syndical.png)
+L'interface cible doit dire simplement:
 
-### Decisions, Actions, Preuves
+- ce qui reste dans le coffre local;
+- ce qui va partir dans Drive;
+- pourquoi l'envoi est autorise;
+- ce qui bloque le partage en cas de doute.
 
-Une decision d'assemblee generale ne doit pas rester un texte archive: elle doit devenir une action suivie, reliee aux preuves.
+### Controler Les Comptes Sans Se Pretendre Comptable
 
-![Registre decisions actions preuves](./docs/assets/etude-utilisateurs/registre-decisions-actions-preuves.png)
+![Matrice de controle des comptes](./docs/assets/showcase/controle-comptes-matrice.png)
 
-### Controle Des Comptes Guide
+CoproScope aide a voir les sources disponibles, les sources absentes et les
+questions a poser. Une ligne n'est pas declaree vraie sans preuve et validation
+humaine.
 
-Le controle comptable doit produire des questions comprehensibles, pas seulement des tableaux.
+### Ouvrir Une Preuve Avec Son Contexte
 
-![Controle des comptes guide](./docs/assets/etude-utilisateurs/controle-comptes-guide.png)
+![Preuve document PDF](./docs/assets/showcase/preuve-document-pdf.png)
 
-### Memoire De Copropriete
+Une piece doit dire ce qu'elle prouve, ce qu'elle ne prouve pas, et pourquoi
+elle est rattachee a une action, une depense ou un point.
 
-La memoire de l'immeuble doit survivre aux changements de personnes, de comptes et de mandats.
+### Demander, Relancer, Transmettre
 
-![Memoire de copropriete](./docs/assets/etude-utilisateurs/memoire-copropriete.png)
+Une absence de piece devient une demande suivie. Une decision devient une
+action. Une action garde sa preuve attendue. La passation ne repose plus sur la
+memoire d'une seule personne.
+
+## Lire Selon Votre Profil
+
+| Vous voulez | Commencer ici |
+|---|---|
+| Relire la vitrine en Markdown dans Codex | [Vitrine Markdown](./docs/public/vitrine.md) |
+| Comprendre CoproScope sans technique | [Decouvrir CoproScope](./docs/public/README.md) |
+| Voir les parcours en images | [Parcours demonstratifs](./docs/public/parcours-demonstratifs.md) |
+| Evaluer l'interet pour une institution ou un sponsor | [Sponsors et partenaires](./docs/public/sponsors-et-partenaires.md) |
+| Comprendre Drive, partage et confidentialite | [Strategie Drive et confidentialite](./docs/public/confiance-confidentialite.md) |
+| Voir ce qui existe vraiment | [Maturite et limites](./docs/public/maturite-et-limites.md) |
+| Installer, tester ou contribuer | [Documentation developpeurs](./docs/developpeurs/README.md) |
 
 ## Maturite Reelle
 
-| Bloc | Etat | Ce que cela veut dire |
-|---|---|---|
-| Interface locale | V0 utile | Des vues existent deja pour cockpit, actions, comptes, demandes, pieces, passation et documents. |
-| Donnees de demo | Stable | L'instance `examples/synthetic_copro` est fictive et sert aux tests publics. |
-| Documents | Exploitable | Inventaire, hash, extraction, classement, completude et preuves documentaires. |
-| Confidentialite | Socle present | Detection de signaux sensibles, file de revue, biffage ou separation des sorties. |
-| Demandes | En consolidation | Suivi des demandes, relances, pieces attendues et traces d'action. |
-| Comptes | Amorce forte | Rapprochements et controles candidats, a rendre toujours plus pedagogiques. |
-| AG et decisions | Amorce utile | Decisions, actions et preuves commencent a etre reliees. |
-| Passation et memoire | En structuration | Le cap est clair; l'experience complete reste a construire. |
-| Travaux, contrats, syntheses diffusables | A epaissir | Besoins identifies, modules encore incomplets. |
-
-## Transparence
-
-- CoproScope travaille d'abord en local; rien n'est publie automatiquement.
-- Ce depot public ne contient pas de documents reels de copropriete.
-- Les exemples sont fictifs ou synthetiques.
-- Un export est une copie derivee, pas la source de verite.
-- Le masquage reduit le risque, mais ne remplace pas une validation humaine.
-- Les analyses doivent citer leurs sources et rester verifiables.
-- Si le doute subsiste, on garde hors diffusion publique.
-
-## Lire Ensuite
-
-| Besoin | Lire |
+| Bloc | Etat |
 |---|---|
-| Comprendre le besoin | [Etude utilisateurs](./docs/etude_utilisateurs.md) |
-| Comprendre la promesse | [Concept et philosophie](./docs/concept_et_philosophie.md) |
-| Voir ce qui est livre | [Etat du developpement](./docs/etat_du_developpement.md) |
-| Naviguer la doc | [Documentation CoproScope](./docs/README.md) |
-| Comprendre la frontiere public/prive | [Documentation noyau vs instance](./docs/documentation_noyau_vs_instance.md) |
-| Publier sans fuite | [Politique de partage GitHub](./docs/github_sharing.md) |
+| Interface locale | V0 utile: actions, comptes, demandes, documents, preuves et passation. |
+| Donnees de demonstration | Instance fictive publique sous `examples/synthetic_copro`. |
+| DocOps | Inventaire, hash, extraction, classement et completude. |
+| PrivacyOps / BiffageOps | Socle de revue, biffage et diffusion prudente. |
+| ComptaScope | Rapprochements candidats et questions guidees. |
+| Demandes / actions / preuves | En consolidation dans les vues produit. |
+| Coffre et Drive chiffre | Cap cible clair, parcours complet encore a stabiliser. |
+| Installation noob | Cible documentee, pas encore experience finale. |
 
-## Public Averti
+## Ce Que CoproScope N'Est Pas
 
-Le CLI, les tests et les commandes de reconstruction sont utiles pour developper, auditer, integrer ou lancer une demo locale. Ils ne sont pas le parcours attendu d'un coproprietaire novice.
-
-Pour installer et lancer techniquement CoproScope, lire [server/README.md](./server/README.md).
+- pas un syndic;
+- pas une comptabilite officielle;
+- pas un avis juridique personnalise;
+- pas un SaaS multi-tenant pret a vendre;
+- pas un coffre cloud de documents bruts;
+- pas une IA qui decide seule.
 
 ## Structure Du Depot
 
-- [server/](./server): code produit, interface locale, CLI, configs, templates et tests.
-- [docs/](./docs): vision produit, UX, architecture, confidentialite et references.
-- [examples/synthetic_copro/](./examples/synthetic_copro): instance publique fictive pour tests et demonstration.
+- [server/](./server): code produit, CLI, interface locale, configs, templates
+  et tests.
+- [docs/](./docs): documentation publique, technique, architecture, UX et
+  archives.
+- [examples/synthetic_copro/](./examples/synthetic_copro): instance fictive
+  pour tests publics et demonstrations.
 
-Les donnees reelles de copropriete, secrets, exports OCR prives, journaux locaux, cartes de biffage et sorties generees n'ont pas leur place dans ce depot public.
+Pour installer et lancer techniquement CoproScope, lire
+[server/README.md](./server/README.md).
