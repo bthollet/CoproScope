@@ -19,6 +19,7 @@ except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 fallback.
 
 CANONICAL_HEARTBEAT = "relance-equipe-agile-gouvernail-autonome"
 EXPECTED_RRULE = "FREQ=MINUTELY;INTERVAL=5"
+LEGACY_HEARTBEAT_PREFIXES = ("relance-worker-", "worker-", "ce-", "relance-ce-")
 CODEX_TOOL_COUNT_WARNING = 20
 CODEX_TOOL_MEMORY_WARNING_MB = 1024.0
 CODEX_UI_MEMORY_WARNING_MB = 4096.0
@@ -195,25 +196,9 @@ Get-CimInstance Win32_Process |
 
 
 def _stop_windows_processes(processes: list[dict[str, object]]) -> int:
-    pids: list[int] = []
-    for process in processes:
-        try:
-            pids.append(int(process.get("ProcessId") or 0))
-        except (TypeError, ValueError):
-            pass
-    pids = [pid for pid in pids if pid > 0]
-    if not pids:
-        return 0
-    ids = ",".join(str(pid) for pid in sorted(set(pids)))
-    script = f"Stop-Process -Id {ids} -Force -ErrorAction SilentlyContinue"
-    subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
-    return len(set(pids))
+    # Process cleanup is no longer automatic: recipe servers and Codex sessions
+    # must stay under visible, human-controlled ownership.
+    return 0
 
 
 def check_codex_process_hygiene(
@@ -235,6 +220,17 @@ def check_codex_process_hygiene(
         return hygiene
     except Exception as exc:  # pragma: no cover - local environment dependent.
         return CodexProcessHygiene(available=False, error=str(exc))
+
+
+def is_legacy_active_heartbeat(item: Automation, canonical_id: str) -> bool:
+    if item.kind != "heartbeat" or item.status != "ACTIVE":
+        return False
+    automation_id = item.automation_id.lower()
+    return item.automation_id == canonical_id or automation_id.startswith(LEGACY_HEARTBEAT_PREFIXES)
+
+
+def active_legacy_heartbeats(automations: list[Automation], canonical_id: str) -> list[Automation]:
+    return [item for item in automations if is_legacy_active_heartbeat(item, canonical_id)]
 
 
 def trace_state(
@@ -265,34 +261,35 @@ def trace_state(
     return "STALE"
 
 
-def recovery_prompt(reason: str, heartbeat: Automation | None, duplicates: list[Automation]) -> str:
-    duplicate_ids = ", ".join(item.automation_id for item in duplicates) or "aucun"
+def recovery_prompt(reason: str, heartbeat: Automation | None, active_legacy: list[Automation]) -> str:
+    active_ids = ", ".join(item.automation_id for item in active_legacy) or "aucun"
     current_status = "absente" if heartbeat is None else f"{heartbeat.status} / {heartbeat.rrule}"
     return "\n".join(
         [
-            "Relance superviseur externe CoproScope.",
-            f"Raison: {reason}. Heartbeat canonique: {current_status}. Doublons actifs: {duplicate_ids}.",
+            "Diagnostic superviseur CoproScope.",
+            f"Raison: {reason}. Politique: /objectif prioritaire; heartbeat seulement sur reveil horodate demande par Brice.",
+            f"Heartbeat canonique: {current_status}. Heartbeats legacy actifs: {active_ids}.",
             "Lire AGENTS.md, docs/orchestration_watchdog.md, docs/presence_agents.md et docs/roadmap_backlog_central.md.",
-            "Reparer ou recadrer l'automation relance-equipe-agile-gouvernail-autonome en ACTIVE, FREQ=MINUTELY;INTERVAL=5, mode surveillance/reprise.",
-            "Le heartbeat doit laisser une trace persistante a chaque passage, meme en DONT_NOTIFY.",
-            "Ne pas dupliquer de roles vivants; si un arbitrage ou blocage existe, le remonter avant tout dispatch.",
+            "Ne pas reactiver la heartbeat canonique ni un watchdog permanent par defaut.",
+            "Si Brice demande un reveil, le borner a un CH-* existant, laisser une trace, puis le mettre en pause.",
             "Appliquer docs/strategie_equipes_multi_agents.md avant tout nouveau dispatch: routeur d'equipe-type, puis un seul CH-* et owners uniques.",
-            "Relancer seulement les roles manquants, idle, bloques ou expires d'un CH-* deja declare; ne jamais choisir un nouveau ORD-* quand EN_ATTENTE_USER ou incident doublon est present.",
-            "Si aucun P0 n'est actionnable ou autorise, tracer NO_ORD_ACTIONNABLE ou HEARTBEAT_CHECKIN avec la raison exacte.",
-            "Verifier l'hygiene processus Codex via .\\tools\\orchestration-supervise.cmd --cleanup-codex-tool-processes si les outils node_repl/stdio s'accumulent.",
-            "Interdits: instances privees, documents bruts, OCR/logs, exports bruts, secrets, serveurs non reserves, push GitHub, RM-2026-0017, ORD-P0-990.",
+            "Relancer seulement les roles manquants, idle, bloques ou expires d'un CH-* deja declare.",
+            "Serveur UI: port reserve, instance de test explicite, PowerShell visible, arret Ctrl+C; pas de scan/kill de processus.",
+            "Pour CPU/RAM, fermer manuellement les vieux outils Codex visibles; --read-codex-processes reste un diagnostic lecture seule.",
+            "Interdits: instances privees, documents bruts, OCR/logs, exports bruts, secrets, serveurs non reserves, push GitHub non demande.",
         ]
     )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Supervise the CoproScope orchestration heartbeat.")
+    parser = argparse.ArgumentParser(description="Diagnose CoproScope orchestration policy.")
     parser.add_argument("--strict", action="store_true", help="Exit 2 when recovery is required.")
     parser.add_argument("--emit-recovery-prompt", action="store_true")
     parser.add_argument("--heartbeat-id", default=CANONICAL_HEARTBEAT)
     parser.add_argument("--stale-minutes", type=int, default=20)
     parser.add_argument("--quiet-grace-minutes", type=int, default=30)
     parser.add_argument("--skip-codex-hygiene", action="store_true")
+    parser.add_argument("--read-codex-processes", action="store_true")
     parser.add_argument("--cleanup-codex-tool-processes", action="store_true")
     parser.add_argument("--codex-tool-count-warning", type=int, default=CODEX_TOOL_COUNT_WARNING)
     parser.add_argument("--codex-tool-memory-warning-mb", type=float, default=CODEX_TOOL_MEMORY_WARNING_MB)
@@ -307,6 +304,8 @@ def main() -> int:
     running = [row for row in rows if watchdog.status_of(row) == "EN_COURS"]
     decisions = [row for row in rows if watchdog.status_of(row) == "EN_ATTENTE_USER"]
     blocked = [row for row in rows if watchdog.status_of(row) == "BLOQUE"]
+    ready = [row for row in rows if watchdog.status_of(row) == "PRET_A_INTEGRER"]
+    open_rows = [row for row in rows if watchdog.status_of(row) in watchdog.ACTIVE_STATUSES]
     stale = []
     expired = []
     for row in running:
@@ -332,14 +331,13 @@ def main() -> int:
 
     automations = read_automations(codex_home())
     heartbeat = next((item for item in automations if item.automation_id == args.heartbeat_id), None)
-    active_heartbeats = [item for item in automations if item.kind == "heartbeat" and item.status == "ACTIVE"]
-    duplicates = [item for item in active_heartbeats if item.automation_id != args.heartbeat_id]
+    active_legacy = active_legacy_heartbeats(automations, args.heartbeat_id)
 
-    heartbeat_ok = bool(heartbeat and heartbeat.status == "ACTIVE" and heartbeat.rrule == EXPECTED_RRULE)
+    heartbeat_ok = not active_legacy
     trace_ok = state in {"OK", "QUIET"}
     hygiene = (
-        CodexProcessHygiene(available=False, error="skipped")
-        if args.skip_codex_hygiene
+        CodexProcessHygiene(available=False, error="skipped; opt in with --read-codex-processes")
+        if args.skip_codex_hygiene or not (args.read_codex_processes or args.cleanup_codex_tool_processes)
         else check_codex_process_hygiene(
             args.cleanup_codex_tool_processes,
             args.codex_tool_count_warning,
@@ -351,23 +349,21 @@ def main() -> int:
         args.codex_tool_count_warning,
         args.codex_tool_memory_warning_mb,
     )
-    recovery_required = not heartbeat_ok or not trace_ok or bool(duplicates) or hygiene_issue
+    recovery_required = not heartbeat_ok or hygiene_issue
 
     reasons: list[str] = []
     if not heartbeat_ok:
-        reasons.append("heartbeat canonique absent, pause ou cadence incorrecte")
+        reasons.append("heartbeat legacy active a pauser")
     if not trace_ok:
-        reasons.append(f"trace orchestrateur {state}")
-    if duplicates:
-        reasons.append("doublon heartbeat actif")
+        reasons.append(f"trace orchestrateur {state} (diagnostic)")
     if hygiene_issue:
         reasons.append("processus outils Codex accumules")
     reason = "; ".join(reasons) or "etat supervise sain"
 
     print("CoproScope orchestration supervisor")
     print(f"Repository:          {root}")
-    print(f"Canonical heartbeat: {args.heartbeat_id}")
-    print(f"Expected rrule:      {EXPECTED_RRULE}")
+    print("Heartbeat policy:    OPTIONAL (/objectif primary)")
+    print(f"Legacy heartbeat:    {args.heartbeat_id}")
     print(f"Automation state:    {'OK' if heartbeat_ok else 'RECOVER'}")
     if heartbeat:
         print(f"  {heartbeat.status} / {heartbeat.rrule} / {heartbeat.path}")
@@ -376,7 +372,9 @@ def main() -> int:
     print(f"Trace state:         {state}")
     if watch_at:
         print(f"  last {watch_at.strftime('%Y-%m-%d %H:%M %z')} ({now - watch_at})")
-    print(f"Active duplicates:   {', '.join(item.automation_id for item in duplicates) or 'none'}")
+    print(f"Trace-open:         {len(open_rows)}")
+    print(f"Trace-ready:        {len(ready)}")
+    print(f"Active legacy HB:    {', '.join(item.automation_id for item in active_legacy) or 'none'}")
     if hygiene.available:
         hygiene_state = "RECOVER" if hygiene_issue else "OK"
         ui_state = "HIGH" if hygiene.ui_working_set_mb >= args.codex_ui_memory_warning_mb else "OK"
@@ -398,7 +396,7 @@ def main() -> int:
     if recovery_required or args.emit_recovery_prompt:
         print("")
         print("--- RECOVERY PROMPT ---")
-        print(recovery_prompt(reason, heartbeat, duplicates))
+        print(recovery_prompt(reason, heartbeat, active_legacy))
 
     return 2 if args.strict and recovery_required else 0
 

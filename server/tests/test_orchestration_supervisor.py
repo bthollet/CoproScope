@@ -50,7 +50,41 @@ def _process(name: str, command: str, mb: int) -> dict[str, object]:
     }
 
 
+def _automation(automation_id: str, kind: str, status: str) -> object:
+    return supervisor.Automation(
+        automation_id=automation_id,
+        kind=kind,
+        status=status,
+        rrule="FREQ=MINUTELY;INTERVAL=5",
+        path=Path("automation.toml"),
+    )
+
+
 class OrchestrationSupervisorTests(unittest.TestCase):
+    def test_optional_policy_allows_paused_canonical_heartbeat(self) -> None:
+        automations = [
+            _automation(supervisor.CANONICAL_HEARTBEAT, "heartbeat", "PAUSED"),
+            _automation("reveil-borne-ch-1234", "heartbeat", "ACTIVE"),
+        ]
+
+        self.assertEqual(
+            supervisor.active_legacy_heartbeats(automations, supervisor.CANONICAL_HEARTBEAT),
+            [],
+        )
+
+    def test_optional_policy_flags_active_legacy_heartbeat(self) -> None:
+        automations = [
+            _automation(supervisor.CANONICAL_HEARTBEAT, "heartbeat", "ACTIVE"),
+            _automation("relance-worker-drive", "heartbeat", "ACTIVE"),
+        ]
+
+        active = supervisor.active_legacy_heartbeats(automations, supervisor.CANONICAL_HEARTBEAT)
+
+        self.assertEqual([item.automation_id for item in active], [
+            supervisor.CANONICAL_HEARTBEAT,
+            "relance-worker-drive",
+        ])
+
     def test_quiet_trace_has_a_finite_grace_period(self) -> None:
         now = dt.datetime(2026, 5, 25, 11, 0, tzinfo=dt.timezone(dt.timedelta(hours=2)))
         trace = (

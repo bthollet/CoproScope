@@ -23,6 +23,9 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   Platanes `examples/synthetic_copro` reste reservee aux tests publics/CI et
   aux exemples partageables.
 - Le coordinateur integre les branches une par une et relance les tests.
+- Toute branche de developpement suit
+  [`docs/methode_developpement_branches.md`](./docs/methode_developpement_branches.md):
+  d'abord un bloc d'enquete, puis un bloc doc + dev en mode plan et objectifs.
 - Le gouvernail roadmap unique est
   [`docs/roadmap_backlog_central.md`](./docs/roadmap_backlog_central.md).
   Toute demande "ajoute ceci a la roadmap" y est inscrite en `RM-*`.
@@ -30,19 +33,50 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
 - Tout chantier actif doit avoir une ligne vivante dans
   [`docs/presence_agents.md`](./docs/presence_agents.md), avec owner,
   worktree/branche, heartbeat et statut.
-- Le tableau de travail quotidien est
-  [`docs/tableau_execution_courant.md`](./docs/tableau_execution_courant.md).
-  Le gouvernail `ORD-*` reste reserve a l'orchestrateur. Les workers ne
-  choisissent jamais dans le backlog long: ils prennent seulement un slot
-  `A_PRENDRE` publie dans le tableau d'execution du `CH-*` courant.
+- Le travail multi-agent n'utilise plus de couche CO/CE ni de file de jetons.
+  La conversation courante reste le fil pilote: elle lit le gouvernail
+  [`docs/roadmap_backlog_central.md`](./docs/roadmap_backlog_central.md),
+  verifie `docs/presence_agents.md`, choisit ou reprend une seule tache du
+  backlog `ORD-*`, puis cree des sous-agents avec des roles explicites si
+  l'outil de sous-agents est disponible. Un sous-agent recoit directement:
+  role, mission, ownership modifiable, fichiers evites, tests/preuves attendus,
+  format de rendu et condition d'arret. Aucun jeton `CEJ-*`, alias `CE-*`,
+  claim ou file intermediaire ne doit etre cree. Si la capacite de sous-agents
+  manque, le fil pilote le dit clairement et execute les roles sequentiellement
+  dans des sections nommees, sans pretendre qu'ils sont actifs.
+  L'identifiant interne `ORD-*` designe une tache du backlog et doit etre
+  explique comme tel a Brice.
+  [`docs/tableau_execution_courant.md`](./docs/tableau_execution_courant.md)
+  est archive: ne plus publier ni attendre de `SLOT-*`.
+- Quand Brice dit `lance un orchestrateur`, `lance une equipe`, `lance une
+  equipe agile`, `lance une equipe UX/UI` ou une variante proche, appliquer
+  [`docs/commandes_orchestration_coproscope.md`](./docs/commandes_orchestration_coproscope.md):
+  le fil pilote s'appuie d'abord sur l'objectif actif Codex (`/objectif`) et
+  sur `docs/presence_agents.md`. Les outils `orchestration-watch` et
+  `orchestration-supervise` sont des diagnostics manuels, pas des relances
+  permanentes. Le fil reprend le `CH-*` vivant si le travail n'est pas fini, ou
+  choisit la prochaine tache du backlog si le dispatch est autorise. Il
+  applique le routeur d'equipe, trace `ROUTAGE_EQUIPE` dans
+  `docs/presence_agents.md`, puis genere les sous-agents correspondant aux
+  roles du type d'equipe demande. Quand un ancien prompt dit `lance un worker`
+  ou `lance une CE`, le convertir en sous-agent role dans le fil pilote; ne
+  jamais recreer de file de jetons ni de conversation esclave.
+- Les commandes `ceci est une CE`, `ceci est une CE coproscope`,
+  `active le protocole CE`, `lance le protocole CO` et `active le protocole CO`
+  sont des commandes legacy. Elles doivent etre recadrees vers le modele
+  actuel: fil pilote + sous-agents par roles, sans script `ce-claim`, sans
+  alias CE et sans jeton.
 - Quand Brice demande une equipe multi-agents, appliquer d'abord
   [`docs/strategie_equipes_multi_agents.md`](./docs/strategie_equipes_multi_agents.md):
   preflight anti-collision, choix automatique de l'equipe-type
   `INCIDENT_STATIONNEMENT`, `FANIN_CONSOLIDATION`, `RECHERCHE_METIER`,
   `UXUI_RECHERCHE`, `AGILE_UI_PRODUIT`, `BACKEND_DOMAINE`,
   `RECETTE_LIVE_QA`, `INTEGRATION_RELEASE` ou `DOCTRINE_SIDEQUEST`, puis un
-  seul `CH-*`, des owners vivants uniques et des slots workers publies dans
-  `docs/tableau_execution_courant.md`. Si le routeur choisit
+  seul `CH-*` par tache du backlog, des owners vivants uniques et une trace
+  `ROUTAGE_EQUIPE` dans `docs/presence_agents.md`. Le routeur donne ensuite
+  les sous-agents correspondant aux roles du type d'equipe retenu, avec mission,
+  ownership, fichiers evites, condition d'arret et format de rendu. Si le
+  routeur choisit
   `AGILE_UI_PRODUIT`, appliquer
   [`docs/protocole_equipe_agile_agents.md`](./docs/protocole_equipe_agile_agents.md):
   coordinateur-scribe, designer/facilitateur, utilisateur novice, dev front,
@@ -57,20 +91,15 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   remplacent jamais ces livrables cibles. Le coordinateur peut annuler le
   visuel, le blueprint, ou les deux, uniquement avec justification tracee:
   `VISUEL_IA_WAIVED`, `BLUEPRINT_WAIVED`, ou les deux. Les agents comparent
-  regulierement avec les visuels de l'enquete utilisateur. Au lancement
-  effectif, mettre a jour la heartbeat canonique
-  `relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
-  courant, plutot que creer une heartbeat concurrente; tout doublon actif doit
-  etre mis en pause. La heartbeat canonique doit laisser un check-in persistant
-  dans `docs/presence_agents.md`, meme en `DONT_NOTIFY`, sans dupliquer les
-  roles vivants. Quand un lot contient
-  `AGILE-DONE - equipe agile a fini son job` et que ses roles sont clos, la
-  heartbeat peut ouvrir le prochain `ORD-*` seulement si aucun arbitrage
-  `EN_ATTENTE_USER`, blocage non stationne ou incident de doublon n'est actif.
-  Si Brice signale que plusieurs conversations prennent la meme tache, tout
-  chainage automatique s'arrete, mais la heartbeat canonique reste active en
-  mode surveillance/reprise: pause des dispatchers concurrents, abandon/attente
-  des lots ouverts par course, check-in persistant, reprise seulement des roles
+  regulierement avec les visuels de l'enquete utilisateur. La continuite entre
+  passages est portee par `/objectif` et les traces `docs/presence_agents.md`:
+  ne pas creer ni reparer de heartbeat canonique ou de watchdog permanent par
+  defaut. Un heartbeat Codex ne revient que sur demande explicite de Brice pour
+  un reveil horodate; il doit rester borne a un `CH-*` existant, ne pas choisir
+  de nouveau `ORD-*` seul et etre mis en pause des que le besoin de reveil
+  disparait. Si Brice signale que plusieurs conversations prennent la meme
+  tache, tout chainage automatique s'arrete: pause des dispatchers concurrents,
+  abandon/attente des lots ouverts par course, reprise seulement des roles
   manquants d'un `CH-*` deja declare, puis nouveau dispatch uniquement apres
   arbitrage explicite de Brice.
 - Quand Brice dit "lance une equipe UX/UI" avec ou sans accent sur `equipe`,
@@ -78,12 +107,12 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   [`docs/protocole_equipe_ux_ui_recherche.md`](./docs/protocole_equipe_ux_ui_recherche.md):
   equipe de recherche sans dev, 6 roles maximum dont Testeur metier expert et
   Testeur accessibilite/novice, generation d'images, images retenues archivees
-  dans la doc de mission, et relance heartbeat toutes les 10 minutes jusqu'au
-  marqueur `UXUI-DONE - equipe UX/UI a fini son job`.
+  dans la doc de mission. La reprise se fait par `/objectif`; une relance Codex
+  horodatee n'est creee que si Brice la demande explicitement.
 - Dans une conversation orientee vers un but, comme un audit ou une livraison,
   le coordinateur garde le chemin critique. Les demandes ponctuelles de
   generalisation, doctrine, cadrage transverse ou side-quest bornee sont
-  confiees a des sub-agents si la capacite de threads le permet.
+  confiees a des sous-agents si la capacite de threads le permet.
 
 ## Rapports d'audit et notes coproprietaires
 
@@ -206,11 +235,12 @@ Options utiles:
   securite;
 - `.\tools\agent-check.cmd -Security` pour ajouter Bandit haute severite et
   pip-audit;
-- `.\tools\agent-check.cmd -Orchestration` pour verifier heartbeats,
-  conversations expirees, blocages, arbitrages et relance gouvernail;
+- `.\tools\agent-check.cmd -Orchestration` pour afficher les diagnostics
+  orchestration, conversations expirees, blocages, arbitrages et hygiene Codex
+  sans exiger de heartbeat permanente;
 - `.\tools\agent-check.cmd -Full` pour lancer toute la suite `unittest`.
 
-Pour surveiller seulement l'orchestration sans tests applicatifs:
+Pour diagnostiquer l'orchestration sans tests applicatifs:
 
 ```powershell
 .\tools\orchestration-watch.cmd
@@ -222,9 +252,38 @@ Le check rapide ne remplace pas la verification d'integration complete quand le
 coordinateur integre une branche, mais il donne un signal fiable avant de rendre
 un lot.
 
-## Contrat a donner a chaque agent
+## Lancement serveur local approuve
 
-Copier-coller un contrat court au lancement :
+Pour demarrer une interface CoproScope locale, utiliser le lanceur stable du
+workspace au lieu d'inventer une commande PowerShell `Start-Process`:
+
+```powershell
+C:\Users\brice\CoproScope\dev\tooling\scripts\start-coproscope-ui-server.cmd
+```
+
+Il accepte les options utiles pour une recette temporaire:
+
+```powershell
+C:\Users\brice\CoproScope\dev\tooling\scripts\start-coproscope-ui-server.cmd --instance-root C:\Users\brice\CoproScope\coproscope\examples\synthetic_copro --port 8786 --token drive-publish-demo-local
+```
+
+Pour la recette "publication Drive demo" sur l'instance synthetique, utiliser
+la commande stable sans argument:
+
+```powershell
+C:\Users\brice\CoproScope\dev\tooling\scripts\start-coproscope-drive-publish-demo.cmd
+```
+
+Ce lanceur est approuve dans Codex. Les commandes PowerShell variables avec
+`Start-Process` redemandent une autorisation et doivent etre evitees si le
+lanceur suffit.
+
+## Contrat a inscrire pour chaque agent
+
+Inscrire une fiche courte dans le registre de coordination avant le lancement.
+Pour un sous-agent, cette fiche est donnee directement par le fil pilote et
+reportee dans `docs/presence_agents.md`: pas de file de jetons ni de relais
+manuel par copier-coller.
 
 ```text
 Mission: Sprint <numero> - <objectif>
@@ -255,33 +314,33 @@ La methode canonique est
 Elle est obligatoire quand une conversation demande une equipe agile,
 des agents UX/dev/QA, ou des iterations rapides avec utilisateurs.
 
-Au lancement effectif, le coordinateur met a jour la heartbeat canonique
-`relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
-courant. Il ne cree une heartbeat separee que si Brice le demande
-explicitement; sinon tout doublon actif est mis en pause. La heartbeat canonique
-laisse un check-in persistant dans `docs/presence_agents.md`, meme en
-`DONT_NOTIFY`, et relance les roles manquants, idle, bloques ou expires sans
-dupliquer un role vivant.
+Depuis le recadrage `/objectif` du 2026-05-30, le fil pilote ne cree plus de
+heartbeat canonique ni de watchdog permanent par defaut. La continuite est
+portee par l'objectif actif Codex, les traces `docs/presence_agents.md` et les
+leases declares. Les anciennes heartbeats `relance-worker-*`, `worker-*`,
+`ce-*`, `relance-ce-*` et la heartbeat canonique doivent rester pausees ou
+etre supprimees, sauf demande explicite de Brice pour un reveil horodate
+strictement borne.
+Le fil pilote laisse un point de reprise persistant dans
+`docs/presence_agents.md` quand il suspend ou cloture un passage.
 `AGILE-DONE - equipe agile a fini son job` ferme seulement le lot courant: si
-tous les roles du lot sont clos, la heartbeat choisit le prochain `ORD-*`
-actionnable du gouvernail uniquement quand aucun arbitrage `EN_ATTENTE_USER`,
-blocage non stationne ou incident de doublon n'est actif. En mode incident
-anti-chevauchement, elle ne lance aucune nouvelle equipe et reste active en
-mode surveillance/reprise: elle met en pause les dispatchers concurrents, marque
-les lots ouverts par course `ABANDONNE` ou `EN_ATTENTE_USER`, trace le verrou
-dans `docs/presence_agents.md`, relance seulement les roles manquants d'un
-`CH-*` deja declare et attend un arbitrage explicite de Brice avant tout nouveau
-`ORD-*`. Elle ne se supprime que sur demande explicite de Brice ou si le
-gouvernail ne contient vraiment plus aucun `ORD-*` actionnable, auquel cas elle
-trace le no-go et reste recadrable.
+tous les roles du lot sont clos, le fil pilote choisit la prochaine tache actionnable du
+gouvernail uniquement quand aucun arbitrage `EN_ATTENTE_USER`, blocage non
+stationne ou incident de doublon n'est actif. En mode incident
+anti-chevauchement, le fil ne lance aucune nouvelle equipe: il met en pause les
+dispatchers concurrents, marque les lots ouverts par course `ABANDONNE` ou
+`EN_ATTENTE_USER`, trace le verrou dans `docs/presence_agents.md`, relance
+seulement les roles manquants d'un `CH-*` deja declare et attend un arbitrage
+explicite de Brice avant toute nouvelle tache.
 
 Resume d'execution:
 
 1. le coordinateur rattache le travail au gouvernail `RM-*` et cree un `CH-*`
    horodate selon `docs/protocole_roadmap_presence_agents.md`;
-2. il publie son `BOT-START`, remplit
-   `docs/tableau_execution_courant.md` avec les slots `A_PRENDRE` du chantier,
-   puis une ligne `CONV-*` par role effectivement pris;
+2. il publie son `BOT-START`, reserve la tache du backlog dans
+   `docs/presence_agents.md`, trace `ROUTAGE_EQUIPE`, puis genere les
+   sous-agents de roles disponibles et ajoute une ligne `CONV-*` ou
+   `SUBAGENT-*` par role actif;
 3. les roles standards sont coordinateur-scribe, designer/facilitateur,
    utilisateur novice, dev front, dev back/viewmodel et QA; si le budget de
    threads le permet, ajouter un testeur expert metier
@@ -301,14 +360,19 @@ Resume d'execution:
 7. le designer, le novice et la QA comparent souvent l'UI reelle aux visuels
    d'enquete utilisateur ou au visuel designer derive, et tracent les ecarts
    acceptes/refuses avant GO;
-8. les devs restent en lecture tant que le blueprint, la commande dev, la
+8. des qu'un lot livre un bout de page visible, route, template, fragment,
+   CSS, composant, modale, premier viewport ou interaction, QA et novice
+   testent la page reelle via un serveur local reserve; les tests unitaires ou
+   TestClient restent des preuves de regression, pas une preuve produit
+   suffisante;
+9. les devs restent en lecture tant que le blueprint, la commande dev, la
    qualification novice et le contrat `model.ux.*` ne sont pas stabilises;
-9. chaque point annonce: a tester, en dev, en enquete, commande prete, agents
+10. chaque point annonce: a tester, en dev, en enquete, commande prete, agents
    idle, decision requise, prochain mouvement et preuves.
 
 Dans ce cadre, le coordinateur ne quitte pas la piste critique pour traiter une
 generalisation ou une side-quest nee d'une orientation ponctuelle. Si un thread
-est disponible, il lance un sub-agent avec objectif borne, ownership explicite,
+est disponible, il lance un sous-agent avec objectif borne, ownership explicite,
 fichiers evites, trace et critere de fin. Si aucun thread n'est disponible, il
 note la demande comme reprise ulterieure ou question d'arbitrage, sauf si elle
 bloque directement le but principal.
@@ -324,10 +388,12 @@ visuel produit les images candidates; seules les images retenues ou utiles a
 une decision sont archivees dans `docs/assets/...` et referencees dans la doc
 de mission.
 
-Au lancement effectif, le coordinateur cree une heartbeat automation Codex
-toutes les 10 minutes sur le fil courant. Elle relance les roles idle ou
-bloques sans les dupliquer, puis s'arrete quand la trace finale contient
-`UXUI-DONE - equipe UX/UI a fini son job`.
+Au lancement effectif, le coordinateur ne cree pas de heartbeat automatique par
+defaut. Il s'appuie sur `/objectif` et sur une ligne de reprise dans
+`docs/presence_agents.md`. Si Brice demande explicitement un reveil horodate,
+la relance Codex doit etre bornee a la mission UX/UI courante, relancer
+seulement les roles idle ou bloques sans les dupliquer, puis etre mise en pause
+quand la trace finale contient `UXUI-DONE - equipe UX/UI a fini son job`.
 
 ## Ports locaux
 
@@ -340,8 +406,14 @@ Regles obligatoires:
 
 - reserver un port avant de demarrer un serveur, avec `CONV-*`, role, instance,
   token de test et commande prevue;
-- garder le serveur dans un terminal PowerShell visible; arret par `Ctrl+C`
-  uniquement;
+- choisir l'instance de recette la moins sensible possible: `examples/synthetic_copro`
+  pour les preuves partageables, `beauvallon_test` seulement quand le scenario
+  local l'exige, jamais une instance privee brute pour une capture diffusable;
+- garder le serveur dans un terminal PowerShell visible, identifiable par le
+  port et le `CONV-*`; arret par `Ctrl+C` uniquement;
+- un serveur de recette appartient a un seul owner et a un seul lot. Si le code
+  a change ou si l'owner change, repartir d'un port reserve frais dans `8780`
+  a `8799` au lieu de reutiliser un serveur ambigu;
 - ne pas scanner les ports ou processus, ne pas tuer de PID, ne pas utiliser
   `taskkill`, `Start-Process` cache ou ouverture navigateur automatique;
 - si le port prevu est occupe ou douteux, ne pas enqueter par scan: publier le
@@ -349,8 +421,13 @@ Regles obligatoires:
   secours, et mettre a jour `presence_agents.md`;
 - une URL live citee dans un test doit toujours indiquer port, instance cible et
   token attendu;
+- pour toute livraison de bout de page visible par une equipe agile, la trace de
+  fin cite l'URL exacte, le role qui a teste, le scenario clique, les captures
+  desktop/mobile ou le waiver explicite `RECETTE_PAGE_REELLE_WAIVED`;
+- conserver seulement les captures utiles a la decision; les logs, `.pid`,
+  caches et sorties temporaires restent hors Git;
 - a la fin du lot, dire si le serveur a ete arrete ou s'il reste volontairement
-  ouvert pour recette.
+  ouvert pour recette, avec la raison, l'owner et la consigne d'arret.
 
 Ports reserves par defaut:
 

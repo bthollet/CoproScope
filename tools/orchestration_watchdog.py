@@ -11,6 +11,20 @@ from pathlib import Path
 ACTIVE_STATUSES = {"A_LANCER", "EN_COURS", "EN_ATTENTE_USER", "BLOQUE", "PRET_A_INTEGRER"}
 TERMINAL_STATUSES = {"INTEGRE", "CLOTURE", "ABANDONNE", "EXPIRE"}
 WATCHDOG_ID = "relance-equipe-agile-gouvernail-autonome"
+ORCHESTRATION_TRACE_MARKERS = (
+    "POINT_REPRISE_",
+    "ROUTAGE_EQUIPE",
+    "BOT_START",
+    "BOT_END",
+    "REVISION_START_",
+    "REVISION_END_",
+    "REVISION_VERIF_",
+    "INTEGRATE_",
+    "NO_ORD_ACTIONNABLE",
+    "HEARTBEAT_",
+    "UXUI-DONE",
+    "AGILE-DONE",
+)
 AGILE_COMPOSITION_PROMPT = (
     "Composition agile canonique: coordinateur-scribe, designer/facilitateur, "
     "utilisateur novice, dev front, dev back/viewmodel, QA et, si le budget de "
@@ -19,7 +33,6 @@ AGILE_COMPOSITION_PROMPT = (
     "reprennent explicitement cette checklist."
 )
 TEAM_ROUTER_DOC = "docs/strategie_equipes_multi_agents.md"
-SPRINT_BOARD_DOC = "docs/tableau_execution_courant.md"
 
 
 @dataclass(frozen=True)
@@ -305,7 +318,7 @@ def latest_watchdog_trace(path: Path) -> tuple[dt.datetime | None, str | None]:
     latest_at: dt.datetime | None = None
     latest_line: str | None = None
     for line in path.read_text(encoding="utf-8").splitlines():
-        if WATCHDOG_ID not in line:
+        if WATCHDOG_ID not in line and not any(marker in line for marker in ORCHESTRATION_TRACE_MARKERS):
             continue
         parts = split_md_row(line)
         if not parts:
@@ -396,19 +409,19 @@ def emit_prompt(team: str, rows: list[Conversation], items: list[OrdItem]) -> st
         incident = TEAM_ROUTES["INCIDENT_STATIONNEMENT"]
         lines = [
             "Arbitrage orchestration CoproScope, sans relance automatique.",
-            "Lis AGENTS.md, docs/presence_agents.md, docs/tableau_execution_courant.md et docs/roadmap_backlog_central.md avant toute action.",
+            "Lis AGENTS.md, docs/presence_agents.md et docs/roadmap_backlog_central.md avant toute action.",
             f"Equipe-type: {incident.key} ({incident.orchestration}).",
             "Ne lance aucune nouvelle equipe et ne choisis aucun nouveau ORD tant que l'arbitrage EN_ATTENTE_USER n'est pas tranche.",
-            "Le backlog ORD-* est reserve a l'orchestrateur; les workers attendent un slot A_PRENDRE dans docs/tableau_execution_courant.md.",
+            "Les sous-agents attendent une mission explicite du fil pilote, pas un slot separe.",
             "Laisse seulement un check-in persistant et respecte les interdits: instances privees, documents bruts, secrets, exports bruts, serveurs non reserves, push GitHub et RM-2026-0017.",
         ]
     else:
         lines = [
             "Relance orchestration CoproScope.",
-            f"Lis AGENTS.md, {TEAM_ROUTER_DOC}, {SPRINT_BOARD_DOC}, docs/presence_agents.md et docs/roadmap_backlog_central.md avant toute action.",
+            f"Lis AGENTS.md, {TEAM_ROUTER_DOC}, docs/presence_agents.md et docs/roadmap_backlog_central.md avant toute action.",
             "Ne duplique pas de roles vivants, ne rouvre pas un lot AGILE-DONE sans nouveau diff ou decision explicite,",
             "et ne touche pas aux instances privees, documents bruts, secrets, exports bruts, serveurs non reserves, push GitHub ni RM-2026-0017.",
-            "Si un dispatch est autorise, publie d'abord les slots workers dans docs/tableau_execution_courant.md; les workers ne choisissent jamais un ORD-*.",
+            "Si un dispatch est autorise, trace ROUTAGE_EQUIPE puis donne une mission bornee a chaque sous-agent.",
         ]
     if not decisions and (team == "agile" or route.key == "AGILE_UI_PRODUIT"):
         lines.append(AGILE_COMPOSITION_PROMPT)
@@ -438,7 +451,7 @@ def emit_prompt(team: str, rows: list[Conversation], items: list[OrdItem]) -> st
         lines.append(f"Tache suivante: {clean(candidate.next_task)}")
         lines.append(f"Gate backlog: {clean(candidate.gate)}")
         lines.append("Tracer ROUTAGE_EQUIPE dans docs/presence_agents.md avant de lancer les roles.")
-        lines.append("Publier les slots A_PRENDRE dans docs/tableau_execution_courant.md avant d'ouvrir les workers.")
+        lines.append("Les sous-agents recoivent directement role, ownership, fichiers evites, preuves et condition d'arret.")
     else:
         lines.append("")
         lines.append("Aucun ORD actionnable detecte. Tracer NO_ORD_ACTIONNABLE avec la raison concrete.")
@@ -457,6 +470,7 @@ def main() -> int:
         default=30,
         help="Maximum age for a quiet stationnement trace before it becomes stale.",
     )
+    parser.add_argument("--require-recent-trace", action="store_true")
     args = parser.parse_args()
 
     root = repo_root()
@@ -470,6 +484,7 @@ def main() -> int:
     decisions = [row for row in rows if status_of(row) == "EN_ATTENTE_USER"]
     blocked = [row for row in rows if status_of(row) == "BLOQUE"]
     ready = [row for row in rows if status_of(row) == "PRET_A_INTEGRER"]
+    open_rows = [row for row in rows if status_of(row) in ACTIVE_STATUSES]
     stale = []
     expired = []
     for row in running:
@@ -491,6 +506,7 @@ def main() -> int:
     print(f"Now:        {now.strftime('%Y-%m-%d %H:%M %z')}")
     print("")
     print(f"Running: {len(running)} | Waiting user: {len(decisions)} | Blocked: {len(blocked)} | Ready: {len(ready)}")
+    print(f"Trace-open: {len(open_rows)} | Trace-ready: {len(ready)}")
     watch_age = now - watch_at if watch_at else None
     quiet_allowed = bool(watch_age and watch_age <= dt.timedelta(minutes=args.quiet_grace_minutes))
     watch_quiet = bool(
@@ -548,7 +564,8 @@ def main() -> int:
         print("--- RELAUNCH PROMPT ---")
         print(emit_prompt(args.team, rows, ord_items))
 
-    has_issue = bool(decisions or blocked or stale or expired or (not watch_ok and not watch_quiet))
+    trace_issue = args.require_recent_trace and not watch_ok and not watch_quiet
+    has_issue = bool(decisions or blocked or stale or expired or trace_issue)
     return 2 if args.strict and has_issue else 0
 
 

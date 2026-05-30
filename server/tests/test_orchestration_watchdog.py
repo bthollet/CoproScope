@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -72,8 +73,7 @@ class OrchestrationWatchdogQuietTraceTests(unittest.TestCase):
 
         self.assertIn("sans relance automatique", prompt)
         self.assertIn("Ne lance aucune nouvelle equipe", prompt)
-        self.assertIn("docs/tableau_execution_courant.md", prompt)
-        self.assertIn("workers attendent un slot A_PRENDRE", prompt)
+        self.assertIn("sous-agents attendent une mission explicite", prompt)
         self.assertNotIn("Composition agile canonique", prompt)
         self.assertNotIn("CONV-2026-1641 / ORD-P0-061", prompt)
 
@@ -94,9 +94,28 @@ class OrchestrationWatchdogQuietTraceTests(unittest.TestCase):
 
         self.assertIn("Equipe-type: BACKEND_DOMAINE", prompt)
         self.assertIn("hub-and-spoke", prompt)
-        self.assertIn("Publier les slots A_PRENDRE", prompt)
-        self.assertIn("workers ne choisissent jamais un ORD-*", prompt)
+        self.assertIn("Tracer ROUTAGE_EQUIPE", prompt)
+        self.assertIn("Les sous-agents recoivent directement role", prompt)
         self.assertNotIn("Composition agile canonique", prompt)
+
+    def test_latest_trace_accepts_objectif_point_reprise_without_heartbeat_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presence_agents.md"
+            path.write_text(
+                "\n".join(
+                    [
+                        "| Date | Agent | Evenement | Detail |",
+                        "|---|---|---|---|",
+                        "| 2026-05-30 13:20 +02:00 | `CONV-1` | `POINT_REPRISE_OBJECTIF` | Reprise par /objectif. |",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            when, line = watchdog.latest_watchdog_trace(path)
+
+        self.assertIsNotNone(when)
+        self.assertIn("POINT_REPRISE_OBJECTIF", line or "")
 
     def test_auto_prompt_routes_live_recipe(self) -> None:
         prompt = watchdog.emit_prompt(
