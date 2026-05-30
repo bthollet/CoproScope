@@ -30,9 +30,74 @@ class DriveInstanceSyncTests(unittest.TestCase):
             self.assertGreater(published["sync_surface"]["public_key_count"], 0)
             self.assertNotIn("coproscope-drive-demo-canary", sync_text)
             self.assertNotIn("device_key", sync_text)
+            self.assertNotIn("instance_sync_key", sync_text)
             self.assertNotIn("private key", sync_text)
             self.assertNotIn(str(root).lower(), serialized)
             self.assertTrue((state / "cache_instance" / "last_recovered.json").exists())
+
+    def test_second_authorized_post_recovers_update_from_first_post(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sync = root / "Drive-Copro-FICTIF"
+            post_a = root / "poste-a-local"
+            post_b = root / "poste-b-local"
+            instance = SimpleNamespace(instance_id="copro-fictive")
+
+            published = drive_instance_sync.publish_instance_update(instance=instance, sync_root=sync, local_state_root=post_a)
+            post_b.mkdir()
+            (post_b / drive_instance_sync.SYNC_KEY_FILE).write_bytes((post_a / drive_instance_sync.SYNC_KEY_FILE).read_bytes())
+            recovered = drive_instance_sync.recover_instance_update(instance=instance, sync_root=sync, local_state_root=post_b)
+
+            sync_text = _text(sync).lower()
+            serialized = json.dumps({"published": published, "recovered": recovered}, ensure_ascii=True).lower()
+
+            self.assertEqual(published["status"], "published")
+            self.assertEqual(recovered["status"], "recovered")
+            self.assertTrue((post_b / "cache_instance" / "last_recovered.json").exists())
+            self.assertNotIn("copro-fictive", sync_text)
+            self.assertNotIn("instance_sync_key", sync_text)
+            self.assertNotIn(str(root).lower(), serialized)
+
+    def test_two_authorized_posts_round_trip_without_cleartext_in_drive(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sync = root / "Drive-Copro-FICTIF"
+            post_a = root / "poste-a-local"
+            post_b = root / "poste-b-local"
+            instance = SimpleNamespace(instance_id="copro-fictive")
+
+            first_publish = drive_instance_sync.publish_instance_update(instance=instance, sync_root=sync, local_state_root=post_a)
+            post_b.mkdir()
+            (post_b / drive_instance_sync.SYNC_KEY_FILE).write_bytes((post_a / drive_instance_sync.SYNC_KEY_FILE).read_bytes())
+            first_recover = drive_instance_sync.recover_instance_update(instance=instance, sync_root=sync, local_state_root=post_b)
+            second_publish = drive_instance_sync.publish_instance_update(instance=instance, sync_root=sync, local_state_root=post_b)
+            second_recover = drive_instance_sync.recover_instance_update(instance=instance, sync_root=sync, local_state_root=post_a)
+
+            sync_text = _text(sync).lower()
+            self.assertEqual(first_publish["status"], "published")
+            self.assertEqual(first_recover["status"], "recovered")
+            self.assertEqual(second_publish["status"], "published")
+            self.assertEqual(second_recover["status"], "recovered")
+            self.assertEqual(second_publish["sync_surface"]["encrypted_file_count"], 2)
+            self.assertNotIn("copro-fictive", sync_text)
+            self.assertNotIn("instance_sync_key", sync_text)
+            self.assertNotIn("coproscope-drive-demo-canary", sync_text)
+
+    def test_second_post_with_different_local_key_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sync = root / "Drive-Copro-FICTIF"
+            post_a = root / "poste-a-local"
+            post_b = root / "poste-b-local"
+            instance = SimpleNamespace(instance_id="copro-fictive")
+
+            drive_instance_sync.publish_instance_update(instance=instance, sync_root=sync, local_state_root=post_a)
+            recovered = drive_instance_sync.recover_instance_update(instance=instance, sync_root=sync, local_state_root=post_b)
+
+            serialized = json.dumps(recovered, ensure_ascii=True).lower()
+            self.assertEqual(recovered["status"], "blocked")
+            self.assertIn("recuperation", recovered["result_label"].lower())
+            self.assertNotIn(str(root).lower(), serialized)
 
     def test_local_state_inside_drive_folder_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

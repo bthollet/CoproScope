@@ -12,10 +12,12 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from . import drive_folder_status
 
 
-PROTOCOL = "coproscope-drive-instance-demo-v1"
+PROTOCOL = "coproscope-drive-instance-shared-key-v1"
 PACKAGE_DIR = "packages"
 DEVICE_DIR = "devices"
 PACKAGE_SUFFIX = ".cspkg"
+SYNC_KEY_FILE = "instance_sync_key.bin"
+DEVICE_ID_FILE = "device_id.txt"
 
 
 def publish_instance_update(*, instance: Any, sync_root: str | Path, local_state_root: str | Path) -> dict[str, object]:
@@ -24,14 +26,14 @@ def publish_instance_update(*, instance: Any, sync_root: str | Path, local_state
     blocked = _preflight(sync, state)
     if blocked:
         return blocked
-    private_key = _device_key(state)
-    public_id = _device_public_id(private_key)
-    _write_json(sync / DEVICE_DIR / f"{public_id}.json", {"device": "ce-poste", "public_id": public_id})
+    sync_key = _sync_key(state)
+    device_id = _device_public_id(state)
+    _write_json(sync / DEVICE_DIR / f"{device_id}.json", {"device": "ce-poste", "public_id": device_id})
 
     generation = _next_publish_generation(state)
     canary = f"COPROSCOPE-DRIVE-DEMO-CANARY-{secrets.token_hex(8)}"
     payload = _payload(instance, generation, canary)
-    package = _encrypt_payload(payload, private_key, generation, public_id)
+    package = _encrypt_payload(payload, sync_key, generation, device_id)
     package_hash = _package_hash(package)
     package["package_hash"] = package_hash
     _write_json(sync / PACKAGE_DIR / f"{package_hash}{PACKAGE_SUFFIX}", package)
@@ -64,7 +66,7 @@ def recover_instance_update(*, instance: Any, sync_root: str | Path, local_state
     blocked = _preflight(sync, state)
     if blocked:
         return blocked
-    private_key = _device_key(state)
+    sync_key = _sync_key(state)
     package = _latest_package(sync)
     if package is None:
         return _idle(sync, "Aucune nouvelle version test")
@@ -73,7 +75,7 @@ def recover_instance_update(*, instance: Any, sync_root: str | Path, local_state
     if isinstance(applied, Mapping) and applied.get("package_hash") == package_hash:
         return _idle(sync, "Aucune nouvelle version test")
     try:
-        payload = _decrypt_payload(package, private_key)
+        payload = _decrypt_payload(package, sync_key)
     except Exception:
         return _blocked("Recuperation bloquee", "CoproScope refuse cette version test avant import.", _empty_scan())
     parsed = json.loads(payload.decode("utf-8"))
@@ -127,29 +129,31 @@ def _payload(instance: Any, generation: int, canary: str) -> bytes:
     ).encode("utf-8")
 
 
-def _encrypt_payload(payload: bytes, private_key: bytes, generation: int, public_id: str) -> dict[str, object]:
+def _encrypt_payload(payload: bytes, sync_key: bytes, generation: int, device_id: str) -> dict[str, object]:
     nonce = secrets.token_bytes(12)
-    encrypted = AESGCM(private_key).encrypt(nonce, payload, public_id.encode("ascii"))
+    encrypted = AESGCM(sync_key).encrypt(nonce, payload, _package_context(device_id))
     return {
         "protocol": PROTOCOL,
         "generation": generation,
-        "recipient": public_id,
+        "author_device": device_id,
         "nonce": base64.b64encode(nonce).decode("ascii"),
         "ciphertext": base64.b64encode(encrypted).decode("ascii"),
     }
 
 
-def _decrypt_payload(package: Mapping[str, object], private_key: bytes) -> bytes:
-    public_id = _device_public_id(private_key)
-    if package.get("recipient") != public_id:
-        raise ValueError("wrong recipient")
+def _decrypt_payload(package: Mapping[str, object], sync_key: bytes) -> bytes:
+    if package.get("protocol") != PROTOCOL:
+        raise ValueError("wrong protocol")
+    device_id = str(package.get("author_device") or "")
+    if not device_id:
+        raise ValueError("missing author")
     nonce = base64.b64decode(str(package.get("nonce") or ""))
     encrypted = base64.b64decode(str(package.get("ciphertext") or ""))
-    return AESGCM(private_key).decrypt(nonce, encrypted, public_id.encode("ascii"))
+    return AESGCM(sync_key).decrypt(nonce, encrypted, _package_context(device_id))
 
 
-def _device_key(state: Path) -> bytes:
-    key_path = state / "device_key.bin"
+def _sync_key(state: Path) -> bytes:
+    key_path = state / SYNC_KEY_FILE
     if key_path.exists():
         return key_path.read_bytes()
     state.mkdir(parents=True, exist_ok=True)
@@ -158,13 +162,29 @@ def _device_key(state: Path) -> bytes:
     return key
 
 
-def _device_public_id(key: bytes) -> str:
-    return hashlib.sha256(key).hexdigest()[:32]
+def _device_public_id(state: Path) -> str:
+    id_path = state / DEVICE_ID_FILE
+    if id_path.exists():
+        value = id_path.read_text(encoding="ascii").strip()
+        if value:
+            return value[:32]
+    state.mkdir(parents=True, exist_ok=True)
+    value = secrets.token_hex(16)
+    id_path.write_text(value, encoding="ascii")
+    return value
+
+
+def _package_context(device_id: str) -> bytes:
+    return f"{PROTOCOL}:{device_id}".encode("ascii")
 
 
 def _next_publish_generation(state: Path) -> int:
-    current = _read_json(state / "publish_state.json")
-    return int(current.get("generation") or 0) + 1 if isinstance(current, Mapping) else 1
+    generations: list[int] = []
+    for name in ("publish_state.json", "recover_state.json"):
+        current = _read_json(state / name)
+        if isinstance(current, Mapping):
+            generations.append(int(current.get("generation") or 0))
+    return max(generations, default=0) + 1
 
 
 def _latest_package(sync: Path) -> dict[str, object] | None:
@@ -182,7 +202,12 @@ def _scan_surface(sync: Path, canary: str) -> dict[str, object]:
     return {
         "cleartext_checked": True,
         "cleartext_found": bool(marker) and any(_contains(path, marker) for path in files),
-        "private_key_marker_found": any(_contains(path, b"PRIVATE KEY") or _contains(path, b"device_key") for path in files),
+        "private_key_marker_found": any(
+            _contains(path, b"PRIVATE KEY")
+            or _contains(path, b"device_key")
+            or _contains(path, SYNC_KEY_FILE.encode("ascii"))
+            for path in files
+        ),
         "unexpected_file_count": len([path for path in files if not _allowed(sync, path)]),
     }
 
@@ -274,15 +299,9 @@ def _contains(path: Path, marker: bytes) -> bool:
 def _allowed(sync: Path, path: Path) -> bool:
     relative = path.relative_to(sync)
     return (
-        len(relative.parts) == 2
-        and relative.parts[0] == DEVICE_DIR
-        and path.suffix == ".json"
-        or len(relative.parts) == 2
-        and relative.parts[0] == PACKAGE_DIR
-        and path.suffix == PACKAGE_SUFFIX
-        or len(relative.parts) == 3
-        and relative.parts[0] == PACKAGE_DIR
-        and path.suffix == PACKAGE_SUFFIX
+        (len(relative.parts) == 2 and relative.parts[0] == DEVICE_DIR and path.suffix == ".json")
+        or (len(relative.parts) == 2 and relative.parts[0] == PACKAGE_DIR and path.suffix == PACKAGE_SUFFIX)
+        or (len(relative.parts) == 3 and relative.parts[0] == PACKAGE_DIR and path.suffix == PACKAGE_SUFFIX)
     )
 
 

@@ -14,10 +14,10 @@ contentieux, demandes au syndic, documents personnels et preuves internes.
 La confiance repose donc sur une separation simple: le travail clair reste dans
 le coffre local; Drive transporte seulement une version chiffree et controlee.
 
-![Strategie cible Drive](../assets/showcase/drive-strategie-cible.svg)
+![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
-Ouvrir l'infographie:
-[strategie cible Drive](../assets/showcase/drive-strategie-cible.svg)
+Ouvrir le visuel:
+[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
 
 ## Le Principe
 
@@ -34,11 +34,6 @@ Drive reste donc un moyen de transport. Il ne decide pas qui a le droit de lire,
 il ne remplace pas le coffre local et il ne devient pas la source de verite.
 
 ## Ce Que L'Utilisateur Doit Voir
-
-![Garde-fous avant partage Drive](../assets/showcase/drive-garde-fous-partage.svg)
-
-Ouvrir l'infographie:
-[garde-fous avant partage](../assets/showcase/drive-garde-fous-partage.svg)
 
 L'interface cible doit afficher clairement:
 
