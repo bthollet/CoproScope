@@ -154,7 +154,7 @@ premier niveau UI; on parle de conseil syndical, assemblee generale, journal
 local et controles locaux.
 
 Complement recette issu de `CC-IT-018`: des qu'un `CoproScope.exe` existe, la
-preuve finale de la route ComptaScope se fait dans cet executable CoproScope,
+preuve finale de la route Controle des comptes se fait dans cet executable,
 pas dans un executable separe et pas seulement sur le serveur de developpement.
 Le smoke Windows doit pouvoir cibler la route reelle avec
 `-ProbePath /comptes/rapprochement` et des textes visibles comme
