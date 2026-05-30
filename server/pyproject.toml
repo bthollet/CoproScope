@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Cockpit documentaire local-first pour les workflows de copropriete."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MPL-2.0" }
+license = { text = "AGPL-3.0-only" }
 authors = [{ name = "Codex" }]
 keywords = [
   "copropriete",
@@ -24,7 +24,7 @@ classifiers = [
   "Intended Audience :: End Users/Desktop",
   "Intended Audience :: Legal Industry",
   "Intended Audience :: Other Audience",
-  "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
@@ -65,6 +65,10 @@ security = [
   "bandit>=1.8",
   "pip-audit>=2.7",
 ]
+executable = [
+  "pyinstaller>=6.0",
+  "pywebview>=6.2",
+]
 docai = [
   "PyMuPDF>=1.24",
   "docling>=2.0",
@@ -90,6 +94,7 @@ layout = [
 
 [project.scripts]
 coprocs = "coproscope.cli:main"
+coproscope-app = "coproscope.executable_app:main"
 
 [project.urls]
 Homepage = "https://github.com/bthollet/CoproScope"
@@ -116,5 +121,6 @@ coproscope = [
   "web/_*_fragments/*.pyfrag",
   "web/viewmodels/_*_fragments/*.pyfrag",
   "web/templates/*.html",
-  "web/static/*.css"
+  "web/static/*.css",
+  "web/static/*.js"
 ]

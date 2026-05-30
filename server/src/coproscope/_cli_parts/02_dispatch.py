@@ -288,6 +288,7 @@ def _dispatch(args: argparse.Namespace) -> int:
                 port=args.port,
                 access_token=access_token,
                 unsafe_lan=args.unsafe_lan,
+                recette_mode=args.recette or str(os.environ.get("COPROSCOPE_RECETTE_MODE") or "").lower() in {"1", "true", "yes", "on"},
             )
             return 0
         if args.command == "decisions" and args.decisions_command == "build":

@@ -153,6 +153,24 @@ Les termes `CS`, `AG`, `append-only`, `read model` ou equivalents restent hors
 premier niveau UI; on parle de conseil syndical, assemblee generale, journal
 local et controles locaux.
 
+Complement recette issu de `CC-IT-018`: des qu'un `CoproScope.exe` existe, la
+preuve finale de la route Controle des comptes se fait dans cet executable,
+pas dans un executable separe et pas seulement sur le serveur de developpement.
+Le smoke Windows doit pouvoir cibler la route reelle avec
+`-ProbePath /comptes/rapprochement` et des textes visibles comme
+`Controle des comptes`, `Sources du controle` et `Lignes a controler`. Une
+recette serveur peut aider a iterer vite, mais elle ne suffit plus pour dire
+que le module est integre. Les frottements vus dans la fenetre executable ou
+dans le navigateur integre, par exemple une navigation qui coupe les mots, sont
+a corriger avant de donner un lien de recettage.
+
+Complement UI issu de `CC-IT-019`: une iteration utile peut retirer des blocs.
+Les tableaux bas de page `Decision avant rapport`, `Diffusion` et
+`Historique local` ont ete supprimes de la route Controle des comptes, car ils
+repetaient les garde-fous sans guider l'action principale. La regle
+generalisable est de garder les garde-fous au plus pres de la ligne controlee
+et de tester explicitement l'absence du bruit retire.
+
 ## Limites
 
 - Pas de saisie comptable complete.

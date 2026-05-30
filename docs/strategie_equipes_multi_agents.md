@@ -130,6 +130,20 @@ elles portent une decision, un test ou un apprentissage.
 
 Pour `BACKEND_DOMAINE`, le routeur limite le parallele:
 
+- si le travail cree une nouvelle feature produit ou transverse, aucun patch de
+  code ne demarre avant un cadrage documentaire: probleme utilisateur,
+  blueprint de service ou UI, event storming ou parcours-evenements, contrat de
+  donnees, risques privacy/licence, criteres d'acceptation et GO/NO-GO dev;
+- un prototype commence avant ce gate reste hors validation produit jusqu'a
+  reprise de la sequence correcte;
+- `owner code unique` veut dire qu'une seule personne modifie les fichiers
+  sensibles; cela ne veut pas dire que l'owner travaille seul. Une nouvelle
+  feature backend doit mobiliser au minimum un expert domaine, une QA
+  privacy/regression et un testeur novice ou usage, avec retours traces avant
+  `PRET_A_INTEGRER`;
+- si aucun agent ne peut etre mobilise, le lot reste en `EN_ATTENTE_USER` ou
+  `BLOQUE` selon la cause. Il ne peut pas etre transforme en livraison validee
+  par simple revue du coordinateur;
 - un seul owner code sur le schema, le vault, les configs ou le read model;
 - les experts metier ne patchent pas; ils rendent des invariants, cas limites
   et no-go;

@@ -15,6 +15,13 @@ Le present protocole est lance seulement si le routeur choisit
 `AGILE_UI_PRODUIT` ou si Brice demande explicitement une equipe agile
 UX/dev/QA.
 
+Pour une nouvelle feature produit ou transverse, le passage par une equipe
+d'agents est obligatoire apres le cadrage, meme si le routeur choisit
+`BACKEND_DOMAINE` plutot que `AGILE_UI_PRODUIT`. Un owner code unique peut
+implementer, mais il ne suffit pas a valider le lot: les roles experts, QA,
+novice ou designer prevus par le routeur doivent rendre un retour trace avant
+le statut `PRET_A_INTEGRER`.
+
 Regle produit ajoutee: l'equipe travaille systematiquement sur de l'UI reelle.
 Une discussion, une note ou une commande ne suffit pas: chaque cycle doit nommer
 la route, l'ecran, la modale, l'artefact HTML ou le parcours local vise. Si
@@ -65,21 +72,16 @@ Avant de lancer l'equipe, le coordinateur doit:
    file `ORD-*`;
 4. declarer son propre `CONV-*` avec ownership, fichiers evites, trace, tests
    attendus, lease et dernier point lu;
-5. mettre a jour la heartbeat canonique
-   `relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
-   courant; ne creer une heartbeat separee que sur demande explicite de Brice
-   et mettre en pause les doublons actifs. La heartbeat canonique laisse un
-   check-in persistant dans `docs/presence_agents.md`, meme en `DONT_NOTIFY`,
-   et relance les roles manquants, idle, bloques ou expires sans dupliquer un
-   role vivant. Quand la trace finale contient
-   `AGILE-DONE - equipe agile a fini son job`, elle considere seulement le lot
-   courant comme termine; si tous ses roles sont clos, elle peut choisir le
-   prochain `ORD-*` actionnable seulement si aucun arbitrage `EN_ATTENTE_USER`,
-   blocage non stationne ou incident de doublon n'est actif. Si Brice signale
-   que plusieurs conversations prennent la meme tache, la heartbeat canonique
-   reste active en mode surveillance/reprise, les dispatchers concurrents sont
-   mis en pause, les lots ouverts par course sont abandonnes ou mis en attente,
-   et aucun nouveau `CH-*` n'est cree avant arbitrage explicite;
+5. s'appuyer sur l'objectif actif Codex (`/objectif`) et sur
+   `docs/presence_agents.md` pour la continuite. Ne pas creer ni reparer de
+   heartbeat canonique ou de watchdog permanent par defaut. Un heartbeat Codex
+   ne revient que sur demande explicite de Brice pour un reveil horodate et
+   borne a un `CH-*` existant. Quand la trace finale contient
+   `AGILE-DONE - equipe agile a fini son job`, elle ferme seulement le lot
+   courant; le fil pilote reprend ensuite le gouvernail seulement si aucun
+   arbitrage `EN_ATTENTE_USER`, blocage non stationne ou incident de doublon
+   n'est actif. Si Brice signale que plusieurs conversations prennent la meme
+   tache, aucun nouveau `CH-*` n'est cree avant arbitrage explicite;
 6. ouvrir une ligne `CONV-*` par role actif;
 7. attribuer un ownership disjoint a chaque role;
 8. garder les devs en lecture si la commande produit ou le contrat de donnees
@@ -298,16 +300,15 @@ Chaque point de coordination utilise ce format:
 Le coordinateur donne un prochain mouvement concret. S'il n'y a pas
 d'arbitrage impossible, l'equipe continue.
 
-## Transition heartbeat entre lots
+## Transition entre lots avec `/objectif`
 
-`AGILE-DONE - equipe agile a fini son job` ne supprime pas la heartbeat agile.
-Ce marqueur signifie que le lot courant est ferme. Au passage suivant, la
-heartbeat doit:
+`AGILE-DONE - equipe agile a fini son job` ferme le lot courant. Il ne cree pas
+de relance permanente. Au passage suivant, le fil pilote doit:
 
 0. lancer `.\tools\orchestration-watch.cmd --emit-prompt` depuis la racine du
    depot pour verifier les conversations vivantes, expirees, bloquees et en
    attente utilisateur;
-1. si le watchdog remonte `EN_ATTENTE_USER`, un incident de doublon backlog ou
+1. si le diagnostic remonte `EN_ATTENTE_USER`, un incident de doublon backlog ou
    un blocage non stationne, ne pas lire la file `ORD-*` pour dispatch: remonter
    seulement l'arbitrage, laisser un check-in et attendre Brice; si un `CH-*`
    est deja declare avec roles manquants, idle, bloques ou expires, relancer
@@ -327,11 +328,11 @@ heartbeat doit:
    routage;
 8. publier les slots workers `A_PRENDRE` du chantier dans
    `docs/tableau_execution_courant.md`;
-9. recadrer le prompt de heartbeat sur ce nouveau chantier.
+9. tracer le point de reprise dans `docs/presence_agents.md`.
 
-Si aucun `ORD-*` actionnable n'existe, la heartbeat trace
-`NO_ORD_ACTIONNABLE` dans `docs/presence_agents.md` avec la raison concrete.
-Elle ne se supprime pas sans demande explicite de Brice.
+Si aucun `ORD-*` actionnable n'existe, le fil trace `NO_ORD_ACTIONNABLE` dans
+`docs/presence_agents.md` avec la raison concrete. Il ne cree pas de heartbeat
+de substitution.
 
 ## Contrat court a copier a un agent
 
@@ -357,12 +358,10 @@ Le comportement attendu est:
 1. le coordinateur lit `AGENTS.md`, `strategie_equipes_multi_agents.md`, ce
    protocole, la roadmap et la presence;
 2. il declare un `BOT-START`;
-3. il met a jour la heartbeat canonique
-   `relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
-   courant, avec check-in persistant dans `docs/presence_agents.md`; si un lot
-   precedent est `AGILE-DONE`, la heartbeat ne peut ouvrir le prochain `ORD-*`
-   actionnable que s'il n'y a pas d'arbitrage `EN_ATTENTE_USER`, de blocage non
-   stationne ou d'incident de doublon backlog;
+3. il s'appuie sur l'objectif actif Codex et sur `docs/presence_agents.md`;
+   aucun heartbeat canonique n'est cree par defaut. Si Brice demande un reveil
+   horodate, celui-ci reste borne au `CH-*` courant et ne choisit pas seul un
+   nouveau `ORD-*`;
 4. il confirme que le routage retenu est bien `AGILE_UI_PRODUIT` ou une equipe
    agile explicitement demandee, sinon il applique le protocole du type choisi;
 5. il ouvre les roles standards utiles, pas plus; si le nombre de threads le

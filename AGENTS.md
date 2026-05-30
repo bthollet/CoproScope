@@ -18,6 +18,11 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   lignes, ou signaler explicitement le reliquat et son `RM-*`.
 - Les instances privees restent hors depot et ne sont jamais commitees.
 - Les sorties publiables utilisent l'instance synthetique ou une copro demo fictive hors Drive.
+- Le packaging desktop courant est un executable Windows PyInstaller avec
+  pywebview: `CoproScope.exe` ouvre une fenetre CoproScope dediee, tout en
+  gardant `--browser` comme secours et `--no-browser` pour les smokes. Ne pas
+  migrer vers Electron/Tauri ni restructurer le repo sans arbitrage explicite.
+  La reference dev est `docs/runbook_packaging_noob_windows.md`.
 - En local, l'environnement de test par defaut pour recette live et agents est
   `C:\Users\brice\CoproScope\instances\beauvallon_test`; l'instance
   Platanes `examples/synthetic_copro` reste reservee aux tests publics/CI et
@@ -26,6 +31,19 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
 - Toute branche de developpement suit
   [`docs/methode_developpement_branches.md`](./docs/methode_developpement_branches.md):
   d'abord un bloc d'enquete, puis un bloc doc + dev en mode plan et objectifs.
+- Pour une nouvelle feature produit ou une feature transverse, le bloc
+  d'enquete est obligatoire avant tout code applicatif. Il doit produire au
+  minimum: probleme utilisateur, perimetre/hors perimetre, blueprint de service
+  ou blueprint UI selon le cas, event storming ou parcours-evenements, contrat
+  de donnees, risques privacy/licence, criteres d'acceptation, tests attendus et
+  gate GO/NO-GO avant dev. Si ces elements manquent, les devs restent en
+  lecture seule; tout code deja esquisse reste hors validation produit jusqu'a
+  reprise de la sequence correcte.
+- Apres ce cadrage, une nouvelle feature doit mobiliser une equipe d'agents
+  selon `docs/strategie_equipes_multi_agents.md`. Le fait qu'un fichier ait un
+  owner unique ne remplace pas l'equipe: expert domaine, QA/privacy, novice ou
+  designer selon le routage doivent rendre un retour trace avant tout statut
+  `PRET_A_INTEGRER`.
 - Le gouvernail roadmap unique est
   [`docs/roadmap_backlog_central.md`](./docs/roadmap_backlog_central.md).
   Toute demande "ajoute ceci a la roadmap" y est inscrite en `RM-*`.
@@ -404,13 +422,21 @@ dans le `BOT-END`.
 
 Regles obligatoires:
 
+- Pour les lots desktop, packaging, installable ou recette utilisateur generale,
+  tester en priorite l'executable avec
+  `server\packaging\windows\smoke-executable.ps1`. Le serveur PowerShell visible
+  reste l'outil de developpement web fin, pas la recette cible par defaut.
+- Le smoke executable peut choisir un port loopback libre fourni par Windows,
+  lancer son propre processus `CoproScope.exe`, puis fermer uniquement ce
+  processus. Il ne doit jamais tuer un PID qu'il n'a pas cree.
 - reserver un port avant de demarrer un serveur, avec `CONV-*`, role, instance,
   token de test et commande prevue;
 - choisir l'instance de recette la moins sensible possible: `examples/synthetic_copro`
   pour les preuves partageables, `beauvallon_test` seulement quand le scenario
   local l'exige, jamais une instance privee brute pour une capture diffusable;
-- garder le serveur dans un terminal PowerShell visible, identifiable par le
-  port et le `CONV-*`; arret par `Ctrl+C` uniquement;
+- quand un serveur de developpement est lance manuellement, le garder dans un
+  terminal PowerShell visible, identifiable par le port et le `CONV-*`; arret
+  par `Ctrl+C` uniquement;
 - un serveur de recette appartient a un seul owner et a un seul lot. Si le code
   a change ou si l'owner change, repartir d'un port reserve frais dans `8780`
   a `8799` au lieu de reutiliser un serveur ambigu;

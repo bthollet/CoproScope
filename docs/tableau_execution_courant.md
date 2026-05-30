@@ -52,8 +52,7 @@ L'orchestrateur est le seul role qui peut:
 - lire la file `ORD-*` pour choisir le prochain travail;
 - ouvrir un nouveau `CH-*`;
 - publier ou fermer les slots `SLOT-*`;
-- gerer la heartbeat canonique
-  `relance-equipe-agile-gouvernail-autonome`;
+- mettre a jour l'objectif actif Codex et les traces de presence;
 - consolider les retours workers et choisir le mouvement suivant.
 
 ### Worker
@@ -72,13 +71,13 @@ Un worker ne peut pas:
 - choisir un `ORD-*`;
 - creer un `CH-*`;
 - lancer `orchestration-watch.cmd --emit-prompt`;
-- modifier la heartbeat canonique;
+- modifier l'objectif actif Codex ou creer une relance automatique;
 - prendre un fichier non liste dans son ownership;
 - relancer un role vivant ou un lot deja clos.
 
 ## Cycle standard
 
-1. L'orchestrateur lit le watchdog et le gouvernail.
+1. L'orchestrateur lit les diagnostics d'orchestration et le gouvernail.
 2. S'il n'y a pas d'arbitrage ou de blocage, il choisit un seul `ORD-*`.
 3. Il ouvre un seul `CH-*` et trace `ROUTAGE_EQUIPE`.
 4. Il publie ici les slots du chantier courant, chacun en `A_PRENDRE`.
@@ -126,7 +125,8 @@ C:\Users\brice\CoproScope\coproscope. Lis AGENTS.md puis
 docs/tableau_execution_courant.md et docs/presence_agents.md.
 
 Ne choisis aucun ORD-*. Ne cree aucun CH-*. Ne lance pas
-orchestration-watch.cmd --emit-prompt. Ne modifie pas la heartbeat canonique.
+orchestration-watch.cmd --emit-prompt. Ne modifie pas l'objectif actif Codex et
+ne cree pas de relance automatique.
 
 Prends uniquement un slot A_PRENDRE du chantier courant dans
 docs/tableau_execution_courant.md. Marque-le EN_COURS avec ton CONV-*,

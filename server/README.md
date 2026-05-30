@@ -67,6 +67,50 @@ Les commandes suivantes se lancent depuis la racine du depot avec l'interpreteur
 
 `ui open-test` lance le serveur au premier plan, affiche l'URL locale tokenisee et s'arrete avec `Ctrl+C`.
 
+## Executable Windows
+
+Le lanceur desktop courant est `coproscope.executable_app`. Il demarre l'UI
+locale et ouvre par defaut une fenetre CoproScope via pywebview.
+
+Depuis `server/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[ui,drive,executable]"
+.\packaging\windows\build-executable.ps1 -PythonExe .\.venv\Scripts\python.exe
+```
+
+Modes utiles:
+
+| Usage | Commande |
+|---|---|
+| Fenetre CoproScope | `.\dist\CoproScope\CoproScope.exe` |
+| Navigateur de secours | `.\dist\CoproScope\CoproScope.exe --browser` |
+| Smoke sans interface | `.\dist\CoproScope\CoproScope.exe --no-browser --token smoke-token` |
+| Recette HTTP executable | `.\packaging\windows\smoke-executable.ps1 -Mode http` |
+| Recette fenetre executable | `.\packaging\windows\smoke-executable.ps1 -Mode window` |
+
+Dans la fenetre desktop, le bouton `Changer de coffre` ouvre le selecteur de
+dossiers Windows. Le dossier choisi doit contenir `instance.yml`: CoproScope le
+traite alors comme le coffre actif, memorise ce choix dans le profil utilisateur
+local, puis relance une nouvelle fenetre avec un nouveau port et un nouveau
+jeton de session. Le navigateur de secours `--browser` ne peut pas ouvrir ce
+selecteur natif.
+
+Si un ancien dossier `dist\CoproScope` est verrouille, construire dans un dossier
+frais sous `dist`, par exemple:
+
+```powershell
+.\packaging\windows\build-executable.ps1 -PythonExe .\.venv\Scripts\python.exe -DistPath .\dist\pywebview-20260531
+```
+
+Ne pas mettre de logique metier dans la couche pywebview: elle doit seulement
+ouvrir/fermer la fenetre et encadrer le serveur local.
+
+Pour les lots desktop ou packaging, les preuves de recette doivent venir en
+priorite de `smoke-executable.ps1`. Le lancement serveur PowerShell visible
+reste utile pour developper une route web, mais ne suffit plus a valider une
+livraison executable.
+
 ## Organisation
 
 - `src/coproscope/cli.py`: point d'entree CLI.
@@ -81,6 +125,11 @@ Les commandes suivantes se lancent depuis la racine du depot avec l'interpreteur
 ## Frontiere Public / Prive
 
 Le depot public expose le code, les schemas, les tests, la documentation et les exemples fictifs. Les instances reelles, OCR prives, sorties brutes, secrets, chemins locaux et cartes de biffage restent hors Git.
+
+## Licence
+
+Le serveur CoproScope suit la licence du depot: `AGPL-3.0-only`. Le texte
+complet est dans [../LICENSE](../LICENSE).
 
 Avant de publier:
 

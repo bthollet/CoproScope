@@ -222,6 +222,10 @@
       </footer>
     </div>
   </div>
+  {% if recette_mode_enabled|default(false) %}
+  <script id="cs-recette-config" type="application/json">{{ {"saveUrl": token_href('/recette/annotations'), "pageUrl": token_href('/recette'), "token": ui_token_param|replace('token=', '')}|tojson }}</script>
+  <script src="/static/recette_mode.js"></script>
+  {% endif %}
   <script>
   (function () {
     var form = document.getElementById("cs-global-drop-form");

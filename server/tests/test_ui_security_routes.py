@@ -178,7 +178,7 @@ class UiSecurityRouteTests(unittest.TestCase):
                 "qa-2115-local",
             ]
         )
-        with patch("coproscope.web.app.serve") as mocked_serve:
+        with patch("coproscope.web.app.serve") as mocked_serve, patch.dict("os.environ", {}, clear=True):
             result = cli._dispatch(args)
 
         self.assertEqual(result, 0)
@@ -188,6 +188,29 @@ class UiSecurityRouteTests(unittest.TestCase):
         self.assertEqual(kwargs["host"], "127.0.0.1")
         self.assertEqual(kwargs["port"], 8769)
         self.assertFalse(kwargs["unsafe_lan"])
+        self.assertFalse(kwargs["recette_mode"])
+
+    def test_ui_open_test_can_enable_recette_from_environment(self) -> None:
+        from coproscope import cli
+
+        args = cli.build_parser().parse_args(
+            [
+                "ui",
+                "open-test",
+                "--instance-root",
+                str(self.instance.instance_root),
+                "--port",
+                "8769",
+                "--token",
+                "qa-2115-local",
+            ]
+        )
+        with patch("coproscope.web.app.serve") as mocked_serve, patch.dict("os.environ", {"COPROSCOPE_RECETTE_MODE": "1"}, clear=True):
+            result = cli._dispatch(args)
+
+        self.assertEqual(result, 0)
+        _, kwargs = mocked_serve.call_args
+        self.assertTrue(kwargs["recette_mode"])
 
         source = Path(cli.__file__).read_text(encoding="utf-8")
         tree = ast.parse(source)

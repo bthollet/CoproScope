@@ -260,11 +260,12 @@ def create_instance_selector_app(
     registry_root: str | Path | None = None,
     prewarm_dashboard: bool = False,
     discovered_instances: list[InstanceChoice] | None = None,
+    recette_mode: bool = False,
 ):
     FastAPI, _HTTPException, _Request, HTMLResponse, RedirectResponse, Response, _StaticFiles, _Jinja2Templates = _require_web_stack()
     choices = discovered_instances or discover_local_instances(instance, registry_root=registry_root)
     if len(choices) < 2:
-        return create_app(instance, year, access_token=access_token, prewarm_dashboard=prewarm_dashboard)
+        return create_app(instance, year, access_token=access_token, prewarm_dashboard=prewarm_dashboard, recette_mode=recette_mode)
 
     default_choice_id = _choice_id_for_instance(choices, instance)
     subapps = {
@@ -274,6 +275,7 @@ def create_instance_selector_app(
             access_token=access_token,
             prewarm_dashboard=prewarm_dashboard and choice.choice_id == default_choice_id,
             instance_switcher_href="/instances",
+            recette_mode=recette_mode,
         )
         for choice in choices
     }
@@ -313,6 +315,7 @@ def serve(
     *,
     access_token: str | None = None,
     unsafe_lan: bool = False,
+    recette_mode: bool = False,
 ) -> None:
     if host not in LOOPBACK_HOSTS and not unsafe_lan:
         raise ValueError("Refusing to expose the UI outside loopback without --unsafe-lan.")
@@ -334,6 +337,7 @@ def serve(
             year,
             access_token=access_token,
             discovered_instances=choices,
+            recette_mode=recette_mode,
         ),
         host=host,
         port=port,

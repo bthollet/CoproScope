@@ -83,18 +83,13 @@ Quand la demande est seulement "equipe multi-agents" ou quand le prochain lot
 vient du gouvernail, appliquer d'abord le routeur automatique; l'equipe agile
 UI produit n'est lancee que si le routeur choisit `AGILE_UI_PRODUIT`.
 
-Au lancement effectif, le coordinateur met a jour la heartbeat canonique
-`relance-equipe-agile-gouvernail-autonome` toutes les 5 minutes sur le fil
-courant. Il ne cree pas de heartbeat concurrente sans demande explicite de
-Brice; tout doublon actif est mis en pause. La relance laisse un check-in
-persistant dans `docs/presence_agents.md`, meme en `DONT_NOTIFY`, reprend les
-roles manquants, idle, bloques ou expires, ne duplique pas un role vivant, et
-traite `AGILE-DONE - equipe agile a fini son job` comme une fin de lot, pas
-comme une fin d'orchestration. Si tous les roles du lot sont clos, la heartbeat
-reprend le gouvernail, choisit le prochain `ORD-*` actionnable et ouvre une
-nouvelle equipe avec un nouveau `CH-*`, puis met a jour le tableau d'execution
-courant avec les slots workers. Elle n'est supprimee que sur demande explicite
-de Brice ou absence verifiee de tout `ORD-*` actionnable.
+Au lancement effectif, le coordinateur s'appuie sur l'objectif actif Codex
+(`/objectif`) et sur `docs/presence_agents.md`. Il ne cree pas de heartbeat
+canonique ni de watchdog permanent par defaut. Un heartbeat Codex ne revient
+que sur demande explicite de Brice pour un reveil horodate, borne au `CH-*`
+courant, sans choisir seul un nouveau `ORD-*`. `AGILE-DONE - equipe agile a
+fini son job` ferme seulement le lot courant; le fil pilote ne reprend le
+gouvernail qu'apres cloture et absence d'arbitrage, blocage ou doublon actif.
 
 Le noyau d'equipe est:
 
@@ -396,7 +391,7 @@ Pour obtenir un prompt de relance sans inventer de roles:
 
 Le watchdog signale les conversations `EN_COURS` stale ou expirees, les
 `EN_ATTENTE_USER`, les `BLOQUE`, les lots `PRET_A_INTEGRER` et la derniere
-trace de `relance-equipe-agile-gouvernail-autonome`. En mode strict:
+trace d'orchestration. Il ne relance rien tout seul. En mode strict:
 
 ```powershell
 .\tools\agent-check.cmd -Orchestration
@@ -444,6 +439,19 @@ Pour une integration coordinateur, depuis `server/` :
 Checks UI depuis la racine :
 
 Ouvrir manuellement l'URL tokenisee affichee par `ui open-test`, puis verifier les onglets `Cockpit`, `Actions`, `Comptes`, `Documents`, `Atelier pieces`, `Confidentialite`, `Chantiers` et `Depot`. Pour les agents, preferer les tests unitaires et les clients FastAPI internes plutot que des boucles `Invoke-WebRequest`.
+
+Pour un lot desktop, packaging, installable ou recette utilisateur generale,
+remplacer autant que possible la recette serveur PowerShell par la recette de
+l'executable depuis `server/`:
+
+```powershell
+.\packaging\windows\smoke-executable.ps1 -Mode http
+.\packaging\windows\smoke-executable.ps1 -Mode window
+```
+
+Le serveur PowerShell visible reste adapte au developpement d'une route web,
+mais la preuve finale d'un executable doit citer le smoke executable, son mode
+et l'artefact teste.
 
 ## Garde-fous donnees
 
