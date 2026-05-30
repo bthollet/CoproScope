@@ -3,6 +3,8 @@
 Navigation:
 [README GitHub](../../README.md) |
 [Decouvrir](./README.md) |
+[Galerie](./galerie-visuelle.md) |
+[Supports ecran](./supports-ecran.md) |
 [Drive et confidentialite](./confiance-confidentialite.md) |
 [Sponsors](./sponsors-et-partenaires.md) |
 [Maturite](./maturite-et-limites.md) |
@@ -11,6 +13,9 @@ Navigation:
 Cette page montre les parcours que CoproScope cherche a rendre simples. Les
 visuels sont issus des travaux UX, des equipes agiles et des recettes sur
 donnees fictives ou pseudonymisees.
+
+Pour une lecture plus directe par images, ouvrir aussi:
+[Galerie visuelle](./galerie-visuelle.md).
 
 ## 1. Gerer Drive Comme Un Transport Chiffre
 

@@ -3,7 +3,9 @@
 Navigation:
 [README GitHub](../../README.md) |
 [Decouvrir](./README.md) |
+[Galerie](./galerie-visuelle.md) |
 [Parcours](./parcours-demonstratifs.md) |
+[Supports ecran](./supports-ecran.md) |
 [Sponsors](./sponsors-et-partenaires.md) |
 [Maturite](./maturite-et-limites.md) |
 [Index docs](../README.md)
@@ -14,10 +16,10 @@ contentieux, demandes au syndic, documents personnels et preuves internes.
 La confiance repose donc sur une separation simple: le travail clair reste dans
 le coffre local; Drive transporte seulement une version chiffree et controlee.
 
-![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+![Confiance par conception](../assets/showcase/confiance-par-conception-16x9.png)
 
 Ouvrir le visuel:
-[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+[confiance par conception](../assets/showcase/confiance-par-conception-16x9.png)
 
 ## Le Principe
 
@@ -46,6 +48,25 @@ L'interface cible doit afficher clairement:
 
 Une personne non technique doit pouvoir comprendre l'etat du partage sans ouvrir
 une console ou inspecter un dossier cache.
+
+![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+
+Ouvrir le visuel:
+[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+
+## Strategie Cible Drive
+
+```mermaid
+flowchart LR
+    A["Coffre local<br/>documents clairs"] --> B["Controle CoproScope<br/>revue et blocage si doute"]
+    B --> C["Paquet chiffre<br/>aucun clair dans Drive"]
+    C --> D["Drive<br/>transport seulement"]
+    D --> E["Poste autorise<br/>verification locale"]
+    E --> F["Lecture<br/>memoire et actions"]
+```
+
+Le message a garder: Drive aide a transporter, mais il ne devient ni le coffre,
+ni le juge des droits, ni la source de verite.
 
 ## PrivacyOps Et BiffageOps
 

@@ -3,7 +3,9 @@
 Navigation:
 [README GitHub](../../README.md) |
 [Decouvrir](./README.md) |
+[Galerie](./galerie-visuelle.md) |
 [Parcours](./parcours-demonstratifs.md) |
+[Supports ecran](./supports-ecran.md) |
 [Drive et confidentialite](./confiance-confidentialite.md) |
 [Maturite](./maturite-et-limites.md) |
 [Index docs](../README.md)
@@ -15,6 +17,8 @@ Le projet n'a pas pour but de remplacer les professionnels. Il veut donner aux
 habitants, conseils syndicaux, syndics benevoles et structures
 d'accompagnement un outil pour mieux comprendre, verifier, expliquer et passer
 le relais.
+
+![Les documents existent deja, le lien manque](../assets/showcase/probleme-lien-manque-16x9.png)
 
 ## Pourquoi C'Est Utile
 
@@ -43,10 +47,13 @@ CoproScope peut servir de support pour:
 La strategie Drive est un point cle pour un partenaire: elle permet d'imaginer
 un usage collectif sans faire de Drive un coffre de documents clairs.
 
-![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+![Une lecture pour chaque public](../assets/showcase/publics-entrees-coproscope-16x9.png)
 
 Ouvrir le visuel:
-[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+[une lecture pour chaque public](../assets/showcase/publics-entrees-coproscope-16x9.png)
+
+Voir la selection complete des images publiques:
+[Galerie visuelle](./galerie-visuelle.md)
 
 Le cap est lisible:
 

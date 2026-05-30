@@ -3,7 +3,9 @@
 Navigation:
 [README GitHub](../../README.md) |
 [Decouvrir](./README.md) |
+[Galerie](./galerie-visuelle.md) |
 [Parcours](./parcours-demonstratifs.md) |
+[Supports ecran](./supports-ecran.md) |
 [Drive et confidentialite](./confiance-confidentialite.md) |
 [Sponsors](./sponsors-et-partenaires.md) |
 [Index docs](../README.md)
@@ -59,6 +61,15 @@ Les prochains jalons les plus utiles sont:
 - une recette par utilisateur non technique;
 - un exemple public montrant paquet chiffre, controle anti-fuite et blocage;
 - des syntheses relues qui disent leur source, leur limite et leur public.
+
+## Ce Que Les Captures Montrent Deja
+
+| Preuve visible | Lire |
+|---|---|
+| Galerie retenue pour GitHub | [Galerie visuelle](./galerie-visuelle.md) |
+| Parcours comptes, preuve, demande et point a verifier | [Parcours demonstratifs](./parcours-demonstratifs.md) |
+| Support ecran 16:9 et carrousel | [Supports ecran et carrousel](./supports-ecran.md) |
+| Strategie Drive cible | [Strategie Drive et confidentialite](./confiance-confidentialite.md) |
 
 ## Pourquoi Montrer Les Limites
 
