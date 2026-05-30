@@ -10,10 +10,12 @@ nouvelle feature, une feature transverse ou une zone sensible.
 ## Sequence obligatoire
 
 1. Enquete et cadrage documentaire.
-2. Decision GO/NO-GO dev.
-3. Doc + dev sur un perimetre borne.
-4. Tests et preuves.
-5. Trace finale dans `docs/presence_agents.md` et le gouvernail.
+2. Routage dans `docs/strategie_equipes_multi_agents.md`.
+3. Mobilisation d'une equipe d'agents adaptee au sujet.
+4. Decision GO/NO-GO dev rendue par cette equipe, pas par l'owner seul.
+5. Doc + dev sur un perimetre borne.
+6. Tests, contre-tests et preuves.
+7. Trace finale dans `docs/presence_agents.md` et le gouvernail.
 
 ## Gate nouvelle feature
 
@@ -27,6 +29,7 @@ Avant tout code applicatif, le cadrage doit contenir:
 - risques privacy, securite, licence et maintenance;
 - criteres d'acceptation;
 - tests attendus;
+- roles d'agents attendus;
 - decision GO/NO-GO avant dev.
 
 Si ces elements ne sont pas prets, les devs restent en lecture seule.
@@ -44,7 +47,15 @@ Le code commence seulement quand:
 - les fichiers a eviter sont nommes;
 - les tests ou preuves sont connus;
 - le cadrage a donne une coupe V1 precise;
+- le routeur d'equipe a choisi une equipe-type;
+- les roles d'agents utiles ont rendu ou sont explicitement traces comme
+  indisponibles;
+- le GO dev vient d'une synthese d'equipe, meme si un seul owner ecrit le code;
 - aucune collision vivante ne bloque le perimetre.
+
+Un owner solo peut implementer apres le GO, mais il ne peut pas remplacer
+l'equipe. Si une nouvelle feature est codee sans mobilisation d'agents, elle
+reste `A_REQUALIFIER` ou `EN_ATTENTE_USER`, pas `PRET_A_INTEGRER`.
 
 Pour une iteration UI, ajouter les gates du protocole agile:
 

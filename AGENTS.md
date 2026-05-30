@@ -39,6 +39,12 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   gate GO/NO-GO avant dev. Si ces elements manquent, les devs restent en
   lecture seule; tout code deja esquisse est marque brouillon non integrable
   jusqu'a validation du cadrage.
+- Apres ce cadrage, une nouvelle feature doit mobiliser une equipe d'agents
+  selon `docs/strategie_equipes_multi_agents.md`. Le fait qu'un fichier ait un
+  owner unique ne remplace pas l'equipe: expert domaine, QA/privacy, novice ou
+  designer selon le routage doivent rendre un retour trace. Sans cette
+  mobilisation, le lot reste a requalifier et ne peut pas etre marque
+  `PRET_A_INTEGRER`.
 - Le gouvernail roadmap unique est
   [`docs/roadmap_backlog_central.md`](./docs/roadmap_backlog_central.md).
   Toute demande "ajoute ceci a la roadmap" y est inscrite en `RM-*`.
