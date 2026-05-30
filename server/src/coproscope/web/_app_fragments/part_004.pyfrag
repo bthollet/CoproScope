@@ -292,4 +292,5 @@ def serve(
         host=host,
         port=port,
         log_level="info",
+        ws="none",
     )

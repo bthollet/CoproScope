@@ -24,6 +24,7 @@ def register_feature_routes(
     from .roles_commissions_view import register_roles_commissions_routes
     from .suggestions_view import register_suggestions_routes
     from .worksops_travaux_view import register_travaux_routes
+    from .drive_mvp_view import register_drive_mvp_routes
 
     register_travaux_routes(app, templates, context, year, require_token, html_response)
     register_coffre_partage_routes(app, templates, context, year, require_token, html_response)
@@ -38,3 +39,4 @@ def register_feature_routes(
     register_compta_rapprochement_routes(app, templates, context, year, require_token, html_response)
     register_activity_routes(app, templates, context, year, require_token, html_response)
     register_suggestions_routes(app, templates, context, year, require_token, html_response)
+    register_drive_mvp_routes(app, templates, context, year, require_token, html_response)
