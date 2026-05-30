@@ -96,7 +96,7 @@ Question a suivre cote DB: faut-il creer un module applicatif `audit360` dedie d
 
 ### Point DB-20260527-03 - Challenge metier DB par equipe agents
 
-- Source: `RM-2026-0040`, livrable `docs/challenge_db_modele_metier_2026-05-27.md`.
+- Source: `RM-2026-0040`, livrable `docs/archive/audits_recherches/challenge_db_modele_metier_2026-05-27.md`.
 - Methode: revue multidisciplinaire en lecture seule par agents backend/vault, syndic-juridique, compta, incidents-travaux et privacy/UX; aucun serveur, aucune migration, aucune donnee d'instance.
 - Verdict: le socle `event_log` / projections / `points` / `actions` / `expected_pieces` / `requests` / `request_actions` / `object_links` / `source_import_map` reste valide, mais il ne doit pas devenir un modele universel.
 - Frontiere UX obligatoire: `action` = tache humaine. Ne pas l'utiliser comme substitut de `decision`, `incident`, `works_project`, `proof`, `request_action`, `candidate_bundle`, `human_validation` ou `alert`.

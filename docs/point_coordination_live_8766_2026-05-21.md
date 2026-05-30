@@ -32,7 +32,7 @@
 
 ### Commande prete
 
-- Commande de reprise deja disponible: `docs/commandes_reprise_live_8766.md`.
+- Commande de reprise deja disponible: `docs/commandes/commandes_reprise_live_8766.md`.
 - Prochaine commande dev a stabiliser: `P0 demandes/depot`, avant de repartir sur l'alignement profond `actions -> comptes -> memoire`.
 - Format exige pour la commande suivante: objectif utilisateur, structure visuelle, composants, donnees, interactions, etats vides, criteres d'acceptation, tests attendus.
 
@@ -46,7 +46,7 @@
 - Dev back: terminer la route POST `/demandes` et le raccord registre.
 - Dev front: verifier les CTA depot/document et les libelles novice.
 - QA: relancer les tests cibles `requests`, `document_intake`, `depot`, `actions`, puis la suite UI complete.
-- Coordinateur-scribe: consigner le resultat du prochain point dans `docs/journal_cycles_ux_2026-05-21.md`.
+- Coordinateur-scribe: consigner le resultat du prochain point dans `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md`.
 
 ## Etat des agents
 
@@ -67,8 +67,8 @@
 ## Rappel des preuves visuelles existantes
 
 - Capture de reference apres reprise: `docs/assets/ux-livraison-reelle-2026-05-21-8766-apres-reprise/`.
-- Planche de preuve visuelle: `docs/planche_preuve_visuelle_live_8766.md`.
-- Diagnostic visuel: `docs/ecarts_visuels_live_vs_canva_2026-05-21.md`.
+- Planche de preuve visuelle: `docs/archive/recettes_ux/planche_preuve_visuelle_live_8766.md`.
+- Diagnostic visuel: `docs/archive/recettes_ux/ecarts_visuels_live_vs_canva_2026-05-21.md`.
 
 ## Historique avant ce point
 
@@ -90,7 +90,7 @@
 - Bloc P0 relance/demandes/depot livre et teste.
 - Prochain bloc recommande: pieces manquantes puis detail action, en partant
   des PNG designer N+2 et de
-  `docs/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
+  `docs/archive/recettes_ux/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
 - Retour novice ajoute: relance validee; `Pieces manquantes` refusee tant que
   la liste n'est pas remplie/coherente. Image prioritaire:
   `docs/assets/ux-visuels-fictifs-2026-05-21/09_pieces_manquantes_n2_liste_coherente.png`.
@@ -144,7 +144,7 @@
 
 ### Commande prete
 
-- Commande pieces/detail action: `docs/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
+- Commande pieces/detail action: `docs/archive/recettes_ux/coordination_cycle_n2_pieces_detail_2026-05-21.md`.
 - Detail action `/actions/{id}` existe et redirige vers la fiche selectionnee avec token.
 
 ### Agents idle a relancer
@@ -280,7 +280,7 @@
 - Coordinateur interconversations actif.
 - Note de coordination creee: `docs/coordination_interconversations_2026-05-21.md`.
 - Dernier signal DB: `docs/passerelle_db_vers_ux_2026-05-21.md` modifie a 20:56 avec reponses UXDB et question `DBUX-20260521-01`.
-- Dernier signal UX/live: ce point live et `docs/journal_cycles_ux_2026-05-21.md` modifies a 20:48 avec `150 tests OK`.
+- Dernier signal UX/live: ce point live et `docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md` modifies a 20:48 avec `150 tests OK`.
 
 ### Regles appliquees
 

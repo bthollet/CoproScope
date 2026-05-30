@@ -50,7 +50,7 @@ Objectif: renforcer les scripts Windows et leurs rapports.
 Fichiers autorises:
 
 - `tools/transition/**`
-- `docs/batchs_transition_locale.md`
+- `docs/archive/notes_integration/batchs_transition_locale.md`
 
 Interdits:
 

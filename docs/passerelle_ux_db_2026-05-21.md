@@ -62,9 +62,9 @@ Format recommande pour une reponse DB vers UX:
 - `coproscope/docs/passerelle_ux_vers_db_2026-05-21.md`
 - `coproscope/docs/passerelle_db_vers_ux_2026-05-21.md`
 - `coproscope/docs/refonte_ux_cycles_image_dev_test.md`
-- `coproscope/docs/coordination_cycle_n2_pieces_detail_2026-05-21.md`
+- `coproscope/docs/archive/recettes_ux/coordination_cycle_n2_pieces_detail_2026-05-21.md`
 - `coproscope/docs/point_coordination_live_8766_2026-05-21.md`
-- `coproscope/docs/journal_cycles_ux_2026-05-21.md`
+- `coproscope/docs/archive/recettes_ux/journal_cycles_ux_2026-05-21.md`
 - `coproscope/server/src/coproscope/web/viewmodel.py`
 - `coproscope/server/src/coproscope/web/app.py`
 - `coproscope/server/tests/test_ui_action_detail_route.py`

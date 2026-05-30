@@ -327,7 +327,7 @@ Voir les briefs detailles : [Lots paralleles approfondis](./lots_paralleles.md).
 | `server/src/coproscope/web/viewmodel.py` | Point de convergence de l'interface | Un seul owner a la fois. |
 | `server/src/coproscope/cli.py` | Surface de commande partagee | Modifications groupees par coordinateur ou agent unique. |
 | schemas/registres partages | Risque de casser plusieurs modules | Proposer le schema dans une note avant implementation concurrente. |
-| docs de synthese (`README.md`, `feuille_de_route.md`) | Risque de conflits editoriaux | Owner documentation unique. |
+| docs de synthese (`README.md`, `archive/roadmaps_anciennes/feuille_de_route.md`) | Risque de conflits editoriaux | Owner documentation unique. |
 
 ## Ports et serveurs locaux
 
@@ -409,7 +409,7 @@ nouveau `CH-*` avec ownership explicite.
 ## Vague active 21h15
 
 La coordination exploitable pour le jalon du 2026-05-20 a 21h15 est tenue dans
-[`orchestration_2115.md`](./orchestration_2115.md). Elle couvre:
+[`orchestration_2115.md`](./archive/recettes_ux/orchestration_2115.md). Elle couvre:
 
 - l'etat des chantiers comptes, sync alertes, atelier piece, cockpit et UX tester;
 - les dependances entre lots;

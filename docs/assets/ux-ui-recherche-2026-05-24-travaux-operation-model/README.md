@@ -1,6 +1,6 @@
 # Assets UX/UI WorksOps operation model
 
-Mission: `docs/recherche_ux_ui_2026-05-24_travaux_operation-model.md`.
+Mission: `docs/archive/recherches_ux_ui/recherche_ux_ui_2026-05-24_travaux_operation-model.md`.
 Roadmap: `RM-2026-0032`.
 Chantier: `CH-20260524-092657-RM-2026-0032-travaux-operation-ux-ui`.
 
