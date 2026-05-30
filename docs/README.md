@@ -16,7 +16,9 @@ Le README racine reste la vitrine principale:
 | Relecture rapide dans Codex | [README vitrine GitHub](../README.md) |
 | Coproprietaire ou conseil syndical | [Decouvrir CoproScope](./public/README.md) |
 | Sponsor, collectivite, association | [Sponsors et partenaires](./public/sponsors-et-partenaires.md) |
+| Lecteur qui veut voir les images retenues | [Galerie visuelle](./public/galerie-visuelle.md) |
 | Futur utilisateur qui veut voir les ecrans | [Parcours demonstratifs](./public/parcours-demonstratifs.md) |
+| Lecteur qui prepare une presentation | [Supports ecran et carrousel](./public/supports-ecran.md) |
 | Lecteur qui veut comprendre Drive et les donnees | [Strategie Drive et confidentialite](./public/confiance-confidentialite.md) |
 | Lecteur qui veut connaitre l'etat reel | [Maturite et limites](./public/maturite-et-limites.md) |
 | Developpeur ou contributeur | [Documentation developpeurs](./developpeurs/README.md) |
@@ -27,7 +29,9 @@ Le README racine reste la vitrine principale:
 |---|---|
 | Ou lire la vitrine principale ? | [README vitrine GitHub](../README.md) |
 | A quoi sert CoproScope ? | [README public](./public/README.md) |
+| Quelles images montrer ? | [Galerie visuelle](./public/galerie-visuelle.md) |
 | Quels parcours sont vises ? | [Parcours demonstratifs](./public/parcours-demonstratifs.md) |
+| Comment presenter CoproScope sur ecran ? | [Supports ecran et carrousel](./public/supports-ecran.md) |
 | Pourquoi une institution pourrait soutenir le projet ? | [Sponsors et partenaires](./public/sponsors-et-partenaires.md) |
 | Comment fonctionne la cible Drive ? | [Strategie Drive et confidentialite](./public/confiance-confidentialite.md) |
 | Qu'est-ce qui existe deja et qu'est-ce qui manque ? | [Maturite et limites](./public/maturite-et-limites.md) |

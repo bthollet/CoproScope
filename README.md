@@ -11,7 +11,7 @@ Le produit ne remplace ni un syndic, ni une comptabilite officielle, ni une
 validation juridique. Il aide a relier les documents, demandes, decisions,
 depenses, preuves, actions et restitutions partageables.
 
-![Coffre et partage Drive chiffre](./docs/assets/showcase/coffre-partage-drive-chiffre.png)
+![CoproScope - ecran d'accueil PC](./docs/assets/showcase/accueil-pc-coproscope-16x9.png)
 
 ## Choisir Son Entree
 
@@ -19,10 +19,26 @@ depenses, preuves, actions et restitutions partageables.
 |---|---|---|
 | Coproprietaire, conseil syndical, futur utilisateur | [Decouvrir CoproScope](./docs/public/README.md) | Promesse, usages, limites, vocabulaire simple. |
 | Sponsor, collectivite, association | [Sponsors et partenaires](./docs/public/sponsors-et-partenaires.md) | Interet collectif, prevention, autonomie, soutenabilite. |
+| Lecteur qui veut voir avant de lire | [Galerie visuelle](./docs/public/galerie-visuelle.md) | Images 16:9, captures produit, supports de demonstration. |
 | Lecteur qui veut voir les parcours | [Parcours demonstratifs](./docs/public/parcours-demonstratifs.md) | Comptes, preuves, demandes, Drive cible, points a verifier. |
 | Lecteur inquiet sur les donnees | [Strategie Drive et confidentialite](./docs/public/confiance-confidentialite.md) | Coffre local, Drive chiffre, controle avant partage. |
 | Lecteur qui veut l'etat reel | [Maturite et limites](./docs/public/maturite-et-limites.md) | Ce qui existe, ce qui reste a stabiliser, ce qui n'est pas promis. |
 | Developpeur ou contributeur | [Documentation developpeurs](./docs/developpeurs/README.md) | Installation, tests, architecture, publication prudente. |
+
+## La Demo En Images
+
+| Le probleme | La preuve |
+|---|---|
+| ![Les documents existent deja, le lien manque](./docs/assets/showcase/probleme-lien-manque-16x9.png) | ![Preuve document PDF](./docs/assets/showcase/preuve-document-pdf.png) |
+| Les documents existent, mais le lien entre source, preuve, action et memoire manque souvent. | Une piece utile dit ce qu'elle prouve, ce qu'elle ne prouve pas et a quoi elle sert. |
+
+| Les comptes | Le partage prudent |
+|---|---|
+| ![Matrice de controle des comptes](./docs/assets/showcase/controle-comptes-matrice.png) | ![Coffre et partage Drive chiffre](./docs/assets/showcase/coffre-partage-drive-chiffre.png) |
+| Les lignes a verifier deviennent des questions, des reserves et des preuves visibles. | Drive reste un transport chiffre: le clair reste local, l'envoi est controle. |
+
+Voir la selection complete:
+[Galerie visuelle](./docs/public/galerie-visuelle.md)
 
 ## Le Probleme
 
@@ -48,6 +64,8 @@ document -> preuve -> point a verifier -> action -> decision -> memoire -> parta
 Drive n'est pas le cerveau du produit. Dans la cible, CoproScope garde le
 travail clair en local, controle ce qui peut etre prepare, chiffre le paquet,
 puis utilise Drive comme transport vers les personnes autorisees.
+
+![Coffre et partage Drive chiffre](./docs/assets/showcase/coffre-partage-drive-chiffre.png)
 
 Lire la page detaillee:
 [Strategie Drive et confidentialite](./docs/public/confiance-confidentialite.md)
@@ -105,9 +123,11 @@ elle est rattachee a une action, une depense ou un point.
 |---|---|
 | Index complet de la documentation | [docs/README.md](./docs/README.md) |
 | Parcours publics | [docs/public](./docs/public/README.md) |
+| Galerie visuelle | [docs/public/galerie-visuelle.md](./docs/public/galerie-visuelle.md) |
 | Parcours demonstratifs | [docs/public/parcours-demonstratifs.md](./docs/public/parcours-demonstratifs.md) |
 | Sponsors et partenaires | [docs/public/sponsors-et-partenaires.md](./docs/public/sponsors-et-partenaires.md) |
 | Drive et confidentialite | [docs/public/confiance-confidentialite.md](./docs/public/confiance-confidentialite.md) |
+| Supports ecran et carrousel | [docs/public/supports-ecran.md](./docs/public/supports-ecran.md) |
 | Developpeurs | [docs/developpeurs/README.md](./docs/developpeurs/README.md) |
 
 ## Structure Du Depot

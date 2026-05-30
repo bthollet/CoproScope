@@ -3,7 +3,9 @@
 Navigation:
 [README GitHub](../../README.md) |
 [Index docs](../README.md) |
+[Galerie](./galerie-visuelle.md) |
 [Parcours](./parcours-demonstratifs.md) |
+[Supports ecran](./supports-ecran.md) |
 [Drive et confidentialite](./confiance-confidentialite.md) |
 [Sponsors](./sponsors-et-partenaires.md) |
 [Maturite](./maturite-et-limites.md) |
@@ -18,10 +20,23 @@ documents. Elle manque souvent d'un chemin clair pour comprendre ce que les
 documents prouvent, ce qu'il manque, quelle action faire maintenant et comment
 partager prudemment.
 
-![Coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+![CoproScope - ecran d'accueil PC](../assets/showcase/accueil-pc-coproscope-16x9.png)
 
 Ouvrir le visuel:
-[coffre et partage Drive chiffre](../assets/showcase/coffre-partage-drive-chiffre.png)
+[ecran d'accueil PC](../assets/showcase/accueil-pc-coproscope-16x9.png)
+
+## Voir D'Abord
+
+| Probleme | Publics |
+|---|---|
+| ![Les documents existent deja, le lien manque](../assets/showcase/probleme-lien-manque-16x9.png) | ![Une lecture pour chaque public](../assets/showcase/publics-entrees-coproscope-16x9.png) |
+
+| Preuve | Confiance |
+|---|---|
+| ![Preuve document PDF](../assets/showcase/preuve-document-pdf.png) | ![Confiance par conception](../assets/showcase/confiance-par-conception-16x9.png) |
+
+La selection complete des images et captures est ici:
+[Galerie visuelle](./galerie-visuelle.md).
 
 ## Pour Qui
 
@@ -63,7 +78,9 @@ La cible CoproScope est plus simple a expliquer:
 
 Les parcours les plus importants sont detailles ici:
 
+- [Galerie visuelle](./galerie-visuelle.md)
 - [Parcours demonstratifs](./parcours-demonstratifs.md)
+- [Supports ecran et carrousel](./supports-ecran.md)
 - [Strategie Drive et confidentialite](./confiance-confidentialite.md)
 - [Maturite et limites](./maturite-et-limites.md)
 - [Sponsors et partenaires](./sponsors-et-partenaires.md)
