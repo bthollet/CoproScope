@@ -100,7 +100,7 @@ Le fichier `controle_comptes_guide_<annee>.csv` est la vue actionnable pour cons
 - l'ecriture candidate reconstruite ;
 - le motif local, la prochaine action et la question syndic.
 
-Le fichier `regroupement_controle_comptes_<annee>.csv` sert de table de lecture rapide avant AG: il regroupe les lignes du guide par priorite, fournisseur, anomalie facture et statut de rapprochement. Il donne le nombre de factures, le total TTC, le nombre de questions syndic et quelques exemples de factures a ouvrir en premier.
+Le fichier `regroupement_controle_comptes_<annee>.csv` sert de table de lecture rapide avant assemblee generale: il regroupe les lignes du guide par priorite, fournisseur, anomalie facture et statut de rapprochement. Il donne le nombre de factures, le total TTC, le nombre de questions syndic et quelques exemples de factures a ouvrir en premier.
 
 Le fichier `questions_syndic_comptascope_<annee>.md` reprend uniquement les lignes ouvertes. Les blocs `Objet / Bonjour / question / action attendue` sont faits pour etre relus puis copies dans un mail ou une demande de piece. Les lignes `OK` ne generent pas de question.
 
@@ -123,6 +123,35 @@ Les alias et sources de lignes se configurent dans `settings.comptascope`:
 Si `invoice_evidence_csv` est renseigne, ComptaScope repart de ce registre deja extrait au lieu de rescanner les bruts. C'est le mode adapte aux reprises d'audit: on peut enrichir les rapprochements, les alias et les rapports sans refaire toute l'extraction documentaire.
 
 Le mecanisme d'alias automatique reste prudent: un alias n'est auto-applique que lorsqu'au moins deux factures du meme fournisseur ont un montant exact, une famille comptable compatible, et le meme indice fournisseur structure dans l'etat des depenses. Les alias deduits seulement d'un libelle libre ou d'un cas unitaire restent proposes en `A_CONTROLER`.
+
+## Methode agile de recette Comptes
+
+Les petites iterations ComptaScope se font sur une route reelle, avec une
+equipe agile tracee: coordinateur, designer/facilitateur, utilisateur novice,
+expert CS/compta, dev front/back et QA. Quand la route existe deja et que la
+tranche corrige seulement le vocabulaire ou la prudence metier, le visuel IA et
+le blueprint peuvent etre annules avec `VISUEL_IA_WAIVED` et
+`BLUEPRINT_WAIVED`. Si la structure de l'ecran change, ils redeviennent
+obligatoires avant dev.
+
+Regles generalisables issues de l'iteration `CC-IT-016`:
+
+- le code courant et les tests priment sur une trace documentaire ancienne;
+- une source absente doit etre nommee explicitement, par exemple banque ou
+  grand livre non fourni;
+- les actions utilisent des verbes de controle: tracer, verifier, garder une
+  reserve, preparer une question;
+- une question syndic reste un brouillon a relire et copier, jamais un envoi;
+- la trace conseil syndical ne valide ni paiement ni comptabilite officielle;
+- les tests de route doivent verifier les mots que le membre du conseil
+  syndical novice voit vraiment.
+
+Complement UI issu de `CC-IT-017`: un ecran ComptaScope de bon niveau ne doit
+pas afficher les noms techniques internes. Les sources doivent etre scannables,
+et chaque absence de source doit etre aussi visible qu'une preuve presente.
+Les termes `CS`, `AG`, `append-only`, `read model` ou equivalents restent hors
+premier niveau UI; on parle de conseil syndical, assemblee generale, journal
+local et controles locaux.
 
 ## Limites
 

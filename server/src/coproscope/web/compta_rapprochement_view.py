@@ -29,19 +29,19 @@ VALIDATION_FIELDS = [
 ]
 
 DECISION_LABELS = {
-    "validated": "Valide humainement",
-    "validated_with_reserve": "Valide avec reserve",
-    "question_needed": "Piece demandee",
+    "validated": "Relu par le conseil syndical",
+    "validated_with_reserve": "Reserve visible",
+    "question_needed": "Question syndic a poser",
     "decision_needed": "Decision ou devis demande",
     "rejected": "Ecarte du rapprochement",
 }
 
 DECISION_ACTIONS = [
-    {"key": "validated", "label": "Valider", "tone": "ok"},
-    {"key": "validated_with_reserve", "label": "Valider avec reserve", "tone": "warn"},
-    {"key": "question_needed", "label": "Demander piece", "tone": "warn"},
+    {"key": "validated", "label": "Marquer comme relu par le conseil", "tone": "ok"},
+    {"key": "validated_with_reserve", "label": "Garder une reserve visible", "tone": "warn"},
+    {"key": "question_needed", "label": "Preparer question syndic", "tone": "warn"},
     {"key": "decision_needed", "label": "Demander decision ou devis", "tone": "warn"},
-    {"key": "rejected", "label": "Ecarter", "tone": "danger"},
+    {"key": "rejected", "label": "Ecarter ce rapprochement", "tone": "danger"},
 ]
 
 FORBIDDEN_PATTERNS = (
@@ -102,7 +102,7 @@ def build_compta_reconciliation_view(
         year = instance
         instance = None
     review_rows = _review_rows(instance, year)
-    source_label = "Synthese derivee" if review_rows else "Read model a alimenter"
+    source_label = "Synthese derivee" if review_rows else "Controle a preparer"
     if instance is None and not review_rows:
         review_rows = _fallback_rows(year)
         source_label = "FICTIF"
@@ -121,27 +121,28 @@ def build_compta_reconciliation_view(
         if items and source_label != "FICTIF"
         else "Scenario FICTIF: file de demonstration, aucun envoi."
         if items
-        else "Read model non alimente: lancer ComptaScope ou importer une synthese derivee."
+        else "Aucune ligne a controler: lancez ComptaScope ou importez une synthese derivee."
     )
     return {
-        "title": "Rapprochement compta",
-        "headline": "Rapprochement compta, banque, factures et decisions",
+        "title": "Controle des comptes",
+        "headline": "Controle des comptes avec sources separees",
         "read_model_name": READ_MODEL_NAME,
+        "eyebrow": "ComptaScope - controle prudent des factures et lignes comptables",
         "notice": notice,
         "status": {
-            "label": "Validation humaine ouverte" if open_count else "Aucun blocage ouvert",
-            "summary": "Chaque ligne garde la suggestion separee de la decision humaine.",
+            "label": "Controle humain ouvert" if open_count else "Aucun blocage ouvert",
+            "summary": "Chaque ligne separe ce que CoproScope suggere de ce que le conseil decide.",
             "cta": "Ouvrir la file",
         },
         "summary": [
-            _metric("A traiter avant AG", str(counts.get("P1", 0)), "Lignes sans faisceau suffisant."),
+            _metric("A traiter avant assemblee", str(counts.get("P1", 0)), "Lignes sans faisceau suffisant."),
             _metric("A confirmer", str(counts.get("P2", 0)), "Candidats ou rapprochements ambigus."),
-            _metric("Validees ou reservees", str(validated_count), "Traces humaines append-only."),
+            _metric("Relues ou reservees", str(validated_count), "Traces locales du conseil."),
             _metric("Questions syndic", str(question_count), "Brouillons sans envoi automatique."),
         ],
         "definitions": [
-            _entry("Comptabilite", "Ligne issue du grand livre ou de l'etat des depenses."),
-            _entry("Banque", "Mouvement bancaire ou indice de paiement a rattacher."),
+            _entry("Comptabilite", "Ligne derivee d'un etat financier ou d'une annexe comptable. Grand livre non fourni."),
+            _entry("Banque", "Source non fournie dans le corpus actuel: aucun paiement n'est confirme."),
             _entry("Facture", "Piece fournisseur et montant TTC extraits ou confirmes."),
             _entry("Decision / devis", "Vote, devis, bon ou reserve qui justifie la depense."),
         ],
@@ -152,9 +153,9 @@ def build_compta_reconciliation_view(
         "status_counts": _status_counts(items),
         "decision_gates": [
             _entry("Suggestion locale", "Le faisceau propose n'est pas une preuve ni une ecriture officielle."),
-            _entry("Reserve visible", "Une validation avec reserve reste ouverte pour l'AG."),
+            _entry("Reserve visible", "Une reserve reste lisible jusqu'au rapport d'assemblee."),
             _entry("Question externe", "Le brouillon se copie hors CoproScope; aucun envoi n'est declenche."),
-            _entry("Export bloque", "Les lignes rouges ne partent pas en rapport AG confirme."),
+            _entry("Rapport bloque", "Les lignes rouges ne partent pas en rapport confirme."),
         ],
         "boundaries": [
             _entry("Donnees derivees", "Aucun original comptable, bancaire ou facture n'est servi ici."),
@@ -162,9 +163,9 @@ def build_compta_reconciliation_view(
             _entry("References opaques", "Les identifiants restent courts et sans chemin local."),
         ],
         "version_log": [
-            f"Read model {READ_MODEL_NAME} expose depuis le guide ComptaScope.",
-            "Validations humaines stockees dans un journal append-only local.",
-            "Envois syndic, ecritures comptables officielles et export AG automatique bloques.",
+            "Guide ComptaScope expose depuis les controles comptables locaux.",
+            "Traces humaines stockees dans un journal local non reecrit.",
+            "Envois syndic, ecritures comptables officielles et rapport automatique bloques.",
         ],
         "shell_model": _shell_model(year),
     }
@@ -256,7 +257,9 @@ def _queue_item(row: Mapping[str, Any], *, index: int, validation: Mapping[str, 
         "question_syndic": question,
         "copy_text": _public_text(row.get("bloc_copiable") or question, limit=360),
         "validation": dict(validation) if validation else None,
-        "diffusion": "CS seulement - a relire avant AG" if priority != "OK" else "Interne CS - diffusable apres controle",
+        "diffusion": "Conseil syndical seulement - a relire avant assemblee"
+        if priority != "OK"
+        else "Interne conseil - diffusable apres controle",
     }
 
 
@@ -328,7 +331,7 @@ def _decision_cell_label(row: Mapping[str, Any], priority: str) -> str:
 
 def _decision_cell_detail(row: Mapping[str, Any], priority: str) -> str:
     if priority == "OK":
-        return "Aucun blocage detecte, validation humaine conservee."
+        return "Aucun blocage detecte, trace humaine conservee."
     action = _first(row, "prochaine_action", "motif")
     return action or "Verifier le vote, le devis ou la reserve avant validation."
 
@@ -338,8 +341,8 @@ def _status_label(row: Mapping[str, Any], priority: str, validation: Mapping[str
         return validation.get("decision_label", "") or DECISION_LABELS.get(validation.get("decision", ""), "Trace humaine")
     label = _public_text(row.get("libelle_statut"), limit=70)
     if label:
-        return label
-    return {"P1": "A traiter avant AG", "P2": "A confirmer", "OK": "OK a relire"}.get(priority, "A verifier")
+        return label.replace("avant AG", "avant assemblee").replace("rapport AG", "rapport d'assemblee")
+    return {"P1": "A traiter avant assemblee", "P2": "A confirmer", "OK": "OK a relire"}.get(priority, "A verifier")
 
 
 def _status_counts(items: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -386,10 +389,10 @@ def _strength(priority: str) -> str:
 
 def _default_next_action(priority: str) -> str:
     if priority == "P1":
-        return "Demander la piece ou le mouvement manquant avant AG."
+        return "Demander la piece ou le mouvement manquant avant assemblee."
     if priority == "P2":
-        return "Confirmer le faisceau puis valider avec ou sans reserve."
-    return "Relire puis valider si le conseil syndical confirme."
+        return "Confirmer le faisceau puis tracer avec ou sans reserve."
+    return "Relire puis tracer si le conseil syndical confirme."
 
 
 def _row_id(row: Mapping[str, Any], index: int) -> str:
@@ -521,7 +524,7 @@ def _fallback_rows(year: int) -> list[dict[str, str]]:
             "ttc": "1200.00",
             "niveau_preuve": "facture extraite",
             "statut_rapprochement": "NON_RAPPROCHE",
-            "libelle_statut": "A traiter avant AG",
+            "libelle_statut": "A traiter avant assemblee",
             "motif": "Aucun mouvement compatible n'est rattache.",
             "prochaine_action": "Demander mouvement bancaire et decision ou devis.",
             "question_syndic": "Pouvez-vous transmettre le mouvement bancaire et le devis associe ?",
@@ -555,7 +558,7 @@ def _shell_model(year: int) -> dict[str, Any]:
         "ux": {
             "shell": {
                 "app_title": "CoproScope",
-                "page_title": "Rapprochement compta",
+                "page_title": "Controle des comptes",
                 "active_page": "accounting",
                 "search_placeholder": "Rechercher fournisseur, facture ou ligne comptable...",
                 "notification_count": 0,

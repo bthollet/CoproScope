@@ -5,7 +5,7 @@
 <section class="cs-comptes-page" aria-labelledby="rappro-title">
   <header class="cs-page-header cs-comptes-header">
     <div>
-      <p class="eyebrow">ComptaScope - {{ view.read_model_name }}</p>
+      <p class="eyebrow">{{ view.eyebrow }}</p>
       <h2 id="rappro-title">{{ view.title }}</h2>
       <p class="lead">{{ view.status.summary }}</p>
     </div>
@@ -27,10 +27,10 @@
 
   <section class="panel" aria-labelledby="rappro-definitions-title">
     <div class="panel-head">
-      <h3 id="rappro-definitions-title">Quatre sources a relier</h3>
-      <span>{{ view.notice }}</span>
+      <h3 id="rappro-definitions-title">Sources du controle</h3>
+      <span>Banque et grand livre restent a fournir pour confirmer un paiement.</span>
     </div>
-    <div class="cs-card-list">
+    <div class="cs-card-list cs-rappro-source-grid">
       {% for definition in view.definitions %}
       <article class="cs-followup-card">
         <strong>{{ definition.label }}</strong>
@@ -43,7 +43,7 @@
   <section class="grid two" id="rappro-file">
     <div class="panel">
       <div class="panel-head">
-        <h3>File de validation humaine</h3>
+        <h3>Lignes a controler</h3>
         <span>{{ view['items']|length }} lignes</span>
       </div>
       <div class="cs-card-list" role="list" aria-label="Lignes de rapprochement">
@@ -56,18 +56,18 @@
         </a>
         {% else %}
         <article class="cs-followup-card">
-          <strong>Aucune ligne de rapprochement</strong>
+          <strong>Aucune ligne a controler</strong>
           <p>{{ view.notice }}</p>
         </article>
         {% endfor %}
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-head">
-        <h3>Detail ligne</h3>
+    <details class="panel cs-rappro-detail" open>
+      <summary class="panel-head cs-rappro-detail-summary">
+        <h3>Controle de la ligne</h3>
         <span>{{ view.selected.status_label if view.selected else 'Aucune selection' }}</span>
-      </div>
+      </summary>
       {% if view.selected %}
       {% set item = view.selected %}
       <article class="cs-focus-card cs-card-tone-{{ item.tone }}">
@@ -93,24 +93,27 @@
 
       <section class="panel" aria-labelledby="rappro-suggestion-title">
         <div class="panel-head">
-          <h3 id="rappro-suggestion-title">Suggestion et suite</h3>
+          <h3 id="rappro-suggestion-title">Question syndic et suite</h3>
           <span>Decision separee</span>
         </div>
         <p>{{ item.suggestion.reason or 'Rapprochement a relire.' }}</p>
         <p><strong>Prochaine action:</strong> {{ item.suggestion.next_action }}</p>
         {% if item.question_syndic %}
-        <p><strong>Question syndic:</strong> {{ item.question_syndic }}</p>
+        <p><strong>Question syndic a relire:</strong> {{ item.question_syndic }}</p>
         {% endif %}
         {% if item.copy_text %}
-        <p><strong>Brouillon a copier, aucun envoi automatique:</strong> {{ item.copy_text }}</p>
+        <p><strong>Question syndic a relire et copier, aucun envoi automatique:</strong> {{ item.copy_text }}</p>
+        {% else %}
+        <p><strong>Question syndic:</strong> aucune question prete pour cette ligne.</p>
         {% endif %}
       </section>
 
       <section class="panel" aria-labelledby="rappro-validation-title">
         <div class="panel-head">
-          <h3 id="rappro-validation-title">Validation humaine</h3>
+          <h3 id="rappro-validation-title">Trace conseil syndical</h3>
           <span>{{ item.validation.decision_label if item.validation else 'A tracer' }}</span>
         </div>
+        <p>Cette action ajoute seulement une trace locale de controle. Elle ne valide pas un paiement ni la comptabilite officielle.</p>
         {% if item.validation %}
         <p>{{ item.validation.decision_label }} - {{ item.validation.created_at }}</p>
         {% if item.validation.note %}
@@ -136,13 +139,13 @@
       {% else %}
       <p>{{ view.notice }}</p>
       {% endif %}
-    </div>
+    </details>
   </section>
 
   <section class="grid two">
     <div class="panel">
       <div class="panel-head">
-        <h3>Decisions avant AG</h3>
+        <h3>Decision avant rapport d'assemblee</h3>
         <span>Garde-fous</span>
       </div>
       <div class="cs-card-list">
@@ -158,7 +161,7 @@
     <div class="panel">
       <div class="panel-head">
         <h3>Diffusion</h3>
-        <span>Sources derivees</span>
+        <span>Sans brut ni source officielle manquante</span>
       </div>
       <div class="cs-card-list">
         {% for item in view.boundaries %}
@@ -173,7 +176,7 @@
 
   <section class="panel" aria-labelledby="rappro-version-title">
     <div class="panel-head">
-      <h3 id="rappro-version-title">Journal de versions</h3>
+      <h3 id="rappro-version-title">Historique local</h3>
       <span>Trace locale</span>
     </div>
     <ul class="compact-list">

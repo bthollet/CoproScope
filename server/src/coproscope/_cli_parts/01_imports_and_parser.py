@@ -25,6 +25,11 @@ from .modules import (
     docuscope,
     evidenceops,
     factureops,
+    drive_sync_now,
+    drive_watch,
+    drive_watch_loop,
+    gdrive_rights,
+    gdrive_transport,
     gdriveops,
     gristops,
     incidentops,
@@ -344,6 +349,55 @@ def build_parser() -> argparse.ArgumentParser:
         "--parent-sha256",
         help="Hash parent attendu; vide pour la premiere generation, jamais un chemin ou un secret.",
     )
+    drive_pull = drive_subparsers.add_parser(
+        "pull-package",
+        aliases=["recuperer-paquet", "readback"],
+        help="Telecharger le dernier paquet chiffre visible dans le dossier Drive choisi.",
+    )
+    drive_pull.add_argument("--folder-id", required=True, help="ID du dossier Google Drive partage; jamais affiche dans la sortie.")
+    drive_pull.add_argument("--sync-root", required=True, help="Surface locale qui recevra uniquement les paquets chiffres.")
+    drive_pull.add_argument("--token-path", help="Chemin du token utilisateur local, hors Git.")
+    drive_sync = drive_subparsers.add_parser(
+        "sync-now",
+        aliases=["synchroniser-maintenant", "sync"],
+        parents=[instance_parent],
+        help="Lire Drive puis publier ce poste en une action manuelle.",
+    )
+    drive_sync.add_argument("--folder-id", required=True, help="ID du dossier Google Drive partage; jamais affiche dans la sortie.")
+    drive_sync.add_argument("--sync-root", required=True, help="Surface locale qui contient uniquement les paquets chiffres.")
+    drive_sync.add_argument("--local-state-root", required=True, help="Etat local de ce poste; doit rester hors Drive et hors Git.")
+    drive_sync.add_argument("--token-path", help="Chemin du token utilisateur local, hors Git.")
+    drive_watch_once = drive_subparsers.add_parser(
+        "watch-once",
+        aliases=["surveiller-une-fois"],
+        parents=[instance_parent],
+        help="Faire un tour de surveillance Drive sans boucle permanente.",
+    )
+    drive_watch_once.add_argument("--folder-id", required=True, help="ID du dossier Google Drive partage; jamais affiche dans la sortie.")
+    drive_watch_once.add_argument("--sync-root", required=True, help="Surface locale qui contient uniquement les paquets chiffres.")
+    drive_watch_once.add_argument("--local-state-root", required=True, help="Etat local de ce poste; doit rester hors Drive et hors Git.")
+    drive_watch_once.add_argument("--local-change-marker", help="Marqueur local opaque; jamais affiche, seulement compare par empreinte.")
+    drive_watch_once.add_argument("--token-path", help="Chemin du token utilisateur local, hors Git.")
+    drive_watch_loop_parser = drive_subparsers.add_parser(
+        "watch-loop",
+        aliases=["surveiller"],
+        parents=[instance_parent],
+        help="Surveiller Drive en cycles bornes; Ctrl+C pour arreter en usage interactif.",
+    )
+    drive_watch_loop_parser.add_argument("--folder-id", required=True, help="ID du dossier Google Drive partage; jamais affiche dans la sortie.")
+    drive_watch_loop_parser.add_argument("--sync-root", required=True, help="Surface locale qui contient uniquement les paquets chiffres.")
+    drive_watch_loop_parser.add_argument("--local-state-root", required=True, help="Etat local de ce poste; doit rester hors Drive et hors Git.")
+    drive_watch_loop_parser.add_argument("--local-change-marker", help="Marqueur local opaque; jamais affiche, seulement compare par empreinte.")
+    drive_watch_loop_parser.add_argument("--interval-seconds", type=float, default=15.0, help="Delai entre deux controles Drive.")
+    drive_watch_loop_parser.add_argument("--max-cycles", type=int, help="Nombre de tours a executer; omis = boucle jusqu'a arret manuel.")
+    drive_watch_loop_parser.add_argument("--token-path", help="Chemin du token utilisateur local, hors Git.")
+    drive_folder_rights = drive_subparsers.add_parser(
+        "folder-rights",
+        aliases=["droits-dossier", "share-status"],
+        help="Verifier les droits Google du dossier choisi sans afficher les comptes.",
+    )
+    drive_folder_rights.add_argument("--folder-id", required=True, help="ID du dossier Google Drive partage; jamais affiche dans la sortie.")
+    drive_folder_rights.add_argument("--token-path", help="Chemin du token utilisateur local, hors Git.")
 
     instance_parser = subparsers.add_parser("instance", aliases=["instances"], parents=[instance_parent], help="Gestion locale d'une instance CoproScope.")
     instance_subparsers = instance_parser.add_subparsers(dest="instance_command", required=True)
