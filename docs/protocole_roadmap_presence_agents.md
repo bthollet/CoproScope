@@ -49,9 +49,9 @@ Le tableau contient des slots de role, pas une seconde roadmap:
 - les fichiers interdits;
 - le livrable et les tests/preuves.
 
-Un worker ne peut pas creer de `CH-*`, choisir un `ORD-*` ou modifier la
-heartbeat canonique. S'il ne trouve aucun slot `A_PRENDRE`, il s'arrete en
-repondant qu'il attend l'orchestrateur.
+Un worker ne peut pas creer de `CH-*`, choisir un `ORD-*`, modifier l'objectif
+actif Codex ou creer une relance automatique. S'il ne trouve aucun slot
+`A_PRENDRE`, il s'arrete en repondant qu'il attend l'orchestrateur.
 
 ## Nommage des chantiers
 

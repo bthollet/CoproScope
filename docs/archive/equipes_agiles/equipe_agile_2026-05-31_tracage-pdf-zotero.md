@@ -163,7 +163,12 @@ Wording novice retenu:
 
 ## Resultat backend V1
 
-Statut: `PRET_A_INTEGRER`.
+Statut methode: `EN_ATTENTE_USER`.
+
+Rectification du 2026-05-31 01:36: cette tranche est techniquement verte, mais
+elle n'a pas suivi la sequence equipe agile du repo. Elle ne peut donc pas etre
+consideree comme une iteration validee tant que les roles prevus par la
+doctrine n'ont pas rendu.
 
 Livraison:
 
@@ -191,3 +196,14 @@ Limites:
 - pas encore de lecteur PDF integre;
 - pas encore de visuel IA, blueprint UI dedie ou qualification novice;
 - pas de copie de code Zotero.
+
+Revue d'equipe a lancer avant integration:
+
+- expert domaine DocOps/preuve: verifier les invariants metier et la
+  distinction preuve candidate/preuve confirmee;
+- QA privacy/regression: verifier anti-fuite, non-mutation PDF, hash et
+  compatibilite annotations existantes;
+- novice usage: verifier que les sorties publiques ne font pas croire a une
+  validation automatique;
+- designer/facilitateur seulement pour l'iteration UI suivante, avec visuel IA
+  bitmap et blueprint UI dedie avant tout dev d'ecran.
