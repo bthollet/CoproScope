@@ -511,7 +511,14 @@ def _public_text(value: Any, *, limit: int) -> str:
     text = " ".join(str(value or "").split())
     for pattern in FORBIDDEN_PATTERNS:
         text = pattern.sub("[retire]", text)
-    text = re.sub(r"#?\s*\d*[_ -]?(?:devis|facture|annexe|etat)[\w.-]*\.(?:pdf|docx?|xlsx?)", "piece comptable", text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"#?\s*\d*[\s_-]*(?:devis|facture|annexe|etat)(?:[\s_.-]+[^\s,;:|()]+)*\.(?:pdf|docx?|xlsx?)",
+        "piece comptable",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"\bsha256,count,doc_ids,paths\b", "piece comptable", text, flags=re.IGNORECASE)
+    text = re.sub(r"(?<!\w)[^\s,;:|()]+\.(?:pdf|docx?|xlsx?)(?!\w)", "piece comptable", text, flags=re.IGNORECASE)
     text = re.sub(r"\bfacture\s+(?:vid|vide)\b", "facture", text, flags=re.IGNORECASE)
     text = re.sub(r"\b(raw|restricted|logs?|private|system|tokens?|secrets?|prompts?|oauth)\b", "[retire]", text, flags=re.IGNORECASE)
     text = text.strip()

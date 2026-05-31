@@ -101,6 +101,7 @@ def save_zone_trace(
         raise ValueError("empreinte document requise")
 
     page = _required_page(form.get("page"))
+    _validate_page_in_document(instance, document_ref, document, page)
     zone = _required_zone(form)
     hash_status = _current_document_hash_status(instance, document_ref, document, document_hash)
     comment = _comment(form.get("comment"))
@@ -206,6 +207,19 @@ def _required_page(value: Any) -> int:
     return page
 
 
+def _validate_page_in_document(
+    instance: InstanceConfig,
+    document_ref: str,
+    document: Mapping[str, Any],
+    page: int,
+) -> None:
+    page_count = _positive_int(document.get("page_count"))
+    if page_count <= 0:
+        page_count = _positive_int(_registered_document(instance, document_ref).get("page_count"))
+    if page_count > 0 and page > page_count:
+        raise ValueError("page de trace hors document")
+
+
 def _required_zone(form: Mapping[str, Any]) -> dict[str, float]:
     zone = {
         "x": _required_float_value(form.get("zone_x"), "zone_x"),
@@ -233,6 +247,14 @@ def _required_float_value(value: Any, field: str) -> float:
     if parsed < 0 or parsed > 1:
         raise ValueError("zone de trace hors page")
     return parsed
+
+
+def _positive_int(value: Any) -> int:
+    try:
+        parsed = int(str(value or "").strip())
+    except (TypeError, ValueError):
+        return 0
+    return parsed if parsed > 0 else 0
 
 
 def _current_document_hash_status(

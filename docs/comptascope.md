@@ -234,6 +234,16 @@ est replie. Cette regle vaut pour les autres modules: chaque repli utile au
 premier ecran doit etre lisible par un membre novice du conseil syndical sans
 comprendre les conventions HTML.
 
+Complement UI/executable issu de `CC-IT-027`: aucun libelle principal visible
+ne doit reprendre un nom de fichier brut ou un marqueur OCR/vide. Les exemples
+rejetes sont `*.pdf`, `*.doc`, `*.xlsx`, `Facture Vid`, `Facture vide` et les
+colonnes techniques comme `sha256,count,doc_ids,paths`. La page remplace ces
+fragments par un libelle metier neutre (`Piece comptable a qualifier`) et garde
+les identifiants de preuve internes (`DOC-*`) seulement comme ancrage
+technique. La recette doit verifier l'instance reelle chargee par
+`CoproScope.exe`, car les fuites de libelles apparaissent souvent dans la file
+longue et pas seulement sur la ligne de demonstration.
+
 ## Limites
 
 - Pas de saisie comptable complete.
