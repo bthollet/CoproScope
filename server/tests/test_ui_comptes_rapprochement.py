@@ -208,6 +208,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("827 lignes", response.text)
+        self.assertLess(response.text.index('id="rappro-file"'), response.text.index("cs-comptes-kpis"))
+        self.assertLess(response.text.index('id="rappro-file"'), response.text.index("rappro-definitions-title"))
         self.assertLess(response.text.index("cs-rappro-detail"), response.text.index("cs-rappro-queue-panel"))
         self.assertLess(response.text.index("Rapprochement 4 sources"), response.text.index("Lignes a controler"))
         self.assertIn(".cs-rappro-queue-list", css)
