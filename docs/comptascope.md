@@ -252,6 +252,13 @@ piece reste disponible, mais il ne doit pas repousser la comparaison compta /
 banque / facture / decision sous la ligne de flottaison. La recette mesure la
 position reelle dans le navigateur integre et garde l'absence de libelles bruts.
 
+Complement UI/executable issu de `CC-IT-029`: une matrice dite quatre sources
+doit rester visuellement en quatre colonnes dans la fenetre executable quand la
+largeur utile le permet. Le repli a deux colonnes est reserve aux largeurs
+tres etroites, pas au poste de recette desktop. La recette verifie le style
+calcule, les positions des quatre premieres cellules, l'absence de scroll
+horizontal et l'absence de colonnes techniques visibles comme `doc_ids`.
+
 ## Limites
 
 - Pas de saisie comptable complete.

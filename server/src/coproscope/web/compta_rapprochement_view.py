@@ -517,7 +517,8 @@ def _public_text(value: Any, *, limit: int) -> str:
         text,
         flags=re.IGNORECASE,
     )
-    text = re.sub(r"\bsha256,count,doc_ids,paths\b", "piece comptable", text, flags=re.IGNORECASE)
+    tech_headers = r"\b(?:sha256,count,doc_ids,paths|date,document_type,count,doc_ids,examples)\b"
+    text = re.sub(tech_headers, "piece comptable", text, flags=re.IGNORECASE)
     text = re.sub(r"(?<!\w)[^\s,;:|()]+\.(?:pdf|docx?|xlsx?)(?!\w)", "piece comptable", text, flags=re.IGNORECASE)
     text = re.sub(r"\bfacture\s+(?:vid|vide)\b", "facture", text, flags=re.IGNORECASE)
     text = re.sub(r"\b(raw|restricted|logs?|private|system|tokens?|secrets?|prompts?|oauth)\b", "[retire]", text, flags=re.IGNORECASE)

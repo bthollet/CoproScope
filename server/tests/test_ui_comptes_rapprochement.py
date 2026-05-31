@@ -110,7 +110,11 @@ class UiComptesRapprochementTests(unittest.TestCase):
                     doc_id="DOC-FAC-FILE",
                     ttc="73333.05",
                     question_syndic="Merci de rapprocher la facture Vid de # 09_Devis_ventilation_Baillargues.pdf.",
-                    bloc_copiable="Controle - Facture abour.pdf - # 09_Devis_ventilation_Baillargues.pdf - Vid",
+                    motif="Colonnes sources date,document_type,count,doc_ids,examples.",
+                    bloc_copiable=(
+                        "Controle - Facture abour.pdf - # 09_Devis_ventilation_Baillargues.pdf - "
+                        "date,document_type,count,doc_ids,examples - Vid"
+                    ),
                 )
             ],
         )
@@ -120,6 +124,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertEqual(item["title"], "Piece comptable a qualifier")
         self.assertNotIn(".pdf", visible)
         self.assertNotIn("sha256,count,doc_ids,paths", visible)
+        self.assertNotIn("date,document_type,count,doc_ids,examples", visible)
         self.assertNotIn("Facture abour", visible)
         self.assertNotIn("abour.pdf", visible)
         self.assertNotIn("Facture Vid", item["subtitle"])
@@ -229,7 +234,11 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("source manquante", text)
         self.assertIn('href="/documents/DOC-FAC-001?token=local-secret"', response.text)
         self.assertIn("grid-template-columns: repeat(4, minmax(0, 1fr))", css)
+        self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("@media (max-width: 560px)", css)
+        self.assertNotIn("@media (max-width: 1320px)", css)
+        imports = (static_root / "styles.css").read_text(encoding="utf-8")
+        self.assertIn("styles_part_30.css?v=20260531-compta-029", imports)
 
     def test_long_queue_keeps_detail_before_scrollable_line_list(self) -> None:
         write_csv(
@@ -272,6 +281,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("max-height: min(680px, calc(100vh - 174px))", css)
         self.assertIn("overflow-y: auto", css)
         self.assertIn("@media (max-width: 980px)", css)
+        self.assertIn("@media (max-width: 640px)", css)
         self.assertIn(".cs-comptes-header .cs-header-tools", css)
         self.assertIn("flex: 0 1 auto", css)
         self.assertIn("flex-direction: row", css)
