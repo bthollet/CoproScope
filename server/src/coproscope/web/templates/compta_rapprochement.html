@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% set view = rapprochement %}
 {% block topbar_title %}{{ view.title }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+{% block topbar_action %}
+<a class="button-link cs-top-action" href="#rappro-validation">Tracer le controle</a>
+{% endblock %}
 {% block content %}
 <section class="cs-comptes-page" aria-labelledby="rappro-title">
   <header class="cs-page-header cs-comptes-header">

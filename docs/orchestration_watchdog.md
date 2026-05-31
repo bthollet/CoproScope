@@ -67,6 +67,9 @@ Regles serveur:
 - garder le serveur dans un PowerShell visible, identifiable par port et
   `CONV-*`;
 - arreter par `Ctrl+C`, pas par kill de processus;
+- fermer apres recette ou apres merge, sauf demande explicite de Brice de le
+  garder ouvert pour un essai immediat; tracer alors le port, l'heure et la
+  personne responsable de l'arret;
 - ne pas scanner les ports ou processus;
 - si un port est douteux, noter le conflit et prendre un autre port documente
   dans `8780` a `8799`;

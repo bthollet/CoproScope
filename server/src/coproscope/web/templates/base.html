@@ -167,6 +167,7 @@
           <p class="eyebrow">CoproScope local</p>
           <h1>{% block topbar_title %}{{ shell.page_title|default(instance.name|default('CoproScope')) }}{% endblock %}</h1>
         </div>
+        {% block topbar_search %}
         <form class="cs-search" action="{{ token_href('/documents') }}" method="get" role="search">
           {% if ui_token_param %}
           <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
@@ -174,6 +175,7 @@
           <label class="sr-only" for="cs-global-search">Rechercher</label>
           <input id="cs-global-search" name="q" type="search" placeholder="{{ shell.search_placeholder|default('Rechercher documents, actions...') }}">
         </form>
+        {% endblock %}
         <div class="instance-meta" aria-label="Contexte du coffre local">
           <span>Exercice {{ instance.year|default('2025') }}</span>
           <span>Coffre {{ instance.id|default('local') }}</span>
@@ -181,7 +183,9 @@
           <a class="instance-switch-link" href="{{ instance_switcher_href }}">Changer</a>
           {% endif %}
         </div>
+        {% block topbar_action %}
         <a class="button-link cs-top-action" href="{{ token_href('/demandes') }}"><span aria-hidden="true">+</span> Nouvelle demande</a>
+        {% endblock %}
       </header>
 
       <form id="cs-global-drop-form" class="cs-global-drop-form" action="/depot{{ ui_token_query }}" method="post" enctype="multipart/form-data" aria-label="Depot global dans le coffre local">

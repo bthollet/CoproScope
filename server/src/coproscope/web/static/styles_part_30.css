@@ -244,6 +244,10 @@
   text-underline-offset: 2px;
 }
 
+.cs-topbar:not(:has(.cs-search)) {
+  grid-template-columns: minmax(0, 1fr) auto max-content;
+}
+
 @media (max-width: 640px) {
   .cs-rappro-matrix-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
