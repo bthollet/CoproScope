@@ -15,31 +15,6 @@
     </div>
   </header>
 
-  <section class="cs-comptes-kpis" aria-label="Indicateurs rapprochement">
-    {% for metric in view.summary %}
-    <a class="cs-comptes-kpi cs-tone-{{ 'danger' if loop.index == 1 else 'warn' if loop.index in [2, 4] else 'ok' }}" href="#rappro-file">
-      <span>{{ metric.label }}</span>
-      <strong>{{ metric.value }}</strong>
-      <small>{{ metric.detail }}</small>
-    </a>
-    {% endfor %}
-  </section>
-
-  <section class="panel" aria-labelledby="rappro-definitions-title">
-    <div class="panel-head">
-      <h3 id="rappro-definitions-title">Sources du controle</h3>
-      <span>Banque et grand livre restent a fournir pour confirmer un paiement.</span>
-    </div>
-    <div class="cs-card-list cs-rappro-source-grid">
-      {% for definition in view.definitions %}
-      <article class="cs-followup-card">
-        <strong>{{ definition.label }}</strong>
-        <p>{{ definition.detail }}</p>
-      </article>
-      {% endfor %}
-    </div>
-  </section>
-
   <section class="cs-rappro-workbench" id="rappro-file">
     <details class="panel cs-rappro-detail" open>
       <summary class="panel-head cs-rappro-detail-summary">
@@ -152,6 +127,31 @@
         </article>
         {% endfor %}
       </div>
+    </div>
+  </section>
+
+  <section class="cs-comptes-kpis" aria-label="Indicateurs rapprochement">
+    {% for metric in view.summary %}
+    <a class="cs-comptes-kpi cs-tone-{{ 'danger' if loop.index == 1 else 'warn' if loop.index in [2, 4] else 'ok' }}" href="#rappro-file">
+      <span>{{ metric.label }}</span>
+      <strong>{{ metric.value }}</strong>
+      <small>{{ metric.detail }}</small>
+    </a>
+    {% endfor %}
+  </section>
+
+  <section class="panel" aria-labelledby="rappro-definitions-title">
+    <div class="panel-head">
+      <h3 id="rappro-definitions-title">Sources du controle</h3>
+      <span>Banque et grand livre restent a fournir pour confirmer un paiement.</span>
+    </div>
+    <div class="cs-card-list cs-rappro-source-grid">
+      {% for definition in view.definitions %}
+      <article class="cs-followup-card">
+        <strong>{{ definition.label }}</strong>
+        <p>{{ definition.detail }}</p>
+      </article>
+      {% endfor %}
     </div>
   </section>
 
