@@ -105,12 +105,12 @@ class UiComptesRapprochementTests(unittest.TestCase):
             [
                 _review_row(
                     review_id="REV-2025-FILE-001",
-                    fournisseur="# 09_Devis_ventilation_Baillargues.pdf",
-                    numero_facture="Vid",
+                    fournisseur="sha256,count,doc_ids,paths",
+                    numero_facture="abour.pdf",
                     doc_id="DOC-FAC-FILE",
                     ttc="73333.05",
                     question_syndic="Merci de rapprocher la facture Vid de # 09_Devis_ventilation_Baillargues.pdf.",
-                    bloc_copiable="Controle - # 09_Devis_ventilation_Baillargues.pdf - Vid",
+                    bloc_copiable="Controle - Facture abour.pdf - # 09_Devis_ventilation_Baillargues.pdf - Vid",
                 )
             ],
         )
@@ -119,6 +119,9 @@ class UiComptesRapprochementTests(unittest.TestCase):
         visible = str(item)
         self.assertEqual(item["title"], "Piece comptable a qualifier")
         self.assertNotIn(".pdf", visible)
+        self.assertNotIn("sha256,count,doc_ids,paths", visible)
+        self.assertNotIn("Facture abour", visible)
+        self.assertNotIn("abour.pdf", visible)
         self.assertNotIn("Facture Vid", item["subtitle"])
         self.assertNotIn("facture Vid", visible)
         self.assertNotIn("_Devis_", visible)

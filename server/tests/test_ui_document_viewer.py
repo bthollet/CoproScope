@@ -260,7 +260,7 @@ class DocumentViewerUiTests(unittest.TestCase):
                 "document_type": "PDF",
                 "status_ocr": "TEXT_EXTRACTED",
                 "classification_status": "A_RELIRE",
-                "page_count": "1",
+                "page_count": "3",
                 "text_char_count": "120",
             }
         )
@@ -272,17 +272,22 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Atelier de trace PDF", body)
         self.assertIn("Lecteur PDF", body)
-        self.assertIn("Miniature page 1", body)
+        self.assertIn("Miniatures des pages", body)
+        self.assertIn("Page precedente", body)
+        self.assertIn("Page suivante", body)
+        self.assertIn("Page 1 sur 3", body)
+        self.assertIn("Choisissez la page, puis encadrez la zone", body)
         self.assertIn("100 %", body)
-        self.assertIn("Zone a selectionner", body)
+        self.assertIn("Zone a selectionner sur la page 1", body)
         self.assertIn("Annotations", body)
         self.assertIn("Historique", body)
         self.assertIn("Informations techniques et traitement local", body)
         self.assertIn("Tracer une preuve candidate", body)
-        self.assertIn("Enregistrer comme trace candidate", body)
+        self.assertIn("Enregistrer cette zone comme trace candidate", body)
         self.assertIn("Dessinez une zone sur la page", body)
         self.assertIn("Zone a selectionner", body)
         self.assertIn("data-pdf-trace-workbench", response.text)
+        self.assertIn('data-pdf-trace-page-count="3"', response.text)
         self.assertIn("data-pdf-trace-selection", response.text)
         self.assertIn("data-pdf-trace-form", response.text)
         self.assertIn("data-pdf-trace-submit disabled", response.text)
@@ -303,7 +308,7 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertLess(body.index("Lecteur PDF"), body.index("Parcours novice et point d'action"))
         self.assertLess(body.index("Le PDF original n'est pas modifie."), body.index("Annotations"))
         self.assertLess(body.index("Texte non confirme : seule la zone encadree est gardee."), body.index("Annotations"))
-        self.assertLess(body.index("Enregistrer comme trace candidate"), body.index("Informations techniques et traitement local"))
+        self.assertLess(body.index("Enregistrer cette zone comme trace candidate"), body.index("Informations techniques et traitement local"))
         self.assertLess(body.index("Annotations"), body.index("Metadonnees"))
         self.assertLess(body.index("Historique"), body.index("Traitement local"))
         self.assertLess(body.index("Informations techniques et traitement local"), body.index("Moteur OCR"))
@@ -318,8 +323,11 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertIn("data-pdf-trace-selection", script)
         self.assertIn("data-pdf-trace-field=", script)
         self.assertIn("data-pdf-trace-submit", script)
+        self.assertIn("data-pdf-trace-page-next", script)
+        self.assertIn("setCurrentPage", script)
         self.assertIn("pointerdown", script)
         self.assertIn("pointerup", script)
+        self.assertNotIn('field(form, "page").value = "1"', script)
         self.assertNotIn("zotero_position", script)
         self.assertNotIn("source_engine", script)
         self.assertNotIn("rects", script)
@@ -344,7 +352,7 @@ class DocumentViewerUiTests(unittest.TestCase):
                 "document_type": "PDF",
                 "status_ocr": "TEXT_EXTRACTED",
                 "classification_status": "A_RELIRE",
-                "page_count": "1",
+                "page_count": "3",
                 "text_char_count": "120",
             }
         )
@@ -354,7 +362,7 @@ class DocumentViewerUiTests(unittest.TestCase):
         response = client.post(
             f"/documents/{doc_id}/traces",
             data={
-                "page": "1",
+                "page": "2",
                 "zone_x": "0.20",
                 "zone_y": "0.25",
                 "zone_width": "0.40",
@@ -373,7 +381,7 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertEqual(trace_fields, pdftrace_registry.PDF_TRACE_FIELDS)
         self.assertEqual(len(trace_rows), 1)
         self.assertEqual(trace_rows[0]["document_ref"], doc_id)
-        self.assertEqual(trace_rows[0]["page"], "1")
+        self.assertEqual(trace_rows[0]["page"], "2")
         self.assertEqual(trace_rows[0]["proof_status"], "preuve_candidate")
         self.assertEqual(trace_rows[0]["text_status"], "non_confirme")
         self.assertEqual(trace_rows[0]["document_hash_status"], "hash_conforme")
@@ -382,7 +390,7 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertEqual(detail.status_code, 200)
         self.assertIn("Trace candidate enregistree", body)
         self.assertIn("Non diffusable par defaut", body)
-        self.assertIn("Zone encadree page 1", body)
+        self.assertIn("Zone encadree page 2", body)
         self.assertIn("Le PDF original n'est pas modifie.", body)
         self.assertIn("Budget previsionnel a relire", body)
         self.assertNotIn("zotero_position", body)
@@ -562,6 +570,7 @@ class DocumentViewerUiTests(unittest.TestCase):
                 "original_path": relative_to(self.instance_root, pdf_path),
                 "source_zone": "STAGING",
                 "document_type": "PDF",
+                "page_count": "3",
             }
         )
         self._write_documents(fields, rows)
@@ -572,6 +581,7 @@ class DocumentViewerUiTests(unittest.TestCase):
             {"page": "1", "zone_x": "-0.1", "zone_y": "0.1", "zone_width": "0.2", "zone_height": "0.2"},
             {"page": "1", "zone_x": "0.9", "zone_y": "0.1", "zone_width": "0.2", "zone_height": "0.2"},
             {"page": "1", "zone_x": "x", "zone_y": "0.1", "zone_width": "0.2", "zone_height": "0.2"},
+            {"page": "4", "zone_x": "0.1", "zone_y": "0.1", "zone_width": "0.2", "zone_height": "0.2"},
         )
         client = self._client()
         for form in invalid_forms:

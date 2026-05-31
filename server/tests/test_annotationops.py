@@ -168,6 +168,27 @@ class AnnotationOpsTests(unittest.TestCase):
         self.assertIn("phone-like private data detected", reasons)
         self.assertIn("annotations must not modify source PDF/image", reasons)
 
+    def test_numeric_hash_is_not_rejected_as_phone_like_private_data(self) -> None:
+        numeric_hash = "sha256:" + ("1234567890abcdef" * 4)
+        annotation = CollaborativeAnnotation(
+            annotation_id="ANN-HASH-DIGITS",
+            document_ref="DOC-HASH-DIGITS",
+            document_hash=numeric_hash,
+            anchor=AnnotationAnchor(
+                page=1,
+                zone=AnnotationZone(x=0.1, y=0.1, width=0.2, height=0.2),
+                anchor_hash=numeric_hash,
+            ),
+            comment="Verifier la zone selectionnee.",
+            author_ref="user:cs-1",
+            created_at="2026-05-20T12:30:00Z",
+            point_ref="POINT-HASH",
+            action_ref="ACT-HASH",
+            proof_ref="PROOF-HASH",
+        )
+
+        self.assertEqual(validate_annotation(annotation), ())
+
     def test_static_documentation_covers_contract_markers(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         text = (repo_root / "docs" / "annotations_pdf_collaboratives.md").read_text(encoding="utf-8")

@@ -277,6 +277,8 @@ def _validate_anchor(anchor: AnnotationAnchor) -> tuple[ValidationIssue, ...]:
 def _validate_private_details(annotation: CollaborativeAnnotation) -> tuple[ValidationIssue, ...]:
     issues: list[ValidationIssue] = []
     for path, value in _walk_text(annotation):
+        if _is_hash_field(path) and _is_hash(value):
+            continue
         if contains_private_path(value):
             issues.append(ValidationIssue(path, "private path marker detected"))
         if _EMAIL_RE.search(value):
@@ -430,6 +432,10 @@ def _normalize_hash(value: Any) -> str:
 
 def _is_hash(value: Any) -> bool:
     return bool(_HASH_RE.match(_cell(value)))
+
+
+def _is_hash_field(path: str) -> bool:
+    return path.endswith(".document_hash") or path.endswith(".anchor_hash")
 
 
 def _first_text(row: Mapping[str, Any], fields: Iterable[str]) -> str:

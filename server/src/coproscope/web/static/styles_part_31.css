@@ -10,6 +10,24 @@
   min-height: 260px;
 }
 
+.cs-pdf-trace-page-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cs-pdf-trace-page-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-pdf-trace-page-picker .input {
+  width: 72px;
+}
+
 .cs-pdf-trace-page-content {
   position: relative;
   z-index: 1;

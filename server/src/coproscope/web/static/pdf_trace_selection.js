@@ -31,6 +31,15 @@
     return form.querySelector("[data-pdf-trace-field='" + name + "']");
   }
 
+  function formatLabel(template, page) {
+    return String(template || "").replace("{page}", String(page));
+  }
+
+  function numberFrom(value, fallback) {
+    var parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
   function setSubmitEnabled(button, enabled) {
     if (!button) {
       return;
@@ -53,10 +62,63 @@
     }
 
     var emptyLabel = workbench.getAttribute("data-pdf-trace-empty-label") || "Zone a selectionner";
-    var readyLabel = workbench.getAttribute("data-pdf-trace-ready-label") || "Zone selectionnee page 1";
+    var readyLabel = workbench.getAttribute("data-pdf-trace-ready-label") || "Zone selectionnee sur la page 1";
+    var pageCount = numberFrom(workbench.getAttribute("data-pdf-trace-page-count"), 1);
+    var currentPage = numberFrom(workbench.getAttribute("data-pdf-trace-current-page"), 1);
+    var pageInput = section.querySelector("[data-pdf-trace-page-input]");
+    var pagePrev = section.querySelector("[data-pdf-trace-page-prev]");
+    var pageNext = section.querySelector("[data-pdf-trace-page-next]");
+    var pageStatus = section.querySelector("[data-pdf-trace-page-status]");
+    var pdfObject = section.querySelector("[data-pdf-trace-pdf-object]");
     var start = null;
+
+    function emptyForPage() {
+      return formatLabel(emptyLabel, currentPage);
+    }
+
+    function readyForPage() {
+      return formatLabel(readyLabel, currentPage);
+    }
+
+    function updatePdfObject() {
+      if (!pdfObject) {
+        return;
+      }
+      var base = pdfObject.getAttribute("data-pdf-trace-pdf-src") || pdfObject.getAttribute("data") || "";
+      pdfObject.setAttribute("data", base.split("#")[0] + "#page=" + currentPage);
+    }
+
+    function resetSelection(message) {
+      field(form, "x").value = "";
+      field(form, "y").value = "";
+      field(form, "width").value = "";
+      field(form, "height").value = "";
+      box.hidden = true;
+      setSubmitEnabled(submit, false);
+      setStatus(section, message || emptyForPage());
+    }
+
+    function setCurrentPage(nextPage) {
+      currentPage = Math.max(1, Math.min(pageCount, numberFrom(nextPage, currentPage)));
+      field(form, "page").value = String(currentPage);
+      if (pageInput) {
+        pageInput.value = String(currentPage);
+      }
+      if (pagePrev) {
+        pagePrev.disabled = currentPage <= 1;
+      }
+      if (pageNext) {
+        pageNext.disabled = currentPage >= pageCount;
+      }
+      if (pageStatus) {
+        pageStatus.textContent = "Page " + currentPage + " sur " + pageCount;
+      }
+      updatePdfObject();
+      resetSelection(emptyForPage());
+    }
+
     setSubmitEnabled(submit, false);
-    setStatus(section, emptyLabel);
+    setCurrentPage(currentPage);
 
     function draw(current) {
       if (!start || !current.width || !current.height) {
@@ -82,22 +144,34 @@
       var width = Math.abs(current.x - start.x);
       var height = Math.abs(current.y - start.y);
       if (width < MIN_SIZE_PX || height < MIN_SIZE_PX) {
-        field(form, "x").value = "";
-        field(form, "y").value = "";
-        field(form, "width").value = "";
-        field(form, "height").value = "";
-        box.hidden = true;
-        setSubmitEnabled(submit, false);
-        setStatus(section, emptyLabel);
+        resetSelection(emptyForPage());
         return;
       }
-      field(form, "page").value = "1";
+      field(form, "page").value = String(currentPage);
       field(form, "x").value = formatUnit(left / current.width);
       field(form, "y").value = formatUnit(top / current.height);
       field(form, "width").value = formatUnit(width / current.width);
       field(form, "height").value = formatUnit(height / current.height);
       setSubmitEnabled(submit, true);
-      setStatus(section, readyLabel);
+      setStatus(section, readyForPage());
+    }
+
+    if (pagePrev) {
+      pagePrev.addEventListener("click", function () {
+        setCurrentPage(currentPage - 1);
+      });
+    }
+
+    if (pageNext) {
+      pageNext.addEventListener("click", function () {
+        setCurrentPage(currentPage + 1);
+      });
+    }
+
+    if (pageInput) {
+      pageInput.addEventListener("change", function () {
+        setCurrentPage(pageInput.value);
+      });
     }
 
     layer.addEventListener("pointerdown", function (event) {
@@ -137,13 +211,7 @@
       if (event.key !== "Escape") {
         return;
       }
-      field(form, "x").value = "";
-      field(form, "y").value = "";
-      field(form, "width").value = "";
-      field(form, "height").value = "";
-      box.hidden = true;
-      setSubmitEnabled(submit, false);
-      setStatus(section, emptyLabel);
+      resetSelection(emptyForPage());
     });
   }
 

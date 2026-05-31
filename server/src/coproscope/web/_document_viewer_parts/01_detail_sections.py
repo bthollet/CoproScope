@@ -96,6 +96,7 @@ def _public_document(row: dict[str, str]) -> dict[str, str]:
         "source_kind": row.get("source_kind", ""),
         "size_bytes": row.get("size_bytes", ""),
         "sha256": row.get("sha256", ""),
+        "page_count": row.get("page_count", ""),
     }
 
 
@@ -146,16 +147,24 @@ def _workflow(row: dict[str, str]) -> list[dict[str, str]]:
 def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str, object]) -> dict[str, object]:
     is_pdf = (row.get("extension") or "").lower().lstrip(".") == "pdf" or preview.get("kind") == "pdf"
     has_pdf_viewer = preview.get("kind") == "pdf"
+    page_count = _positive_int(row.get("page_count", ""))
+    page_count_known = page_count > 0
+    effective_page_count = page_count if page_count_known else 1
+    page_nav_available = bool(is_pdf and has_pdf_viewer and effective_page_count > 1)
     saved_traces = pdftrace_registry.public_trace_summaries(instance, row.get("doc_id", "")) if is_pdf else []
     return {
         "available": is_pdf,
         "has_pdf_viewer": has_pdf_viewer,
+        "page_nav_available": page_nav_available,
+        "page_count": str(effective_page_count),
+        "page_count_label": f"sur {effective_page_count}" if page_count_known else "nombre total de pages non connu",
+        "current_page": "1",
         "workshop_label": "Atelier de trace PDF" if is_pdf else "Atelier de preuve",
         "reader_label": "Lecteur PDF" if has_pdf_viewer else "Apercu PDF textuel" if is_pdf else "Apercu autorise",
-        "page_label": "Page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Document",
-        "thumbnail_label": "Miniature page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Apercu",
+        "page_label": f"Page 1 sur {effective_page_count}" if page_nav_available else "Page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Document",
+        "thumbnail_label": "Miniatures des pages" if page_nav_available else "Miniature page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Apercu",
         "title": "Tracer une preuve candidate" if is_pdf else "Preparer une preuve",
-        "primary_action": "Enregistrer comme trace candidate" if is_pdf else "Selection PDF indisponible",
+        "primary_action": "Enregistrer cette zone comme trace candidate" if page_nav_available else "Enregistrer comme trace candidate" if is_pdf else "Selection PDF indisponible",
         "status": "Preuve candidate a verifier",
         "limitation_notice": (
             "Dessinez une zone sur la page avant d'enregistrer comme trace candidate."
@@ -168,9 +177,9 @@ def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str,
             else "Cette fiche garde les memes garde-fous, sans promettre une selection dans un PDF."
         ),
         "source_notice": "Le PDF original n'est pas modifie." if is_pdf else "La source originale n'est pas modifiee.",
-        "selection_prompt": "Dessinez une zone sur la page",
-        "selection_empty_label": "Zone a selectionner",
-        "selection_ready_label": "Zone selectionnee page 1",
+        "selection_prompt": "Choisissez la page, puis encadrez la zone" if page_nav_available else "Dessinez une zone sur la page",
+        "selection_empty_label": "Zone a selectionner sur la page {page}" if page_nav_available else "Zone a selectionner",
+        "selection_ready_label": "Zone selectionnee sur la page {page}",
         "validation_notice": (
             "CoproScope garde un repere dans le PDF, mais ne valide pas la preuve."
             if is_pdf

@@ -18,7 +18,7 @@
 </section>
 
 <section class="grid two" aria-label="{{ document_detail.pdf_trace.workshop_label }}">
-  <div class="panel" id="pdf-reader" {% if document_detail.pdf_trace.available %}data-pdf-trace-workbench data-pdf-trace-empty-label="{{ document_detail.pdf_trace.selection_empty_label }}" data-pdf-trace-ready-label="{{ document_detail.pdf_trace.selection_ready_label }}"{% endif %}>
+  <div class="panel" id="pdf-reader" {% if document_detail.pdf_trace.available %}data-pdf-trace-workbench data-pdf-trace-empty-label="{{ document_detail.pdf_trace.selection_empty_label }}" data-pdf-trace-ready-label="{{ document_detail.pdf_trace.selection_ready_label }}" data-pdf-trace-current-page="{{ document_detail.pdf_trace.current_page }}" data-pdf-trace-page-count="{{ document_detail.pdf_trace.page_count }}"{% endif %}>
     <p class="eyebrow">{{ document_detail.pdf_trace.workshop_label }}</p>
     <div class="panel-head">
       <h3>{{ document_detail.pdf_trace.reader_label }}</h3>
@@ -31,6 +31,18 @@
       {% endif %}
       <span class="badge">{{ document_detail.preview.source_label or document_detail.preview.kind_label }}</span>
     </div>
+    {% if document_detail.pdf_trace.page_nav_available %}
+    <div class="cs-pdf-trace-page-nav" aria-label="Navigation dans le PDF">
+      <button class="button-link secondary" type="button" data-pdf-trace-page-prev disabled>Page precedente</button>
+      <label class="cs-pdf-trace-page-picker">
+        <span>Page</span>
+        <input class="input" type="number" min="1" max="{{ document_detail.pdf_trace.page_count }}" value="{{ document_detail.pdf_trace.current_page }}" data-pdf-trace-page-input aria-label="Page courante">
+      </label>
+      <span class="badge" data-pdf-trace-page-total>{{ document_detail.pdf_trace.page_count_label }}</span>
+      <button class="button-link secondary" type="button" data-pdf-trace-page-next>Page suivante</button>
+      <strong data-pdf-trace-page-status>{{ document_detail.pdf_trace.page_label }}</strong>
+    </div>
+    {% endif %}
     <p class="hint" style="margin-top:12px;">{{ document_detail.pdf_trace.selection_prompt if document_detail.pdf_trace.available else "Apercu autorise pour pointer une zone sans modifier la source." }}</p>
     {% if document_detail.preview.message %}
     <p class="hint">{{ document_detail.preview.message }}</p>
@@ -51,7 +63,7 @@
         {% elif document_detail.preview.kind == "image" %}
         <img src="{{ document_detail.preview.data_uri }}" alt="Apercu {{ document_detail.doc.file_name }}" style="display:block;width:100%;max-height:520px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fbfcfb;">
         {% elif document_detail.preview.kind == "pdf" %}
-        <object data="{{ document_detail.preview.data_uri }}" type="{{ document_detail.preview.media_type }}" style="display:block;width:100%;min-height:520px;border:1px solid var(--line);border-radius:8px;background:#fbfcfb;">
+        <object data="{{ document_detail.preview.data_uri }}" type="{{ document_detail.preview.media_type }}" data-pdf-trace-pdf-object data-pdf-trace-pdf-src="{{ document_detail.preview.data_uri }}" style="display:block;width:100%;min-height:520px;border:1px solid var(--line);border-radius:8px;background:#fbfcfb;">
           <div class="empty">Apercu PDF non disponible dans ce navigateur.</div>
         </object>
         {% else %}
@@ -65,7 +77,7 @@
         {% endif %}
         </div>
         <div class="empty" style="margin-top:10px;">
-          <strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label if document_detail.pdf_trace.available else "Zone encadree" }}</strong><br>
+          <strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label|replace('{page}', document_detail.pdf_trace.current_page) if document_detail.pdf_trace.available else "Zone encadree" }}</strong><br>
           <small>{{ document_detail.pdf_trace.status }} - {{ document_detail.pdf_trace.scan_status }}</small>
         </div>
       </div>
@@ -80,7 +92,7 @@
     <p class="hint">{{ document_detail.pdf_trace.intro }}</p>
     <p class="hint"><strong>{{ document_detail.pdf_trace.limitation_notice }}</strong></p>
     {% if document_detail.pdf_trace.available %}
-    <p class="hint"><strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label }}</strong></p>
+    <p class="hint"><strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label|replace('{page}', document_detail.pdf_trace.current_page) }}</strong></p>
     <form method="post" action="/documents/{{ document_detail.doc.doc_id }}/traces{{ ui_token_query }}" class="upload-form cs-upload-form" style="margin-top:10px;" data-pdf-trace-form>
       <input type="hidden" name="page" value="{{ document_detail.pdf_trace.candidate_form.page }}" data-pdf-trace-field="page">
       <input type="hidden" name="zone_x" value="{{ document_detail.pdf_trace.candidate_form.zone_x }}" data-pdf-trace-field="x">
