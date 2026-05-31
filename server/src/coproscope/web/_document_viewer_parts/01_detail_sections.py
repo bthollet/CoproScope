@@ -53,6 +53,7 @@ def build_document_detail(instance: InstanceConfig, doc_id: str) -> dict[str, ob
         "evidence": _evidence(row),
         "diffusion": diffusion,
         "signature": signature,
+        "pdf_trace": _pdf_trace(row, preview),
         "anchors": _anchors(row),
         "annotations": _annotations(row),
         "history": _history(row),
@@ -85,7 +86,7 @@ def _find_document_row(instance: InstanceConfig, doc_id: str) -> dict[str, str] 
 def _public_document(row: dict[str, str]) -> dict[str, str]:
     return {
         "doc_id": row.get("doc_id", ""),
-        "file_name": row.get("file_name") or row.get("filename") or row.get("doc_id", ""),
+        "file_name": _display_file_name(row),
         "extension": (row.get("extension") or "").lower(),
         "lot": row.get("lot", "") or "non renseigne",
         "document_type": row.get("document_type", "") or "Document",
@@ -95,6 +96,17 @@ def _public_document(row: dict[str, str]) -> dict[str, str]:
         "size_bytes": row.get("size_bytes", ""),
         "sha256": row.get("sha256", ""),
     }
+
+
+def _display_file_name(row: dict[str, str]) -> str:
+    value = row.get("file_name") or row.get("filename") or row.get("doc_id", "") or "Document"
+    normalized = value.strip().replace("\\", "/")
+    if not normalized:
+        return row.get("doc_id", "") or "Document"
+    basename = next((part for part in reversed(normalized.split("/")) if part), "")
+    if basename in {"", ".", ".."}:
+        return row.get("doc_id", "") or "Document"
+    return basename
 
 
 def _metadata(row: dict[str, str]) -> list[dict[str, str]]:
@@ -130,6 +142,52 @@ def _workflow(row: dict[str, str]) -> list[dict[str, str]]:
     ]
 
 
+def _pdf_trace(row: dict[str, str], preview: dict[str, object]) -> dict[str, object]:
+    is_pdf = (row.get("extension") or "").lower().lstrip(".") == "pdf" or preview.get("kind") == "pdf"
+    has_pdf_viewer = preview.get("kind") == "pdf"
+    return {
+        "available": is_pdf,
+        "has_pdf_viewer": has_pdf_viewer,
+        "workshop_label": "Atelier de trace PDF" if is_pdf else "Atelier de preuve",
+        "reader_label": "Lecteur PDF" if has_pdf_viewer else "Apercu PDF textuel" if is_pdf else "Apercu autorise",
+        "page_label": "Page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Document",
+        "thumbnail_label": "Miniature page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Apercu",
+        "title": "Tracer une preuve" if is_pdf else "Preparer une preuve",
+        "primary_action": "Preparer une trace dans ce PDF" if is_pdf else "Selection PDF indisponible",
+        "status": "Preuve candidate a verifier",
+        "limitation_notice": (
+            "Cette version ne selectionne pas encore une zone dans le PDF."
+            if is_pdf
+            else "La selection de zone est reservee aux PDF."
+        ),
+        "intro": (
+            "Encadrez le passage utile. CoproScope gardera le lien, sans changer le PDF."
+            if is_pdf
+            else "Cette fiche garde les memes garde-fous, sans promettre une selection dans un PDF."
+        ),
+        "source_notice": "Le PDF original n'est pas modifie." if is_pdf else "La source originale n'est pas modifiee.",
+        "validation_notice": (
+            "CoproScope garde un repere dans le PDF, mais ne valide pas la preuve."
+            if is_pdf
+            else "CoproScope prepare un repere de preuve, mais ne valide pas la preuve."
+        ),
+        "text_status": "Texte reconnu automatiquement : relisez avant de vous en servir.",
+        "scan_status": "Texte non confirme : seule la zone encadree est gardee.",
+        "hash_status": "Le fichier a change depuis la trace. Verifiez avant usage.",
+        "diffusion_status": "Non diffusable par defaut",
+        "availability_note": (
+            "Atelier prudent pour les PDF; enregistrement reel a venir."
+            if is_pdf
+            else "Atelier prepare pour les PDF; cette fiche rappelle les garde-fous."
+        ),
+        "sample": {
+            "page": "page 1",
+            "zone": "zone encadree",
+            "proof": "preuve candidate",
+        },
+    }
+
+
 def _workbench(
     row: dict[str, str],
     diffusion: dict[str, str],
@@ -143,7 +201,7 @@ def _workbench(
         "steps": [
             {
                 "label": "1. Piece",
-                "title": row.get("file_name") or row.get("doc_id", "") or "Document",
+                "title": _display_file_name(row),
                 "status": row.get("document_type", "") or "Document a qualifier",
                 "text": "Identifier ce que contient la piece sans modifier le fichier source.",
             },

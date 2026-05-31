@@ -55,18 +55,25 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Fiche document - atelier de piece", body)
         self.assertIn(doc["file_name"], body)
-        self.assertIn("Parcours novice: piece -> point -> action -> preuve", body)
-        self.assertIn("Point, action, preuve", body)
+        self.assertIn("Atelier de preuve", body)
+        self.assertIn("Selection PDF indisponible", body)
+        self.assertIn("Parcours novice et point d'action", body)
         self.assertIn("Apercu autorise", body)
         self.assertIn("Texte local extrait pour la fiche securisee.", body)
         self.assertIn("Diffusion et signature", body)
         self.assertIn("Signature a venir", body)
-        self.assertIn("Annotations futures", body)
+        self.assertIn("Annotations", body)
         self.assertIn("Annotation signee", body)
         self.assertIn("evenements futurs separes", body)
         self.assertIn("aucune annotation n'est injectee dans le PDF", body)
+        self.assertIn("Preuve candidate a verifier", body)
+        self.assertIn("La source originale n'est pas modifiee", body)
+        self.assertIn("Non diffusable par defaut", body)
         self.assertIn("Ancres sans PDF modifie", body)
-        self.assertIn("Historique visible", body)
+        self.assertIn("Historique", body)
+        self.assertLess(body.index("Atelier de preuve"), body.index("Parcours novice et point d'action"))
+        self.assertNotIn("Tracer une preuve dans ce PDF", body)
+        self.assertNotIn("Le PDF original n'est pas modifie", body)
         self.assertNotIn(str(self.instance_root), body)
         self.assertNotIn("raw/", body.lower())
         self.assertNotIn("raw\\", body.lower())
@@ -88,6 +95,14 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertEqual(detail["signature"]["label"], "Signature a venir")
         self.assertEqual(detail["evidence"]["status"], "piece probatoire")
         self.assertEqual(detail["annotations"]["mode"], "evenements futurs separes")
+        self.assertFalse(detail["pdf_trace"]["available"])
+        self.assertFalse(detail["pdf_trace"]["has_pdf_viewer"])
+        self.assertEqual(detail["pdf_trace"]["primary_action"], "Selection PDF indisponible")
+        self.assertEqual(detail["pdf_trace"]["status"], "Preuve candidate a verifier")
+        self.assertIn("reservee aux PDF", detail["pdf_trace"]["limitation_notice"])
+        self.assertIn("ne valide pas la preuve", detail["pdf_trace"]["validation_notice"])
+        self.assertIn("source originale", detail["pdf_trace"]["source_notice"])
+        self.assertEqual(detail["pdf_trace"]["diffusion_status"], "Non diffusable par defaut")
         annotation_events = detail["annotations"]["events"]
         self.assertEqual(annotation_events[0]["label"], "Annotation signee")
         self.assertEqual(annotation_events[0]["status"], "a venir")
@@ -129,6 +144,37 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertIn("Aucun apercu exploitable", body)
         self.assertNotIn("SECRET_OUTSIDE_INSTANCE", body)
         self.assertNotIn(str(outside), body)
+
+    def test_document_detail_never_displays_file_name_as_local_path(self) -> None:
+        fields, rows = self._documents()
+        doc_id = "DOC-PATH-NAME"
+        pdf_path = self.instance_root / "staging" / "pdf" / "contrat_affichage.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_path.write_bytes(b"%PDF-1.4\n% display name test\n")
+        rows.append(
+            {
+                **{field: "" for field in fields},
+                "doc_id": doc_id,
+                "file_name": r"C:\Users\demo\raw\contrat_affichage.pdf",
+                "extension": "pdf",
+                "original_path": relative_to(self.instance_root, pdf_path),
+                "source_zone": "STAGING",
+                "document_type": "PDF",
+                "status_ocr": "TEXT_EXTRACTED",
+            }
+        )
+        self._write_documents(fields, rows)
+
+        response = self._client().get(f"/documents/{doc_id}")
+        body = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("contrat_affichage.pdf", body)
+        self.assertNotIn("C:", body)
+        self.assertNotIn("Users", body)
+        self.assertNotIn("demo", body)
+        self.assertNotIn("raw\\", body.lower())
+        self.assertNotIn("raw/", body.lower())
 
     def test_raw_and_restricted_files_are_not_served_directly(self) -> None:
         restricted = self.instance_root / "restricted" / "secret.txt"
@@ -176,10 +222,79 @@ class DocumentViewerUiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Apercu media indisponible; affichage du texte extrait.", body)
+        self.assertIn("Apercu PDF textuel", body)
+        self.assertIn("Texte extrait", body)
+        self.assertIn("Preparer une trace dans ce PDF", body)
+        self.assertIn("Cette version ne selectionne pas encore une zone dans le PDF.", body)
+        self.assertNotIn("Lecteur PDF", body)
+        self.assertNotIn("Miniature page 1", body)
+        self.assertNotIn("100 %", body)
         self.assertIn("Texte OCR de secours pour PDF indisponible.", body)
         self.assertNotIn("data:application/pdf", response.text)
         self.assertNotIn("raw/scan_preview.pdf", body)
         self.assertNotIn("raw\\scan_preview.pdf", body)
+
+    def test_pdf_trace_workshop_keeps_novice_wording_and_hides_technical_fields(self) -> None:
+        fields, rows = self._documents()
+        doc_id = "DOC-PDF-TRACE-UI"
+        pdf_path = self.instance_root / "staging" / "pdf" / "trace_demo.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_path.write_bytes(b"%PDF-1.4\n% fictive PDF for UI test\n")
+        rows.append(
+            {
+                **{field: "" for field in fields},
+                "doc_id": doc_id,
+                "file_name": "trace_demo.pdf",
+                "extension": "pdf",
+                "sha256": "d" * 64,
+                "size_bytes": str(pdf_path.stat().st_size),
+                "original_path": relative_to(self.instance_root, pdf_path),
+                "source_zone": "STAGING",
+                "document_type": "PDF",
+                "status_ocr": "TEXT_EXTRACTED",
+                "classification_status": "A_RELIRE",
+                "page_count": "1",
+                "text_char_count": "120",
+            }
+        )
+        self._write_documents(fields, rows)
+
+        response = self._client().get(f"/documents/{doc_id}")
+        body = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Atelier de trace PDF", body)
+        self.assertIn("Lecteur PDF", body)
+        self.assertIn("Miniature page 1", body)
+        self.assertIn("100 %", body)
+        self.assertIn("Zone encadree", body)
+        self.assertIn("Annotations", body)
+        self.assertIn("Historique", body)
+        self.assertIn("Informations techniques et traitement local", body)
+        self.assertIn("Tracer une preuve", body)
+        self.assertIn("Preparer une trace dans ce PDF", body)
+        self.assertIn("Cette version ne selectionne pas encore une zone dans le PDF.", body)
+        self.assertIn("Preuve candidate a verifier", body)
+        self.assertIn("Texte reconnu automatiquement : relisez avant de vous en servir.", body)
+        self.assertIn("Texte non confirme : seule la zone encadree est gardee.", body)
+        self.assertIn("Le fichier a change depuis la trace. Verifiez avant usage.", body)
+        self.assertIn("Le PDF original n'est pas modifie.", body)
+        self.assertIn("CoproScope garde un repere dans le PDF, mais ne valide pas la preuve.", body)
+        self.assertIn("Non diffusable par defaut", body)
+        self.assertIn("Les evenements restent separes du fichier source.", body)
+        self.assertLess(body.index("Lecteur PDF"), body.index("Parcours novice et point d'action"))
+        self.assertLess(body.index("Le PDF original n'est pas modifie."), body.index("Annotations"))
+        self.assertLess(body.index("Texte non confirme : seule la zone encadree est gardee."), body.index("Annotations"))
+        self.assertLess(body.index("Preparer une trace dans ce PDF"), body.index("Informations techniques et traitement local"))
+        self.assertLess(body.index("Annotations"), body.index("Metadonnees"))
+        self.assertLess(body.index("Historique"), body.index("Traitement local"))
+        self.assertLess(body.index("Informations techniques et traitement local"), body.index("Moteur OCR"))
+        self.assertNotIn("Tracer une preuve dans ce PDF", body)
+        self.assertNotIn("zotero_position", body)
+        self.assertNotIn("source_engine", body)
+        self.assertNotIn("rects", body)
+        self.assertNotIn(str(self.instance_root), body)
+        self.assertNotIn("raw/", body.lower())
 
 
 if __name__ == "__main__":
