@@ -455,6 +455,8 @@ def _business_label(value: Any, *, limit: int) -> str:
     text = _public_text(value, limit=limit)
     if _is_empty_marker(text):
         return ""
+    if text.lower() == "piece comptable":
+        return ""
     if re.search(r"\.(?:pdf|docx?|xlsx?)$", text, re.IGNORECASE):
         return ""
     return "" if "_" in text and re.search(r"\b(?:devis|facture|annexe|etat)\b", text, re.IGNORECASE) else text
@@ -509,6 +511,8 @@ def _public_text(value: Any, *, limit: int) -> str:
     text = " ".join(str(value or "").split())
     for pattern in FORBIDDEN_PATTERNS:
         text = pattern.sub("[retire]", text)
+    text = re.sub(r"#?\s*\d*[_ -]?(?:devis|facture|annexe|etat)[\w.-]*\.(?:pdf|docx?|xlsx?)", "piece comptable", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bfacture\s+(?:vid|vide)\b", "facture", text, flags=re.IGNORECASE)
     text = re.sub(r"\b(raw|restricted|logs?|private|system|tokens?|secrets?|prompts?|oauth)\b", "[retire]", text, flags=re.IGNORECASE)
     text = text.strip()
     if len(text) <= limit:
