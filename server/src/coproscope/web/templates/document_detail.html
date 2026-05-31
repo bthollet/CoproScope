@@ -145,9 +145,14 @@
       </tbody>
     </table>
     {% if document_detail.pdf_trace.saved_traces %}
+    {% set first_trace = document_detail.pdf_trace.saved_traces[0] %}
     <div class="empty" style="margin-top:10px;">
-      <strong>{{ document_detail.pdf_trace.saved_traces[0].status }}</strong><br>
-      <small>{{ document_detail.pdf_trace.saved_traces[0].diffusion }} - {{ document_detail.pdf_trace.saved_traces[0].zone }}</small>
+      <strong>{{ first_trace.status }}</strong><br>
+      <small>{{ first_trace.text }}</small>
+      {% if first_trace.excerpt %}
+      <br><small>Extrait repere - {{ first_trace.excerpt }}</small>
+      {% endif %}
+      <br><small>{{ first_trace.diffusion }} - {{ first_trace.zone }}</small>
     </div>
     {% endif %}
     <div class="button-row">
@@ -166,13 +171,23 @@
     <p class="hint">{{ document_detail.annotations.notice }}</p>
     {% if document_detail.pdf_trace.saved_traces %}
     <table aria-label="Traces candidates enregistrees">
-      <thead><tr><th>Trace</th><th>Zone</th><th>Statut</th></tr></thead>
+      <thead><tr><th>Trace</th><th>Zone</th><th>Extrait repere</th><th>Statut</th></tr></thead>
       <tbody>
       {% for trace in document_detail.pdf_trace.saved_traces %}
         <tr>
           <th>{{ trace.status }}<br><small>{{ trace.created_at }}</small></th>
           <td>{{ trace.zone }}<br><small>Ancre {{ trace.anchor }}</small></td>
-          <td>{{ trace.diffusion }}<br><small>{{ trace.text }} {{ trace.comment }}</small></td>
+          <td>
+            {% if trace.excerpt %}
+            {{ trace.excerpt }}
+            {% else %}
+            Aucun extrait repere
+            {% endif %}
+            {% if trace.comment %}
+            <br><small>Commentaire: {{ trace.comment }}</small>
+            {% endif %}
+          </td>
+          <td>{{ trace.diffusion }}<br><small>{{ trace.text }}</small></td>
         </tr>
       {% endfor %}
       </tbody>
