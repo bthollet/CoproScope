@@ -125,13 +125,14 @@ def build_compta_reconciliation_view(
     )
     return {
         "title": "Controle des comptes",
+        "work_title": "Ligne selectionnee et preuves",
         "headline": "Controle des comptes avec sources separees",
         "read_model_name": READ_MODEL_NAME,
-        "eyebrow": "ComptaScope - controle prudent des factures et lignes comptables",
+        "eyebrow": "Factures, lignes comptables et decisions",
         "notice": notice,
         "status": {
             "label": "Controle humain ouvert" if open_count else "Aucun blocage ouvert",
-            "summary": "Chaque ligne separe ce que CoproScope suggere de ce que le conseil decide.",
+            "summary": "Commencez par l'action proposee, puis verifiez les quatre sources.",
             "cta": "Ouvrir la file",
         },
         "summary": [

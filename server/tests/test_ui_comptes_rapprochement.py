@@ -22,6 +22,10 @@ REQUIRED_LABELS = (
     "Sources du controle",
     "Lignes a controler",
     "Controle humain ouvert",
+    "Factures, lignes comptables et decisions",
+    "Commencez par l'action proposee",
+    "Ligne selectionnee et preuves",
+    "Retour aux comptes",
     "Relues ou reservees",
     "Traces locales du conseil",
     "Comptabilite",
@@ -29,6 +33,7 @@ REQUIRED_LABELS = (
     "Facture",
     "Decision / devis",
     "Action immediate",
+    "A faire sur cette ligne",
     "Tracer le controle local",
     "Aucune validation de paiement",
     "Rapprochement 4 sources",
@@ -132,11 +137,13 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn('action="/comptes/rapprochement/validation?token=local-secret"', response.text)
         self.assertIn('<details class="panel cs-rappro-detail" open>', response.text)
         self.assertIn('<summary class="panel-head cs-rappro-detail-summary">', response.text)
+        self.assertNotIn("ComptaScope - controle prudent", text)
         self.assertNotIn("Decision avant rapport", text)
         self.assertNotIn("<h3>Diffusion</h3>", response.text)
         self.assertNotIn("Historique local", text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
+        self.assertEqual(visible.count("Controle des comptes"), 1)
         self.assertNotIn(READ_MODEL_NAME, visible)
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
@@ -177,6 +184,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("cs-rappro-action", response.text)
         self.assertIn('href="#rappro-validation"', response.text)
         self.assertIn('id="rappro-validation"', response.text)
+        self.assertLess(response.text.index("cs-rappro-action"), response.text.index("cs-focus-card"))
         self.assertLess(response.text.index("Action immediate"), response.text.index("Rapprochement 4 sources"))
         self.assertIn('role="listitem" class="cs-rappro-source-cell', response.text)
         matrix_text = text[text.index("Rapprochement 4 sources") :]
@@ -231,6 +239,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("@media (max-width: 980px)", css)
         self.assertIn(".cs-comptes-header .cs-header-tools", css)
         self.assertIn("flex: 0 1 auto", css)
+        self.assertIn("flex-direction: row", css)
+        self.assertIn("justify-content: flex-end", css)
         self.assertIn(".cs-comptes-header .lead", css)
         self.assertIn("grid-row: 1", css)
 

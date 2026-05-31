@@ -38,8 +38,8 @@ PDF_TRACE_FIELDS = [
     "source_engine",
 ]
 
-DEFAULT_ZONE = {"x": 0.16, "y": 0.22, "width": 0.52, "height": 0.16}
 AUTHOR_REF = "membre_cs_demo"
+MIN_ZONE_SIZE = 0.01
 
 
 def trace_register_path(instance: InstanceConfig):
@@ -77,13 +77,8 @@ def save_zone_trace(
     if not document_hash:
         raise ValueError("empreinte document requise")
 
-    page = max(1, _int_value(form.get("page"), 1))
-    zone = {
-        "x": _float_value(form.get("zone_x"), DEFAULT_ZONE["x"]),
-        "y": _float_value(form.get("zone_y"), DEFAULT_ZONE["y"]),
-        "width": _float_value(form.get("zone_width"), DEFAULT_ZONE["width"]),
-        "height": _float_value(form.get("zone_height"), DEFAULT_ZONE["height"]),
-    }
+    page = _required_page(form.get("page"))
+    zone = _required_zone(form)
     comment = _comment(form.get("comment"))
     if contains_sensitive_text(comment):
         raise ValueError("note trop sensible pour une trace candidate")
@@ -176,18 +171,43 @@ def _comment(value: Any) -> str:
     return text or "Trace candidate depuis l'atelier document."
 
 
-def _int_value(value: Any, default: int) -> int:
+def _required_page(value: Any) -> int:
     try:
-        return int(str(value).strip())
+        page = int(str(value or "").strip())
     except (TypeError, ValueError):
-        return default
+        raise ValueError("page de trace invalide") from None
+    if page < 1:
+        raise ValueError("page de trace invalide")
+    return page
 
 
-def _float_value(value: Any, default: float) -> float:
+def _required_zone(form: Mapping[str, Any]) -> dict[str, float]:
+    zone = {
+        "x": _required_float_value(form.get("zone_x"), "zone_x"),
+        "y": _required_float_value(form.get("zone_y"), "zone_y"),
+        "width": _required_float_value(form.get("zone_width"), "zone_width"),
+        "height": _required_float_value(form.get("zone_height"), "zone_height"),
+    }
+    if zone["width"] < MIN_ZONE_SIZE or zone["height"] < MIN_ZONE_SIZE:
+        raise ValueError("zone de trace trop petite")
+    if zone["x"] + zone["width"] > 1 or zone["y"] + zone["height"] > 1:
+        raise ValueError("zone de trace hors page")
+    return zone
+
+
+def _required_float_value(value: Any, field: str) -> float:
+    text = str(value if value is not None else "").strip()
+    if not text:
+        raise ValueError("zone de trace a selectionner")
     try:
-        return float(str(value).strip())
+        parsed = float(text)
     except (TypeError, ValueError):
-        return default
+        raise ValueError(f"{field} invalide") from None
+    if parsed != parsed or parsed in {float("inf"), float("-inf")}:
+        raise ValueError(f"{field} invalide")
+    if parsed < 0 or parsed > 1:
+        raise ValueError("zone de trace hors page")
+    return parsed
 
 
 def _format_float(value: float) -> str:

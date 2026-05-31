@@ -18,7 +18,7 @@
 </section>
 
 <section class="grid two" aria-label="{{ document_detail.pdf_trace.workshop_label }}">
-  <div class="panel" id="pdf-reader">
+  <div class="panel" id="pdf-reader" {% if document_detail.pdf_trace.available %}data-pdf-trace-workbench data-pdf-trace-empty-label="{{ document_detail.pdf_trace.selection_empty_label }}" data-pdf-trace-ready-label="{{ document_detail.pdf_trace.selection_ready_label }}"{% endif %}>
     <p class="eyebrow">{{ document_detail.pdf_trace.workshop_label }}</p>
     <div class="panel-head">
       <h3>{{ document_detail.pdf_trace.reader_label }}</h3>
@@ -31,16 +31,18 @@
       {% endif %}
       <span class="badge">{{ document_detail.preview.source_label or document_detail.preview.kind_label }}</span>
     </div>
-    <p class="hint" style="margin-top:12px;">Apercu autorise pour pointer une zone sans modifier la source.</p>
+    <p class="hint" style="margin-top:12px;">{{ document_detail.pdf_trace.selection_prompt if document_detail.pdf_trace.available else "Apercu autorise pour pointer une zone sans modifier la source." }}</p>
     {% if document_detail.preview.message %}
     <p class="hint">{{ document_detail.preview.message }}</p>
     {% endif %}
-    <div style="display:grid;grid-template-columns:82px minmax(0,1fr);gap:12px;align-items:start;">
+    <div class="cs-pdf-trace-preview-grid">
       <div class="empty" style="min-height:112px;padding:10px;text-align:center;">
         <strong>{{ document_detail.pdf_trace.page_label }}</strong><br>
         <small>{{ document_detail.pdf_trace.thumbnail_label }}</small>
       </div>
       <div>
+        <div class="cs-pdf-trace-page-shell" {% if document_detail.pdf_trace.available %}data-pdf-trace-page-shell{% endif %}>
+        <div class="cs-pdf-trace-page-content">
         {% if document_detail.preview.kind == "text" %}
         <pre class="report" style="max-height:420px;">{{ document_detail.preview.text }}</pre>
         {% if document_detail.preview.truncated %}
@@ -55,8 +57,15 @@
         {% else %}
         <div class="empty">{{ document_detail.preview.message }}</div>
         {% endif %}
+        </div>
+        {% if document_detail.pdf_trace.available %}
+        <div class="cs-pdf-trace-selection-layer" data-pdf-trace-selection role="button" tabindex="0" aria-label="{{ document_detail.pdf_trace.selection_prompt }}">
+          <div class="cs-pdf-trace-selection-box" data-pdf-trace-box hidden></div>
+        </div>
+        {% endif %}
+        </div>
         <div class="empty" style="margin-top:10px;">
-          <strong>Zone encadree</strong><br>
+          <strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label if document_detail.pdf_trace.available else "Zone encadree" }}</strong><br>
           <small>{{ document_detail.pdf_trace.status }} - {{ document_detail.pdf_trace.scan_status }}</small>
         </div>
       </div>
@@ -71,17 +80,18 @@
     <p class="hint">{{ document_detail.pdf_trace.intro }}</p>
     <p class="hint"><strong>{{ document_detail.pdf_trace.limitation_notice }}</strong></p>
     {% if document_detail.pdf_trace.available %}
-    <form method="post" action="/documents/{{ document_detail.doc.doc_id }}/traces{{ ui_token_query }}" class="upload-form cs-upload-form" style="margin-top:10px;">
-      <input type="hidden" name="page" value="{{ document_detail.pdf_trace.candidate_form.page }}">
-      <input type="hidden" name="zone_x" value="{{ document_detail.pdf_trace.candidate_form.zone_x }}">
-      <input type="hidden" name="zone_y" value="{{ document_detail.pdf_trace.candidate_form.zone_y }}">
-      <input type="hidden" name="zone_width" value="{{ document_detail.pdf_trace.candidate_form.zone_width }}">
-      <input type="hidden" name="zone_height" value="{{ document_detail.pdf_trace.candidate_form.zone_height }}">
+    <p class="hint"><strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label }}</strong></p>
+    <form method="post" action="/documents/{{ document_detail.doc.doc_id }}/traces{{ ui_token_query }}" class="upload-form cs-upload-form" style="margin-top:10px;" data-pdf-trace-form>
+      <input type="hidden" name="page" value="{{ document_detail.pdf_trace.candidate_form.page }}" data-pdf-trace-field="page">
+      <input type="hidden" name="zone_x" value="{{ document_detail.pdf_trace.candidate_form.zone_x }}" data-pdf-trace-field="x">
+      <input type="hidden" name="zone_y" value="{{ document_detail.pdf_trace.candidate_form.zone_y }}" data-pdf-trace-field="y">
+      <input type="hidden" name="zone_width" value="{{ document_detail.pdf_trace.candidate_form.zone_width }}" data-pdf-trace-field="width">
+      <input type="hidden" name="zone_height" value="{{ document_detail.pdf_trace.candidate_form.zone_height }}" data-pdf-trace-field="height">
       <label class="cs-upload-label">
         <span>Note courte</span>
         <input class="input" name="comment" maxlength="180" value="{{ document_detail.pdf_trace.candidate_form.comment }}">
       </label>
-      <button class="button-link" type="submit">{{ document_detail.pdf_trace.primary_action }}</button>
+      <button class="button-link" type="submit" data-pdf-trace-submit disabled>{{ document_detail.pdf_trace.primary_action }}</button>
     </form>
     {% else %}
     <p class="hint"><strong>{{ document_detail.pdf_trace.primary_action }}</strong></p>
@@ -293,4 +303,7 @@
     </div>
   </div>
 </details>
+{% if document_detail.pdf_trace.available %}
+<script src="/static/pdf_trace_selection.js"></script>
+{% endif %}
 {% endblock %}

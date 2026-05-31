@@ -204,6 +204,19 @@ comptabilite officielle. La matrice conserve ensuite les preuves et reserves.
 La recette de cette tranche est validee dans l'executable `CoproScope.exe`, pas
 dans un serveur web separe.
 
+Complement executable/UI issu de `CC-IT-023`: le premier viewport compte comme
+un vrai critere de recette dans `CoproScope.exe`. En largeur etroite, la coque
+ne doit pas repousser le controle metier sous la ligne de flottaison: le lien
+actif de navigation remonte en premier, la navigation reste compacte sur une
+ligne au chargement, puis se deploie au survol ou au focus clavier. La preuve
+finale doit mesurer l'ecran reel de l'executable, pas seulement lire le CSS.
+
+Complement UI issu de `CC-IT-024`: dans une file de controle, la priorite
+visuelle est `action prudente -> preuves -> contexte de piece`. La fiche PDF,
+le fournisseur et le montant restent visibles, mais ils ne doivent pas
+repousser l'action sous le premier ecran. Les libelles de retour evitent de
+repeter le titre courant; ils disent ou l'utilisateur revient.
+
 ## Limites
 
 - Pas de saisie comptable complete.

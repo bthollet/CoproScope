@@ -225,8 +225,9 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertIn("Apercu media indisponible; affichage du texte extrait.", body)
         self.assertIn("Apercu PDF textuel", body)
         self.assertIn("Texte extrait", body)
-        self.assertIn("Enregistrer la trace candidate", body)
-        self.assertIn("Cette version enregistre la zone candidate affichee par l'atelier.", body)
+        self.assertIn("Enregistrer comme trace candidate", body)
+        self.assertIn("Dessinez une zone sur la page avant d'enregistrer comme trace candidate.", body)
+        self.assertIn("Zone a selectionner", body)
         self.assertNotIn("Lecteur PDF", body)
         self.assertNotIn("Miniature page 1", body)
         self.assertNotIn("100 %", body)
@@ -268,13 +269,24 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertIn("Lecteur PDF", body)
         self.assertIn("Miniature page 1", body)
         self.assertIn("100 %", body)
-        self.assertIn("Zone encadree", body)
+        self.assertIn("Zone a selectionner", body)
         self.assertIn("Annotations", body)
         self.assertIn("Historique", body)
         self.assertIn("Informations techniques et traitement local", body)
         self.assertIn("Tracer une preuve candidate", body)
-        self.assertIn("Enregistrer la trace candidate", body)
-        self.assertIn("Cette version enregistre la zone candidate affichee par l'atelier.", body)
+        self.assertIn("Enregistrer comme trace candidate", body)
+        self.assertIn("Dessinez une zone sur la page", body)
+        self.assertIn("Zone a selectionner", body)
+        self.assertIn("data-pdf-trace-workbench", response.text)
+        self.assertIn("data-pdf-trace-selection", response.text)
+        self.assertIn("data-pdf-trace-form", response.text)
+        self.assertIn("data-pdf-trace-submit disabled", response.text)
+        self.assertIn('data-pdf-trace-field="x"', response.text)
+        self.assertIn('name="zone_x" value=""', response.text)
+        self.assertIn('name="zone_y" value=""', response.text)
+        self.assertIn('name="zone_width" value=""', response.text)
+        self.assertIn('name="zone_height" value=""', response.text)
+        self.assertIn("/static/pdf_trace_selection.js", response.text)
         self.assertIn("Preuve candidate a verifier", body)
         self.assertIn("Texte reconnu automatiquement : relisez avant de vous en servir.", body)
         self.assertIn("Texte non confirme : seule la zone encadree est gardee.", body)
@@ -286,7 +298,7 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertLess(body.index("Lecteur PDF"), body.index("Parcours novice et point d'action"))
         self.assertLess(body.index("Le PDF original n'est pas modifie."), body.index("Annotations"))
         self.assertLess(body.index("Texte non confirme : seule la zone encadree est gardee."), body.index("Annotations"))
-        self.assertLess(body.index("Enregistrer la trace candidate"), body.index("Informations techniques et traitement local"))
+        self.assertLess(body.index("Enregistrer comme trace candidate"), body.index("Informations techniques et traitement local"))
         self.assertLess(body.index("Annotations"), body.index("Metadonnees"))
         self.assertLess(body.index("Historique"), body.index("Traitement local"))
         self.assertLess(body.index("Informations techniques et traitement local"), body.index("Moteur OCR"))
@@ -296,6 +308,16 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertNotIn("rects", body)
         self.assertNotIn(str(self.instance_root), body)
         self.assertNotIn("raw/", body.lower())
+        script = (Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static" / "pdf_trace_selection.js").read_text(encoding="utf-8")
+        self.assertIn("data-pdf-trace-workbench", script)
+        self.assertIn("data-pdf-trace-selection", script)
+        self.assertIn("data-pdf-trace-field=", script)
+        self.assertIn("data-pdf-trace-submit", script)
+        self.assertIn("pointerdown", script)
+        self.assertIn("pointerup", script)
+        self.assertNotIn("zotero_position", script)
+        self.assertNotIn("source_engine", script)
+        self.assertNotIn("rects", script)
 
     def test_pdf_trace_save_creates_sidecar_without_mutating_pdf(self) -> None:
         fields, rows = self._documents()
@@ -398,6 +420,41 @@ class DocumentViewerUiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 422)
         self.assertEqual(read_csv(pdftrace_registry.trace_register_path(self.instance))[1], [])
+
+    def test_pdf_trace_save_rejects_missing_or_invalid_zone_without_sidecar(self) -> None:
+        fields, rows = self._documents()
+        doc_id = "DOC-PDF-TRACE-ZONE-INVALID"
+        pdf_path = self.instance_root / "staging" / "pdf" / "trace_invalid_zone.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_path.write_bytes(b"%PDF-1.4\n% invalid zone test\n")
+        rows.append(
+            {
+                **{field: "" for field in fields},
+                "doc_id": doc_id,
+                "file_name": "trace_invalid_zone.pdf",
+                "extension": "pdf",
+                "sha256": "a" * 64,
+                "size_bytes": str(pdf_path.stat().st_size),
+                "original_path": relative_to(self.instance_root, pdf_path),
+                "source_zone": "STAGING",
+                "document_type": "PDF",
+            }
+        )
+        self._write_documents(fields, rows)
+
+        invalid_forms = (
+            {"page": "1", "comment": "Zone absente"},
+            {"page": "1", "zone_x": "0.1", "zone_y": "0.1", "zone_width": "0", "zone_height": "0.2"},
+            {"page": "1", "zone_x": "-0.1", "zone_y": "0.1", "zone_width": "0.2", "zone_height": "0.2"},
+            {"page": "1", "zone_x": "0.9", "zone_y": "0.1", "zone_width": "0.2", "zone_height": "0.2"},
+            {"page": "1", "zone_x": "x", "zone_y": "0.1", "zone_width": "0.2", "zone_height": "0.2"},
+        )
+        client = self._client()
+        for form in invalid_forms:
+            with self.subTest(form=form):
+                response = client.post(f"/documents/{doc_id}/traces", data=form)
+                self.assertEqual(response.status_code, 422)
+                self.assertEqual(read_csv(pdftrace_registry.trace_register_path(self.instance))[1], [])
 
 
 if __name__ == "__main__":
