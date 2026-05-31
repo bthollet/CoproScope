@@ -188,7 +188,7 @@ def append_human_validation(
 
 
 def _review_rows(instance: Any | None, year: int) -> list[dict[str, str]]:
-    accounting_dir = _accounting_dir(instance)
+    accounting_dir = _accounting_dataset_dir(instance, year)
     if accounting_dir is None:
         return []
     _, rows = read_csv(accounting_dir / f"controle_comptes_guide_{year}.csv")
@@ -250,7 +250,9 @@ def _queue_item(row: Mapping[str, Any], *, index: int, validation: Mapping[str, 
 def _cells(row: Mapping[str, Any], priority: str) -> list[dict[str, str]]:
     line_ref = _first(row, "ligne_depense_candidate", "reference_depense", "ecriture_candidate")
     accounting_status = "strong_match" if line_ref and priority == "OK" else "candidate" if line_ref else "missing_source"
-    bank_status = "candidate" if line_ref else "missing_source"
+    bank_ref = _first(row, "mouvement_bancaire", "bank_reference", "releve_bancaire")
+    bank_status = "candidate" if bank_ref else "missing_source"
+    doc_id = _review_id(row.get("doc_id"))
     invoice_status = "strong_match" if _first(row, "doc_id", "numero_facture", "fournisseur") else "missing_source"
     decision_status = _decision_cell_status(row, priority)
     return [
@@ -263,14 +265,16 @@ def _cells(row: Mapping[str, Any], priority: str) -> list[dict[str, str]]:
         _cell(
             "Banque",
             bank_status,
-            "Mouvement a confirmer" if line_ref else "Mouvement bancaire a retrouver",
-            "Indice derive de la ligne comptable; source bancaire directe non modifiee.",
+            _public_text(bank_ref, limit=90) if bank_ref else "Banque non fournie",
+            "Le corpus actuel ne contient pas d'extrait bancaire: aucun paiement n'est confirme.",
         ),
         _cell(
             "Facture",
             invoice_status,
             _join_title(_first(row, "fournisseur"), _first(row, "numero_facture")) or "Facture a rattacher",
             _join_non_empty(("Doc", row.get("doc_id")), ("TTC", row.get("ttc")), ("Preuve", row.get("niveau_preuve"))),
+            href=f"/documents/{quote(doc_id)}" if doc_id else "",
+            action_label="Ouvrir la piece",
         ),
         _cell(
             "Decision / devis",
@@ -281,18 +285,20 @@ def _cells(row: Mapping[str, Any], priority: str) -> list[dict[str, str]]:
     ]
 
 
-def _cell(kind: str, status: str, label: str, detail: str) -> dict[str, str]:
+def _cell(kind: str, status: str, label: str, detail: str, *, href: str = "", action_label: str = "") -> dict[str, str]:
     return {
         "kind": kind,
         "status": status,
         "status_label": {
-            "strong_match": "source forte",
-            "candidate": "candidat",
+            "strong_match": "source fournie",
+            "candidate": "indice local",
             "conflict": "conflit",
             "missing_source": "source manquante",
         }.get(status, "a verifier"),
         "label": _public_text(label, limit=90),
         "detail": _public_text(detail, limit=150),
+        "href": href,
+        "action_label": action_label,
     }
 
 
@@ -415,10 +421,20 @@ def _accounting_dir(instance: Any | None) -> Path | None:
 
 
 def _validation_path(instance: Any | None, year: int) -> Path | None:
-    accounting_dir = _accounting_dir(instance)
+    accounting_dir = _accounting_dataset_dir(instance, year)
     if accounting_dir is None:
         return None
     return accounting_dir / f"compta_human_validations_{year}.csv"
+
+
+def _accounting_dataset_dir(instance: Any | None, year: int) -> Path | None:
+    accounting_dir = _accounting_dir(instance)
+    if accounting_dir is None:
+        return None
+    year_dir = accounting_dir / str(year)
+    if (year_dir / f"controle_comptes_guide_{year}.csv").exists():
+        return year_dir
+    return accounting_dir
 
 
 def _first(row: Mapping[str, Any], *fields: str) -> str:

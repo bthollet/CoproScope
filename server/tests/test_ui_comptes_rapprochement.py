@@ -28,12 +28,15 @@ REQUIRED_LABELS = (
     "Banque",
     "Facture",
     "Decision / devis",
+    "Rapprochement 4 sources",
+    "La facture seule ne confirme jamais le paiement",
     "Question syndic et suite",
     "Trace conseil syndical",
     "Marquer comme relu par le conseil",
     "Garder une reserve visible",
     "Question syndic a relire et copier, aucun envoi automatique",
     "Banque et grand livre restent a fournir",
+    "Banque non fournie",
     "Grand livre non fourni",
     "Elle ne valide pas un paiement ni la comptabilite officielle",
 )
@@ -87,6 +90,27 @@ class UiComptesRapprochementTests(unittest.TestCase):
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
 
+    def test_view_model_loads_real_year_subdirectory_layout(self) -> None:
+        root_path = self.accounting_dir / "controle_comptes_guide_2025.csv"
+        _, rows = read_csv(root_path)
+        year_dir = self.accounting_dir / "2025"
+        year_dir.mkdir(parents=True, exist_ok=True)
+        root_path.unlink()
+        write_csv(year_dir / "controle_comptes_guide_2025.csv", COMPTASCOPE_REVIEW_FIELDS, rows)
+
+        view = build_compta_reconciliation_view(instance=self.instance, year=2025)
+        client = self._client(access_token="local-secret")
+        response = client.post(
+            "/comptes/rapprochement/validation?token=local-secret",
+            data={"review_id": "REV-2025-001", "decision": "validated", "note": ""},
+            follow_redirects=False,
+        )
+
+        self.assertEqual(len(view["items"]), 2)
+        self.assertEqual(view["items"][0]["id"], "REV-2025-001")
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue((year_dir / "compta_human_validations_2025.csv").exists())
+
     def test_route_is_token_guarded_and_novice_readable(self) -> None:
         client = self._client(access_token="local-secret")
 
@@ -137,6 +161,25 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("cs-rappro-detail-summary", response.text)
         self.assertIn(".cs-rappro-detail:not([open])", css)
         self.assertIn("cursor: pointer", css)
+
+    def test_detail_uses_four_source_matrix_without_bank_overclaim(self) -> None:
+        response = self._client(access_token="local-secret").get("/comptes/rapprochement?token=local-secret")
+        text = unescape(response.text)
+        static_root = Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static"
+        css = (static_root / "styles_part_30.css").read_text(encoding="utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("cs-rappro-matrix-grid", response.text)
+        self.assertIn('role="listitem" class="cs-rappro-source-cell', response.text)
+        matrix_text = text[text.index("Rapprochement 4 sources") :]
+        order = [matrix_text.index(label) for label in ("Comptabilite", "Banque", "Facture", "Decision / devis")]
+        self.assertEqual(order, sorted(order))
+        self.assertIn("Banque non fournie", text)
+        self.assertIn("aucun paiement n'est confirme", text)
+        self.assertIn("source manquante", text)
+        self.assertIn('href="/documents/DOC-FAC-001?token=local-secret"', response.text)
+        self.assertIn("grid-template-columns: repeat(4, minmax(0, 1fr))", css)
+        self.assertIn("@media (max-width: 720px)", css)
 
     def test_validation_post_appends_human_trace_without_private_note_leak(self) -> None:
         client = self._client(access_token="local-secret")

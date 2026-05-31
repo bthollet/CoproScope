@@ -171,6 +171,15 @@ repetaient les garde-fous sans guider l'action principale. La regle
 generalisable est de garder les garde-fous au plus pres de la ligne controlee
 et de tester explicitement l'absence du bruit retire.
 
+Complement UI issu de `CC-IT-020`: le rapprochement d'une ligne doit se lire
+comme une matrice de quatre sources, toujours dans le meme ordre:
+`Comptabilite`, `Banque`, `Facture`, `Decision / devis`. Une source absente
+est une information de premier niveau, pas une note de bas de page. En
+particulier, si le corpus ne contient pas d'extrait bancaire, la colonne
+`Banque` affiche `Banque non fournie` et rappelle qu'aucun paiement n'est
+confirme. Les liens vers DocOps sont autorises seulement sur les cellules qui
+portent une piece identifiable; ils ne remplacent pas la reserve metier.
+
 ## Limites
 
 - Pas de saisie comptable complete.

@@ -80,16 +80,29 @@
         </div>
       </article>
 
-      <div class="cs-card-list">
-        {% for cell in item.cells %}
-        <article class="cs-followup-card cs-card-tone-{{ 'danger' if cell.status == 'missing_source' else 'warn' if cell.status in ['candidate', 'conflict'] else 'ok' }}">
-          <strong>{{ cell.kind }}</strong>
-          <small>{{ cell.status_label }}</small>
-          <p>{{ cell.label }}</p>
-          <p>{{ cell.detail }}</p>
-        </article>
-        {% endfor %}
-      </div>
+      <section class="cs-rappro-matrix" aria-labelledby="rappro-matrix-title">
+        <div class="cs-rappro-matrix-head">
+          <h4 id="rappro-matrix-title">Rapprochement 4 sources</h4>
+          <span>La facture seule ne confirme jamais le paiement.</span>
+        </div>
+        <div class="cs-rappro-matrix-grid" role="list">
+          {% for cell in item.cells %}
+          <article role="listitem" class="cs-rappro-source-cell is-{{ cell.status }}">
+            <div class="cs-rappro-source-cell-head">
+              <strong>{{ cell.kind }}</strong>
+              <span>{{ cell.status_label }}</span>
+            </div>
+            <p>{{ cell.label }}</p>
+            <small>{{ cell.detail }}</small>
+            {% if cell.href %}
+            <a href="{{ token_href(cell.href) }}">{{ cell.action_label or 'Ouvrir la piece' }}</a>
+            {% else %}
+            <em>Aucun lien de preuve directe</em>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      </section>
 
       <section class="panel" aria-labelledby="rappro-suggestion-title">
         <div class="panel-head">

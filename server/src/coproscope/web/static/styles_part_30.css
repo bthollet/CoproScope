@@ -1,0 +1,122 @@
+.cs-rappro-matrix {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cs-rappro-matrix-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cs-rappro-matrix-head h4 {
+  margin: 0;
+  color: #101828;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.cs-rappro-matrix-head span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-rappro-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cs-rappro-source-cell {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 8px;
+  border: 1px solid #dce3ec;
+  border-top: 4px solid #1d5fd8;
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.cs-rappro-source-cell.is-strong_match {
+  border-top-color: #13976b;
+  background: #f5fffb;
+}
+
+.cs-rappro-source-cell.is-candidate {
+  border-top-color: #f28705;
+  background: #fffaf2;
+}
+
+.cs-rappro-source-cell.is-missing_source,
+.cs-rappro-source-cell.is-conflict {
+  border-top-color: #df2f24;
+  background: #fff8f7;
+}
+
+.cs-rappro-source-cell-head {
+  display: grid;
+  gap: 5px;
+}
+
+.cs-rappro-source-cell-head strong,
+.cs-rappro-source-cell p,
+.cs-rappro-source-cell small {
+  overflow-wrap: anywhere;
+}
+
+.cs-rappro-source-cell-head span,
+.cs-rappro-source-cell em {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: rgba(16, 24, 40, .07);
+  color: #475467;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 760;
+}
+
+.cs-rappro-source-cell p,
+.cs-rappro-source-cell small {
+  margin: 0;
+}
+
+.cs-rappro-source-cell p {
+  color: #101828;
+  font-weight: 760;
+}
+
+.cs-rappro-source-cell small {
+  color: #475467;
+  line-height: 1.35;
+}
+
+.cs-rappro-source-cell a {
+  color: #1d5fd8;
+  font-size: 12px;
+  font-weight: 760;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 1320px) {
+  .cs-rappro-matrix-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .cs-rappro-matrix-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cs-rappro-matrix-grid {
+    grid-template-columns: 1fr;
+  }
+}
