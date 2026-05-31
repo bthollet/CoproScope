@@ -34,18 +34,20 @@ REQUIRED_LABELS = (
     "Decision / devis",
     "Action immediate",
     "A faire sur cette ligne",
-    "Tracer le controle local",
-    "Aucune validation de paiement",
+    "Ligne: Ascenseur FICTIF - Facture FAC-001 - 1200.00 EUR",
+    "Noter ce controle apres verification",
+    "Pas de validation de paiement officielle",
     "Rapprochement 4 sources",
-    "La facture seule ne confirme jamais le paiement",
+    "Facture seule: paiement non prouve",
     "Question syndic et suite",
     "Trace conseil syndical",
     "Marquer comme relu par le conseil",
     "Garder une reserve visible",
     "Question syndic a relire et copier, aucun envoi automatique",
-    "Banque et grand livre restent a fournir",
+    "Preuve de paiement et etat des depenses restent a fournir",
     "Banque non fournie",
-    "Grand livre non fourni",
+    "avant conclusion",
+    "Ligne issue de l'etat des depenses ou d'une annexe comptable",
     "Elle ne valide pas un paiement ni la comptabilite officielle",
 )
 
@@ -95,6 +97,12 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertEqual(view["items"][0]["id"], "REV-2025-001")
         self.assertEqual([cell["kind"] for cell in view["items"][0]["cells"]], ["Comptabilite", "Banque", "Facture", "Decision / devis"])
         self.assertIn("Brouillon a copier", view["items"][0]["copy_text"])
+        self.assertEqual(view["items"][0]["suggestion"]["strength"], "Source manquante")
+        self.assertEqual(view["items"][0]["suggestion"]["summary_action"], "Banque + decision.")
+        self.assertNotIn("DOC-FAC-001", view["items"][0]["subtitle"])
+        second_accounting = next(cell for cell in view["items"][1]["cells"] if cell["kind"] == "Comptabilite")
+        self.assertIn("Compte comptable propose: 615", second_accounting["detail"])
+        self.assertNotIn("Compte: 615", second_accounting["detail"])
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
 
@@ -106,9 +114,10 @@ class UiComptesRapprochementTests(unittest.TestCase):
                 _review_row(
                     review_id="REV-2025-FILE-001",
                     fournisseur="sha256,count,doc_ids,paths",
-                    numero_facture="abour.pdf",
+                    numero_facture="DOC-ED8787E3BEC4.native",
                     doc_id="DOC-FAC-FILE",
                     ttc="73333.05",
+                    ligne_depense_candidate="REC-2025-0001",
                     question_syndic="Merci de rapprocher la facture Vid de # 09_Devis_ventilation_Baillargues.pdf.",
                     motif="Colonnes sources date,document_type,count,doc_ids,examples.",
                     bloc_copiable=(
@@ -127,10 +136,14 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertNotIn("date,document_type,count,doc_ids,examples", visible)
         self.assertNotIn("Facture abour", visible)
         self.assertNotIn("abour.pdf", visible)
+        self.assertNotIn("DOC-ED8787E3BEC4", item["subtitle"])
+        self.assertNotIn("REC-2025-0001", visible)
+        self.assertIn("Ligne comptable possible", visible)
         self.assertNotIn("Facture Vid", item["subtitle"])
         self.assertNotIn("facture Vid", visible)
         self.assertNotIn("_Devis_", visible)
         self.assertIn("73333.05 EUR", item["subtitle"])
+        self.assertNotIn("DOC-FAC-FILE", item["subtitle"])
 
     def test_view_model_loads_real_year_subdirectory_layout(self) -> None:
         root_path = self.accounting_dir / "controle_comptes_guide_2025.csv"
@@ -153,6 +166,45 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertEqual(response.status_code, 303)
         self.assertTrue((year_dir / "compta_human_validations_2025.csv").exists())
 
+    def test_decision_cell_detail_complements_signal(self) -> None:
+        write_csv(
+            self.accounting_dir / "controle_comptes_guide_2025.csv",
+            COMPTASCOPE_REVIEW_FIELDS,
+            [
+                _review_row(
+                    review_id="REV-2025-DEC-001",
+                    priorite="P2",
+                    fournisseur="Travaux FICTIF",
+                    numero_facture="FAC-DEC-001",
+                    doc_id="DOC-FAC-DEC-001",
+                    ttc="640.00",
+                    motif="Devis transmis par le syndic a relire.",
+                    prochaine_action="Relire le devis avant conclusion.",
+                )
+            ],
+        )
+
+        item = build_compta_reconciliation_view(instance=self.instance, year=2025)["items"][0]
+        decision_cell = next(cell for cell in item["cells"] if cell["kind"] == "Decision / devis")
+
+        self.assertEqual(decision_cell["status_label"], "A confirmer")
+        self.assertEqual(decision_cell["label"], "Justification a relire")
+        self.assertEqual(decision_cell["detail"], "Relire vote, devis ou reserve avant conclusion.")
+        self.assertNotEqual(decision_cell["label"], decision_cell["detail"].removesuffix(" avant conclusion."))
+
+    def test_accounting_cell_names_proposed_account_without_overclaim(self) -> None:
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/comptes/rapprochement?selected=REV-2025-002&token=local-secret")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Entretien parties communes", text)
+        self.assertIn("Compte comptable propose: 615", text)
+        self.assertNotIn("Compte: 615", text)
+        self.assertNotIn("Compte valide", text)
+        self.assertNotIn("Paiement confirme", text)
+
     def test_route_is_token_guarded_and_novice_readable(self) -> None:
         client = self._client(access_token="local-secret")
 
@@ -171,6 +223,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn('action="/comptes/rapprochement/validation?token=local-secret"', response.text)
         self.assertIn('href="#rappro-validation"', response.text)
         self.assertIn("Tracer le controle", text)
+        self.assertIn("Noter ce controle apres verification", text)
+        self.assertNotIn("Tracer le controle local", text)
         self.assertNotIn("Nouvelle demande", text)
         self.assertNotIn('id="cs-global-search"', response.text)
         self.assertIn('<details class="panel cs-rappro-detail" open>', response.text)
@@ -183,6 +237,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
             self.assertIn(label, text)
         self.assertEqual(visible.count("Controle des comptes"), 1)
         self.assertNotIn(READ_MODEL_NAME, visible)
+        self.assertNotIn("avant validation", visible.lower())
+        self.assertNotIn("avant de valider", visible.lower())
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
 
@@ -230,21 +286,61 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("cs-rappro-matrix-grid", response.text)
         self.assertIn("cs-rappro-summary-action", response.text)
+        self.assertIn("cs-rappro-selected-line", response.text)
         self.assertIn("cs-rappro-action", response.text)
+        self.assertIn("cs-rappro-action-kicker", response.text)
         self.assertIn('href="#rappro-validation"', response.text)
         self.assertIn('id="rappro-validation"', response.text)
         self.assertLess(response.text.index("cs-rappro-action"), response.text.index("cs-rappro-matrix"))
         self.assertLess(response.text.index("cs-rappro-matrix"), response.text.index("cs-focus-card"))
         self.assertLess(response.text.index("Action immediate"), response.text.index("Rapprochement 4 sources"))
+        self.assertIn("Action immediate: Banque + decision.", text)
+        self.assertIn("Demander mouvement bancaire et decision ou devis.", text)
         self.assertIn('role="listitem" class="cs-rappro-source-cell', response.text)
-        matrix_text = text[text.index("Rapprochement 4 sources") :]
-        order = [matrix_text.index(label) for label in ("Comptabilite", "Banque", "Facture", "Decision / devis")]
+        matrix_html = response.text[response.text.index("cs-rappro-matrix-grid") :]
+        order = [
+            matrix_html.index(f"<strong>{label}</strong>")
+            for label in ("Comptabilite", "Banque", "Facture", "Decision / devis")
+        ]
         self.assertEqual(order, sorted(order))
         self.assertIn("Banque non fournie", text)
-        self.assertIn("aucun paiement n'est confirme", text)
-        self.assertIn("source manquante", text)
-        self.assertIn('href="/documents/DOC-FAC-001?token=local-secret"', response.text)
+        self.assertIn("Aucun extrait bancaire: paiement non confirme.", text)
+        self.assertIn("Facture seule: paiement non prouve.", text)
+        self.assertNotIn("La facture seule ne confirme jamais le paiement", text)
+        self.assertIn("Vote, devis ou reserve a fournir.", text)
+        self.assertNotIn("Justification a relire avant conclusion.", text)
+        self.assertNotIn("Le corpus actuel ne contient pas d'extrait bancaire", text)
+        self.assertNotIn("grand livre", text.lower())
+        self.assertNotIn("avant validation", text.lower())
+        self.assertNotIn("avant de valider", text.lower())
+        self.assertIn("Source manquante", text)
+        self.assertIn("Source disponible", text)
+        self.assertIn("Montant a retrouver: 1200.00 EUR", text)
+        self.assertIn("Ouvrir la piece", text)
+        self.assertNotIn("Voir la piece dans DocOps", text)
+        self.assertIn("DocOps: piece a controler.", text)
+        self.assertNotIn("Piece disponible dans DocOps. Montant a controler avant conclusion.", text)
+        self.assertNotIn("indice local", text)
+        self.assertNotIn("source fournie", text)
+        self.assertNotIn("Aucun lien de preuve directe", text)
+        self.assertNotIn("facture extraite", text)
+        self.assertNotIn("Doc: DOC-FAC-001", text)
+        self.assertNotIn("TTC: 1200.00", text)
+        self.assertIn("source=compta&amp;evidence=montant&amp;value=1200.00&amp;token=local-secret", response.text)
+        visible = _visible_text(response.text)
+        self.assertNotIn("DOC-FAC-001", visible)
+        self.assertNotIn("REV-2025-001", visible)
+        self.assertNotIn("missing_source", visible)
+        self.assertNotIn("strong_match", visible)
+        self.assertIn("Source manquante", visible)
+        self.assertIn("A confirmer", visible)
+        self.assertIn('class="cs-rappro-source-signal"', response.text)
+        self.assertIn('class="cs-rappro-source-link"', response.text)
         self.assertIn("grid-template-columns: repeat(4, minmax(0, 1fr))", css)
+        self.assertIn(".cs-rappro-source-signal", css)
+        self.assertIn(".cs-rappro-source-link", css)
+        self.assertIn(".cs-rappro-selected-line", css)
+        self.assertIn(".cs-rappro-action-kicker", css)
         self.assertIn("@media (max-width: 760px)", css)
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("@media (max-width: 560px)", css)
@@ -254,7 +350,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("-webkit-line-clamp: 1", css)
         self.assertIn("min-width: 142px", css)
         imports = (static_root / "styles.css").read_text(encoding="utf-8")
-        self.assertIn("styles_part_30.css?v=20260531-compta-032", imports)
+        self.assertIn("styles_part_30.css?v=20260531-compta-049", imports)
 
     def test_long_queue_keeps_detail_before_scrollable_line_list(self) -> None:
         write_csv(
@@ -289,7 +385,9 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertLess(response.text.index("Rapprochement 4 sources"), response.text.index("Lignes a controler"))
         self.assertIn(".cs-rappro-queue-list", css)
         self.assertIn(".cs-rappro-summary-action", css)
+        self.assertIn(".cs-rappro-selected-line", css)
         self.assertIn(".cs-rappro-action", css)
+        self.assertIn(".cs-rappro-action-kicker", css)
         self.assertLess(response.text.index("Action immediate"), response.text.index("Rapprochement 4 sources"))
         self.assertLess(response.text.index("Rapprochement 4 sources"), response.text.index("cs-focus-card"))
         self.assertIn("white-space: normal", css)

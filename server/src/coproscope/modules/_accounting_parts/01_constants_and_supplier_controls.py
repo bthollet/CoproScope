@@ -165,7 +165,7 @@ MATCH_STATUS_META: dict[str, dict[str, str]] = {
         "priority": "P2",
         "meaning": "Les factures sont reconstituees, mais aucune ligne d'etat des depenses n'est disponible pour rapprocher.",
         "local_treatment": "Production du guide facture sans comparaison comptable.",
-        "human_check": "Fournir l'etat des depenses ou le grand livre avant validation.",
+        "human_check": "Fournir l'etat des depenses ou l'annexe comptable avant conclusion.",
     },
     "MATCH_REFERENCE": {
         "label": "Reference facture retrouvee",
@@ -207,7 +207,7 @@ MATCH_STATUS_META: dict[str, dict[str, str]] = {
         "priority": "P2",
         "meaning": "Le montant et la famille concordent; le nom du tiers ressemble fortement au fournisseur.",
         "local_treatment": "Similarite locale de noms, sans appel IA ni interpretation externe.",
-        "human_check": "Confirmer que les deux noms designent le meme tiers avant de valider.",
+        "human_check": "Confirmer que les deux noms designent le meme tiers avant avis local.",
     },
     "CANDIDAT_DIVISION_EGALE": {
         "label": "Facture divisee en lignes egales",
@@ -242,7 +242,7 @@ MATCH_STATUS_META: dict[str, dict[str, str]] = {
         "priority": "P2",
         "meaning": "Plusieurs combinaisons de lignes peuvent reconstituer la facture.",
         "local_treatment": "Recherche de sommes multi-lignes exactes.",
-        "human_check": "Limiter par date, compte, cle ou equipement avant validation.",
+        "human_check": "Limiter par date, compte, cle ou equipement avant conclusion.",
     },
     "CANDIDAT_MONTANT_SANS_NOM": {
         "label": "Montant exact sans fournisseur reconnu",
@@ -263,14 +263,14 @@ MATCH_STATUS_META: dict[str, dict[str, str]] = {
         "priority": "P2",
         "meaning": "Le compte semble compatible, mais reference, montant et fournisseur ne suffisent pas.",
         "local_treatment": "Rapprochement faible par compte/famille de charge.",
-        "human_check": "Comparer avec le grand livre et les pieces avant tout reclassement.",
+        "human_check": "Comparer avec l'etat des depenses et les pieces avant tout reclassement.",
     },
     "NON_RAPPROCHE": {
         "label": "Aucun indice local suffisant",
         "priority": "P1",
         "meaning": "Aucune reference, montant, fournisseur, alias ou famille comptable suffisante n'a ete trouvee.",
         "local_treatment": "Tous les traitements locaux disponibles ont echoue.",
-        "human_check": "Verifier grand livre, etat des depenses, OCR, piece manquante ou imputation hors perimetre.",
+        "human_check": "Verifier etat des depenses, annexe comptable, OCR, piece manquante ou imputation hors perimetre.",
     },
 }
 

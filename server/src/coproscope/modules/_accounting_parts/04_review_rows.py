@@ -241,12 +241,12 @@ def _syndic_question_for_review(row: dict[str, str], year: int) -> str:
     statement = row.get("libelle_depense") or row.get("ligne_depense_candidate")
     if status == "SANS_ETAT_DEPENSES":
         return (
-            f"Pouvez-vous transmettre l'etat des depenses ou la ligne de grand livre {year} "
+            f"Pouvez-vous transmettre l'etat des depenses ou l'annexe comptable {year} "
             f"permettant de rapprocher la facture {invoice_ref} de {supplier} ({amount} EUR) ?"
         )
     if row.get("priorite") == "P1":
         return (
-            f"Pouvez-vous nous indiquer la ligne de grand livre, d'etat des depenses ou la piece "
+            f"Pouvez-vous nous indiquer la ligne d'etat des depenses, l'annexe comptable ou la piece "
             f"qui permet de rapprocher la facture {invoice_ref} de {supplier} ({amount} EUR) ? "
             f"Constat local: {row.get('motif', '')}"
         )

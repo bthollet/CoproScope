@@ -228,7 +228,7 @@ def _grouped_invoice_candidates(
                     len(group),
                     "invoice_group_sum",
                     "Plusieurs factures du meme fournisseur totalisent exactement une ligne de depense.",
-                    "Confirmer que la ligne comptable regroupe bien ces factures avant validation.",
+                    "Confirmer que la ligne comptable regroupe bien ces factures avant conclusion.",
                 )
     return updates
 
@@ -422,7 +422,7 @@ def reconcile_invoice_expenses(
                         len(division_match),
                         "equal_division",
                         "Le TTC de la facture se divise exactement en plusieurs lignes compatibles de meme montant.",
-                        "Verifier la cle de repartition, le compteur, le batiment ou l'equipement avant validation.",
+                        "Verifier la cle de repartition, le compteur, le batiment ou l'equipement avant conclusion.",
                     )
                 )
                 continue
@@ -456,7 +456,7 @@ def reconcile_invoice_expenses(
                         split_count,
                         "split_sum",
                         "Plusieurs combinaisons de lignes peuvent reconstituer le montant de la facture.",
-                        "Limiter par date, compte ou cle de repartition avant validation.",
+                        "Limiter par date, compte ou cle de repartition avant conclusion.",
                     )
                 )
                 continue
@@ -485,7 +485,7 @@ def reconcile_invoice_expenses(
         else:
             status = "NON_RAPPROCHE"
             reason = "Aucune ligne de depense ne porte la reference, le montant exact, le fournisseur ou une famille comptable suffisante."
-            action = "Verifier l'etat des depenses, le grand livre, les libelles OCR et la presence de la piece."
+            action = "Verifier l'etat des depenses, l'annexe comptable, les libelles OCR et la presence de la piece."
             line = None
             candidate_count = 0
         results.append(
