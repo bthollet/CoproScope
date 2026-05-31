@@ -106,6 +106,17 @@
 
   .cs-sidebar .nav {
     grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    max-height: 46px;
+    overflow: hidden;
+  }
+
+  .cs-sidebar .nav:hover,
+  .cs-sidebar .nav:focus-within {
+    max-height: none;
+  }
+
+  .cs-sidebar .nav a.active {
+    order: -1;
   }
 
   .cs-sidebar .nav a {

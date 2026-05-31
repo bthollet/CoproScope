@@ -117,6 +117,10 @@ Roles optionnels:
   regle/process -> action`. Si aucun thread n'est disponible, QA et le
   coordinateur reprennent explicitement cette checklist.
 
+Ces roles sont optionnels seulement pour une equipe agile generique. Quand le
+routeur, le gate nouvelle feature ou un risque privacy/metier les exige, ils
+deviennent des retours attendus avant dev ou avant `PRET_A_INTEGRER`.
+
 ## Double flux rapide
 
 Le coordinateur garde au maximum trois flux decales:
