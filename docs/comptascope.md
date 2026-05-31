@@ -266,6 +266,12 @@ une ou deux lignes, tant que les signaux utiles restent presents: action
 immediate, reserve sur le paiement, quatre sources, banque non fournie et aucun
 libelle technique.
 
+Complement `CC-IT-031`: le haut de l'ecran ne doit pas consommer la hauteur
+gagnee par la matrice. Sous 760px, l'en-tete de travail peut devenir plus dense
+et limiter son texte d'aide a une ligne, tant que les signaux utiles restent
+visibles: controle humain ouvert, retour aux comptes, action immediate, aucune
+validation de paiement et banque non fournie.
+
 ## Limites
 
 - Pas de saisie comptable complete.

@@ -239,8 +239,11 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("@media (max-width: 560px)", css)
         self.assertNotIn("@media (max-width: 1320px)", css)
         self.assertIn("-webkit-line-clamp: 2", css)
+        self.assertIn(".cs-comptes-header .lead", css)
+        self.assertIn("-webkit-line-clamp: 1", css)
+        self.assertIn("min-width: 142px", css)
         imports = (static_root / "styles.css").read_text(encoding="utf-8")
-        self.assertIn("styles_part_30.css?v=20260531-compta-030", imports)
+        self.assertIn("styles_part_30.css?v=20260531-compta-031", imports)
 
     def test_long_queue_keeps_detail_before_scrollable_line_list(self) -> None:
         write_csv(
