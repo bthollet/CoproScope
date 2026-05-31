@@ -164,7 +164,7 @@ def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str,
         "page_label": f"Page 1 sur {effective_page_count}" if page_nav_available else "Page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Document",
         "thumbnail_label": "Miniatures des pages" if page_nav_available else "Miniature page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Apercu",
         "title": "Tracer une preuve candidate" if is_pdf else "Preparer une preuve",
-        "primary_action": "Enregistrer cette zone comme trace candidate" if page_nav_available else "Enregistrer comme trace candidate" if is_pdf else "Selection PDF indisponible",
+        "primary_action": "Enregistrer comme trace a verifier" if is_pdf else "Selection PDF indisponible",
         "status": "Preuve candidate a verifier",
         "limitation_notice": (
             "Dessinez une zone sur la page avant d'enregistrer comme trace candidate."
@@ -179,7 +179,8 @@ def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str,
         "source_notice": "Le PDF original n'est pas modifie." if is_pdf else "La source originale n'est pas modifiee.",
         "selection_prompt": "Choisissez la page, puis encadrez la zone" if page_nav_available else "Dessinez une zone sur la page",
         "selection_empty_label": "Zone a selectionner sur la page {page}" if page_nav_available else "Zone a selectionner",
-        "selection_ready_label": "Zone selectionnee sur la page {page}",
+        "selection_ready_label": "Zone ajustable sur la page {page}",
+        "selection_adjust_help": "Tirer les poignees pour ajuster.",
         "validation_notice": (
             "CoproScope garde un repere dans le PDF, mais ne valide pas la preuve."
             if is_pdf

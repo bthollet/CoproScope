@@ -17,6 +17,21 @@
     );
   }
 
+  function toggleAdjustHelp(section, visible) {
+    Array.prototype.forEach.call(
+      section.querySelectorAll("[data-pdf-trace-adjust-help]"),
+      function (node) {
+        node.hidden = !visible;
+      }
+    );
+    Array.prototype.forEach.call(
+      section.querySelectorAll("[data-pdf-trace-fallback-help]"),
+      function (node) {
+        node.hidden = visible;
+      }
+    );
+  }
+
   function pointInLayer(layer, event) {
     var rect = layer.getBoundingClientRect();
     return {
@@ -48,6 +63,58 @@
     button.setAttribute("aria-disabled", enabled ? "false" : "true");
   }
 
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function orderedRect(left, top, right, bottom) {
+    return {
+      left: Math.min(left, right),
+      top: Math.min(top, bottom),
+      right: Math.max(left, right),
+      bottom: Math.max(top, bottom)
+    };
+  }
+
+  function rectFromPoints(start, current) {
+    return orderedRect(start.x, start.y, current.x, current.y);
+  }
+
+  function rectSize(rect) {
+    return {
+      width: Math.max(0, rect.right - rect.left),
+      height: Math.max(0, rect.bottom - rect.top)
+    };
+  }
+
+  function isUsableRect(rect) {
+    var size = rectSize(rect);
+    return size.width >= MIN_SIZE_PX && size.height >= MIN_SIZE_PX;
+  }
+
+  function boundedResizeRect(original, handle, point, layerWidth, layerHeight) {
+    var left = original.left;
+    var top = original.top;
+    var right = original.right;
+    var bottom = original.bottom;
+    var x = clamp(point.x, 0, layerWidth);
+    var y = clamp(point.y, 0, layerHeight);
+
+    if (handle.indexOf("w") !== -1) {
+      left = clamp(x, 0, right - MIN_SIZE_PX);
+    }
+    if (handle.indexOf("e") !== -1) {
+      right = clamp(x, left + MIN_SIZE_PX, layerWidth);
+    }
+    if (handle.indexOf("n") !== -1) {
+      top = clamp(y, 0, bottom - MIN_SIZE_PX);
+    }
+    if (handle.indexOf("s") !== -1) {
+      bottom = clamp(y, top + MIN_SIZE_PX, layerHeight);
+    }
+    return orderedRect(left, top, right, bottom);
+  }
+
   function wireWorkbench(workbench) {
     var section = workbench.closest("section");
     if (!section) {
@@ -62,7 +129,7 @@
     }
 
     var emptyLabel = workbench.getAttribute("data-pdf-trace-empty-label") || "Zone a selectionner";
-    var readyLabel = workbench.getAttribute("data-pdf-trace-ready-label") || "Zone selectionnee sur la page 1";
+    var readyLabel = workbench.getAttribute("data-pdf-trace-ready-label") || "Zone ajustable sur la page 1";
     var pageCount = numberFrom(workbench.getAttribute("data-pdf-trace-page-count"), 1);
     var currentPage = numberFrom(workbench.getAttribute("data-pdf-trace-current-page"), 1);
     var pageInput = section.querySelector("[data-pdf-trace-page-input]");
@@ -70,7 +137,8 @@
     var pageNext = section.querySelector("[data-pdf-trace-page-next]");
     var pageStatus = section.querySelector("[data-pdf-trace-page-status]");
     var pdfObject = section.querySelector("[data-pdf-trace-pdf-object]");
-    var start = null;
+    var drag = null;
+    var selection = null;
 
     function emptyForPage() {
       return formatLabel(emptyLabel, currentPage);
@@ -93,8 +161,11 @@
       field(form, "y").value = "";
       field(form, "width").value = "";
       field(form, "height").value = "";
+      selection = null;
+      drag = null;
       box.hidden = true;
       setSubmitEnabled(submit, false);
+      toggleAdjustHelp(section, false);
       setStatus(section, message || emptyForPage());
     }
 
@@ -120,40 +191,54 @@
     setSubmitEnabled(submit, false);
     setCurrentPage(currentPage);
 
-    function draw(current) {
-      if (!start || !current.width || !current.height) {
-        return;
-      }
-      var left = Math.min(start.x, current.x);
-      var top = Math.min(start.y, current.y);
-      var width = Math.abs(current.x - start.x);
-      var height = Math.abs(current.y - start.y);
+    function renderSelection(rect) {
+      var size = rectSize(rect);
       box.hidden = false;
-      box.style.left = left + "px";
-      box.style.top = top + "px";
-      box.style.width = width + "px";
-      box.style.height = height + "px";
+      box.style.left = rect.left + "px";
+      box.style.top = rect.top + "px";
+      box.style.width = size.width + "px";
+      box.style.height = size.height + "px";
     }
 
-    function commit(current) {
-      if (!start || !current.width || !current.height) {
+    function syncFields(rect, layerWidth, layerHeight) {
+      if (!layerWidth || !layerHeight || !isUsableRect(rect)) {
+        setSubmitEnabled(submit, false);
+        toggleAdjustHelp(section, false);
         return;
       }
-      var left = Math.min(start.x, current.x);
-      var top = Math.min(start.y, current.y);
-      var width = Math.abs(current.x - start.x);
-      var height = Math.abs(current.y - start.y);
-      if (width < MIN_SIZE_PX || height < MIN_SIZE_PX) {
-        resetSelection(emptyForPage());
-        return;
-      }
+      var size = rectSize(rect);
       field(form, "page").value = String(currentPage);
-      field(form, "x").value = formatUnit(left / current.width);
-      field(form, "y").value = formatUnit(top / current.height);
-      field(form, "width").value = formatUnit(width / current.width);
-      field(form, "height").value = formatUnit(height / current.height);
+      field(form, "x").value = formatUnit(rect.left / layerWidth);
+      field(form, "y").value = formatUnit(rect.top / layerHeight);
+      field(form, "width").value = formatUnit(size.width / layerWidth);
+      field(form, "height").value = formatUnit(size.height / layerHeight);
       setSubmitEnabled(submit, true);
+      toggleAdjustHelp(section, true);
       setStatus(section, readyForPage());
+    }
+
+    function previewRect(rect, current) {
+      if (!current.width || !current.height) {
+        return;
+      }
+      selection = rect;
+      renderSelection(rect);
+      syncFields(rect, current.width, current.height);
+    }
+
+    function commitRect(rect, current) {
+      if (!current.width || !current.height || !isUsableRect(rect)) {
+        resetSelection("Zone trop petite : recommencez la selection");
+        return;
+      }
+      previewRect(rect, current);
+    }
+
+    function handleFromEvent(event) {
+      if (!event.target || !event.target.closest) {
+        return null;
+      }
+      return event.target.closest("[data-pdf-trace-handle]");
     }
 
     if (pagePrev) {
@@ -179,32 +264,60 @@
         return;
       }
       event.preventDefault();
-      start = pointInLayer(layer, event);
+      var handle = handleFromEvent(event);
+      var point = pointInLayer(layer, event);
       if (layer.setPointerCapture) {
         layer.setPointerCapture(event.pointerId);
       }
-      draw(start);
+      if (handle && selection) {
+        drag = {
+          kind: "resize",
+          handle: handle.getAttribute("data-pdf-trace-handle"),
+          rect: {
+            left: selection.left,
+            top: selection.top,
+            right: selection.right,
+            bottom: selection.bottom
+          }
+        };
+        return;
+      }
+      drag = {
+        kind: "draw",
+        start: point
+      };
+      previewRect(rectFromPoints(point, point), point);
     });
 
     layer.addEventListener("pointermove", function (event) {
-      if (!start) {
+      if (!drag) {
         return;
       }
       event.preventDefault();
-      draw(pointInLayer(layer, event));
+      var current = pointInLayer(layer, event);
+      if (drag.kind === "resize") {
+        previewRect(boundedResizeRect(drag.rect, drag.handle, current, current.width, current.height), current);
+      } else {
+        previewRect(rectFromPoints(drag.start, current), current);
+      }
     });
 
     layer.addEventListener("pointerup", function (event) {
-      if (!start) {
+      if (!drag) {
         return;
       }
       event.preventDefault();
-      commit(pointInLayer(layer, event));
-      start = null;
+      var current = pointInLayer(layer, event);
+      if (drag.kind === "resize") {
+        commitRect(boundedResizeRect(drag.rect, drag.handle, current, current.width, current.height), current);
+      } else {
+        commitRect(rectFromPoints(drag.start, current), current);
+      }
+      drag = null;
     });
 
     layer.addEventListener("pointercancel", function () {
-      start = null;
+      drag = null;
     });
 
     layer.addEventListener("keydown", function (event) {

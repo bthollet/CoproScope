@@ -72,13 +72,23 @@
         </div>
         {% if document_detail.pdf_trace.available %}
         <div class="cs-pdf-trace-selection-layer" data-pdf-trace-selection role="button" tabindex="0" aria-label="{{ document_detail.pdf_trace.selection_prompt }}">
-          <div class="cs-pdf-trace-selection-box" data-pdf-trace-box hidden></div>
+          <div class="cs-pdf-trace-selection-box" data-pdf-trace-box hidden>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-nw" data-pdf-trace-handle="nw" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-n" data-pdf-trace-handle="n" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-ne" data-pdf-trace-handle="ne" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-e" data-pdf-trace-handle="e" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-se" data-pdf-trace-handle="se" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-s" data-pdf-trace-handle="s" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-sw" data-pdf-trace-handle="sw" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-w" data-pdf-trace-handle="w" aria-hidden="true"></span>
+          </div>
         </div>
         {% endif %}
         </div>
         <div class="empty" style="margin-top:10px;">
           <strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label|replace('{page}', document_detail.pdf_trace.current_page) if document_detail.pdf_trace.available else "Zone encadree" }}</strong><br>
-          <small>{{ document_detail.pdf_trace.status }} - {{ document_detail.pdf_trace.scan_status }}</small>
+          <small data-pdf-trace-adjust-help hidden>{{ document_detail.pdf_trace.selection_adjust_help }}</small>
+          <small data-pdf-trace-fallback-help>{{ document_detail.pdf_trace.status }} - {{ document_detail.pdf_trace.scan_status }}</small>
         </div>
       </div>
     </div>
@@ -93,6 +103,7 @@
     <p class="hint"><strong>{{ document_detail.pdf_trace.limitation_notice }}</strong></p>
     {% if document_detail.pdf_trace.available %}
     <p class="hint"><strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label|replace('{page}', document_detail.pdf_trace.current_page) }}</strong></p>
+    <p class="hint" data-pdf-trace-adjust-help hidden>{{ document_detail.pdf_trace.selection_adjust_help }}</p>
     <form method="post" action="/documents/{{ document_detail.doc.doc_id }}/traces{{ ui_token_query }}" class="upload-form cs-upload-form" style="margin-top:10px;" data-pdf-trace-form>
       <input type="hidden" name="page" value="{{ document_detail.pdf_trace.candidate_form.page }}" data-pdf-trace-field="page">
       <input type="hidden" name="zone_x" value="{{ document_detail.pdf_trace.candidate_form.zone_x }}" data-pdf-trace-field="x">
@@ -110,7 +121,13 @@
     {% endif %}
     <div class="empty" style="margin-top:10px;">
       <strong>{{ document_detail.pdf_trace.source_notice }}</strong><br>
-      <small>{{ document_detail.pdf_trace.scan_status }}</small>
+      <small>
+        {% if document_detail.pdf_trace.saved_traces and document_detail.pdf_trace.saved_traces[0].excerpt %}
+        Texte repere automatiquement, a relire.
+        {% else %}
+        {{ document_detail.pdf_trace.scan_status }}
+        {% endif %}
+      </small>
     </div>
     <table aria-label="Annotations et historique resumes">
       <tbody>
