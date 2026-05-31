@@ -1,3 +1,42 @@
+.cs-rappro-workbench {
+  display: grid;
+  grid-template-columns: minmax(300px, 430px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.cs-rappro-queue-panel {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  top: 78px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: min(760px, calc(100vh - 96px));
+  overflow: hidden;
+}
+
+.cs-rappro-queue-list {
+  max-height: min(680px, calc(100vh - 174px));
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cs-rappro-queue-list .cs-followup-card.is-selected {
+  border-color: #1d5fd8;
+  background: #eef4ff;
+  box-shadow: 0 8px 22px rgba(16, 24, 40, .07);
+}
+
+.cs-rappro-detail {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 78px;
+  max-height: min(900px, calc(100vh - 96px));
+  overflow-y: auto;
+}
+
 .cs-rappro-matrix {
   display: grid;
   gap: 10px;
@@ -110,7 +149,33 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 980px) {
+  .cs-rappro-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-rappro-detail,
+  .cs-rappro-queue-panel {
+    grid-column: 1;
+    position: static;
+    max-height: none;
+  }
+
+  .cs-rappro-detail {
+    grid-row: 1;
+    overflow: visible;
+  }
+
+  .cs-rappro-queue-panel {
+    grid-row: 2;
+  }
+
+  .cs-rappro-queue-list {
+    max-height: min(520px, 62vh);
+  }
+}
+
+@media (max-width: 560px) {
   .cs-rappro-matrix-head {
     align-items: flex-start;
     flex-direction: column;

@@ -40,29 +40,7 @@
     </div>
   </section>
 
-  <section class="grid two" id="rappro-file">
-    <div class="panel">
-      <div class="panel-head">
-        <h3>Lignes a controler</h3>
-        <span>{{ view['items']|length }} lignes</span>
-      </div>
-      <div class="cs-card-list" role="list" aria-label="Lignes de rapprochement">
-        {% for item in view['items'] %}
-        <a role="listitem" class="cs-followup-card cs-card-tone-{{ item.tone }}{% if item.id == view.selected_id %} is-selected{% endif %}" href="{{ token_href(item.href) }}">
-          <strong>{{ item.title }}</strong>
-          <small>{{ item.subtitle }}</small>
-          <span class="badge is-review">{{ item.status_label }}</span>
-          <p>{{ item.suggestion.next_action }}</p>
-        </a>
-        {% else %}
-        <article class="cs-followup-card">
-          <strong>Aucune ligne a controler</strong>
-          <p>{{ view.notice }}</p>
-        </article>
-        {% endfor %}
-      </div>
-    </div>
-
+  <section class="cs-rappro-workbench" id="rappro-file">
     <details class="panel cs-rappro-detail" open>
       <summary class="panel-head cs-rappro-detail-summary">
         <h3>Controle de la ligne</h3>
@@ -153,6 +131,28 @@
       <p>{{ view.notice }}</p>
       {% endif %}
     </details>
+
+    <div class="panel cs-rappro-queue-panel">
+      <div class="panel-head">
+        <h3>Lignes a controler</h3>
+        <span>{{ view['items']|length }} lignes</span>
+      </div>
+      <div class="cs-card-list cs-rappro-queue-list" role="list" aria-label="Lignes de rapprochement">
+        {% for item in view['items'] %}
+        <a role="listitem" class="cs-followup-card cs-card-tone-{{ item.tone }}{% if item.id == view.selected_id %} is-selected{% endif %}" href="{{ token_href(item.href) }}">
+          <strong>{{ item.title }}</strong>
+          <small>{{ item.subtitle }}</small>
+          <span class="badge is-review">{{ item.status_label }}</span>
+          <p>{{ item.suggestion.next_action }}</p>
+        </a>
+        {% else %}
+        <article class="cs-followup-card">
+          <strong>Aucune ligne a controler</strong>
+          <p>{{ view.notice }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
   </section>
 
 </section>
