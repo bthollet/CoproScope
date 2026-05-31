@@ -109,6 +109,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
                     numero_facture="Vid",
                     doc_id="DOC-FAC-FILE",
                     ttc="73333.05",
+                    question_syndic="Merci de rapprocher la facture Vid de # 09_Devis_ventilation_Baillargues.pdf.",
+                    bloc_copiable="Controle - # 09_Devis_ventilation_Baillargues.pdf - Vid",
                 )
             ],
         )
@@ -118,6 +120,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertEqual(item["title"], "Piece comptable a qualifier")
         self.assertNotIn(".pdf", visible)
         self.assertNotIn("Facture Vid", item["subtitle"])
+        self.assertNotIn("facture Vid", visible)
+        self.assertNotIn("_Devis_", visible)
         self.assertIn("73333.05 EUR", item["subtitle"])
 
     def test_view_model_loads_real_year_subdirectory_layout(self) -> None:
