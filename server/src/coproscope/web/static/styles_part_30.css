@@ -204,8 +204,15 @@
 }
 
 @media (max-width: 980px) {
+  .cs-comptes-header {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
   .cs-comptes-header .cs-header-tools {
     flex: 0 1 auto;
+    justify-content: flex-end;
+    width: auto;
   }
 
   .cs-comptes-header h2,
@@ -243,6 +250,15 @@
 }
 
 @media (max-width: 560px) {
+  .cs-comptes-header {
+    flex-direction: column;
+  }
+
+  .cs-comptes-header .cs-header-tools {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
   .cs-rappro-action {
     grid-template-columns: 1fr;
   }

@@ -6,19 +6,19 @@
   <header class="cs-page-header cs-comptes-header">
     <div>
       <p class="eyebrow">{{ view.eyebrow }}</p>
-      <h2 id="rappro-title">{{ view.title }}</h2>
+      <h2 id="rappro-title">{{ view.work_title|default(view.title) }}</h2>
       <p class="lead">{{ view.status.summary }}</p>
     </div>
     <div class="cs-header-tools" aria-label="Actions rapprochement">
       <span class="cs-status-badge">{{ view.status.label }}</span>
-      <a class="cs-primary-action" href="{{ token_href('/comptes') }}">Controle des comptes</a>
+      <a class="cs-primary-action" href="{{ token_href('/comptes') }}">Retour aux comptes</a>
     </div>
   </header>
 
   <section class="cs-rappro-workbench" id="rappro-file">
     <details class="panel cs-rappro-detail" open>
       <summary class="panel-head cs-rappro-detail-summary">
-        <h3>Controle de la ligne</h3>
+        <h3>A faire sur cette ligne</h3>
         <span>{{ view.selected.status_label if view.selected else 'Aucune selection' }}</span>
         {% if view.selected %}
         <small class="cs-rappro-summary-action">Action immediate: {{ view.selected.suggestion.next_action }}</small>
@@ -26,16 +26,6 @@
       </summary>
       {% if view.selected %}
       {% set item = view.selected %}
-      <article class="cs-focus-card cs-card-tone-{{ item.tone }}">
-        <p class="eyebrow">{{ item.id }} - {{ item.source_label }}</p>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.subtitle }}</p>
-        <div class="badge-row">
-          <span class="badge is-review">{{ item.suggestion.strength }}</span>
-          <span class="badge is-public">{{ item.diffusion }}</span>
-        </div>
-      </article>
-
       <section class="cs-rappro-action" aria-labelledby="rappro-action-title">
         <div>
           <p class="eyebrow">Action immediate</p>
@@ -45,6 +35,16 @@
         </div>
         <a class="button-link secondary" href="#rappro-validation">Tracer le controle local</a>
       </section>
+
+      <article class="cs-focus-card cs-card-tone-{{ item.tone }}">
+        <p class="eyebrow">{{ item.id }} - {{ item.source_label }}</p>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.subtitle }}</p>
+        <div class="badge-row">
+          <span class="badge is-review">{{ item.suggestion.strength }}</span>
+          <span class="badge is-public">{{ item.diffusion }}</span>
+        </div>
+      </article>
 
       <section class="cs-rappro-matrix" aria-labelledby="rappro-matrix-title">
         <div class="cs-rappro-matrix-head">

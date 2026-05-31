@@ -155,10 +155,10 @@ def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str,
         "page_label": "Page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Document",
         "thumbnail_label": "Miniature page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Apercu",
         "title": "Tracer une preuve candidate" if is_pdf else "Preparer une preuve",
-        "primary_action": "Enregistrer la trace candidate" if is_pdf else "Selection PDF indisponible",
+        "primary_action": "Enregistrer comme trace candidate" if is_pdf else "Selection PDF indisponible",
         "status": "Preuve candidate a verifier",
         "limitation_notice": (
-            "Cette version enregistre la zone candidate affichee par l'atelier."
+            "Dessinez une zone sur la page avant d'enregistrer comme trace candidate."
             if is_pdf
             else "La selection de zone est reservee aux PDF."
         ),
@@ -168,6 +168,9 @@ def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str,
             else "Cette fiche garde les memes garde-fous, sans promettre une selection dans un PDF."
         ),
         "source_notice": "Le PDF original n'est pas modifie." if is_pdf else "La source originale n'est pas modifiee.",
+        "selection_prompt": "Dessinez une zone sur la page",
+        "selection_empty_label": "Zone a selectionner",
+        "selection_ready_label": "Zone selectionnee page 1",
         "validation_notice": (
             "CoproScope garde un repere dans le PDF, mais ne valide pas la preuve."
             if is_pdf
@@ -184,10 +187,10 @@ def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str,
         ),
         "candidate_form": {
             "page": "1",
-            "zone_x": "0.16",
-            "zone_y": "0.22",
-            "zone_width": "0.52",
-            "zone_height": "0.16",
+            "zone_x": "",
+            "zone_y": "",
+            "zone_width": "",
+            "zone_height": "",
             "comment": "Trace candidate depuis l'atelier document.",
         },
         "saved_traces": saved_traces,
