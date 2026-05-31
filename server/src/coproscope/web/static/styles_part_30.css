@@ -150,6 +150,10 @@
 }
 
 @media (max-width: 980px) {
+  .cs-comptes-header .cs-header-tools {
+    flex: 0 1 auto;
+  }
+
   .cs-rappro-workbench {
     grid-template-columns: 1fr;
   }

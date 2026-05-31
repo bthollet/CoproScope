@@ -216,6 +216,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("max-height: min(680px, calc(100vh - 174px))", css)
         self.assertIn("overflow-y: auto", css)
         self.assertIn("@media (max-width: 980px)", css)
+        self.assertIn(".cs-comptes-header .cs-header-tools", css)
+        self.assertIn("flex: 0 1 auto", css)
         self.assertIn("grid-row: 1", css)
 
     def test_validation_post_appends_human_trace_without_private_note_leak(self) -> None:
