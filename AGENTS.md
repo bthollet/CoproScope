@@ -50,7 +50,7 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   Les anciennes roadmaps/backlogs ne sont plus des sources de pilotage actives.
 - Tout chantier actif doit avoir une ligne vivante dans
   [`docs/presence_agents.md`](./docs/presence_agents.md), avec owner,
-  worktree/branche, heartbeat et statut.
+  worktree/branche, lease ou point de reprise et statut.
 - Le travail multi-agent n'utilise plus de couche CO/CE ni de file de jetons.
   La conversation courante reste le fil pilote: elle lit le gouvernail
   [`docs/roadmap_backlog_central.md`](./docs/roadmap_backlog_central.md),
@@ -68,7 +68,7 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   est archive: ne plus publier ni attendre de `SLOT-*`.
 - Quand Brice dit `lance un orchestrateur`, `lance une equipe`, `lance une
   equipe agile`, `lance une equipe UX/UI` ou une variante proche, appliquer
-  [`docs/commandes_orchestration_coproscope.md`](./docs/commandes_orchestration_coproscope.md):
+  [`docs/orchestration_agents.md`](./docs/orchestration_agents.md):
   le fil pilote s'appuie d'abord sur l'objectif actif Codex (`/objectif`) et
   sur `docs/presence_agents.md`. Les outils `orchestration-watch` et
   `orchestration-supervise` sont des diagnostics manuels, pas des relances
@@ -262,8 +262,7 @@ Pour diagnostiquer l'orchestration sans tests applicatifs:
 
 ```powershell
 .\tools\orchestration-watch.cmd
-.\tools\orchestration-watch.cmd --emit-prompt
-.\tools\orchestration-supervise.cmd --emit-recovery-prompt
+.\tools\orchestration-supervise.cmd --read-codex-processes
 ```
 
 Le check rapide ne remplace pas la verification d'integration complete quand le
@@ -313,7 +312,7 @@ Ownership fichiers: <liste de dossiers/fichiers modifiables>
 Fichiers a eviter: <liste>
 Passerelle/registre de trace: <fichier>
 Dernier point coordination lu: <fichier + heure>
-Lease ownership: <expiration + fuseau> ; heartbeat dans docs/presence_agents.md
+Lease ownership: <expiration + fuseau> ; point de reprise dans docs/presence_agents.md
 Donnees: pas de donnees privees dans Git ; instance privee uniquement en lecture locale.
 Donnees de test locales par defaut: `C:\Users\brice\CoproScope\instances\beauvallon_test`.
 Verification attendue: <commandes de test ou checks UI>

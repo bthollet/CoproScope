@@ -7,14 +7,15 @@ Ce protocole relie quatre choses qui ne doivent pas etre confondues:
 | Niveau | Role | Registre |
 |---|---|---|
 | Gouvernail roadmap | Source de verite unique des intentions officielles | `docs/roadmap_backlog_central.md` |
-| Tableau d'execution courant | Facade courte du run actif, lisible par les workers | `docs/tableau_execution_courant.md` |
+| Tableau d'execution courant | Archive historique des anciens slots; ne pilote plus le run actif | `docs/tableau_execution_courant.md` |
 | Chantier | Travail ouvert sur une intention | `docs/presence_agents.md` |
 | Conversation/agent | Fil vivant qui execute ou coordonne | `docs/presence_agents.md` |
 | Worktree/branche | Isolation technique Git | Git + registre de presence |
 
-Le gouvernail long n'est pas un tableau de sprint. Seul l'orchestrateur y
-choisit le prochain `ORD-*`. Les workers lisent le tableau d'execution courant
-et prennent seulement un slot `A_PRENDRE` deja publie pour le `CH-*` courant.
+Le gouvernail long n'est pas un tableau de sprint. Seul le fil pilote y choisit
+le prochain `ORD-*`. Les agents ou sous-agents ne choisissent pas eux-memes
+dans cette file: ils recoivent une mission bornee du fil pilote et la tracent
+dans `docs/presence_agents.md`.
 
 ## Ajouter a la roadmap
 
@@ -34,24 +35,25 @@ Le backlog n'est pas une promesse de livraison. La roadmap est une intention
 retenue. Un chantier actif commence seulement quand un owner et un perimetre
 sont declares.
 
-## Tableau d'execution courant
+## Tableau d'execution courant archive
 
-`docs/tableau_execution_courant.md` est la vue courte du travail en cours.
-L'orchestrateur le met a jour apres avoir choisi un seul `ORD-*` et ouvert un
-seul `CH-*`.
+`docs/tableau_execution_courant.md` est conserve pour lire les anciennes traces,
+mais il n'est plus la vue active du travail en cours. Aucun nouveau slot ni
+aucune nouvelle file intermediaire ne doit y etre cree.
 
-Le tableau contient des slots de role, pas une seconde roadmap:
+Le modele actif est:
 
-- `SLOT-*` avec statut `A_PRENDRE`, `EN_COURS`, `BLOQUE`,
-  `PRET_A_INTEGRER`, `TERMINE` ou `ANNULE`;
-- le `CH-*` et l'`ORD-*` deja choisis par l'orchestrateur;
-- l'ownership autorise;
-- les fichiers interdits;
-- le livrable et les tests/preuves.
+- le fil pilote choisit ou reprend un seul `ORD-*`;
+- il ouvre ou reprend un seul `CH-*`;
+- il trace `ROUTAGE_EQUIPE` dans `docs/presence_agents.md`;
+- il lance des sous-agents par roles si l'outil est disponible;
+- si l'outil manque, les roles requis sont joues sequentiellement, nommes et
+  traces dans `docs/presence_agents.md`.
 
-Un worker ne peut pas creer de `CH-*`, choisir un `ORD-*`, modifier l'objectif
-actif Codex ou creer une relance automatique. S'il ne trouve aucun slot
-`A_PRENDRE`, il s'arrete en repondant qu'il attend l'orchestrateur.
+Un agent ne peut pas creer de `CH-*`, choisir un `ORD-*`, modifier l'objectif
+actif Codex ou creer une relance automatique sans mission explicite du fil
+pilote. Sans mission explicite, il reste en lecture seule et attend le
+coordinateur.
 
 ## Nommage des chantiers
 
@@ -100,9 +102,9 @@ Avant toute edition, l'agent ou la conversation:
 2. rattache son travail a un `RM-*`;
 3. cree ou met a jour un `CH-*` selon la regle de nommage ci-dessus, puis un
    `CONV-*`;
-4. si l'agent est orchestrateur, publie les slots du chantier dans
-   `docs/tableau_execution_courant.md`; si l'agent est worker, prend seulement
-   un slot `A_PRENDRE` deja publie;
+4. si l'agent est coordinateur, trace `ROUTAGE_EQUIPE` et les roles dans
+   `docs/presence_agents.md`; si l'agent execute un role, il travaille
+   seulement sur la mission bornee que le fil pilote lui a donnee;
 5. declare ownership, fichiers evites, worktree/branche, tests attendus;
 6. fixe un lease d'ownership et une prochaine action.
 
@@ -111,7 +113,10 @@ lecture seule.
 
 ## Pendant le travail
 
-- Mettre a jour le heartbeat si le travail dure.
+- Mettre a jour la ligne de presence si le travail dure: dernier point lu,
+  lease, prochaine action, tests ou blocage.
+- Ne creer une heartbeat Codex que si Brice demande explicitement un reveil
+  horodate borne au `CH-*` courant.
 - Ne jamais supposer qu'un worktree suffit a prouver l'activite.
 - Ne pas toucher un fichier sensible sans ownership explicite.
 - Si une autre conversation modifie un fichier hors ownership, continuer.
@@ -126,7 +131,7 @@ Une conversation s'arrete par un statut explicite dans `docs/presence_agents.md`
 - `INTEGRE` si le coordinateur a integre et verifie;
 - `EN_ATTENTE_USER` si Brice doit arbitrer;
 - `BLOQUE` si une dependance empeche de finir;
-- `EXPIRE` si le lease est depasse sans heartbeat;
+- `EXPIRE` si le lease est depasse sans point de reprise exploitable;
 - `CLOTURE` si rien ne reste a reprendre;
 - `ABANDONNE` si le chantier est arrete sans suite.
 
