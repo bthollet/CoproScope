@@ -297,6 +297,57 @@
 }
 
 @media (max-width: 760px) {
+  .cs-comptes-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 10px;
+  }
+
+  .cs-comptes-header > div:first-child {
+    min-width: 0;
+  }
+
+  .cs-comptes-header .eyebrow {
+    margin-bottom: 2px;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .cs-comptes-header h2 {
+    font-size: 22px;
+    line-height: 1.05;
+  }
+
+  .cs-comptes-header .lead {
+    display: -webkit-box;
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.2;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .cs-comptes-header .cs-header-tools {
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 5px;
+    align-items: stretch;
+    width: auto;
+    min-width: 142px;
+  }
+
+  .cs-comptes-header .cs-header-tools > .cs-status-badge,
+  .cs-comptes-header .cs-primary-action {
+    width: auto;
+    min-height: 28px;
+    justify-content: center;
+    padding: 5px 8px;
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
   .cs-rappro-workbench {
     gap: 8px;
   }
