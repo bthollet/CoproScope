@@ -161,8 +161,9 @@ Si le routeur hesite entre deux equipes:
 1. incident ou arbitrage gagne toujours sur tout;
 2. fan-in gagne sur nouveau dispatch;
 3. recherche gagne sur dev si le besoin ou la source est instable;
-4. backend owner unique gagne sur equipe agile complete si le fichier sensible
-   est le centre du travail;
+4. la strategie `BACKEND_DOMAINE` gagne sur `AGILE_UI_PRODUIT` quand un
+   fichier sensible est le centre du travail; cela limite qui edite le code,
+   mais ne rend jamais optionnels les roles expert, QA/privacy et usage;
 5. UI agile gagne seulement si une UI reelle, un visuel IA, un blueprint et un
    GO novice peuvent exister;
 6. integration gagne si un livrable `PRET_A_INTEGRER` attend deja.

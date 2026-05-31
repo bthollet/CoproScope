@@ -18,11 +18,19 @@
   <section class="cs-rappro-workbench" id="rappro-file">
     <details class="panel cs-rappro-detail" open>
       <summary class="panel-head cs-rappro-detail-summary">
-        <h3>A faire sur cette ligne</h3>
-        <span>{{ view.selected.status_label if view.selected else 'Aucune selection' }}</span>
-        {% if view.selected %}
-        <small class="cs-rappro-summary-action">Action immediate: {{ view.selected.suggestion.next_action }}</small>
-        {% endif %}
+        <div class="cs-rappro-summary-main">
+          <h3>A faire sur cette ligne</h3>
+          {% if view.selected %}
+          <small class="cs-rappro-summary-action">Action immediate: {{ view.selected.suggestion.next_action }}</small>
+          {% endif %}
+        </div>
+        <div class="cs-rappro-summary-side">
+          <span>{{ view.selected.status_label if view.selected else 'Aucune selection' }}</span>
+          <span class="cs-rappro-toggle-text">
+            <span class="cs-rappro-toggle-open">Masquer le detail</span>
+            <span class="cs-rappro-toggle-closed">Afficher le detail</span>
+          </span>
+        </div>
       </summary>
       {% if view.selected %}
       {% set item = view.selected %}

@@ -411,24 +411,12 @@
   display: none;
 }
 
-.cs-rappro-detail-summary::after {
-  content: "v";
-  display: inline-grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  border: 1px solid #cfd8e5;
-  border-radius: 8px;
-  color: #475467;
-  font-weight: 760;
+.cs-rappro-detail-summary::marker {
+  content: "";
 }
 
 .cs-rappro-detail:not([open]) {
   padding-bottom: 14px;
-}
-
-.cs-rappro-detail:not([open]) .cs-rappro-detail-summary::after {
-  content: ">";
 }
 
 .cs-comptes-tabs {

@@ -2,15 +2,38 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from ..core.common import InstanceConfig, now_iso, read_csv, write_csv
 from .annotationops import normalize_annotation, validate_annotation
-from .pdftrace_contracts import NO_SOURCE_WRITE_NOTICE, TEXT_STATUS_UNCONFIRMED, contains_sensitive_text
+from .pdftrace_contracts import (
+    DOCUMENT_HASH_MISMATCH,
+    DOCUMENT_HASH_NOT_CHECKED,
+    NO_SOURCE_WRITE_NOTICE,
+    TEXT_STATUS_UNCONFIRMED,
+    contains_sensitive_text,
+    document_hash_status,
+    file_sha256,
+)
 from .pdftraceops import build_zone_trace_candidate, candidate_to_annotation_row
 
 
 REGISTER_FILENAME = "registre_pdf_traces.csv"
+
+BLOCKED_HASH_PATH_PARTS = {
+    "raw",
+    "brut",
+    "bruts",
+    "restricted",
+    "restreint",
+    "restreints",
+    "private",
+    "logs",
+    "journaux",
+    "secret",
+    "secrets",
+}
 
 PDF_TRACE_FIELDS = [
     "trace_id",
@@ -79,6 +102,7 @@ def save_zone_trace(
 
     page = _required_page(form.get("page"))
     zone = _required_zone(form)
+    hash_status = _current_document_hash_status(instance, document_ref, document, document_hash)
     comment = _comment(form.get("comment"))
     if contains_sensitive_text(comment):
         raise ValueError("note trop sensible pour une trace candidate")
@@ -89,6 +113,7 @@ def save_zone_trace(
         page_index=page - 1,
         page_label=str(page),
         zone=zone,
+        document_hash_status=hash_status,
     )
     annotation_row = candidate_to_annotation_row(
         candidate,
@@ -146,9 +171,9 @@ def public_trace_summaries(instance: InstanceConfig, document_ref: str) -> list[
                 "anchor": _short_hash(row.get("anchor_hash", "")),
                 "page": row.get("page", "") or "1",
                 "zone": f"Zone encadree page {row.get('page', '') or '1'}",
-                "status": "Trace candidate enregistree",
+                "status": _trace_status_label(row.get("document_hash_status", "")),
                 "diffusion": _diffusion_label(row.get("diffusion", "")),
-                "text": _text_label(row.get("text_status", "")),
+                "text": _text_label(row.get("text_status", ""), row.get("document_hash_status", "")),
                 "comment": _short_text(row.get("comment", "")),
             }
         )
@@ -210,6 +235,65 @@ def _required_float_value(value: Any, field: str) -> float:
     return parsed
 
 
+def _current_document_hash_status(
+    instance: InstanceConfig,
+    document_ref: str,
+    document: Mapping[str, Any],
+    expected_hash: str,
+) -> str:
+    source_path = _source_pdf_path(instance, document)
+    if source_path is None:
+        source_path = _source_pdf_path(instance, _registered_document(instance, document_ref))
+    if source_path is None:
+        return DOCUMENT_HASH_NOT_CHECKED
+    try:
+        source_hash = file_sha256(source_path)
+    except OSError:
+        return DOCUMENT_HASH_NOT_CHECKED
+    return document_hash_status(expected_hash, source_hash)
+
+
+def _source_pdf_path(instance: InstanceConfig, document: Mapping[str, Any]) -> Path | None:
+    original_path = _cell(document.get("original_path"))
+    if not original_path:
+        return None
+    path = instance.resolve_path(original_path)
+    if path is None:
+        return None
+    try:
+        resolved = path.resolve()
+        root = instance.instance_root.resolve()
+    except OSError:
+        return None
+    if not _is_relative_to(resolved, root):
+        return None
+    if _is_blocked_hash_path(resolved, root):
+        return None
+    try:
+        return resolved if resolved.is_file() else None
+    except OSError:
+        return None
+
+
+def _is_blocked_hash_path(path: Path, root: Path) -> bool:
+    try:
+        relative_parts = [part.lower() for part in path.relative_to(root).parts]
+    except ValueError:
+        return True
+    return any(part in BLOCKED_HASH_PATH_PARTS for part in relative_parts)
+
+
+def _registered_document(instance: InstanceConfig, document_ref: str) -> Mapping[str, Any]:
+    try:
+        _, rows = read_csv(instance.register("documents"))
+    except KeyError:
+        return {}
+    for row in rows:
+        if row.get("doc_id") == document_ref:
+            return row
+    return {}
+
+
 def _format_float(value: float) -> str:
     return f"{value:.6f}".rstrip("0").rstrip(".")
 
@@ -230,7 +314,17 @@ def _diffusion_label(value: str) -> str:
     return "Non diffusable par defaut" if _cell(value) == "non_diffusable" else "Diffusion a verifier"
 
 
-def _text_label(value: str) -> str:
+def _trace_status_label(hash_status: str) -> str:
+    if _cell(hash_status) == DOCUMENT_HASH_MISMATCH:
+        return "Trace candidate enregistree - a verifier"
+    return "Trace candidate enregistree"
+
+
+def _text_label(value: str, hash_status: str) -> str:
+    if _cell(hash_status) == DOCUMENT_HASH_MISMATCH:
+        return "Le document a change depuis son ajout dans CoproScope. Verifiez que la zone encadree montre toujours le bon passage."
+    if _cell(hash_status) == DOCUMENT_HASH_NOT_CHECKED:
+        return "Version du document non verifiee: relisez la zone encadree avant usage."
     if _cell(value) == TEXT_STATUS_UNCONFIRMED:
         return "Texte non confirme : seule la zone encadree est gardee."
     return "Texte a relire avant usage."

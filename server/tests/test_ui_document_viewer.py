@@ -3,6 +3,7 @@ from __future__ import annotations
 import shutil
 import tempfile
 import unittest
+import hashlib
 from html import unescape
 from pathlib import Path
 
@@ -10,6 +11,10 @@ from coproscope.core.common import DEFAULT_DOCUMENT_FIELDS, load_instance, read_
 from coproscope.modules import pdftrace_registry
 from coproscope.web.app import create_app
 from coproscope.web.document_viewer import build_document_detail
+
+
+def _sha256(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()
 
 
 class DocumentViewerUiTests(unittest.TestCase):
@@ -332,7 +337,7 @@ class DocumentViewerUiTests(unittest.TestCase):
                 "doc_id": doc_id,
                 "file_name": "trace_save.pdf",
                 "extension": "pdf",
-                "sha256": "e" * 64,
+                "sha256": _sha256(pdf_bytes),
                 "size_bytes": str(pdf_path.stat().st_size),
                 "original_path": relative_to(self.instance_root, pdf_path),
                 "source_zone": "STAGING",
@@ -371,6 +376,7 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertEqual(trace_rows[0]["page"], "1")
         self.assertEqual(trace_rows[0]["proof_status"], "preuve_candidate")
         self.assertEqual(trace_rows[0]["text_status"], "non_confirme")
+        self.assertEqual(trace_rows[0]["document_hash_status"], "hash_conforme")
         self.assertEqual(trace_rows[0]["diffusion"], "non_diffusable")
         self.assertEqual(trace_rows[0]["write_policy"], "source_pdf_is_never_modified")
         self.assertEqual(detail.status_code, 200)
@@ -384,6 +390,124 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertNotIn("rects", body)
         self.assertNotIn(str(self.instance_root), body)
         self.assertNotIn("raw/", body.lower())
+
+    def test_pdf_trace_save_marks_changed_source_hash_to_verify_without_mutating_pdf(self) -> None:
+        fields, rows = self._documents()
+        doc_id = "DOC-PDF-TRACE-HASH-CHANGED"
+        pdf_path = self.instance_root / "staging" / "pdf" / "trace_hash_changed.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        registered_bytes = b"%PDF-1.4\n% registered version\n"
+        changed_bytes = b"%PDF-1.4\n% changed version\n"
+        pdf_path.write_bytes(registered_bytes)
+        registered_hash = _sha256(registered_bytes)
+        rows.append(
+            {
+                **{field: "" for field in fields},
+                "doc_id": doc_id,
+                "file_name": "trace_hash_changed.pdf",
+                "extension": "pdf",
+                "sha256": registered_hash,
+                "size_bytes": str(pdf_path.stat().st_size),
+                "original_path": relative_to(self.instance_root, pdf_path),
+                "source_zone": "STAGING",
+                "document_type": "PDF",
+            }
+        )
+        self._write_documents(fields, rows)
+        pdf_path.write_bytes(changed_bytes)
+
+        client = self._client()
+        response = client.post(
+            f"/documents/{doc_id}/traces",
+            data={
+                "page": "1",
+                "zone_x": "0.20",
+                "zone_y": "0.25",
+                "zone_width": "0.40",
+                "zone_height": "0.10",
+                "comment": "Zone a verifier apres changement",
+            },
+            follow_redirects=False,
+        )
+        trace_rows = read_csv(pdftrace_registry.trace_register_path(self.instance))[1]
+        detail = client.get(f"/documents/{doc_id}")
+        body = unescape(detail.text)
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(pdf_path.read_bytes(), changed_bytes)
+        self.assertEqual(len(trace_rows), 1)
+        self.assertEqual(trace_rows[0]["document_hash"], f"sha256:{registered_hash}")
+        self.assertEqual(trace_rows[0]["document_hash_status"], "hash_a_verifier")
+        self.assertIn("Trace candidate enregistree - a verifier", body)
+        self.assertIn("Le document a change depuis son ajout dans CoproScope", body)
+        self.assertIn("Verifiez que la zone encadree montre toujours le bon passage", body)
+        self.assertNotIn(str(self.instance_root), body)
+        self.assertNotIn("original_path", body)
+        self.assertNotIn("source_engine", body)
+        self.assertNotIn("zotero_position", body)
+        self.assertNotIn("rects", body)
+        self.assertNotIn("raw/", body.lower())
+        self.assertNotIn("raw\\", body.lower())
+
+    def test_pdf_trace_save_marks_hash_not_verified_when_source_is_unavailable(self) -> None:
+        fields, rows = self._documents()
+        outside_pdf = Path(self.tempdir.name) / "outside_trace.pdf"
+        outside_pdf.write_bytes(b"%PDF-1.4\n% outside instance\n")
+        raw_pdf = self.instance_root / "raw" / "source_trace.pdf"
+        raw_pdf.parent.mkdir(parents=True, exist_ok=True)
+        raw_pdf.write_bytes(b"%PDF-1.4\n% raw source\n")
+        cases = (
+            ("DOC-PDF-TRACE-NO-SOURCE", ""),
+            ("DOC-PDF-TRACE-OUTSIDE-SOURCE", str(outside_pdf)),
+            ("DOC-PDF-TRACE-BLOCKED-SOURCE", relative_to(self.instance_root, raw_pdf)),
+        )
+        for doc_id, original_path in cases:
+            rows.append(
+                {
+                    **{field: "" for field in fields},
+                    "doc_id": doc_id,
+                    "file_name": f"{doc_id}.pdf",
+                    "extension": "pdf",
+                    "sha256": "b" * 64,
+                    "original_path": original_path,
+                    "source_zone": "STAGING",
+                    "document_type": "PDF",
+                }
+            )
+        self._write_documents(fields, rows)
+
+        client = self._client()
+        for index, (doc_id, _original_path) in enumerate(cases, start=1):
+            with self.subTest(doc_id=doc_id):
+                response = client.post(
+                    f"/documents/{doc_id}/traces",
+                    data={
+                        "page": "1",
+                        "zone_x": "0.20",
+                        "zone_y": "0.25",
+                        "zone_width": "0.40",
+                        "zone_height": "0.10",
+                        "comment": "Zone a relire",
+                    },
+                    follow_redirects=False,
+                )
+                trace_rows = read_csv(pdftrace_registry.trace_register_path(self.instance))[1]
+                detail = client.get(f"/documents/{doc_id}")
+                body = unescape(detail.text)
+
+                self.assertEqual(response.status_code, 303)
+                self.assertEqual(len(trace_rows), index)
+                self.assertEqual(trace_rows[-1]["document_ref"], doc_id)
+                self.assertEqual(trace_rows[-1]["document_hash_status"], "hash_non_verifie")
+                self.assertIn("Version du document non verifiee", body)
+                self.assertNotIn(str(self.instance_root), body)
+                self.assertNotIn(str(outside_pdf), body)
+                self.assertNotIn("original_path", body)
+                self.assertNotIn("source_engine", body)
+                self.assertNotIn("zotero_position", body)
+                self.assertNotIn("rects", body)
+                self.assertNotIn("raw/", body.lower())
+                self.assertNotIn("raw\\", body.lower())
 
     def test_pdf_trace_save_rejects_private_comment_without_writing_sidecar(self) -> None:
         fields, rows = self._documents()

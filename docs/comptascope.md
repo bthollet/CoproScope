@@ -217,6 +217,23 @@ le fournisseur et le montant restent visibles, mais ils ne doivent pas
 repousser l'action sous le premier ecran. Les libelles de retour evitent de
 repeter le titre courant; ils disent ou l'utilisateur revient.
 
+Complement executable/UI issu de `CC-IT-025`: la recette Controle des comptes
+ne doit plus jamais etre presentee comme un module ComptaScope separe. Elle se
+fait dans `CoproScope.exe`, avec la route `/comptes/rapprochement` ouverte par
+l'executable. Le titre global peut rester `Controle des comptes`, mais le
+header de travail doit nommer l'objet courant, par exemple `Ligne selectionnee
+et preuves`, pour eviter de repeter deux fois le meme titre dans le premier
+ecran. Les actions du header restent sur une ligne aux largeurs intermediaires
+afin de ne pas repousser le bloc `Action immediate`.
+
+Complement UI issu de `CC-IT-026`: un panneau repliable ne doit pas exposer le
+marqueur technique natif du navigateur (`v`, triangle ou chevron non explique)
+comme seule indication. Le libelle visible doit dire l'action utilisateur:
+`Masquer le detail` quand le panneau est ouvert, `Afficher le detail` quand il
+est replie. Cette regle vaut pour les autres modules: chaque repli utile au
+premier ecran doit etre lisible par un membre novice du conseil syndical sans
+comprendre les conventions HTML.
+
 ## Limites
 
 - Pas de saisie comptable complete.
