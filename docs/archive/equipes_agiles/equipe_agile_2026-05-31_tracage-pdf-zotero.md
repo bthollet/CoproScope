@@ -163,47 +163,61 @@ Wording novice retenu:
 
 ## Resultat backend V1
 
-Statut methode: `EN_ATTENTE_USER`.
+Statut methode: `PRET_A_INTEGRER` pour le backend V1 seul.
 
 Rectification du 2026-05-31 01:36: cette tranche est techniquement verte, mais
 elle n'a pas suivi la sequence equipe agile du repo. Elle ne peut donc pas etre
 consideree comme une iteration validee tant que les roles prevus par la
 doctrine n'ont pas rendu.
 
+Revalidation equipe du 2026-05-31: les roles expert DocOps/preuve, QA
+privacy/regression et novice/usage ont rendu apres correction. Verdict commun:
+GO backend V1 seul, NO-GO UI maintenu.
+
 Livraison:
 
 - module `server/src/coproscope/modules/pdftraceops.py`;
+- module de contrat `server/src/coproscope/modules/pdftrace_contracts.py`;
 - tests `server/tests/test_pdftraceops.py`;
 - carte de mots PDF texte via PyMuPDF quand disponible;
 - recherche de phrase dans une page;
 - position compatible lecteur type Zotero: `pageIndex`, `pageLabel`, `rects`,
   `sortIndex`;
 - conversion vers annotation sidecar CoproScope;
-- masquage d'extrait si un chemin local est detecte;
-- trace de zone seule avec texte `non_confirme` pour scan ou vision future.
+- preuve toujours `preuve_candidate` avant validation humaine;
+- hash du PDF calcule et compare quand un fichier local existe;
+- ancre visuelle separee du hash texte: `anchor_hash` inclut document, page,
+  rectangles et texte;
+- rectangles detailles conserves dans la ligne sidecar, en plus de la zone
+  globale;
+- diffusion par defaut `non_diffusable`;
+- masquage d'extrait public pour les contenus locaux ou sensibles;
+- trace de zone seule avec texte `non_confirme` pour scan ou vision future;
+- trace `a_verifier` si le fichier ne correspond plus au hash attendu.
 
 Preuves:
 
-- `.\.venv\Scripts\python.exe -m unittest tests.test_pdftraceops -v`: 5 OK;
-- `.\.venv\Scripts\python.exe -m unittest tests.test_annotationops -v`: 6 OK;
+- `.\.venv\Scripts\python.exe -m unittest tests.test_pdftraceops -v`: 13 OK;
+- `.\.venv\Scripts\python.exe -m unittest tests.test_pdftraceops tests.test_annotationops -v`: 19 OK;
 - `.\.venv\Scripts\python.exe ..\tools\check_code_line_limit.py`: OK;
 - `git diff --check` cible: OK;
-- nouveaux fichiers controles sans espaces finaux.
+- fichiers code sous 600 lignes: `pdftraceops.py` 553 lignes,
+  `pdftrace_contracts.py` 127 lignes, `test_pdftraceops.py` 386 lignes.
+
+Retours equipe:
+
+- expert DocOps/preuve: GO backend V1 seul; reserve: `annotationops` normalise
+  encore seulement l'annotation globale et ne conserve pas tous les champs
+  detailles dans son evenement standard;
+- QA privacy/regression: GO backend V1 seul apres 13 tests PDF OK;
+- novice/usage: GO backend V1 seul; obligation future: l'UI devra afficher les
+  libelles utilisateur, pas le payload technique brut.
 
 Limites:
 
 - pas encore de route UI;
 - pas encore de lecteur PDF integre;
 - pas encore de visuel IA, blueprint UI dedie ou qualification novice;
-- pas de copie de code Zotero.
-
-Revue d'equipe a lancer avant integration:
-
-- expert domaine DocOps/preuve: verifier les invariants metier et la
-  distinction preuve candidate/preuve confirmee;
-- QA privacy/regression: verifier anti-fuite, non-mutation PDF, hash et
-  compatibilite annotations existantes;
-- novice usage: verifier que les sorties publiques ne font pas croire a une
-  validation automatique;
+- pas de copie de code Zotero;
 - designer/facilitateur seulement pour l'iteration UI suivante, avec visuel IA
   bitmap et blueprint UI dedie avant tout dev d'ecran.
