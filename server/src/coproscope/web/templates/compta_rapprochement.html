@@ -44,16 +44,6 @@
         <a class="button-link secondary" href="#rappro-validation">Tracer le controle local</a>
       </section>
 
-      <article class="cs-focus-card cs-card-tone-{{ item.tone }}">
-        <p class="eyebrow">{{ item.id }} - {{ item.source_label }}</p>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.subtitle }}</p>
-        <div class="badge-row">
-          <span class="badge is-review">{{ item.suggestion.strength }}</span>
-          <span class="badge is-public">{{ item.diffusion }}</span>
-        </div>
-      </article>
-
       <section class="cs-rappro-matrix" aria-labelledby="rappro-matrix-title">
         <div class="cs-rappro-matrix-head">
           <h4 id="rappro-matrix-title">Rapprochement 4 sources</h4>
@@ -77,6 +67,16 @@
           {% endfor %}
         </div>
       </section>
+
+      <article class="cs-focus-card cs-card-tone-{{ item.tone }}">
+        <p class="eyebrow">{{ item.id }} - {{ item.source_label }}</p>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.subtitle }}</p>
+        <div class="badge-row">
+          <span class="badge is-review">{{ item.suggestion.strength }}</span>
+          <span class="badge is-public">{{ item.diffusion }}</span>
+        </div>
+      </article>
 
       <section class="panel" aria-labelledby="rappro-suggestion-title">
         <div class="panel-head">

@@ -17,6 +17,8 @@ from .pdftrace_contracts import (
     file_sha256,
 )
 from .pdftraceops import build_zone_trace_candidate, candidate_to_annotation_row
+from .pdftraceops import extract_pdf_text_map
+from .pdftrace_zone_text import build_zone_text_candidate
 
 
 REGISTER_FILENAME = "registre_pdf_traces.csv"
@@ -52,6 +54,9 @@ PDF_TRACE_FIELDS = [
     "proof_ref",
     "proof_status",
     "text_status",
+    "selected_text_hash",
+    "selected_text_excerpt",
+    "confidence",
     "document_hash_status",
     "diffusion",
     "confidentiality",
@@ -108,7 +113,7 @@ def save_zone_trace(
     if contains_sensitive_text(comment):
         raise ValueError("note trop sensible pour une trace candidate")
 
-    candidate = build_zone_trace_candidate(
+    candidate = _zone_text_candidate(instance, document_ref, document, document_hash, page, zone) or build_zone_trace_candidate(
         document_ref=document_ref,
         document_hash=document_hash,
         page_index=page - 1,
@@ -149,6 +154,9 @@ def save_zone_trace(
         "proof_ref": annotation.proof_ref,
         "proof_status": candidate.proof_status,
         "text_status": candidate.text_status,
+        "selected_text_hash": _selected_text_hash(candidate),
+        "selected_text_excerpt": _selected_text_excerpt(candidate),
+        "confidence": candidate.confidence,
         "document_hash_status": candidate.document_hash_status,
         "diffusion": annotation.diffusion,
         "confidentiality": annotation.confidentiality,
@@ -175,6 +183,7 @@ def public_trace_summaries(instance: InstanceConfig, document_ref: str) -> list[
                 "status": _trace_status_label(row.get("document_hash_status", "")),
                 "diffusion": _diffusion_label(row.get("diffusion", "")),
                 "text": _text_label(row.get("text_status", ""), row.get("document_hash_status", "")),
+                "excerpt": _short_text(row.get("selected_text_excerpt", "")),
                 "comment": _short_text(row.get("comment", "")),
             }
         )
@@ -255,6 +264,45 @@ def _positive_int(value: Any) -> int:
     except (TypeError, ValueError):
         return 0
     return parsed if parsed > 0 else 0
+
+
+def _zone_text_candidate(
+    instance: InstanceConfig,
+    document_ref: str,
+    document: Mapping[str, Any],
+    document_hash: str,
+    page: int,
+    zone: Mapping[str, Any],
+):
+    source_path = _source_pdf_path(instance, document)
+    if source_path is None:
+        source_path = _source_pdf_path(instance, _registered_document(instance, document_ref))
+    if source_path is None:
+        return None
+    try:
+        text_map = extract_pdf_text_map(source_path, document_ref=document_ref, document_hash=document_hash)
+    except Exception:
+        return None
+    return build_zone_text_candidate(text_map, page_index=page - 1, page_label=str(page), zone=zone)
+
+
+def _selected_text_excerpt(candidate) -> str:
+    text = _cell(candidate.selected_text)
+    if not text:
+        return ""
+    if _cell(candidate.document_hash_status) == DOCUMENT_HASH_MISMATCH:
+        return "Document modifie depuis la trace: verifier la zone avant usage."
+    if candidate.private_excerpt_blocked or contains_sensitive_text(text):
+        return "[extrait masque: contenu local ou sensible]"
+    return f"Texte repere: {_short_text(text)}"
+
+
+def _selected_text_hash(candidate) -> str:
+    if not candidate.selected_text.strip():
+        return ""
+    if candidate.private_excerpt_blocked or contains_sensitive_text(candidate.selected_text):
+        return candidate.anchor_hash
+    return candidate.selected_text_hash
 
 
 def _current_document_hash_status(
@@ -349,7 +397,7 @@ def _text_label(value: str, hash_status: str) -> str:
         return "Version du document non verifiee: relisez la zone encadree avant usage."
     if _cell(value) == TEXT_STATUS_UNCONFIRMED:
         return "Texte non confirme : seule la zone encadree est gardee."
-    return "Texte a relire avant usage."
+    return "Texte repere automatiquement, a relire. Preuve non validee par CoproScope."
 
 
 def _actionable_issues(issues):

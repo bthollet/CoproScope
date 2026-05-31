@@ -217,7 +217,8 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("cs-rappro-action", response.text)
         self.assertIn('href="#rappro-validation"', response.text)
         self.assertIn('id="rappro-validation"', response.text)
-        self.assertLess(response.text.index("cs-rappro-action"), response.text.index("cs-focus-card"))
+        self.assertLess(response.text.index("cs-rappro-action"), response.text.index("cs-rappro-matrix"))
+        self.assertLess(response.text.index("cs-rappro-matrix"), response.text.index("cs-focus-card"))
         self.assertLess(response.text.index("Action immediate"), response.text.index("Rapprochement 4 sources"))
         self.assertIn('role="listitem" class="cs-rappro-source-cell', response.text)
         matrix_text = text[text.index("Rapprochement 4 sources") :]
@@ -265,6 +266,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn(".cs-rappro-summary-action", css)
         self.assertIn(".cs-rappro-action", css)
         self.assertLess(response.text.index("Action immediate"), response.text.index("Rapprochement 4 sources"))
+        self.assertLess(response.text.index("Rapprochement 4 sources"), response.text.index("cs-focus-card"))
         self.assertIn("white-space: normal", css)
         self.assertIn("overflow-wrap: anywhere", css)
         self.assertIn("max-height: min(680px, calc(100vh - 174px))", css)
