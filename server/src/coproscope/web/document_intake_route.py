@@ -18,8 +18,11 @@ from .document_intake_sources import (
 from .document_intake_view_options import DOCUMENT_TYPE_VALUES, normalize_document_type_value
 
 
-DOCUMENT_INBOX_INTAKE_LIMIT = 50
+DOCUMENT_INBOX_INTAKE_LIMIT = 1000
 DOCUMENT_INBOX_PENDING_STATUSES = {"", "PENDING", "A_CLASSER", "UNCLASSIFIED", "TO_CLASSIFY", "PROPOSED"}
+DOCUMENT_INBOX_REVIEW_OCR_STATUSES = {"", "PENDING", "OCR_REQUIRED", "EXTRACTION_ERROR", "SOURCE_MISSING", "UNSUPPORTED"}
+DOCUMENT_INBOX_REVIEW_PRIVACY_STATUSES = {"", "A_REVOIR", "A_ARBITRER", "BLOQUE"}
+DOCUMENT_INBOX_REVIEW_PUBLICATION_FORMS = {"aggregation_required", "metadata_only", "redaction_required"}
 DOCUMENT_INTAKE_TYPE_VALUES = set(DOCUMENT_TYPE_VALUES)
 DOCUMENT_INTAKE_PRIVACY_VALUES = {"A_ARBITRER", "DIFFUSABLE_BRUT", "A_BIFFER", "RESERVE_CS", "BLOQUE"}
 DOCUMENT_INTAKE_POINT_KINDS = {"ag", "decision", "demande", "facture", "incident", "chantier", "contentieux", "preuve_libre"}
@@ -301,11 +304,27 @@ def _document_intake_rows_from_register(
         _, register_rows = read_csv(instance.register("documents"))
     except (KeyError, OSError):
         return []
+    duplicate_groups: dict[str, int] = {}
+    duplicate_seen: dict[str, int] = {}
+    for register_row in register_rows:
+        sha256 = str(register_row.get("sha256") or "").strip()
+        if sha256:
+            duplicate_groups[sha256] = duplicate_groups.get(sha256, 0) + 1
     rows: list[dict[str, object]] = []
     for register_row in register_rows:
         classification_status = str(register_row.get("classification_status") or "").strip().upper()
         document_type = _document_intake_type_value(register_row.get("document_type"))
-        if classification_status not in DOCUMENT_INBOX_PENDING_STATUSES and document_type.upper() != "A_CLASSER":
+        status_ocr = str(register_row.get("status_ocr") or "").strip().upper()
+        privacy_status = str(register_row.get("privacy_review_status") or "").strip().upper()
+        publication_form = str(register_row.get("publication_form") or "").strip().lower()
+        needs_review = (
+            classification_status in DOCUMENT_INBOX_PENDING_STATUSES
+            or document_type.upper() == "A_CLASSER"
+            or status_ocr in DOCUMENT_INBOX_REVIEW_OCR_STATUSES
+            or privacy_status in DOCUMENT_INBOX_REVIEW_PRIVACY_STATUSES
+            or publication_form in DOCUMENT_INBOX_REVIEW_PUBLICATION_FORMS
+        )
+        if not needs_review:
             continue
         sha256 = str(register_row.get("sha256") or "").strip()
         doc_id = str(register_row.get("doc_id") or "").strip()
@@ -313,6 +332,13 @@ def _document_intake_rows_from_register(
             doc_id = f"DOC-{sha256[:12].upper()}"
         if not doc_id:
             continue
+        duplicate_count = duplicate_groups.get(sha256, 0)
+        duplicate_seen[sha256] = duplicate_seen.get(sha256, 0) + 1
+        duplicate_of = f"DUP-{sha256[:12].upper()}" if duplicate_count > 1 else ""
+        text_char_count = str(register_row.get("text_char_count") or "").strip()
+        text_path = str(register_row.get("text_path") or "").strip()
+        if not text_char_count or text_char_count == "0" or status_ocr in DOCUMENT_INBOX_REVIEW_OCR_STATUSES:
+            text_path = ""
         source_id = source_id_from_register_row(register_row)
         source_label = (
             "Inbox du coffre"
@@ -333,6 +359,17 @@ def _document_intake_rows_from_register(
                 "classification_status": classification_status or "A_CLASSER",
                 "privacy_status": str(register_row.get("privacy_review_status") or "A_ARBITRER").strip(),
                 "privacy_rationale": "A choisir avant tout partage hors instance locale.",
+                "status_ocr": status_ocr,
+                "text_char_count": text_char_count,
+                "text_path": text_path,
+                "extraction_level": str(register_row.get("extraction_level") or ""),
+                "text_quality": str(register_row.get("text_quality") or ""),
+                "required_transformations": str(register_row.get("required_transformations") or ""),
+                "redaction_status": str(register_row.get("redaction_status") or ""),
+                "publication_form": publication_form,
+                "duplicate_of": duplicate_of,
+                "duplicate_count": str(duplicate_count) if duplicate_count > 1 else "",
+                "duplicate_index": str(duplicate_seen[sha256]) if duplicate_count > 1 else "",
                 "source_kind": str(register_row.get("source_kind") or "depot_local").strip() or "depot_local",
                 "source_id": source_id,
                 "source_label": source_label,

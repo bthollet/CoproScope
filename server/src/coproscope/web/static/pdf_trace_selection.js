@@ -55,6 +55,11 @@
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
   }
 
+  function unitFrom(value) {
+    var parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.min(1, parsed)) : null;
+  }
+
   function setSubmitEnabled(button, enabled) {
     if (!button) {
       return;
@@ -137,6 +142,15 @@
     var pageNext = section.querySelector("[data-pdf-trace-page-next]");
     var pageStatus = section.querySelector("[data-pdf-trace-page-status]");
     var pdfObject = section.querySelector("[data-pdf-trace-pdf-object]");
+    var resumeSelection = {
+      page: numberFrom(workbench.getAttribute("data-pdf-trace-resume-page"), 0),
+      x: unitFrom(workbench.getAttribute("data-pdf-trace-resume-x")),
+      y: unitFrom(workbench.getAttribute("data-pdf-trace-resume-y")),
+      width: unitFrom(workbench.getAttribute("data-pdf-trace-resume-width")),
+      height: unitFrom(workbench.getAttribute("data-pdf-trace-resume-height")),
+      label: workbench.getAttribute("data-pdf-trace-resume-label") || ""
+    };
+    var replayLinks = document.querySelectorAll("[data-pdf-trace-replay]");
     var drag = null;
     var selection = null;
 
@@ -217,6 +231,63 @@
       setStatus(section, readyForPage());
     }
 
+    function applySavedTrace(trigger, updateUrl) {
+      var x = unitFrom(trigger.getAttribute("data-pdf-trace-x"));
+      var y = unitFrom(trigger.getAttribute("data-pdf-trace-y"));
+      var width = unitFrom(trigger.getAttribute("data-pdf-trace-width"));
+      var height = unitFrom(trigger.getAttribute("data-pdf-trace-height"));
+      if (x === null || y === null || width === null || height === null || !width || !height) {
+        return;
+      }
+      setCurrentPage(trigger.getAttribute("data-pdf-trace-page"));
+      var bounds = layer.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) {
+        return;
+      }
+      var rect = orderedRect(
+        x * bounds.width,
+        y * bounds.height,
+        (x + width) * bounds.width,
+        (y + height) * bounds.height
+      );
+      previewRect(rect, { width: bounds.width, height: bounds.height });
+      setSubmitEnabled(submit, false);
+      toggleAdjustHelp(section, false);
+      setStatus(section, trigger.getAttribute("data-pdf-trace-label") || "Zone enregistree a verifier sur la page " + currentPage);
+      if (updateUrl && window.history && trigger.href) {
+        window.history.replaceState(null, "", trigger.href);
+      }
+    }
+
+    function restoreSavedSelection() {
+      if (
+        !resumeSelection.page ||
+        resumeSelection.page !== currentPage ||
+        resumeSelection.x === null ||
+        resumeSelection.y === null ||
+        resumeSelection.width === null ||
+        resumeSelection.height === null ||
+        !resumeSelection.width ||
+        !resumeSelection.height
+      ) {
+        return;
+      }
+      var bounds = layer.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) {
+        return;
+      }
+      var rect = orderedRect(
+        resumeSelection.x * bounds.width,
+        resumeSelection.y * bounds.height,
+        (resumeSelection.x + resumeSelection.width) * bounds.width,
+        (resumeSelection.y + resumeSelection.height) * bounds.height
+      );
+      previewRect(rect, { width: bounds.width, height: bounds.height });
+      setSubmitEnabled(submit, false);
+      toggleAdjustHelp(section, false);
+      setStatus(section, resumeSelection.label || "Point de reprise ouvert");
+    }
+
     function previewRect(rect, current) {
       if (!current.width || !current.height) {
         return;
@@ -258,6 +329,14 @@
         setCurrentPage(pageInput.value);
       });
     }
+
+    Array.prototype.forEach.call(replayLinks, function (link) {
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        applySavedTrace(link, true);
+        layer.focus();
+      });
+    });
 
     layer.addEventListener("pointerdown", function (event) {
       if (event.button !== undefined && event.button !== 0) {
@@ -326,6 +405,26 @@
       }
       resetSelection(emptyForPage());
     });
+
+    if (resumeSelection.page) {
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(restoreSavedSelection);
+      } else {
+        window.setTimeout(restoreSavedSelection, 0);
+      }
+      window.setTimeout(restoreSavedSelection, 120);
+    } else if (window.URLSearchParams) {
+      var requested = new URLSearchParams(window.location.search).get("trace_id");
+      Array.prototype.some.call(replayLinks, function (link) {
+        if (requested && link.getAttribute("data-pdf-trace-id") === requested) {
+          window.setTimeout(function () {
+            applySavedTrace(link, false);
+          }, 0);
+          return true;
+        }
+        return false;
+      });
+    }
   }
 
   Array.prototype.forEach.call(

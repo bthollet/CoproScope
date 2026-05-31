@@ -321,6 +321,84 @@ class UiDocumentIntakeRouteTests(unittest.TestCase):
         self.assertEqual(rows[0]["proof_intent"], "decision")
         self.assertEqual(rows[0]["proof_label"], "decision et facture retrouvees")
 
+    def test_document_intake_surfaces_auto_classified_rows_that_still_need_review(self) -> None:
+        rows = []
+        review_ocr = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
+        review_ocr.update(
+            {
+                "doc_id": "DOC-INBOX-OCR",
+                "sha256": "d" * 64,
+                "original_path": r"200_INBOX\facture_cachee.pdf",
+                "file_name": "facture_cachee.pdf",
+                "extension": "pdf",
+                "size_bytes": "4096",
+                "source_zone": "200_INBOX",
+                "source_kind": "copie_primaire",
+                "document_type": "Facture",
+                "classification_status": "AUTO_CLASSIFIED",
+                "status_ocr": "OCR_REQUIRED",
+                "privacy_review_status": "AUTO_POLICY",
+                "publication_form": "raw",
+            }
+        )
+        review_privacy = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
+        review_privacy.update(
+            {
+                "doc_id": "DOC-INBOX-PRIV",
+                "sha256": "e" * 64,
+                "original_path": r"200_INBOX\contrat_cache.pdf",
+                "file_name": "contrat_cache.pdf",
+                "extension": "pdf",
+                "size_bytes": "2048",
+                "source_zone": "200_INBOX",
+                "source_kind": "copie_primaire",
+                "document_type": "Contrat_Syndic",
+                "classification_status": "AUTO_CLASSIFIED",
+                "status_ocr": "TEXT_EXTRACTED",
+                "text_char_count": "1200",
+                "text_path": r"staging\text\DOC-INBOX-PRIV.native.txt",
+                "privacy_review_status": "A_REVOIR",
+                "publication_form": "redaction_required",
+            }
+        )
+        already_safe = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
+        already_safe.update(
+            {
+                "doc_id": "DOC-INBOX-SAFE",
+                "sha256": "f" * 64,
+                "original_path": r"200_INBOX\piece_deja_ok.pdf",
+                "file_name": "piece_deja_ok.pdf",
+                "extension": "pdf",
+                "size_bytes": "1024",
+                "source_zone": "200_INBOX",
+                "source_kind": "copie_primaire",
+                "document_type": "Facture",
+                "classification_status": "AUTO_CLASSIFIED",
+                "status_ocr": "TEXT_EXTRACTED",
+                "text_char_count": "900",
+                "privacy_review_status": "AUTO_POLICY",
+                "publication_form": "raw",
+            }
+        )
+        rows.extend([review_ocr, review_privacy, already_safe])
+        write_csv(self.instance.register("documents"), DEFAULT_DOCUMENT_FIELDS, rows)
+
+        page = self._client().get("/documents/ajouter?source=inbox")
+
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("DOC-INBOX-OCR", page.text)
+        self.assertIn("DOC-INBOX-PRIV", page.text)
+        self.assertNotIn("DOC-INBOX-SAFE", page.text)
+        self.assertIn("OCR local requis", page.text)
+        self.assertIn("Texte reconnu", page.text)
+        self.assertIn("Facture", page.text)
+        self.assertIn("Contrat_Syndic", page.text)
+        self.assertNotIn("facture_cachee.pdf", page.text)
+        self.assertNotIn("contrat_cache.pdf", page.text)
+        self.assertNotIn("piece_deja_ok.pdf", page.text)
+        self.assertNotIn("200_INBOX", page.text)
+        self.assertNotRegex(page.text.lower(), r"raw[\\/]|c:\\\\|file://")
+
     def test_document_intake_ignores_private_or_unknown_choice_values(self) -> None:
         row = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
         row.update(

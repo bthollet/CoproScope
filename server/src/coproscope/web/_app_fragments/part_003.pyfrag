@@ -330,7 +330,7 @@ def create_app(
         )
 
     from .pdftrace_routes import register_pdftrace_routes
-    register_pdftrace_routes(app, instance, _require_token, _url_with_token, _invalidate_dashboard_model_cache)
+    register_pdftrace_routes(app, instance, _require_token, _url_with_token, _invalidate_dashboard_model_cache, templates, context)
 
     @app.get("/pieces", response_class=HTMLResponse)
     def pieces(request: FastAPIRequest):

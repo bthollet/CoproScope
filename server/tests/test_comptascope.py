@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from coproscope.core.common import RunContext, load_instance, read_csv
+from coproscope.core.common import DEFAULT_DOCUMENT_FIELDS, RunContext, load_instance, read_csv, relative_to, write_csv
 from coproscope.modules.accounting import (
     accounting_controls,
     reconcile_invoice_expenses,
@@ -14,6 +14,7 @@ from coproscope.modules.accounting import (
     supplier_aliases_from_suggestions,
 )
 from coproscope.modules.evidenceops import build_evidence_report
+from coproscope.modules import factureops
 from coproscope.modules.factureops import extract_invoices
 from coproscope.modules.gristops import sync_grist
 from coproscope.modules.tools import tools_status
@@ -181,6 +182,76 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertTrue(Path(str(result["invoice_anomalies"])).exists())
         _, invoices = read_csv(Path(str(result["invoice_evidence"])))
         self.assertEqual(invoices[0]["evidence_level"], "L1_NATIVE_TEXT")
+
+    def test_factureops_prefers_docops_text_without_reopening_source_pdf(self) -> None:
+        doc_id = "DOC-INVOICE-TEXT"
+        pdf_path = self.example_root / "200_INBOX" / "facture_2025_source.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_path.write_bytes(b"%PDF-1.4\n% unread during this test\n")
+        ocr_path = self.example_root / "200_INBOX" / "facture_2025_scan.pdf"
+        ocr_path.write_bytes(b"%PDF-1.4\n% ocr required during this test\n")
+        text_path = self.example_root / "staging" / "text" / f"{doc_id}.native.txt"
+        text_path.parent.mkdir(parents=True, exist_ok=True)
+        text_path.write_text(
+            "\n".join(
+                [
+                    "Facture FAC-2025-777",
+                    "Fournisseur Demo",
+                    "Date 15/01/2025",
+                    "Total TTC 1200,00",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        row = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
+        row.update(
+            {
+                "doc_id": doc_id,
+                "sha256": "abc",
+                "original_path": relative_to(self.example_root, pdf_path),
+                "file_name": "facture_2025_source.pdf",
+                "extension": "pdf",
+                "document_type": "Facture",
+                "status_ocr": "TEXT_EXTRACTED",
+                "text_path": relative_to(self.example_root, text_path),
+                "text_char_count": "80",
+                "extraction_level": "L1_NATIVE_TEXT",
+            }
+        )
+        ocr_row = {field: "" for field in DEFAULT_DOCUMENT_FIELDS}
+        ocr_row.update(
+            {
+                "doc_id": "DOC-INVOICE-OCR",
+                "sha256": "def",
+                "original_path": relative_to(self.example_root, ocr_path),
+                "file_name": "facture_2025_scan.pdf",
+                "extension": "pdf",
+                "document_type": "Facture",
+                "status_ocr": "OCR_REQUIRED",
+                "text_char_count": "0",
+            }
+        )
+        write_csv(self.instance.register("documents"), list(DEFAULT_DOCUMENT_FIELDS), [row, ocr_row])
+        original_reader = factureops._read_source_text
+        def guarded_reader(path: Path):
+            if path in {pdf_path, ocr_path}:
+                raise AssertionError("source pdf reopened")
+            return original_reader(path)
+
+        factureops._read_source_text = guarded_reader
+        try:
+            run = RunContext(self.instance, "invoices docops text")
+            result = extract_invoices(self.instance, run, 2025)
+            run.finish("OK", "invoices docops text complete")
+        finally:
+            factureops._read_source_text = original_reader
+
+        _, invoices = read_csv(Path(str(result["invoice_evidence"])))
+        invoice = next(row for row in invoices if row["doc_id"] == doc_id)
+        self.assertFalse(any(row["doc_id"] == "DOC-INVOICE-OCR" for row in invoices))
+        self.assertGreaterEqual(result["invoice_count"], 1)
+        self.assertEqual(invoice["extraction_method"], "docops_text")
+        self.assertEqual(invoice["evidence_level"], "L1_NATIVE_TEXT")
 
     def test_workers_invoices_scope_does_not_reconstruct_ledger(self) -> None:
         accounting_dir = self.example_root / "outputs" / "accounting"

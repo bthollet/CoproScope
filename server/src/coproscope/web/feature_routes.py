@@ -16,6 +16,7 @@ def register_feature_routes(
     from .compta_rapprochement_view import register_compta_rapprochement_routes
     from .contractops_view import register_contractops_routes
     from .courriers_preuves_view import register_courriers_preuves_routes
+    from .factures_review_view import register_factures_review_routes
     from .governance_atelier_ag_view import register_governance_atelier_ag_routes
     from .governance_cr_cs_view import register_governance_cr_cs_routes
     from .incidentops_view import register_incidentops_routes
@@ -37,6 +38,7 @@ def register_feature_routes(
     register_incidentops_routes(app, templates, context, year, require_token, html_response)
     register_contractops_routes(app, templates, context, year, require_token, html_response)
     register_compta_rapprochement_routes(app, templates, context, year, require_token, html_response)
+    register_factures_review_routes(app, templates, context, year, require_token, html_response)
     register_activity_routes(app, templates, context, year, require_token, html_response)
     register_suggestions_routes(app, templates, context, year, require_token, html_response)
     register_drive_mvp_routes(app, templates, context, year, require_token, html_response)

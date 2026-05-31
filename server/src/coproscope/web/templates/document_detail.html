@@ -17,12 +17,25 @@
   </div>
 </section>
 
+{% set requested_trace_id = request.query_params.get('trace_id', '') %}
+{% set selected_trace = namespace(value=None) %}
+{% for trace in document_detail.pdf_trace.saved_traces %}
+  {% if requested_trace_id and trace.trace_id == requested_trace_id %}
+    {% set selected_trace.value = trace %}
+  {% endif %}
+{% endfor %}
+{% set active_trace = selected_trace.value %}
+{% set trace_page = active_trace.page if active_trace else document_detail.pdf_trace.current_page %}
+{% set trace_page_label = 'Page ' ~ trace_page ~ ' sur ' ~ document_detail.pdf_trace.page_count if document_detail.pdf_trace.page_nav_available else 'Page ' ~ trace_page if document_detail.pdf_trace.has_pdf_viewer else document_detail.pdf_trace.page_label %}
+{% set trace_zone_ready = active_trace and active_trace.zone_x and active_trace.zone_y and active_trace.zone_width and active_trace.zone_height %}
+{% set trace_status_label = 'Point de reprise: ' ~ active_trace.zone if trace_zone_ready else document_detail.pdf_trace.selection_empty_label|replace('{page}', trace_page) %}
+
 <section class="grid two" aria-label="{{ document_detail.pdf_trace.workshop_label }}">
-  <div class="panel" id="pdf-reader" {% if document_detail.pdf_trace.available %}data-pdf-trace-workbench data-pdf-trace-empty-label="{{ document_detail.pdf_trace.selection_empty_label }}" data-pdf-trace-ready-label="{{ document_detail.pdf_trace.selection_ready_label }}" data-pdf-trace-current-page="{{ document_detail.pdf_trace.current_page }}" data-pdf-trace-page-count="{{ document_detail.pdf_trace.page_count }}"{% endif %}>
+  <div class="panel" id="pdf-reader" {% if document_detail.pdf_trace.available %}data-pdf-trace-workbench data-pdf-trace-empty-label="{{ document_detail.pdf_trace.selection_empty_label }}" data-pdf-trace-ready-label="{{ document_detail.pdf_trace.selection_ready_label }}" data-pdf-trace-current-page="{{ trace_page }}" data-pdf-trace-page-count="{{ document_detail.pdf_trace.page_count }}"{% if trace_zone_ready %} data-pdf-trace-resume-page="{{ active_trace.page }}" data-pdf-trace-resume-x="{{ active_trace.zone_x }}" data-pdf-trace-resume-y="{{ active_trace.zone_y }}" data-pdf-trace-resume-width="{{ active_trace.zone_width }}" data-pdf-trace-resume-height="{{ active_trace.zone_height }}" data-pdf-trace-resume-label="Point de reprise: {{ active_trace.zone }}"{% endif %}{% endif %}>
     <p class="eyebrow">{{ document_detail.pdf_trace.workshop_label }}</p>
     <div class="panel-head">
       <h3>{{ document_detail.pdf_trace.reader_label }}</h3>
-      <span>{{ document_detail.pdf_trace.page_label }}</span>
+      <span>{{ trace_page_label }}</span>
     </div>
     <div class="badge-row" aria-label="Commandes du lecteur">
       <span class="badge">{{ document_detail.pdf_trace.thumbnail_label }}</span>
@@ -36,11 +49,11 @@
       <button class="button-link secondary" type="button" data-pdf-trace-page-prev disabled>Page precedente</button>
       <label class="cs-pdf-trace-page-picker">
         <span>Page</span>
-        <input class="input" type="number" min="1" max="{{ document_detail.pdf_trace.page_count }}" value="{{ document_detail.pdf_trace.current_page }}" data-pdf-trace-page-input aria-label="Page courante">
+        <input class="input" type="number" min="1" max="{{ document_detail.pdf_trace.page_count }}" value="{{ trace_page }}" data-pdf-trace-page-input aria-label="Page courante">
       </label>
       <span class="badge" data-pdf-trace-page-total>{{ document_detail.pdf_trace.page_count_label }}</span>
       <button class="button-link secondary" type="button" data-pdf-trace-page-next>Page suivante</button>
-      <strong data-pdf-trace-page-status>{{ document_detail.pdf_trace.page_label }}</strong>
+      <strong data-pdf-trace-page-status>{{ trace_page_label }}</strong>
     </div>
     {% endif %}
     <p class="hint" style="margin-top:12px;">{{ document_detail.pdf_trace.selection_prompt if document_detail.pdf_trace.available else "Apercu autorise pour pointer une zone sans modifier la source." }}</p>
@@ -49,7 +62,7 @@
     {% endif %}
     <div class="cs-pdf-trace-preview-grid">
       <div class="empty" style="min-height:112px;padding:10px;text-align:center;">
-        <strong>{{ document_detail.pdf_trace.page_label }}</strong><br>
+        <strong>{{ trace_page_label }}</strong><br>
         <small>{{ document_detail.pdf_trace.thumbnail_label }}</small>
       </div>
       <div>
@@ -86,7 +99,7 @@
         {% endif %}
         </div>
         <div class="empty" style="margin-top:10px;">
-          <strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label|replace('{page}', document_detail.pdf_trace.current_page) if document_detail.pdf_trace.available else "Zone encadree" }}</strong><br>
+          <strong data-pdf-trace-status>{{ trace_status_label if document_detail.pdf_trace.available else "Zone encadree" }}</strong><br>
           <small data-pdf-trace-adjust-help hidden>{{ document_detail.pdf_trace.selection_adjust_help }}</small>
           <small data-pdf-trace-fallback-help>{{ document_detail.pdf_trace.status }} - {{ document_detail.pdf_trace.scan_status }}</small>
         </div>
@@ -102,10 +115,10 @@
     <p class="hint">{{ document_detail.pdf_trace.intro }}</p>
     <p class="hint"><strong>{{ document_detail.pdf_trace.limitation_notice }}</strong></p>
     {% if document_detail.pdf_trace.available %}
-    <p class="hint"><strong data-pdf-trace-status>{{ document_detail.pdf_trace.selection_empty_label|replace('{page}', document_detail.pdf_trace.current_page) }}</strong></p>
+    <p class="hint"><strong data-pdf-trace-status>{{ trace_status_label }}</strong></p>
     <p class="hint" data-pdf-trace-adjust-help hidden>{{ document_detail.pdf_trace.selection_adjust_help }}</p>
     <form method="post" action="/documents/{{ document_detail.doc.doc_id }}/traces{{ ui_token_query }}" class="upload-form cs-upload-form" style="margin-top:10px;" data-pdf-trace-form>
-      <input type="hidden" name="page" value="{{ document_detail.pdf_trace.candidate_form.page }}" data-pdf-trace-field="page">
+      <input type="hidden" name="page" value="{{ trace_page }}" data-pdf-trace-field="page">
       <input type="hidden" name="zone_x" value="{{ document_detail.pdf_trace.candidate_form.zone_x }}" data-pdf-trace-field="x">
       <input type="hidden" name="zone_y" value="{{ document_detail.pdf_trace.candidate_form.zone_y }}" data-pdf-trace-field="y">
       <input type="hidden" name="zone_width" value="{{ document_detail.pdf_trace.candidate_form.zone_width }}" data-pdf-trace-field="width">
@@ -161,14 +174,29 @@
         </tr>
       </tbody>
     </table>
+    {% if active_trace %}
+    <div class="empty" style="margin-top:10px;">
+      <strong>Point de reprise ouvert</strong><br>
+      <small>Vous reprenez ici: {{ active_trace.zone }}.</small><br>
+      <small>Prochaine action: {{ active_trace.next_action }}</small><br>
+      <small>{{ active_trace.status }}</small>
+      {% if active_trace.excerpt %}
+      <br><small>Extrait repere - {{ active_trace.excerpt }}</small>
+      {% endif %}
+      {% if active_trace.comment %}
+      <br><small>Note courte: {{ active_trace.comment }}</small>
+      {% endif %}
+    </div>
+    {% endif %}
     {% if document_detail.pdf_trace.saved_traces %}
-    {% set first_trace = document_detail.pdf_trace.saved_traces[0] %}
+    {% set first_trace = active_trace if active_trace else document_detail.pdf_trace.saved_traces[0] %}
     <div class="empty" style="margin-top:10px;">
       <strong>{{ first_trace.status }}</strong><br>
       <small>{{ first_trace.text }}</small>
       {% if first_trace.excerpt %}
       <br><small>Extrait repere - {{ first_trace.excerpt }}</small>
       {% endif %}
+      <br><small>Prochaine action: {{ first_trace.next_action }}</small>
       <br><small>{{ first_trace.diffusion }} - {{ first_trace.zone }}</small>
     </div>
     {% endif %}
@@ -188,12 +216,21 @@
     <p class="hint">{{ document_detail.annotations.notice }}</p>
     {% if document_detail.pdf_trace.saved_traces %}
     <table aria-label="Traces candidates enregistrees">
-      <thead><tr><th>Trace</th><th>Zone</th><th>Extrait repere</th><th>Statut</th></tr></thead>
+      <thead><tr><th>Trace</th><th>Zone</th><th>Extrait repere</th><th>Statut</th><th>Reprise locale</th></tr></thead>
       <tbody>
       {% for trace in document_detail.pdf_trace.saved_traces %}
-        <tr>
-          <th>{{ trace.status }}<br><small>{{ trace.created_at }}</small></th>
-          <td>{{ trace.zone }}<br><small>Ancre {{ trace.anchor }}</small></td>
+        {% set is_selected_trace = active_trace and trace.trace_id == active_trace.trace_id %}
+        <tr id="trace-{{ trace.trace_id }}" data-pdf-trace-saved-row data-pdf-trace-id="{{ trace.trace_id }}"{% if is_selected_trace %} aria-current="true"{% endif %}>
+          <th>
+            {{ trace.status }}<br><small>{{ trace.created_at }}</small>
+            {% if is_selected_trace %}<br><small>Point de reprise ouvert</small>{% endif %}
+          </th>
+          <td>
+            {{ trace.zone }}<br><small>Ancre {{ trace.anchor }}</small><br>
+            {% if trace.resume_path %}
+            <a class="button-link secondary" href="{{ token_href(trace.resume_path) }}#pdf-reader" data-pdf-trace-replay data-pdf-trace-id="{{ trace.trace_id }}" data-pdf-trace-page="{{ trace.page }}" data-pdf-trace-x="{{ trace.zone_x }}" data-pdf-trace-y="{{ trace.zone_y }}" data-pdf-trace-width="{{ trace.zone_width }}" data-pdf-trace-height="{{ trace.zone_height }}" data-pdf-trace-label="Point de reprise: {{ trace.zone }}">Reprendre cette trace</a>
+            {% endif %}
+          </td>
           <td>
             {% if trace.excerpt %}
             {{ trace.excerpt }}
@@ -205,6 +242,7 @@
             {% endif %}
           </td>
           <td>{{ trace.diffusion }}<br><small>{{ trace.text }}</small></td>
+          <td>{{ trace.next_action }}</td>
         </tr>
       {% endfor %}
       </tbody>

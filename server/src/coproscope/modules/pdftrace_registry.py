@@ -171,23 +171,39 @@ def save_zone_trace(
 
 
 def public_trace_summaries(instance: InstanceConfig, document_ref: str) -> list[dict[str, str]]:
-    summaries: list[dict[str, str]] = []
-    for row in read_document_trace_rows(instance, document_ref):
-        summaries.append(
+    return [_public_trace_summary(row) for row in read_document_trace_rows(instance, document_ref)]
+
+
+def public_trace_reprise_queue(instance: InstanceConfig) -> dict[str, object]:
+    documents = _document_summary_index(instance)
+    items: list[dict[str, str]] = []
+    for row in read_trace_rows(instance):
+        summary = _public_trace_summary(row)
+        document_ref = summary["document_ref"]
+        if not document_ref or not summary["trace_id"] or not summary["resume_path"]:
+            continue
+        document = documents.get(document_ref, {})
+        items.append(
             {
-                "trace_id": row.get("trace_id", ""),
-                "created_at": row.get("created_at", ""),
-                "anchor": _short_hash(row.get("anchor_hash", "")),
-                "page": row.get("page", "") or "1",
-                "zone": f"Zone encadree page {row.get('page', '') or '1'}",
-                "status": _trace_status_label(row.get("document_hash_status", "")),
-                "diffusion": _diffusion_label(row.get("diffusion", "")),
-                "text": _text_label(row.get("text_status", ""), row.get("document_hash_status", "")),
-                "excerpt": _short_text(row.get("selected_text_excerpt", "")),
-                "comment": _short_text(row.get("comment", "")),
+                "document_ref": document_ref,
+                "document_label": document.get("label", f"Document {document_ref}"),
+                "document_type": document.get("document_type", "Document"),
+                "created_at": summary["created_at"],
+                "page": summary["page"],
+                "zone": summary["zone"],
+                "status": summary["status"],
+                "diffusion": summary["diffusion"],
+                "text": summary["text"],
+                "next_action": summary["next_action"],
+                "resume_path": summary["resume_path"],
             }
         )
-    return summaries
+    return {
+        "count": str(len(items)),
+        "rows": items,
+        "empty": "Aucune trace PDF candidate a relire.",
+        "privacy_notice": "File locale uniquement: pas d'export, pas de PDF modifie, preuve candidate avant validation humaine.",
+    }
 
 
 def _cell(value: Any) -> str:
@@ -204,6 +220,62 @@ def _safe_ref(value: Any) -> str:
 def _comment(value: Any) -> str:
     text = _cell(value)[:180]
     return text or "Trace candidate depuis l'atelier document."
+
+
+def _page_label(row: Mapping[str, str]) -> str:
+    return str(max(1, _positive_int(row.get("page", ""))))
+
+
+def _public_trace_summary(row: Mapping[str, str]) -> dict[str, str]:
+    safe_document_ref = _safe_ref(row.get("document_ref"))
+    trace_id = _safe_ref(row.get("trace_id")) or _short_hash(row.get("anchor_hash", ""))
+    page = _page_label(row)
+    return {
+        "document_ref": safe_document_ref,
+        "trace_id": trace_id,
+        "created_at": row.get("created_at", ""),
+        "anchor": _short_hash(row.get("anchor_hash", "")),
+        "page": page,
+        "zone": f"Zone encadree page {page}",
+        "zone_x": _safe_unit(row.get("zone_x", "")),
+        "zone_y": _safe_unit(row.get("zone_y", "")),
+        "zone_width": _safe_unit(row.get("zone_width", "")),
+        "zone_height": _safe_unit(row.get("zone_height", "")),
+        "resume_path": f"/documents/{safe_document_ref}?trace_id={trace_id}" if safe_document_ref and trace_id else "",
+        "status": _trace_status_label(row.get("document_hash_status", "")),
+        "diffusion": _diffusion_label(row.get("diffusion", "")),
+        "text": _text_label(row.get("text_status", ""), row.get("document_hash_status", "")),
+        "excerpt": _public_text(row.get("selected_text_excerpt", "")),
+        "comment": _public_comment(row.get("comment", "")),
+        "next_action": _reprise_next_action(row.get("text_status", ""), row.get("document_hash_status", "")),
+    }
+
+
+def _document_summary_index(instance: InstanceConfig) -> dict[str, dict[str, str]]:
+    try:
+        _, rows = read_csv(instance.register("documents"))
+    except KeyError:
+        return {}
+    index: dict[str, dict[str, str]] = {}
+    for row in rows:
+        document_ref = _safe_ref(row.get("doc_id"))
+        if not document_ref:
+            continue
+        index[document_ref] = {
+            "label": f"Document {document_ref}",
+            "document_type": _public_text(row.get("document_type", "")) or "Document",
+        }
+    return index
+
+
+def _public_text(value: Any) -> str:
+    text = _short_text(_cell(value))
+    return "" if contains_sensitive_text(text) else text
+
+
+def _public_comment(value: Any) -> str:
+    text = _public_text(value)
+    return text if text else ""
 
 
 def _required_page(value: Any) -> int:
@@ -380,6 +452,39 @@ def _short_text(value: str) -> str:
     return f"{text[:117]}..." if len(text) > 120 else text
 
 
+def _safe_unit(value: Any) -> str:
+    try:
+        parsed = float(str(value or "").strip())
+    except (TypeError, ValueError):
+        return ""
+    if parsed != parsed or parsed < 0 or parsed > 1:
+        return ""
+    return _format_float(parsed)
+
+
+def _reprise_bucket(text_status: str, hash_status: str) -> str:
+    normalized_hash_status = _cell(hash_status)
+    normalized_text_status = _cell(text_status)
+    if normalized_hash_status == DOCUMENT_HASH_MISMATCH:
+        return "document_a_reverifier"
+    if normalized_hash_status == DOCUMENT_HASH_NOT_CHECKED:
+        return "version_a_verifier"
+    if normalized_text_status == TEXT_STATUS_UNCONFIRMED:
+        return "zone_seule_a_relire"
+    return "texte_repere_a_relire"
+
+
+def _reprise_next_action(text_status: str, hash_status: str) -> str:
+    bucket = _reprise_bucket(text_status, hash_status)
+    if bucket == "document_a_reverifier":
+        return "Rouvrir le PDF et confirmer que la zone pointe toujours le bon passage."
+    if bucket == "version_a_verifier":
+        return "Verifier la version du PDF avant de reconstruire la donnee."
+    if bucket == "zone_seule_a_relire":
+        return "Relire manuellement la zone encadree et saisir la donnee utile."
+    return "Relire l'extrait repere puis confirmer ou corriger la donnee."
+
+
 def _diffusion_label(value: str) -> str:
     return "Non diffusable par defaut" if _cell(value) == "non_diffusable" else "Diffusion a verifier"
 
@@ -422,6 +527,7 @@ def _is_relative_to(path, parent) -> bool:
 __all__ = [
     "PDF_TRACE_FIELDS",
     "REGISTER_FILENAME",
+    "public_trace_reprise_queue",
     "public_trace_summaries",
     "read_document_trace_rows",
     "read_trace_rows",

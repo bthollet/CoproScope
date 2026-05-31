@@ -101,6 +101,8 @@ def _public_document(row: dict[str, str]) -> dict[str, str]:
 
 
 def _display_file_name(row: dict[str, str]) -> str:
+    if _guard_private_inbox(row):
+        return row.get("doc_id", "") or f"Document {_short_hash(row.get('sha256', ''))}"
     value = row.get("file_name") or row.get("filename") or row.get("doc_id", "") or "Document"
     normalized = value.strip().replace("\\", "/")
     if not normalized:
@@ -471,7 +473,7 @@ def _history(row: dict[str, str]) -> dict[str, object]:
         {
             "label": "Document inventorie",
             "when": row.get("first_seen", "") or "date inconnue",
-            "status": row.get("source_zone", "") or "source locale",
+            "status": "source locale masquee" if _guard_private_inbox(row) else row.get("source_zone", "") or "source locale",
         },
         {
             "label": "Extraction texte",
@@ -548,6 +550,8 @@ def _build_preview(instance: InstanceConfig, row: dict[str, str]) -> dict[str, o
         preview = _preview_from_path(redacted, "version biffee", fallback=False)
         if preview is not None:
             return preview
+    if _guard_private_inbox(row):
+        return _unavailable_preview()
 
     extracted_text = _safe_existing_path(instance, row.get("text_path", ""))
     if extracted_text is not None:
@@ -565,6 +569,17 @@ def _build_preview(instance: InstanceConfig, row: dict[str, str]) -> dict[str, o
         if preview is not None:
             return preview
 
+    return _unavailable_preview()
+def _guard_private_inbox(row: dict[str, str]) -> bool:
+    source_zone = str(row.get("source_zone") or "").upper()
+    privacy = row.get("privacy_review_status") or row.get("review_required")
+    publication = row.get("publication_form") or ""
+    ocr_review = (row.get("status_ocr") or "").upper() in {"PENDING", "OCR_REQUIRED", "EXTRACTION_ERROR", "SOURCE_MISSING", "UNSUPPORTED"}
+    local_review = ocr_review or "A_CLASSER" in {(row.get("document_type") or "").upper(), (row.get("classification_status") or "").upper()}
+    if source_zone == "200_INBOX":
+        return local_review or privacy not in {"AUTO_POLICY", "DIFFUSABLE_BRUT", "DEMO_FICTIVE"} or publication != "raw"
+    return source_zone == "RAW" and (local_review or privacy not in {"", "AUTO_POLICY", "DIFFUSABLE_BRUT", "DEMO_FICTIVE"} or publication not in {"", "raw"})
+def _unavailable_preview() -> dict[str, object]:
     return {
         "kind": "unavailable",
         "kind_label": "apercu indisponible",
@@ -574,8 +589,6 @@ def _build_preview(instance: InstanceConfig, row: dict[str, str]) -> dict[str, o
         "truncated": False,
         "fallback": False,
     }
-
-
 def _preview_from_path(path: Path, source_label: str, *, fallback: bool) -> dict[str, object] | None:
     suffix = path.suffix.lower()
     if suffix in TEXT_SUFFIXES:

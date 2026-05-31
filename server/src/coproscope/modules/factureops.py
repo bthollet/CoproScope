@@ -158,10 +158,25 @@ def _read_source_text(path: Path) -> tuple[str, str, str]:
 
 
 def _document_evidence(instance: InstanceConfig, row: dict[str, str], path: Path) -> tuple[DocumentExtractionEvidence, str, str]:
-    source_text, method, source_level = _read_source_text(path)
     docops_text = _load_text_artifact(instance, row.get("text_path", ""))
     docling_markdown = _load_text_artifact(instance, row.get("docling_path", ""))
     layout_json = _load_text_artifact(instance, row.get("layout_path", ""))
+    if docops_text:
+        row_level = normalize_intensity_level(row.get("extraction_level"), default="L1_NATIVE_TEXT")
+        ocr_text = docops_text if row_level == "L2_LOCAL_OCR" else ""
+        native_text = "" if ocr_text else docops_text
+        return (
+            DocumentExtractionEvidence(
+                file_name=path.name,
+                native_text=native_text,
+                ocr_text=ocr_text,
+                docling_markdown=docling_markdown,
+                layout_json=layout_json,
+            ),
+            "docops_text",
+            row_level,
+        )
+    source_text, method, source_level = _read_source_text(path)
     row_level = normalize_intensity_level(row.get("extraction_level"), default=source_level or "L1_NATIVE_TEXT")
     evidence_level = highest_intensity_level(source_level, row_level, default=source_level or row_level)
     native_text = docops_text or source_text
@@ -318,6 +333,14 @@ def _extract_invoice_rows(instance: InstanceConfig, year: int) -> list[dict[str,
     for row in _candidate_source_rows(instance):
         path = _resolve_source_path(instance, row)
         if path is None or not path.is_file():
+            continue
+        if not row.get("text_path") and (row.get("status_ocr") or "").upper() in {
+            "PENDING",
+            "OCR_REQUIRED",
+            "EXTRACTION_ERROR",
+            "SOURCE_MISSING",
+            "UNSUPPORTED",
+        }:
             continue
         evidence, method, evidence_level = _document_evidence(instance, row, path)
         text = evidence.combined_text()

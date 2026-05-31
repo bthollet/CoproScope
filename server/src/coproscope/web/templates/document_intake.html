@@ -205,13 +205,14 @@
   {% endif %}
   {% if intake.has_cards %}
   <table class="table-dense">
-    <thead><tr><th>Document</th><th>Source</th><th>Statut</th><th>Type</th><th>Confidentialite</th><th>Diffusion</th><th>Suite</th></tr></thead>
+    <thead><tr><th>Document</th><th>Source</th><th>Statut</th><th>Lecture</th><th>Type</th><th>Confidentialite</th><th>Diffusion</th><th>Suite</th></tr></thead>
     <tbody>
     {% for card in intake.cards %}
       <tr>
-        <td><strong>{{ card.document_label }}</strong><br><small>{{ card.doc_id }}</small></td>
+        <td><strong>{{ card.document_label }}</strong><br><small>{{ card.doc_id }}{% if card.duplicate_label %} - doublon {{ card.duplicate_label }}{% endif %}</small></td>
         <td>{{ card.source_label }}</td>
         <td><span class="pill severity-{{ card.status_tone }}">{{ card.status_label }}</span></td>
+        <td>{{ card.docops.text_label }}</td>
         <td>{{ card.classification.document_type }}</td>
         <td>{{ card.privacy.status_label }}</td>
         <td><span class="pill severity-{{ card.diffusion_review.tone }}">{{ card.diffusion_review.label }}</span></td>
@@ -226,7 +227,7 @@
       <div class="panel-head">
         <div>
           <strong>{{ card.document_label }}</strong>
-          <span>{{ card.doc_id }} - {{ card.source_label }} - {{ card.local_reference }}</span>
+          <span>{{ card.doc_id }} - {{ card.source_label }} - {{ card.local_reference }}{% if card.duplicate_label %} - doublon {{ card.duplicate_label }}{% endif %}</span>
         </div>
         <span class="pill severity-{{ card.status_tone }}">{{ card.status_label }}</span>
       </div>
