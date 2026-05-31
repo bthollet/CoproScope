@@ -62,15 +62,105 @@
   box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.04);
 }
 
-.cs-pdf-trace-selection-box::after {
-  content: "";
+.cs-pdf-trace-selection-handle {
   position: absolute;
-  right: -5px;
-  bottom: -5px;
-  width: 8px;
-  height: 8px;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
   border: 2px solid #1d4ed8;
   background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.24);
+  touch-action: none;
+}
+
+.cs-pdf-trace-selection-handle-nw {
+  top: -8px;
+  left: -8px;
+  cursor: nwse-resize;
+}
+
+.cs-pdf-trace-selection-handle-n {
+  top: -8px;
+  left: calc(50% - 8px);
+  cursor: ns-resize;
+}
+
+.cs-pdf-trace-selection-handle-ne {
+  top: -8px;
+  right: -8px;
+  cursor: nesw-resize;
+}
+
+.cs-pdf-trace-selection-handle-e {
+  top: calc(50% - 8px);
+  right: -8px;
+  cursor: ew-resize;
+}
+
+.cs-pdf-trace-selection-handle-se {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+
+.cs-pdf-trace-selection-handle-s {
+  bottom: -8px;
+  left: calc(50% - 8px);
+  cursor: ns-resize;
+}
+
+.cs-pdf-trace-selection-handle-sw {
+  bottom: -8px;
+  left: -8px;
+  cursor: nesw-resize;
+}
+
+.cs-pdf-trace-selection-handle-w {
+  top: calc(50% - 8px);
+  left: -8px;
+  cursor: ew-resize;
+}
+
+@media (pointer: coarse) {
+  .cs-pdf-trace-selection-handle {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+  }
+
+  .cs-pdf-trace-selection-handle-nw,
+  .cs-pdf-trace-selection-handle-n,
+  .cs-pdf-trace-selection-handle-ne {
+    top: -11px;
+  }
+
+  .cs-pdf-trace-selection-handle-e,
+  .cs-pdf-trace-selection-handle-w {
+    top: calc(50% - 11px);
+  }
+
+  .cs-pdf-trace-selection-handle-se,
+  .cs-pdf-trace-selection-handle-s,
+  .cs-pdf-trace-selection-handle-sw {
+    bottom: -11px;
+  }
+
+  .cs-pdf-trace-selection-handle-nw,
+  .cs-pdf-trace-selection-handle-sw {
+    left: -11px;
+  }
+
+  .cs-pdf-trace-selection-handle-ne,
+  .cs-pdf-trace-selection-handle-e,
+  .cs-pdf-trace-selection-handle-se {
+    right: -11px;
+  }
+
+  .cs-pdf-trace-selection-handle-n,
+  .cs-pdf-trace-selection-handle-s {
+    left: calc(50% - 11px);
+  }
 }
 
 .button-link[disabled],
