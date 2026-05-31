@@ -244,6 +244,14 @@ technique. La recette doit verifier l'instance reelle chargee par
 `CoproScope.exe`, car les fuites de libelles apparaissent souvent dans la file
 longue et pas seulement sur la ligne de demonstration.
 
+Complement UI/executable issu de `CC-IT-028`: le tableau `Rapprochement 4
+sources` est le coeur du controle. Dans le premier ecran de `CoproScope.exe`,
+il doit commencer avant la fiche source detaillee: ordre cible `Action
+immediate`, puis matrice quatre sources, puis contexte de piece. Le contexte de
+piece reste disponible, mais il ne doit pas repousser la comparaison compta /
+banque / facture / decision sous la ligne de flottaison. La recette mesure la
+position reelle dans le navigateur integre et garde l'absence de libelles bruts.
+
 ## Limites
 
 - Pas de saisie comptable complete.
