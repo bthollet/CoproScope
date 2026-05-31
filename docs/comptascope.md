@@ -259,6 +259,13 @@ tres etroites, pas au poste de recette desktop. La recette verifie le style
 calcule, les positions des quatre premieres cellules, l'absence de scroll
 horizontal et l'absence de colonnes techniques visibles comme `doc_ids`.
 
+Complement `CC-IT-030`: quand la fenetre est etroite mais encore exploitable en
+desktop, la priorite est de montrer plus que le seul bord haut des cartes
+source. Les textes longs de l'action et de la matrice peuvent etre contenus sur
+une ou deux lignes, tant que les signaux utiles restent presents: action
+immediate, reserve sur le paiement, quatre sources, banque non fournie et aucun
+libelle technique.
+
 ## Limites
 
 - Pas de saisie comptable complete.

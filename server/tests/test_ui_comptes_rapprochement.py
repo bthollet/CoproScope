@@ -234,11 +234,13 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("source manquante", text)
         self.assertIn('href="/documents/DOC-FAC-001?token=local-secret"', response.text)
         self.assertIn("grid-template-columns: repeat(4, minmax(0, 1fr))", css)
+        self.assertIn("@media (max-width: 760px)", css)
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("@media (max-width: 560px)", css)
         self.assertNotIn("@media (max-width: 1320px)", css)
+        self.assertIn("-webkit-line-clamp: 2", css)
         imports = (static_root / "styles.css").read_text(encoding="utf-8")
-        self.assertIn("styles_part_30.css?v=20260531-compta-029", imports)
+        self.assertIn("styles_part_30.css?v=20260531-compta-030", imports)
 
     def test_long_queue_keeps_detail_before_scrollable_line_list(self) -> None:
         write_csv(
@@ -281,6 +283,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("max-height: min(680px, calc(100vh - 174px))", css)
         self.assertIn("overflow-y: auto", css)
         self.assertIn("@media (max-width: 980px)", css)
+        self.assertIn("@media (max-width: 760px)", css)
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn(".cs-comptes-header .cs-header-tools", css)
         self.assertIn("flex: 0 1 auto", css)
