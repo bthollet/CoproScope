@@ -25,17 +25,19 @@ Avant toute modification, lire dans cet ordre:
 1. `AGENTS.md`;
 2. `docs/orchestration_agents.md`;
 3. `docs/protocole_roadmap_presence_agents.md`;
-4. `docs/tableau_execution_courant.md`;
+4. `docs/tableau_execution_courant.md` seulement pour comprendre une trace
+   historique: ce tableau est archive et ne distribue plus le travail courant;
 5. le gouvernail unique `docs/roadmap_backlog_central.md` seulement si le bot
-   est l'orchestrateur ou si son slot le cite comme contexte;
+   est le fil pilote ou si sa mission explicite le cite comme contexte;
 6. `docs/presence_agents.md`;
 7. le dernier point dans `docs/point_coordination_live_8766_2026-05-21.md`;
 8. `docs/coordination_interconversations_2026-05-21.md`;
 9. la passerelle du lot: UX, DB, QA, dev ou registre.
 
-Un worker ne choisit jamais son travail dans le gouvernail. Il prend seulement
-un slot `A_PRENDRE` publie dans `docs/tableau_execution_courant.md`. S'il n'y
-en a pas, il reste en lecture seule et attend l'orchestrateur.
+Un agent ne choisit jamais son travail dans le gouvernail. Il recoit sa mission
+du fil pilote, avec role, ownership, fichiers evites, preuves attendues et
+condition d'arret, puis il laisse sa trace dans `docs/presence_agents.md`. Sans
+mission explicite, il reste en lecture seule et attend le coordinateur.
 
 Puis publier ou ajouter dans le livrable un bloc court:
 
@@ -60,9 +62,9 @@ Prochaine action:
 
 - Le gouvernail unique des demandes, priorites et imports d'anciens plans est
   `docs/roadmap_backlog_central.md`. Aucun autre document ne fait roadmap.
-- Le tableau de travail courant est `docs/tableau_execution_courant.md`. Il ne
-  contient pas une deuxieme backlog; il contient seulement les slots de role du
-  `CH-*` actif.
+- `docs/tableau_execution_courant.md` est une archive historique. Le travail
+  courant passe par le fil pilote, `ROUTAGE_EQUIPE` et les lignes de roles dans
+  `docs/presence_agents.md`; aucune nouvelle file de slots ne doit etre creee.
 - Le registre officiel des conversations et chantiers actifs est
   `docs/presence_agents.md`.
 - Les nouveaux chantiers utilisent le format anti-collision

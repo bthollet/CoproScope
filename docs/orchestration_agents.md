@@ -49,11 +49,10 @@ de doublon ou `BLOQUE` non stationne gagnent sur toute priorite backlog. Si un
 `CH-*` vivant existe deja, le routeur reprend seulement ses roles manquants,
 idle, bloques ou expires.
 
-Apres le choix d'un `ORD-*` et d'un `CH-*`, le coordinateur publie les slots de
-role dans [`tableau_execution_courant.md`](./tableau_execution_courant.md).
-Les conversations workers ne piochent pas dans `roadmap_backlog_central.md`;
-elles prennent seulement un slot `A_PRENDRE` deja ouvert pour le chantier
-courant.
+Apres le choix d'un `ORD-*` et d'un `CH-*`, le coordinateur trace
+`ROUTAGE_EQUIPE` et les roles dans `presence_agents.md`. Les sous-agents, ou
+les roles joues sequentiellement si l'outil manque, ne piochent pas dans
+`roadmap_backlog_central.md`: ils recoivent une mission bornee du fil pilote.
 
 ## Chemin critique et side-quests
 
@@ -148,8 +147,8 @@ Ce mode est volontairement different de l'equipe agile:
 - generation d'images par le Designer UI / generateur visuel;
 - images retenues archivees dans `docs/assets/...` et referencees dans la doc
   de mission avec prompt/intention, decision et retours testeurs;
-- heartbeat automatique toutes les 10 minutes sur le fil courant jusqu'au
-  marqueur `UXUI-DONE - equipe UX/UI a fini son job`.
+- suivi par `/objectif` et `docs/presence_agents.md`; heartbeat Codex seulement
+  si Brice demande explicitement un reveil horodate borne au `CH-*` courant.
 
 Le coordinateur cree le `RM-*` si necessaire, le `CH-*` horodate, la ligne
 `CONV-*`, la doc de mission `docs/recherche_ux_ui_<date>_<slug>.md` et le
@@ -180,10 +179,11 @@ fichier sensible sans owner declare.
 Les demandes et chantiers vivants sont suivis dans deux registres transverses:
 
 - `roadmap_backlog_central.md` comme gouvernail unique pour les intentions `RM-*`;
-- `tableau_execution_courant.md` comme tableau court du chantier courant et
-  seule surface ou un worker prend un slot;
 - `presence_agents.md` pour les chantiers `CH-*`, conversations `CONV-*`,
-  ownerships, worktrees, heartbeats et fins de mission.
+  ownerships, worktrees, leases, points de reprise et fins de mission.
+
+`tableau_execution_courant.md` est une archive historique des anciens slots; il
+ne distribue plus le travail courant.
 
 Les nouveaux chantiers doivent etre nommes
 `CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court`; les anciens `CH-YYYY-NNNN`
@@ -374,7 +374,7 @@ jour une ligne quand plusieurs agents tournent :
 Statuts conseilles : `A_LANCER`, `EN_COURS`, `EN_ATTENTE_USER`, `BLOQUE`,
 `PRET_A_INTEGRER`, `INTEGRE`, `EXPIRE`, `ABANDONNE`, `CLOTURE`.
 
-## Watchdog orchestration
+## Diagnostic orchestration
 
 Avant de relancer une equipe ou de conclure que l'orchestrateur tourne encore,
 lancer:
@@ -383,15 +383,15 @@ lancer:
 .\tools\orchestration-watch.cmd
 ```
 
-Pour obtenir un prompt de relance sans inventer de roles:
+Pour lire l'etat Codex local sans scanner ni tuer de processus:
 
 ```powershell
-.\tools\orchestration-watch.cmd --emit-prompt
+.\tools\orchestration-supervise.cmd --read-codex-processes
 ```
 
-Le watchdog signale les conversations `EN_COURS` stale ou expirees, les
+Ces diagnostics signalent les conversations `EN_COURS` stale ou expirees, les
 `EN_ATTENTE_USER`, les `BLOQUE`, les lots `PRET_A_INTEGRER` et la derniere
-trace d'orchestration. Il ne relance rien tout seul. En mode strict:
+trace d'orchestration. Ils ne relancent rien tout seuls. En mode strict:
 
 ```powershell
 .\tools\agent-check.cmd -Orchestration

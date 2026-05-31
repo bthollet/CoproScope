@@ -51,7 +51,7 @@ reelle a ces references pendant le cadrage, apres livraison et avant tout GO UI.
 Une equipe agile produit ou QA peut lancer ou utiliser un serveur local quand
 sa mission l'exige: recette navigateur, captures desktop/tablette/mobile,
 verification de token `200/403`, parcours utilisateur ou comparaison visuelle
-sur UI reelle. Ce n'est pas le watchdog qui lance ce serveur; c'est le
+sur UI reelle. Ce n'est pas une relance automatique qui lance ce serveur; c'est le
 coordinateur ou l'owner declare du lot.
 
 Avant tout lancement, le contrat d'equipe doit nommer le port, l'instance de
@@ -67,9 +67,9 @@ Avant de lancer l'equipe, le coordinateur doit:
 2. creer ou reprendre un `CH-*` dans `docs/presence_agents.md`; pour tout
    nouveau chantier, utiliser le format
    `CH-YYYYMMDD-HHMMSS-RM-YYYY-NNNN-slug-court`;
-3. publier dans `docs/tableau_execution_courant.md` les slots de role du
-   chantier. Les workers prennent ces slots; ils ne choisissent pas dans la
-   file `ORD-*`;
+3. tracer `ROUTAGE_EQUIPE` dans `docs/presence_agents.md`, puis ouvrir une
+   ligne `CONV-*` ou `SUBAGENT-*` pour chaque role actif. Les agents recoivent
+   leur mission du fil pilote; ils ne choisissent pas dans la file `ORD-*`;
 4. declarer son propre `CONV-*` avec ownership, fichiers evites, trace, tests
    attendus, lease et dernier point lu;
 5. s'appuyer sur l'objectif actif Codex (`/objectif`) et sur
@@ -309,9 +309,10 @@ d'arbitrage impossible, l'equipe continue.
 `AGILE-DONE - equipe agile a fini son job` ferme le lot courant. Il ne cree pas
 de relance permanente. Au passage suivant, le fil pilote doit:
 
-0. lancer `.\tools\orchestration-watch.cmd --emit-prompt` depuis la racine du
-   depot pour verifier les conversations vivantes, expirees, bloquees et en
-   attente utilisateur;
+0. si necessaire, lancer un diagnostic manuel depuis la racine du depot pour
+   verifier les conversations vivantes, expirees, bloquees et en attente
+   utilisateur, par exemple `.\tools\agent-check.cmd -Orchestration` ou
+   `.\tools\orchestration-supervise.cmd --read-codex-processes`;
 1. si le diagnostic remonte `EN_ATTENTE_USER`, un incident de doublon backlog ou
    un blocage non stationne, ne pas lire la file `ORD-*` pour dispatch: remonter
    seulement l'arbitrage, laisser un check-in et attendre Brice; si un `CH-*`
@@ -330,8 +331,8 @@ de relance permanente. Au passage suivant, le fil pilote doit:
    `RECETTE_LIVE_QA`, `INTEGRATION_RELEASE` ou un autre mode;
 7. creer un nouveau `CH-*` horodate et un coordinateur uniquement apres ce
    routage;
-8. publier les slots workers `A_PRENDRE` du chantier dans
-   `docs/tableau_execution_courant.md`;
+8. tracer les roles a lancer ou a reprendre dans `docs/presence_agents.md`,
+   sans recreer de slots ni de file intermediaire;
 9. tracer le point de reprise dans `docs/presence_agents.md`.
 
 Si aucun `ORD-*` actionnable n'existe, le fil trace `NO_ORD_ACTIONNABLE` dans

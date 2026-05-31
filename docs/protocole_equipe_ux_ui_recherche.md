@@ -50,8 +50,9 @@ Avant de lancer l'equipe, l'Orchestrateur:
    introduit une intention nouvelle;
 3. cree un `CH-*` horodate et une ligne `CONV-*` de coordination dans
    `docs/presence_agents.md`;
-4. publie les slots de role UX/UI dans `docs/tableau_execution_courant.md`;
-   les workers prennent ces slots et ne choisissent pas dans le backlog long;
+4. trace `ROUTAGE_EQUIPE` et les roles UX/UI dans
+   `docs/presence_agents.md`; les agents recoivent leur mission du fil pilote
+   et ne choisissent pas dans le backlog long;
 5. definit le livrable de mission, par defaut
    `docs/recherche_ux_ui_<date>_<slug>.md`;
 6. definit le dossier d'images retenues, par defaut
@@ -64,30 +65,33 @@ comme agents separes avec ownership lecture seule ou documentaire. Sinon, il
 execute les roles sequentiellement dans le fil courant, avec des sections
 nommees par role.
 
-## Relance automatique
+## Reprise bornee
 
-Au lancement effectif de l'equipe UX/UI, l'Orchestrateur cree une heartbeat
-automation Codex rattachee au fil courant, cadencee toutes les 10 minutes.
+Au lancement effectif de l'equipe UX/UI, l'Orchestrateur s'appuie sur
+`/objectif` et sur `docs/presence_agents.md`. Il ne cree pas de heartbeat
+automatique par defaut.
 
-Cette relance continue tant que l'equipe n'a pas emis le marqueur final:
+Une heartbeat Codex n'est permise que si Brice demande explicitement un reveil
+horodate. Elle reste bornee au `CH-*` courant et s'arrete des que l'equipe a
+emis le marqueur final:
 
 ```text
 UXUI-DONE - equipe UX/UI a fini son job
 ```
 
-A chaque relance, l'Orchestrateur:
+Au moment de la reprise, l'Orchestrateur:
 
 1. relit la derniere trace de mission et `docs/presence_agents.md`;
 2. verifie si le marqueur `UXUI-DONE` est deja present;
-3. si le marqueur est absent, relance uniquement les roles manquants, idle,
+3. si le marqueur est absent, reprend uniquement les roles manquants, idle,
    bloques sans prochain geste ou expires;
 4. evite de dupliquer un role dont le lease est vivant;
 5. produit un point court: `a produire`, `en test`, `images candidates`,
    `decisions ouvertes`, `prochain mouvement`;
-6. si le marqueur final est present, stoppe la relance en supprimant ou en
-   mettant en pause l'automation.
+6. si le marqueur final est present, ne relance rien et met en pause toute
+   heartbeat eventuelle.
 
-Le prompt de relance doit rester borne: reprendre la recherche UX/UI active,
+Le prompt de reprise doit rester borne: reprendre la recherche UX/UI active,
 ne pas lancer de dev, ne pas ouvrir de serveur, ne pas modifier d'instance
 privee, ne pas creer une deuxieme equipe si une equipe vivante existe deja.
 
@@ -150,7 +154,7 @@ La reponse finale de l'equipe se termine par:
 UXUI-DONE - equipe UX/UI a fini son job
 ```
 
-Ce marqueur autorise l'arret de la relance automatique.
+Ce marqueur autorise l'arret de toute heartbeat eventuelle.
 
 ## No-go
 

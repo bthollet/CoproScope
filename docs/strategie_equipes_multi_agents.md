@@ -23,22 +23,25 @@ Le routage se fait dans cet ordre:
    doctrine.
 4. **Verrou unique**: declarer un seul `CH-*`, un coordinateur et les owners
    sensibles avant tout lancement de role.
-5. **Tableau d'execution**: publier les slots workers du chantier dans
-   `docs/tableau_execution_courant.md`; les workers ne lisent pas le backlog
-   long pour choisir leur travail.
+5. **Trace des roles**: tracer `ROUTAGE_EQUIPE` dans
+   `docs/presence_agents.md`, puis nommer les roles a lancer ou a jouer
+   sequentiellement; les agents ne lisent pas le backlog long pour choisir leur
+   travail.
 6. **Orchestration adaptee**: choisir fan-out/fan-in, pipeline decale, owner
    unique, serie stricte, monitor-only ou red-team selon le type d'equipe.
 
 Un `ORD-*` n'est jamais pris directement par plusieurs conversations. Le
 routeur choisit d'abord l'equipe-type, puis seulement il ouvre le chantier.
-Les workers prennent ensuite des `SLOT-*` du tableau d'execution courant, pas
-des `ORD-*`.
+Les sous-agents recoivent directement leur mission depuis le fil pilote, avec
+role, ownership, fichiers evites, preuves attendues et condition d'arret. Si
+aucun outil de sous-agents n'est disponible, les memes roles sont joues
+sequentiellement et traces; cela ne rend pas l'equipe optionnelle.
 
 ## Equipes-types
 
 | Type | Quand le choisir | Roles usuels | Orchestration | Livrable attendu |
 |---|---|---|---|---|
-| `INCIDENT_STATIONNEMENT` | Doublon detecte, arbitrage ouvert, blocage non stationne, heartbeat a reparer. | Coordinateur-scribe, superviseur/watchdog. | Monitor-only: check-in persistant, aucun nouveau role, aucun nouveau `ORD-*`. | Trace de blocage, etat sain de la heartbeat, question d'arbitrage. |
+| `INCIDENT_STATIONNEMENT` | Doublon detecte, arbitrage ouvert, blocage non stationne, reprise a cadrer. | Coordinateur-scribe, superviseur lecture seule. | Monitor-only: check-in persistant, aucun nouveau role, aucun nouveau `ORD-*`. | Trace de blocage, etat des conversations, question d'arbitrage. |
 | `FANIN_CONSOLIDATION` | Plusieurs conversations ont travaille le meme sujet ou des retours arrivent en decalage. | Coordinateur-scribe, eventuellement un QA privacy en lecture. | Collecte par angle stable, dedoublonnage, contradictions conservees comme arbitrages. | Synthese convergence/divergence, un seul prochain dispatch propose. |
 | `RECHERCHE_METIER` | Question juridique, syndic, compta, travaux, CS, SHS, veille, challenge sans dev. | Juriste/syndic, compta, travaux/process, CS/usage, privacy/QA novice, coordinateur. | Fan-out/fan-in borne: chaque expert rend son angle, le coordinateur consolide. | Note ou matrice `fait -> preuve -> regle/process -> action`; aucun code. |
 | `UXUI_RECHERCHE` | Recherche UX/UI sans dev, parcours a explorer, directions visuelles, images candidates. | Orchestrateur UX/UI, chercheur utilisateur, architecte UX, designer visuel, testeur metier, novice/accessibilite. | Divergence puis convergence: images candidates, tests, selection, decisions. | Doc de mission, images retenues, decisions UX/UI, marqueur `UXUI-DONE`. |
@@ -69,7 +72,7 @@ le moins dangereux, donc recherche ou fan-in plutot que dev.
 | Vault, DB, schema, read model, extraction, sync, Drive, API, recorder, taxonomie config | `BACKEND_DOMAINE` | Owner code unique, experts en lecture, tests cibles. |
 | Serveur reserve, `8788`, token, captures, navigateur, desktop/tablette/mobile | `RECETTE_LIVE_QA` | Gate live serie, pas de serveur non reserve. |
 | `PRET_A_INTEGRER`, worktree, branche, conflit, panier de tests global | `INTEGRATION_RELEASE` | Integration une par une. |
-| Doctrine, protocole, AGENTS, watchdog, gouvernail, regle transverse | `DOCTRINE_SIDEQUEST` | Patch documentaire borne. |
+| Doctrine, protocole, AGENTS, objectif Codex, gouvernail, regle transverse | `DOCTRINE_SIDEQUEST` | Patch documentaire borne. |
 
 Le routeur ne se contente pas du mot cle. Il relit aussi le gate de l'`ORD-*`,
 les owners vivants, le statut du `RM-*`, le dernier check-in et les interdits
@@ -79,7 +82,7 @@ explicites de Brice.
 
 | Pattern | Usage | Regle anti-chevauchement |
 |---|---|---|
-| `monitor-only` | Incident, arbitrage, heartbeat, blocage. | Aucun nouveau `CH-*`, aucun nouveau `ORD-*`; check-in seulement. |
+| `monitor-only` | Incident, arbitrage, lease expire, blocage. | Aucun nouveau `CH-*`, aucun nouveau `ORD-*`; check-in seulement. |
 | `fan-out/fan-in` | Recherche metier, veille, challenge, plusieurs angles. | Les agents ont des angles stables; le coordinateur consolide avant dispatch. |
 | `pipeline decale` | UI produit. | `N+1` design, `N` dev, `N-1` QA; dev attend visuel IA + blueprint + GO novice. |
 | `hub-and-spoke owner` | Backend/data/Drive/DB. | Un seul owner ecrit le code; experts et QA rendent des notes ou tests. |
@@ -104,7 +107,7 @@ Roles explicitement non lances:
 Gates avant dev:
 Livrable attendu:
 Condition d'arret:
-Tableau execution: slots `SLOT-*` publies dans docs/tableau_execution_courant.md
+Trace roles: lignes `CONV-*` ou `SUBAGENT-*` dans docs/presence_agents.md
 ```
 
 Si `Preflight` vaut `INCIDENT`, `FANIN` ou `REPRISE_CH_EXISTANT`, le routeur
