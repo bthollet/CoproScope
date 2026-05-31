@@ -296,6 +296,124 @@
   }
 }
 
+@media (max-width: 760px) {
+  .cs-rappro-workbench {
+    gap: 8px;
+  }
+
+  .cs-rappro-detail-summary {
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .cs-rappro-summary-main {
+    gap: 2px;
+  }
+
+  .cs-rappro-summary-main h3 {
+    font-size: 18px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-summary-action {
+    display: -webkit-box;
+    font-size: 11px;
+    line-height: 1.2;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .cs-rappro-action {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .cs-rappro-action h4 {
+    font-size: 14px;
+    line-height: 1.18;
+  }
+
+  .cs-rappro-action p {
+    display: -webkit-box;
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.25;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cs-rappro-action small {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .cs-rappro-action .button-link {
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .cs-rappro-matrix {
+    gap: 6px;
+  }
+
+  .cs-rappro-matrix-head {
+    gap: 6px;
+  }
+
+  .cs-rappro-matrix-head h4 {
+    font-size: 15px;
+  }
+
+  .cs-rappro-matrix-head span {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .cs-rappro-source-cell {
+    gap: 4px;
+    border-radius: 6px;
+    padding: 6px;
+  }
+
+  .cs-rappro-source-cell-head {
+    gap: 3px;
+  }
+
+  .cs-rappro-source-cell-head strong {
+    font-size: 13px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-source-cell-head span,
+  .cs-rappro-source-cell em {
+    padding: 2px 5px;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-source-cell p,
+  .cs-rappro-source-cell small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cs-rappro-source-cell p {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-source-cell small,
+  .cs-rappro-source-cell a {
+    font-size: 11px;
+    line-height: 1.18;
+  }
+}
+
 @media (max-width: 560px) {
   .cs-comptes-header {
     flex-direction: column;
