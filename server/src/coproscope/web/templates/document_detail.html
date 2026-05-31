@@ -71,9 +71,18 @@
     <p class="hint">{{ document_detail.pdf_trace.intro }}</p>
     <p class="hint"><strong>{{ document_detail.pdf_trace.limitation_notice }}</strong></p>
     {% if document_detail.pdf_trace.available %}
-    <div class="button-row compact">
-      <a class="button-link secondary" href="#trace-pdf-status">{{ document_detail.pdf_trace.primary_action }}</a>
-    </div>
+    <form method="post" action="/documents/{{ document_detail.doc.doc_id }}/traces{{ ui_token_query }}" class="upload-form cs-upload-form" style="margin-top:10px;">
+      <input type="hidden" name="page" value="{{ document_detail.pdf_trace.candidate_form.page }}">
+      <input type="hidden" name="zone_x" value="{{ document_detail.pdf_trace.candidate_form.zone_x }}">
+      <input type="hidden" name="zone_y" value="{{ document_detail.pdf_trace.candidate_form.zone_y }}">
+      <input type="hidden" name="zone_width" value="{{ document_detail.pdf_trace.candidate_form.zone_width }}">
+      <input type="hidden" name="zone_height" value="{{ document_detail.pdf_trace.candidate_form.zone_height }}">
+      <label class="cs-upload-label">
+        <span>Note courte</span>
+        <input class="input" name="comment" maxlength="180" value="{{ document_detail.pdf_trace.candidate_form.comment }}">
+      </label>
+      <button class="button-link" type="submit">{{ document_detail.pdf_trace.primary_action }}</button>
+    </form>
     {% else %}
     <p class="hint"><strong>{{ document_detail.pdf_trace.primary_action }}</strong></p>
     {% endif %}
@@ -113,6 +122,12 @@
         </tr>
       </tbody>
     </table>
+    {% if document_detail.pdf_trace.saved_traces %}
+    <div class="empty" style="margin-top:10px;">
+      <strong>Trace candidate enregistree</strong><br>
+      <small>{{ document_detail.pdf_trace.saved_traces[0].diffusion }} - {{ document_detail.pdf_trace.saved_traces[0].zone }}</small>
+    </div>
+    {% endif %}
     <div class="button-row">
       <a class="button-link secondary" href="/documents{{ ui_token_query }}">Retour aux documents</a>
       <a class="button-link secondary" href="/confidentialite{{ ui_token_query }}">Voir confidentialite</a>
@@ -124,9 +139,23 @@
   <div class="panel">
     <div class="panel-head">
       <h3>Annotations</h3>
-      <span>{{ document_detail.annotations.mode }}</span>
+      <span>{{ document_detail.annotations.mode }}{% if document_detail.pdf_trace.saved_traces %} - {{ document_detail.pdf_trace.saved_count }} trace(s){% endif %}</span>
     </div>
     <p class="hint">{{ document_detail.annotations.notice }}</p>
+    {% if document_detail.pdf_trace.saved_traces %}
+    <table aria-label="Traces candidates enregistrees">
+      <thead><tr><th>Trace</th><th>Zone</th><th>Statut</th></tr></thead>
+      <tbody>
+      {% for trace in document_detail.pdf_trace.saved_traces %}
+        <tr>
+          <th>{{ trace.status }}<br><small>{{ trace.created_at }}</small></th>
+          <td>{{ trace.zone }}<br><small>Ancre {{ trace.anchor }}</small></td>
+          <td>{{ trace.diffusion }}<br><small>{{ trace.text }} {{ trace.comment }}</small></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
     <table>
       <thead><tr><th>Evenement</th><th>Action</th><th>Preuve gardee</th></tr></thead>
       <tbody>

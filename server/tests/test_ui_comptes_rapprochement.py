@@ -28,6 +28,9 @@ REQUIRED_LABELS = (
     "Banque",
     "Facture",
     "Decision / devis",
+    "Action immediate",
+    "Tracer le controle local",
+    "Aucune validation de paiement",
     "Rapprochement 4 sources",
     "La facture seule ne confirme jamais le paiement",
     "Question syndic et suite",
@@ -170,6 +173,11 @@ class UiComptesRapprochementTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("cs-rappro-matrix-grid", response.text)
+        self.assertIn("cs-rappro-summary-action", response.text)
+        self.assertIn("cs-rappro-action", response.text)
+        self.assertIn('href="#rappro-validation"', response.text)
+        self.assertIn('id="rappro-validation"', response.text)
+        self.assertLess(response.text.index("Action immediate"), response.text.index("Rapprochement 4 sources"))
         self.assertIn('role="listitem" class="cs-rappro-source-cell', response.text)
         matrix_text = text[text.index("Rapprochement 4 sources") :]
         order = [matrix_text.index(label) for label in ("Comptabilite", "Banque", "Facture", "Decision / devis")]
@@ -213,11 +221,17 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertLess(response.text.index("cs-rappro-detail"), response.text.index("cs-rappro-queue-panel"))
         self.assertLess(response.text.index("Rapprochement 4 sources"), response.text.index("Lignes a controler"))
         self.assertIn(".cs-rappro-queue-list", css)
+        self.assertIn(".cs-rappro-summary-action", css)
+        self.assertIn(".cs-rappro-action", css)
+        self.assertLess(response.text.index("Action immediate"), response.text.index("Rapprochement 4 sources"))
+        self.assertIn("white-space: normal", css)
+        self.assertIn("overflow-wrap: anywhere", css)
         self.assertIn("max-height: min(680px, calc(100vh - 174px))", css)
         self.assertIn("overflow-y: auto", css)
         self.assertIn("@media (max-width: 980px)", css)
         self.assertIn(".cs-comptes-header .cs-header-tools", css)
         self.assertIn("flex: 0 1 auto", css)
+        self.assertIn(".cs-comptes-header .lead", css)
         self.assertIn("grid-row: 1", css)
 
     def test_validation_post_appends_human_trace_without_private_note_leak(self) -> None:

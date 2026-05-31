@@ -180,6 +180,30 @@ particulier, si le corpus ne contient pas d'extrait bancaire, la colonne
 confirme. Les liens vers DocOps sont autorises seulement sur les cellules qui
 portent une piece identifiable; ils ne remplacent pas la reserve metier.
 
+Complement executable issu de `CC-IT-020b`: la recette doit utiliser les memes
+chemins de donnees que l'executable ouvre en situation reelle. Les sorties
+ComptaScope peuvent etre rangees directement dans `outputs/accounting` ou dans
+un sous-dossier d'exercice comme `outputs/accounting/2025`; la route doit lire
+les deux formes avant de conclure qu'aucune ligne n'existe. Un smoke positif
+sur le serveur de developpement ne suffit pas si `CoproScope.exe` charge une
+instance differente.
+
+Complement UI issu de `CC-IT-021`: une longue file de controle ne doit jamais
+enterrer la ligne selectionnee. Le poste de controle vient avant les KPI et les
+definitions, puis la file devient un panneau borne avec scroll interne. En
+largeur etroite, le detail reste avant la file; en largeur desktop, la file et
+le detail forment un poste de travail cote a cote. Les barres d'action du
+header ne doivent pas reserver de grand vide invisible. La recette finale doit
+se faire dans `CoproScope.exe` avec un jeu volumineux, ici 827 lignes, pour
+prouver que l'ergonomie tient sous charge.
+
+Complement UI issu de `CC-IT-022`: le detail de ligne doit afficher la suite a
+faire avant la matrice quatre sources. Le bloc `Action immediate` reste
+prudent: il propose de tracer le controle local, sans valider le paiement ni la
+comptabilite officielle. La matrice conserve ensuite les preuves et reserves.
+La recette de cette tranche est validee dans l'executable `CoproScope.exe`, pas
+dans un serveur web separe.
+
 ## Limites
 
 - Pas de saisie comptable complete.

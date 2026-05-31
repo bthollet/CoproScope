@@ -7,6 +7,7 @@ from html import unescape
 from pathlib import Path
 
 from coproscope.core.common import DEFAULT_DOCUMENT_FIELDS, load_instance, read_csv, relative_to, write_csv
+from coproscope.modules import pdftrace_registry
 from coproscope.web.app import create_app
 from coproscope.web.document_viewer import build_document_detail
 
@@ -224,8 +225,8 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertIn("Apercu media indisponible; affichage du texte extrait.", body)
         self.assertIn("Apercu PDF textuel", body)
         self.assertIn("Texte extrait", body)
-        self.assertIn("Preparer une trace dans ce PDF", body)
-        self.assertIn("Cette version ne selectionne pas encore une zone dans le PDF.", body)
+        self.assertIn("Enregistrer la trace candidate", body)
+        self.assertIn("Cette version enregistre la zone candidate affichee par l'atelier.", body)
         self.assertNotIn("Lecteur PDF", body)
         self.assertNotIn("Miniature page 1", body)
         self.assertNotIn("100 %", body)
@@ -271,9 +272,9 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertIn("Annotations", body)
         self.assertIn("Historique", body)
         self.assertIn("Informations techniques et traitement local", body)
-        self.assertIn("Tracer une preuve", body)
-        self.assertIn("Preparer une trace dans ce PDF", body)
-        self.assertIn("Cette version ne selectionne pas encore une zone dans le PDF.", body)
+        self.assertIn("Tracer une preuve candidate", body)
+        self.assertIn("Enregistrer la trace candidate", body)
+        self.assertIn("Cette version enregistre la zone candidate affichee par l'atelier.", body)
         self.assertIn("Preuve candidate a verifier", body)
         self.assertIn("Texte reconnu automatiquement : relisez avant de vous en servir.", body)
         self.assertIn("Texte non confirme : seule la zone encadree est gardee.", body)
@@ -285,7 +286,7 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertLess(body.index("Lecteur PDF"), body.index("Parcours novice et point d'action"))
         self.assertLess(body.index("Le PDF original n'est pas modifie."), body.index("Annotations"))
         self.assertLess(body.index("Texte non confirme : seule la zone encadree est gardee."), body.index("Annotations"))
-        self.assertLess(body.index("Preparer une trace dans ce PDF"), body.index("Informations techniques et traitement local"))
+        self.assertLess(body.index("Enregistrer la trace candidate"), body.index("Informations techniques et traitement local"))
         self.assertLess(body.index("Annotations"), body.index("Metadonnees"))
         self.assertLess(body.index("Historique"), body.index("Traitement local"))
         self.assertLess(body.index("Informations techniques et traitement local"), body.index("Moteur OCR"))
@@ -295,6 +296,108 @@ class DocumentViewerUiTests(unittest.TestCase):
         self.assertNotIn("rects", body)
         self.assertNotIn(str(self.instance_root), body)
         self.assertNotIn("raw/", body.lower())
+
+    def test_pdf_trace_save_creates_sidecar_without_mutating_pdf(self) -> None:
+        fields, rows = self._documents()
+        doc_id = "DOC-PDF-TRACE-SAVE"
+        pdf_path = self.instance_root / "staging" / "pdf" / "trace_save.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_bytes = b"%PDF-1.4\n% sidecar save test\n"
+        pdf_path.write_bytes(pdf_bytes)
+        rows.append(
+            {
+                **{field: "" for field in fields},
+                "doc_id": doc_id,
+                "file_name": "trace_save.pdf",
+                "extension": "pdf",
+                "sha256": "e" * 64,
+                "size_bytes": str(pdf_path.stat().st_size),
+                "original_path": relative_to(self.instance_root, pdf_path),
+                "source_zone": "STAGING",
+                "document_type": "PDF",
+                "status_ocr": "TEXT_EXTRACTED",
+                "classification_status": "A_RELIRE",
+                "page_count": "1",
+                "text_char_count": "120",
+            }
+        )
+        self._write_documents(fields, rows)
+
+        client = self._client()
+        response = client.post(
+            f"/documents/{doc_id}/traces",
+            data={
+                "page": "1",
+                "zone_x": "0.20",
+                "zone_y": "0.25",
+                "zone_width": "0.40",
+                "zone_height": "0.10",
+                "comment": "Budget previsionnel a relire",
+            },
+            follow_redirects=False,
+        )
+        trace_fields, trace_rows = read_csv(pdftrace_registry.trace_register_path(self.instance))
+        detail = client.get(f"/documents/{doc_id}")
+        body = unescape(detail.text)
+
+        self.assertEqual(response.status_code, 303)
+        self.assertIn(f"/documents/{doc_id}?", response.headers["location"])
+        self.assertEqual(pdf_path.read_bytes(), pdf_bytes)
+        self.assertEqual(trace_fields, pdftrace_registry.PDF_TRACE_FIELDS)
+        self.assertEqual(len(trace_rows), 1)
+        self.assertEqual(trace_rows[0]["document_ref"], doc_id)
+        self.assertEqual(trace_rows[0]["page"], "1")
+        self.assertEqual(trace_rows[0]["proof_status"], "preuve_candidate")
+        self.assertEqual(trace_rows[0]["text_status"], "non_confirme")
+        self.assertEqual(trace_rows[0]["diffusion"], "non_diffusable")
+        self.assertEqual(trace_rows[0]["write_policy"], "source_pdf_is_never_modified")
+        self.assertEqual(detail.status_code, 200)
+        self.assertIn("Trace candidate enregistree", body)
+        self.assertIn("Non diffusable par defaut", body)
+        self.assertIn("Zone encadree page 1", body)
+        self.assertIn("Le PDF original n'est pas modifie.", body)
+        self.assertIn("Budget previsionnel a relire", body)
+        self.assertNotIn("zotero_position", body)
+        self.assertNotIn("source_engine", body)
+        self.assertNotIn("rects", body)
+        self.assertNotIn(str(self.instance_root), body)
+        self.assertNotIn("raw/", body.lower())
+
+    def test_pdf_trace_save_rejects_private_comment_without_writing_sidecar(self) -> None:
+        fields, rows = self._documents()
+        doc_id = "DOC-PDF-TRACE-PRIVATE"
+        pdf_path = self.instance_root / "staging" / "pdf" / "trace_private.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_path.write_bytes(b"%PDF-1.4\n% private comment test\n")
+        rows.append(
+            {
+                **{field: "" for field in fields},
+                "doc_id": doc_id,
+                "file_name": "trace_private.pdf",
+                "extension": "pdf",
+                "sha256": "f" * 64,
+                "size_bytes": str(pdf_path.stat().st_size),
+                "original_path": relative_to(self.instance_root, pdf_path),
+                "source_zone": "STAGING",
+                "document_type": "PDF",
+            }
+        )
+        self._write_documents(fields, rows)
+
+        response = self._client().post(
+            f"/documents/{doc_id}/traces",
+            data={
+                "page": "1",
+                "zone_x": "0.20",
+                "zone_y": "0.25",
+                "zone_width": "0.40",
+                "zone_height": "0.10",
+                "comment": r"C:\Users\demo\raw\piece.pdf",
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(read_csv(pdftrace_registry.trace_register_path(self.instance))[1], [])
 
 
 if __name__ == "__main__":

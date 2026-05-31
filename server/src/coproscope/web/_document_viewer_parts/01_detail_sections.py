@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 from ..core.common import InstanceConfig, read_csv
+from ..modules import pdftrace_registry
 
 
 MAX_TEXT_CHARS = 8000
@@ -53,7 +54,7 @@ def build_document_detail(instance: InstanceConfig, doc_id: str) -> dict[str, ob
         "evidence": _evidence(row),
         "diffusion": diffusion,
         "signature": signature,
-        "pdf_trace": _pdf_trace(row, preview),
+        "pdf_trace": _pdf_trace(instance, row, preview),
         "anchors": _anchors(row),
         "annotations": _annotations(row),
         "history": _history(row),
@@ -142,9 +143,10 @@ def _workflow(row: dict[str, str]) -> list[dict[str, str]]:
     ]
 
 
-def _pdf_trace(row: dict[str, str], preview: dict[str, object]) -> dict[str, object]:
+def _pdf_trace(instance: InstanceConfig, row: dict[str, str], preview: dict[str, object]) -> dict[str, object]:
     is_pdf = (row.get("extension") or "").lower().lstrip(".") == "pdf" or preview.get("kind") == "pdf"
     has_pdf_viewer = preview.get("kind") == "pdf"
+    saved_traces = pdftrace_registry.public_trace_summaries(instance, row.get("doc_id", "")) if is_pdf else []
     return {
         "available": is_pdf,
         "has_pdf_viewer": has_pdf_viewer,
@@ -152,11 +154,11 @@ def _pdf_trace(row: dict[str, str], preview: dict[str, object]) -> dict[str, obj
         "reader_label": "Lecteur PDF" if has_pdf_viewer else "Apercu PDF textuel" if is_pdf else "Apercu autorise",
         "page_label": "Page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Document",
         "thumbnail_label": "Miniature page 1" if has_pdf_viewer else "Texte extrait" if is_pdf else "Apercu",
-        "title": "Tracer une preuve" if is_pdf else "Preparer une preuve",
-        "primary_action": "Preparer une trace dans ce PDF" if is_pdf else "Selection PDF indisponible",
+        "title": "Tracer une preuve candidate" if is_pdf else "Preparer une preuve",
+        "primary_action": "Enregistrer la trace candidate" if is_pdf else "Selection PDF indisponible",
         "status": "Preuve candidate a verifier",
         "limitation_notice": (
-            "Cette version ne selectionne pas encore une zone dans le PDF."
+            "Cette version enregistre la zone candidate affichee par l'atelier."
             if is_pdf
             else "La selection de zone est reservee aux PDF."
         ),
@@ -176,13 +178,23 @@ def _pdf_trace(row: dict[str, str], preview: dict[str, object]) -> dict[str, obj
         "hash_status": "Le fichier a change depuis la trace. Verifiez avant usage.",
         "diffusion_status": "Non diffusable par defaut",
         "availability_note": (
-            "Atelier prudent pour les PDF; enregistrement reel a venir."
+            "Trace privee a l'instance tant qu'elle n'est pas validee."
             if is_pdf
             else "Atelier prepare pour les PDF; cette fiche rappelle les garde-fous."
         ),
+        "candidate_form": {
+            "page": "1",
+            "zone_x": "0.16",
+            "zone_y": "0.22",
+            "zone_width": "0.52",
+            "zone_height": "0.16",
+            "comment": "Trace candidate depuis l'atelier document.",
+        },
+        "saved_traces": saved_traces,
+        "saved_count": str(len(saved_traces)),
         "sample": {
             "page": "page 1",
-            "zone": "zone encadree",
+            "zone": "Zone encadree page 1",
             "proof": "preuve candidate",
         },
     }
