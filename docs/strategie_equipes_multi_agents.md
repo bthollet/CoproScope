@@ -141,9 +141,12 @@ Pour `BACKEND_DOMAINE`, le routeur limite le parallele:
   feature backend doit mobiliser au minimum un expert domaine, une QA
   privacy/regression et un testeur novice ou usage, avec retours traces avant
   `PRET_A_INTEGRER`;
-- si aucun agent ne peut etre mobilise, le lot reste en `EN_ATTENTE_USER` ou
-  `BLOQUE` selon la cause. Il ne peut pas etre transforme en livraison validee
-  par simple revue du coordinateur;
+- l'indisponibilite d'un outil de sous-agents ne signifie pas "aucun agent":
+  le fil pilote doit alors jouer les roles requis sequentiellement, les nommer
+  dans la trace et conserver leurs syntheses avant le GO/NO-GO;
+- si aucun role requis ne peut etre rendu, meme sequentiellement, le lot reste
+  en `EN_ATTENTE_USER` ou `BLOQUE` selon la cause. Il ne peut pas etre
+  transforme en livraison validee par simple revue du coordinateur;
 - un seul owner code sur le schema, le vault, les configs ou le read model;
 - les experts metier ne patchent pas; ils rendent des invariants, cas limites
   et no-go;
