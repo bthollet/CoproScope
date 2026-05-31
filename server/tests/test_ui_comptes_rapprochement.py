@@ -98,6 +98,28 @@ class UiComptesRapprochementTests(unittest.TestCase):
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
 
+    def test_view_model_replaces_raw_document_labels(self) -> None:
+        write_csv(
+            self.accounting_dir / "controle_comptes_guide_2025.csv",
+            COMPTASCOPE_REVIEW_FIELDS,
+            [
+                _review_row(
+                    review_id="REV-2025-FILE-001",
+                    fournisseur="# 09_Devis_ventilation_Baillargues.pdf",
+                    numero_facture="Vid",
+                    doc_id="DOC-FAC-FILE",
+                    ttc="73333.05",
+                )
+            ],
+        )
+
+        item = build_compta_reconciliation_view(instance=self.instance, year=2025)["items"][0]
+        visible = str(item)
+        self.assertEqual(item["title"], "Piece comptable a qualifier")
+        self.assertNotIn(".pdf", visible)
+        self.assertNotIn("Facture Vid", item["subtitle"])
+        self.assertIn("73333.05 EUR", item["subtitle"])
+
     def test_view_model_loads_real_year_subdirectory_layout(self) -> None:
         root_path = self.accounting_dir / "controle_comptes_guide_2025.csv"
         _, rows = read_csv(root_path)
@@ -169,7 +191,11 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("<details", response.text)
         self.assertIn("cs-rappro-detail", response.text)
         self.assertIn("cs-rappro-detail-summary", response.text)
+        self.assertIn("Masquer le detail", response.text)
+        self.assertIn("Afficher le detail", response.text)
         self.assertIn(".cs-rappro-detail:not([open])", css)
+        self.assertIn(".cs-rappro-detail-summary::marker", css)
+        self.assertNotIn('content: "v"', css)
         self.assertIn("cursor: pointer", css)
 
     def test_detail_uses_four_source_matrix_without_bank_overclaim(self) -> None:

@@ -209,6 +209,7 @@ def build_zone_trace_candidate(
     page_label: str = "",
     source_engine: str = SOURCE_ENGINE_MANUAL,
     confidence: str = "zone_only",
+    document_hash_status: str = DOCUMENT_HASH_MATCH,
 ) -> PdfTraceCandidate:
     validate_document_identity(document_ref, document_hash)
     safe_page_index = _positive_int(page_index, default=0)
@@ -230,6 +231,7 @@ def build_zone_trace_candidate(
         source_engine=source_engine,
         confidence=confidence,
         text_status=TEXT_STATUS_UNCONFIRMED,
+        document_hash_status=document_hash_status,
     )
 
 

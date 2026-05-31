@@ -40,6 +40,26 @@
 .cs-rappro-detail-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.cs-rappro-summary-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cs-rappro-summary-main h3 {
+  margin-bottom: 0;
+}
+
+.cs-rappro-summary-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  min-width: min(100%, 220px);
 }
 
 .cs-rappro-summary-action {
@@ -51,6 +71,30 @@
   line-height: 1.35;
   overflow-wrap: anywhere;
   white-space: normal;
+}
+
+.cs-rappro-toggle-text {
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 3px 8px;
+  background: #ffffff;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.cs-rappro-toggle-closed {
+  display: none;
+}
+
+.cs-rappro-detail:not([open]) .cs-rappro-toggle-open {
+  display: none;
+}
+
+.cs-rappro-detail:not([open]) .cs-rappro-toggle-closed {
+  display: inline;
 }
 
 .cs-rappro-action {
@@ -265,6 +309,14 @@
 
   .cs-rappro-action .button-link {
     width: 100%;
+  }
+
+  .cs-rappro-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-rappro-summary-side {
+    justify-content: flex-start;
   }
 
   .cs-rappro-matrix-head {

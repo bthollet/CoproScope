@@ -134,7 +134,7 @@
     </table>
     {% if document_detail.pdf_trace.saved_traces %}
     <div class="empty" style="margin-top:10px;">
-      <strong>Trace candidate enregistree</strong><br>
+      <strong>{{ document_detail.pdf_trace.saved_traces[0].status }}</strong><br>
       <small>{{ document_detail.pdf_trace.saved_traces[0].diffusion }} - {{ document_detail.pdf_trace.saved_traces[0].zone }}</small>
     </div>
     {% endif %}

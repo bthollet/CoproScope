@@ -218,7 +218,7 @@ def _queue_item(row: Mapping[str, Any], *, index: int, validation: Mapping[str, 
     review_id = _row_id(row, index)
     priority = _priority(row)
     status_label = _status_label(row, priority, validation)
-    supplier = _public_text(_first(row, "fournisseur", "supplier"), limit=64) or "Fournisseur a qualifier"
+    supplier = _business_label(_first(row, "fournisseur", "supplier"), limit=64) or "Piece comptable a qualifier"
     invoice = _public_text(_first(row, "numero_facture", "invoice_number"), limit=40)
     amount = _money(_first(row, "ttc", "montant_depense", "amount"))
     question = _public_text(row.get("question_syndic"), limit=220)
@@ -272,7 +272,7 @@ def _cells(row: Mapping[str, Any], priority: str) -> list[dict[str, str]]:
         _cell(
             "Facture",
             invoice_status,
-            _join_title(_first(row, "fournisseur"), _first(row, "numero_facture")) or "Facture a rattacher",
+            _join_title(_business_label(_first(row, "fournisseur"), limit=48), _first(row, "numero_facture")) or "Facture a rattacher",
             _join_non_empty(("Doc", row.get("doc_id")), ("TTC", row.get("ttc")), ("Preuve", row.get("niveau_preuve"))),
             href=f"/documents/{quote(doc_id)}" if doc_id else "",
             action_label="Ouvrir la piece",
@@ -441,9 +441,23 @@ def _accounting_dataset_dir(instance: Any | None, year: int) -> Path | None:
 def _first(row: Mapping[str, Any], *fields: str) -> str:
     for field in fields:
         value = str(row.get(field) or "").strip()
-        if value:
+        if value and not _is_empty_marker(value):
             return value
     return ""
+
+
+def _is_empty_marker(value: Any) -> bool:
+    normalized = re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+    return normalized in {"", "vid", "vide", "nan", "none", "null", "na", "nd"}
+
+
+def _business_label(value: Any, *, limit: int) -> str:
+    text = _public_text(value, limit=limit)
+    if _is_empty_marker(text):
+        return ""
+    if re.search(r"\.(?:pdf|docx?|xlsx?)$", text, re.IGNORECASE):
+        return ""
+    return "" if "_" in text and re.search(r"\b(?:devis|facture|annexe|etat)\b", text, re.IGNORECASE) else text
 
 
 def _join_title(left: str, right: str) -> str:
