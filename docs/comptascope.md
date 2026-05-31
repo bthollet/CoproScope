@@ -270,7 +270,18 @@ Complement `CC-IT-031`: le haut de l'ecran ne doit pas consommer la hauteur
 gagnee par la matrice. Sous 760px, l'en-tete de travail peut devenir plus dense
 et limiter son texte d'aide a une ligne, tant que les signaux utiles restent
 visibles: controle humain ouvert, retour aux comptes, action immediate, aucune
-validation de paiement et banque non fournie.
+validation de paiement et banque non fournie. La recette de ce type de
+changement doit verifier le paquet `CoproScope.exe`: un test source ou un
+serveur web peut passer alors que le paquet embarque encore un ancien cache CSS.
+Preuve cible de `CC-IT-031`: a 716 x 695 dans l'executable, en-tete de travail
+61 px, matrice a 506 px, quatre colonnes de 155 px et aucun debordement
+horizontal.
+
+Complement `CC-IT-032`: sur `/comptes/rapprochement`, la barre du haut doit
+servir le controle en cours. Elle remplace l'action globale `Nouvelle demande`
+par `Tracer le controle` vers la zone de validation et masque la recherche
+globale de documents sur cette route. Les autres pages gardent la recherche et
+l'action globale.
 
 ## Limites
 

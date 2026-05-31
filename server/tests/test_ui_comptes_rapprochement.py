@@ -169,6 +169,10 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn('aria-current="page"', response.text)
         self.assertIn('href="/comptes?token=local-secret"', response.text)
         self.assertIn('action="/comptes/rapprochement/validation?token=local-secret"', response.text)
+        self.assertIn('href="#rappro-validation"', response.text)
+        self.assertIn("Tracer le controle", text)
+        self.assertNotIn("Nouvelle demande", text)
+        self.assertNotIn('id="cs-global-search"', response.text)
         self.assertIn('<details class="panel cs-rappro-detail" open>', response.text)
         self.assertIn('<summary class="panel-head cs-rappro-detail-summary">', response.text)
         self.assertNotIn("ComptaScope - controle prudent", text)
@@ -193,6 +197,13 @@ class UiComptesRapprochementTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Controle des comptes", response.text)
+
+    def test_default_topbar_action_stays_available_outside_rapprochement(self) -> None:
+        response = self._client(access_token="local-secret").get("/comptes?token=local-secret")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Nouvelle demande", response.text)
+        self.assertIn('id="cs-global-search"', response.text)
 
     def test_right_detail_panel_is_foldable(self) -> None:
         response = self._client(access_token="local-secret").get("/comptes/rapprochement?token=local-secret")
@@ -243,7 +254,7 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("-webkit-line-clamp: 1", css)
         self.assertIn("min-width: 142px", css)
         imports = (static_root / "styles.css").read_text(encoding="utf-8")
-        self.assertIn("styles_part_30.css?v=20260531-compta-031", imports)
+        self.assertIn("styles_part_30.css?v=20260531-compta-032", imports)
 
     def test_long_queue_keeps_detail_before_scrollable_line_list(self) -> None:
         write_csv(

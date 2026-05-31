@@ -81,6 +81,9 @@ Regles pratiques:
   `docs/presence_agents.md`;
 - garder le serveur dans une fenetre visible et l'arreter par `Ctrl+C` ou par
   fermeture du processus CoproScope qui l'a cree;
+- apres recette, fermer le serveur sauf si Brice a demande explicitement de le
+  garder ouvert pour un essai immediat; apres merge, un serveur de recette
+  laisse ouvert redevient une dette CPU/RAM a fermer;
 - ne pas scanner ni tuer de processus pour "deviner" quel serveur tourne;
 - si le diagnostic Codex est en `RECOVER`, ne pas ajouter un serveur pour une
   micro-iteration: tracer `RECETTE_PAGE_REELLE_WAIVED` avec la raison, puis
