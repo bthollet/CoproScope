@@ -179,7 +179,42 @@ class UiComptesRapprochementTests(unittest.TestCase):
         self.assertIn("source manquante", text)
         self.assertIn('href="/documents/DOC-FAC-001?token=local-secret"', response.text)
         self.assertIn("grid-template-columns: repeat(4, minmax(0, 1fr))", css)
-        self.assertIn("@media (max-width: 720px)", css)
+        self.assertIn("@media (max-width: 560px)", css)
+
+    def test_long_queue_keeps_detail_before_scrollable_line_list(self) -> None:
+        write_csv(
+            self.accounting_dir / "controle_comptes_guide_2025.csv",
+            COMPTASCOPE_REVIEW_FIELDS,
+            [
+                _review_row(
+                    review_id=f"REV-2025-LONG-{index:03d}",
+                    priorite="P1" if index % 3 == 0 else "P2",
+                    fournisseur=f"Fournisseur fictif {index:03d}",
+                    numero_facture=f"FAC-{index:03d}",
+                    doc_id=f"DOC-FAC-{index:03d}",
+                    ttc=str(100 + index),
+                    statut_rapprochement="NON_RAPPROCHE",
+                    libelle_statut="A traiter avant assemblee",
+                    motif="Source bancaire absente.",
+                    prochaine_action="Verifier les sources avant validation.",
+                )
+                for index in range(1, 828)
+            ],
+        )
+        response = self._client(access_token="local-secret").get("/comptes/rapprochement?token=local-secret")
+        css = (
+            Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static" / "styles_part_30.css"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("827 lignes", response.text)
+        self.assertLess(response.text.index("cs-rappro-detail"), response.text.index("cs-rappro-queue-panel"))
+        self.assertLess(response.text.index("Rapprochement 4 sources"), response.text.index("Lignes a controler"))
+        self.assertIn(".cs-rappro-queue-list", css)
+        self.assertIn("max-height: min(680px, calc(100vh - 174px))", css)
+        self.assertIn("overflow-y: auto", css)
+        self.assertIn("@media (max-width: 980px)", css)
+        self.assertIn("grid-row: 1", css)
 
     def test_validation_post_appends_human_trace_without_private_note_leak(self) -> None:
         client = self._client(access_token="local-secret")
