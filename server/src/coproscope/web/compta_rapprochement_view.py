@@ -11,7 +11,8 @@ from urllib.parse import quote
 from fastapi import Request as FastAPIRequest
 
 from ..core.common import append_csv_row, read_csv
-from ..modules.accounting import COMPTASCOPE_REVIEW_FIELDS
+from .compta_rapprochement_fallback import fallback_rows as _fallback_rows
+from .compta_rapprochement_fallback import shell_model as _shell_model
 
 
 READ_MODEL_NAME = "compta_reconciliation_queue_v1"
@@ -142,7 +143,7 @@ def build_compta_reconciliation_view(
             _metric("Questions syndic", str(question_count), "Brouillons sans envoi automatique."),
         ],
         "definitions": [
-            _entry("Comptabilite", "Ligne derivee d'un etat financier ou d'une annexe comptable. Grand livre non fourni."),
+            _entry("Comptabilite", "Ligne issue de l'etat des depenses ou d'une annexe comptable."),
             _entry("Banque", "Source non fournie dans le corpus actuel: aucun paiement n'est confirme."),
             _entry("Facture", "Piece fournisseur et montant TTC extraits ou confirmes."),
             _entry("Decision / devis", "Vote, devis, bon ou reserve qui justifie la depense."),
@@ -219,9 +220,10 @@ def _queue_item(row: Mapping[str, Any], *, index: int, validation: Mapping[str, 
     priority = _priority(row)
     status_label = _status_label(row, priority, validation)
     supplier = _business_label(_first(row, "fournisseur", "supplier"), limit=64) or "Piece comptable a qualifier"
-    invoice = _public_text(_first(row, "numero_facture", "invoice_number"), limit=40)
+    invoice = _invoice_reference(_first(row, "numero_facture", "invoice_number"))
     amount = _money(_first(row, "ttc", "montant_depense", "amount"))
     question = _public_text(row.get("question_syndic"), limit=220)
+    next_action = _public_text(row.get("prochaine_action"), limit=180) or _default_next_action(priority)
     return {
         "id": review_id,
         "priority": priority,
@@ -237,7 +239,8 @@ def _queue_item(row: Mapping[str, Any], *, index: int, validation: Mapping[str, 
         "suggestion": {
             "strength": _strength(priority),
             "reason": _public_text(row.get("motif") or row.get("libelle_statut"), limit=220),
-            "next_action": _public_text(row.get("prochaine_action"), limit=180) or _default_next_action(priority),
+            "next_action": next_action,
+            "summary_action": _summary_action(next_action),
         },
         "question_syndic": question,
         "copy_text": _public_text(row.get("bloc_copiable") or question, limit=360),
@@ -247,35 +250,40 @@ def _queue_item(row: Mapping[str, Any], *, index: int, validation: Mapping[str, 
         else "Interne conseil - diffusable apres controle",
     }
 
-
 def _cells(row: Mapping[str, Any], priority: str) -> list[dict[str, str]]:
     line_ref = _first(row, "ligne_depense_candidate", "reference_depense", "ecriture_candidate")
     accounting_status = "strong_match" if line_ref and priority == "OK" else "candidate" if line_ref else "missing_source"
     bank_ref = _first(row, "mouvement_bancaire", "bank_reference", "releve_bancaire")
     bank_status = "candidate" if bank_ref else "missing_source"
     doc_id = _review_id(row.get("doc_id"))
+    invoice_amount = _money(_first(row, "ttc", "montant_depense", "amount"))
     invoice_status = "strong_match" if _first(row, "doc_id", "numero_facture", "fournisseur") else "missing_source"
     decision_status = _decision_cell_status(row, priority)
     return [
         _cell(
             "Comptabilite",
             accounting_status,
-            _first(row, "libelle_depense", "ecriture_candidate", "ligne_depense_candidate") or "Ligne comptable a identifier",
-            _join_non_empty(("Compte", row.get("compte_candidate")), ("Reference", row.get("reference_depense")), ("Montant", row.get("montant_depense"))),
+            _accounting_cell_label(row),
+            _join_non_empty(
+                ("Compte comptable propose", row.get("compte_candidate")),
+                ("Reference", row.get("reference_depense")),
+                ("Montant", row.get("montant_depense")),
+            ),
         ),
         _cell(
             "Banque",
             bank_status,
             _public_text(bank_ref, limit=90) if bank_ref else "Banque non fournie",
-            "Le corpus actuel ne contient pas d'extrait bancaire: aucun paiement n'est confirme.",
+            "Aucun extrait bancaire: paiement non confirme.",
         ),
         _cell(
             "Facture",
             invoice_status,
-            _join_title(_business_label(_first(row, "fournisseur"), limit=48), _first(row, "numero_facture")) or "Facture a rattacher",
-            _join_non_empty(("Doc", row.get("doc_id")), ("TTC", row.get("ttc")), ("Preuve", row.get("niveau_preuve"))),
-            href=f"/documents/{quote(doc_id)}" if doc_id else "",
+            _invoice_cell_label(row, doc_id),
+            _invoice_cell_detail(row, doc_id),
+            href=f"/documents/{quote(doc_id)}?source=compta&evidence=montant&value={quote(invoice_amount)}" if doc_id else "",
             action_label="Ouvrir la piece",
+            primary_signal=f"Montant a retrouver: {invoice_amount} EUR" if invoice_amount else "",
         ),
         _cell(
             "Decision / devis",
@@ -286,20 +294,43 @@ def _cells(row: Mapping[str, Any], priority: str) -> list[dict[str, str]]:
     ]
 
 
-def _cell(kind: str, status: str, label: str, detail: str, *, href: str = "", action_label: str = "") -> dict[str, str]:
+def _invoice_cell_label(row: Mapping[str, Any], doc_id: str) -> str:
+    label = _join_title(_business_label(_first(row, "fournisseur"), limit=48), _invoice_reference(_first(row, "numero_facture")))
+    if label:
+        return label
+    if doc_id:
+        return "Facture fournie"
+    return "Facture a rattacher"
+
+
+def _invoice_cell_detail(row: Mapping[str, Any], doc_id: str) -> str:
+    return "Aucune piece facture directe dans le corpus actuel." if not doc_id else "DocOps: piece a controler."
+
+
+def _accounting_cell_label(row: Mapping[str, Any]) -> str:
+    label = _public_text(_first(row, "libelle_depense", "ecriture_candidate", "ligne_depense_candidate"), limit=90)
+    if label and not _is_technical_reference(label):
+        return label
+    if _first(row, "ligne_depense_candidate", "reference_depense", "ecriture_candidate"):
+        return "Ligne comptable possible"
+    return "Ligne comptable a identifier"
+
+
+def _cell(kind: str, status: str, label: str, detail: str, *, href: str = "", action_label: str = "", primary_signal: str = "") -> dict[str, str]:
     return {
         "kind": kind,
         "status": status,
         "status_label": {
-            "strong_match": "source fournie",
-            "candidate": "indice local",
-            "conflict": "conflit",
-            "missing_source": "source manquante",
-        }.get(status, "a verifier"),
+            "strong_match": "Source disponible",
+            "candidate": "A confirmer",
+            "conflict": "Conflit a traiter",
+            "missing_source": "Source manquante",
+        }.get(status, "A verifier"),
         "label": _public_text(label, limit=90),
         "detail": _public_text(detail, limit=150),
         "href": href,
         "action_label": action_label,
+        "primary_signal": _public_text(primary_signal, limit=80),
     }
 
 
@@ -323,8 +354,7 @@ def _decision_cell_label(row: Mapping[str, Any], priority: str) -> str:
 def _decision_cell_detail(row: Mapping[str, Any], priority: str) -> str:
     if priority == "OK":
         return "Aucun blocage detecte, trace humaine conservee."
-    action = _first(row, "prochaine_action", "motif")
-    return action or "Verifier le vote, le devis ou la reserve avant validation."
+    return "Vote, devis ou reserve a fournir." if _decision_cell_status(row, priority) == "missing_source" else "Relire vote, devis ou reserve avant conclusion."
 
 
 def _status_label(row: Mapping[str, Any], priority: str, validation: Mapping[str, str] | None) -> str:
@@ -375,7 +405,7 @@ def _tone(priority: str, validation: Mapping[str, str] | None) -> str:
 
 
 def _strength(priority: str) -> str:
-    return {"P1": "missing_source", "P2": "candidate", "OK": "strong_match"}.get(priority, "candidate")
+    return {"P1": "Source manquante", "P2": "A confirmer", "OK": "Sources concordantes"}.get(priority, "A confirmer")
 
 
 def _default_next_action(priority: str) -> str:
@@ -384,6 +414,19 @@ def _default_next_action(priority: str) -> str:
     if priority == "P2":
         return "Confirmer le faisceau puis tracer avec ou sans reserve."
     return "Relire puis tracer si le conseil syndical confirme."
+
+
+def _summary_action(text: str) -> str:
+    lowered = text.lower()
+    if "mouvement bancaire" in lowered or "bancaire" in lowered:
+        return "Banque + decision."
+    if "grand livre" in lowered or "annexe comptable" in lowered or "etat des depenses" in lowered:
+        return "Etat depenses."
+    if "fournisseur" in lowered:
+        return "Fournisseur a confirmer."
+    if "sources" in lowered:
+        return "Sources a verifier."
+    return _public_text(text, limit=34)
 
 
 def _row_id(row: Mapping[str, Any], index: int) -> str:
@@ -482,10 +525,24 @@ def _subtitle(invoice: str, amount: str, row: Mapping[str, Any]) -> str:
         parts.append(f"Facture {invoice}")
     if amount:
         parts.append(f"{amount} EUR")
-    doc_id = _public_text(row.get("doc_id"), limit=36)
-    if doc_id:
-        parts.append(doc_id)
+    if not parts and _review_id(row.get("doc_id")):
+        parts.append("Piece disponible dans DocOps")
     return " - ".join(parts) or "Ligne a qualifier"
+
+
+def _invoice_reference(value: Any) -> str:
+    text = _public_text(value, limit=40)
+    return "" if _is_technical_reference(text) else text
+
+
+def _is_technical_reference(value: Any) -> bool:
+    text = str(value or "").strip()
+    normalized = text.rstrip(".").lower()
+    return bool(
+        re.match(r"^(?:doc|rec)-[a-z0-9_.-]+$", normalized)
+        or normalized.endswith(".native")
+        or re.match(r"^[a-f0-9]{10,}$", normalized)
+    )
 
 
 def _money(value: Any) -> str:
@@ -522,6 +579,10 @@ def _public_text(value: Any, *, limit: int) -> str:
     text = re.sub(r"(?<!\w)[^\s,;:|()]+\.(?:pdf|docx?|xlsx?)(?!\w)", "piece comptable", text, flags=re.IGNORECASE)
     text = re.sub(r"\bfacture\s+(?:vid|vide)\b", "facture", text, flags=re.IGNORECASE)
     text = re.sub(r"\b(raw|restricted|logs?|private|system|tokens?|secrets?|prompts?|oauth)\b", "[retire]", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bl[e']?\s+grand livre\b", "l'annexe comptable", text, flags=re.IGNORECASE)
+    text = re.sub(r"\b(?:ligne de )?grand livre\b", "annexe comptable", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bavant validation\b", "avant conclusion", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bavant de valider\b", "avant avis local", text, flags=re.IGNORECASE)
     text = text.strip()
     if len(text) <= limit:
         return text
@@ -537,62 +598,3 @@ def _contains_private_marker(value: str) -> bool:
 
 def _row_text(row: Mapping[str, Any]) -> str:
     return " ".join(str(value or "") for value in row.values()).lower()
-
-
-def _fallback_rows(year: int) -> list[dict[str, str]]:
-    rows = [
-        {
-            "review_id": f"REV-{year}-FICTIF-001",
-            "exercice": str(year),
-            "priorite": "P1",
-            "fournisseur": "Ascenseur FICTIF",
-            "numero_facture": "FAC-FICT-001",
-            "doc_id": "DOC-FICT-001",
-            "ttc": "1200.00",
-            "niveau_preuve": "facture extraite",
-            "statut_rapprochement": "NON_RAPPROCHE",
-            "libelle_statut": "A traiter avant assemblee",
-            "motif": "Aucun mouvement compatible n'est rattache.",
-            "prochaine_action": "Demander mouvement bancaire et decision ou devis.",
-            "question_syndic": "Pouvez-vous transmettre le mouvement bancaire et le devis associe ?",
-            "bloc_copiable": "Brouillon a copier, aucun envoi automatique: merci de transmettre le mouvement et la justification.",
-        },
-        {
-            "review_id": f"REV-{year}-FICTIF-002",
-            "exercice": str(year),
-            "priorite": "P2",
-            "fournisseur": "Nettoyage FICTIF",
-            "numero_facture": "FAC-FICT-002",
-            "doc_id": "DOC-FICT-002",
-            "ttc": "480.00",
-            "niveau_preuve": "facture et ligne candidate",
-            "ligne_depense_candidate": "DEP-FICT-002",
-            "reference_depense": "REF-FICT-002",
-            "libelle_depense": "Entretien parties communes",
-            "montant_depense": "480.00",
-            "statut_rapprochement": "CANDIDAT_MONTANT_FAMILLE",
-            "libelle_statut": "A confirmer",
-            "motif": "Montant exact mais libelle a relire.",
-            "prochaine_action": "Confirmer le fournisseur avant validation.",
-        },
-    ]
-    return [{field: row.get(field, "") for field in COMPTASCOPE_REVIEW_FIELDS} for row in rows]
-
-
-def _shell_model(year: int) -> dict[str, Any]:
-    return {
-        "instance": {"id": "FICTIF", "name": "Copropriete FICTIVE", "root": "", "year": year},
-        "ux": {
-            "shell": {
-                "app_title": "CoproScope",
-                "page_title": "Controle des comptes",
-                "active_page": "accounting",
-                "search_placeholder": "Rechercher fournisseur, facture ou ligne comptable...",
-                "notification_count": 0,
-                "sharing_mode_label": "Validation locale",
-                "sharing_mode_status": "Aucun envoi ni export automatique",
-            }
-        },
-        "action_summary": {"total": "", "accounting": "", "scope_counts": {}},
-        "kpis": {"actions": "", "doc_requests": "", "decisions": "", "privacy_reviews": ""},
-    }

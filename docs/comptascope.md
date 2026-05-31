@@ -281,7 +281,138 @@ Complement `CC-IT-032`: sur `/comptes/rapprochement`, la barre du haut doit
 servir le controle en cours. Elle remplace l'action globale `Nouvelle demande`
 par `Tracer le controle` vers la zone de validation et masque la recherche
 globale de documents sur cette route. Les autres pages gardent la recherche et
-l'action globale.
+l'action globale. La recette executable a 716 x 695 montre la matrice a 456 px
+au lieu de 506 px apres `CC-IT-031`, sans scroll horizontal et sans perdre
+`Action immediate`, `Banque non fournie` ni les quatre colonnes.
+
+Complement `CC-IT-033`: une cellule de preuve ne doit pas etre un lien discret
+ou generique. Quand une piece existe, l'action visible dit explicitement
+`Voir la piece dans DocOps` et transmet au lecteur DocOps le contexte minimal
+du controle: `source=compta`, `evidence=montant`, `value=<montant>`. Cela
+n'autorise pas encore une zone PDF automatique: le lien donne le montant a
+chercher et la preuve reste a confirmer dans DocOps. Cette tranche a ete
+recetee dans `CoproScope.exe`; le build `switch-coffre-20260531-cc-it-033-ready`
+embarque le cache CSS `compta-033`.
+
+Complement `CC-IT-034`: quand une cellule facture ouvre DocOps avec un montant,
+ce montant doit etre visible comme signal metier dans la cellule elle-meme:
+`Montant a retrouver: <montant> EUR`. Le detail technique de piece reste
+secondaire et le lien DocOps reste une action prudente. Regle generalisable:
+avant d'envoyer l'utilisateur vers une preuve, afficher dans la cellule la
+valeur exacte qu'il doit controler, sans conclure que cette valeur est confirmee.
+
+Complement `CC-IT-035`: une cellule source n'est pas un journal technique.
+Quand la facture existe, la cellule affiche un libelle metier (`Facture
+fournie`), le montant a controler et une phrase prudente (`Piece disponible
+dans DocOps. Montant a controler avant conclusion.`). Les identifiants internes
+`DOC-*`, les niveaux de preuve comme `L1_NATIVE_TEXT` et les doublons de TTC ne
+sont plus visibles dans la matrice quatre sources; ils restent uniquement dans
+les liens tokenises ou dans les traitements internes. Regle generalisable:
+l'utilisateur novice doit voir ce qu'il peut verifier, pas comment le systeme a
+nomme la preuve.
+
+Complement `CC-IT-036`: le nettoyage des noms internes vaut aussi hors cellule.
+Les badges visibles utilisent des libelles metier (`Source manquante`, `A
+confirmer`, `Sources concordantes`) au lieu de codes comme `missing_source`,
+`candidate` ou `strong_match`. Les sous-titres et la fiche de ligne n'affichent
+plus les identifiants `DOC-*`, `REC-*` ou `REV-*`; ils deviennent `Ligne
+comptable possible` et `Ligne de controle - Synthese derivee`. Regle
+generalisable: les identifiants restent utiles aux liens, aux tests et aux
+traces internes, mais le premier niveau UI doit parler en preuve, source et
+controle humain.
+
+Complement `CC-IT-037`: une absence de preuve directe ne doit pas etre rendue
+comme une action inactive. Dans la matrice quatre sources, les cartes sans lien
+n'affichent plus `Aucun lien de preuve directe`; leur statut et leur detail
+portent deja l'information utile. Seules les cellules qui ouvrent une piece
+affichent un vrai lien actionnable (`Voir la piece dans DocOps`). Regle
+generalisable: ne pas remplir l'interface avec des boutons morts ou des
+messages de negation repetes; garder la place pour les actions reelles et les
+preuves verifiables.
+
+Complement `CC-IT-038`: les statuts de cellules doivent utiliser la meme
+grammaire que les badges publics. Les cartes de la matrice affichent maintenant
+`A confirmer`, `Source manquante` ou `Source disponible`, au lieu de libelles
+mi-techniques et en minuscules comme `indice local` ou `source fournie`. Regle
+generalisable: un statut court doit dire l'etat de decision attendu, pas la
+categorie interne qui a servi a colorer la carte.
+
+Complement `CC-IT-039`: une action dans une carte etroite doit rester lisible
+sur une seule ligne quand c'est possible. Le lien de la cellule `Facture`
+devient `Ouvrir la piece`; le contexte DocOps reste dans le detail
+(`Piece disponible dans DocOps. Montant a controler avant conclusion.`). Regle
+generalisable: mettre le verbe court sur le bouton, et garder le pourquoi de
+l'action dans le texte voisin, surtout dans une matrice dense.
+
+Complement `CC-IT-040`: le contexte voisin doit lui aussi tenir dans la carte.
+La cellule `Facture` remplace le detail long par `DocOps: piece a controler.`
+pour eviter un texte tronque juste avant l'action. Regle generalisable: dans
+une carte de rapprochement, une phrase de contexte ne doit pas depasser le
+temps de lecture d'un badge; les explications longues appartiennent a la page
+source ou au panneau detail.
+
+Complement `CC-IT-041`: les quatre cartes de source doivent partager le meme
+niveau de densite. Les details `Banque` et `Decision / devis` sont compactes:
+`Aucun extrait bancaire: paiement non confirme.` et, selon le cas,
+`Justification a relire avant validation.` ou `Vote, devis ou reserve a
+fournir.`. Regle generalisable: une carte source ne repete pas toute l'action a
+faire; elle dit seulement ce que cette source prouve ou ne prouve pas.
+
+Complement `CC-IT-042`: le resume de la ligne selectionnee ne doit pas
+reprendre la phrase d'action complete. Dans la tete de carte, l'action devient
+un libelle tres court, par exemple `Action immediate: Etat depenses.`;
+la phrase complete reste dans le bloc `Action immediate` juste en dessous.
+Regle generalisable: un en-tete sert a reconnaitre l'urgence, pas a porter
+toute l'instruction de traitement.
+
+Complement `CC-IT-043`: une action de controle ne doit pas proposer une source
+que le corpus local n'a pas vocation a fournir. Les anciens libelles qui
+demandaient le grand livre sont normalises vers `etat des depenses` ou `annexe
+comptable`; l'absence de preuve de paiement reste visible separement dans la
+carte `Banque`. Regle generalisable: demander la piece attendue par le parcours
+reel, et traiter les sources absentes comme limites du controle, pas comme une
+option principale.
+
+Complement `CC-IT-044`: dans un poste de controle dense, l'identite de la
+ligne controlee doit etre visible avant les preuves. La tete du panneau
+`A faire sur cette ligne` affiche maintenant un resume court `Ligne: ...`
+avec fournisseur/piece, facture et montant public quand ils existent. Regle
+generalisable: le premier ecran doit toujours porter le triplet `objet controle
+-> action immediate -> sources`; sinon l'utilisateur peut executer une consigne
+sans savoir exactement quelle ligne elle concerne.
+
+Complement `CC-IT-045`: une prudence permanente ne doit pas manger une ligne
+entiere au bas d'un bloc d'action. La reserve `Pas de validation de paiement
+officielle` est maintenant portee dans l'en-tete du bloc `Action immediate`,
+pendant que le corps garde seulement le geste a faire et sa raison. Regle
+generalisable: placer les garde-fous constants dans un signal stable et court;
+laisser la hauteur principale aux instructions operationnelles et aux preuves.
+
+Complement `CC-IT-046`: le mot `validation` reste trop fort quand il decrit une
+etape de controle local. Les textes de rapprochement et l'affichage des anciens
+CSV remplacent les restes `avant validation` par `avant conclusion`, et `avant
+de valider` par `avant avis local`. Regle generalisable: reserver
+`validation` aux actions qui valident vraiment; pour le travail du conseil
+syndical, parler plutot de conclusion locale, avis local, trace ou reserve.
+
+Complement `CC-IT-047`: dans la matrice quatre sources, la cellule
+`Decision / devis` ne doit pas repeter le meme message dans le signal et le
+detail. Le signal reste `Justification a relire`, tandis que le detail devient
+`Relire vote, devis ou reserve avant conclusion.` Regle generalisable: dans une
+carte etroite, chaque ligne doit ajouter une information nouvelle.
+
+Complement `CC-IT-048`: quand le meme ecran contient une action globale et une
+action locale qui pointent vers la trace conseil syndical, les libelles doivent
+dire leur niveau d'engagement. La topbar garde `Tracer le controle`, tandis que
+le bouton du bloc d'action devient `Noter ce controle apres verification`.
+Regle generalisable: l'action locale doit nommer le geste prudent et eviter de
+laisser croire a une validation ou a une resolution automatique.
+
+Complement `CC-IT-049`: l'aide de la matrice doit rappeler la limite probatoire
+de la facture sans occuper une ligne longue. Le libelle devient `Facture seule:
+paiement non prouve.` au lieu de `La facture seule ne confirme jamais le
+paiement.` Regle generalisable: dire ce que la source ne prouve pas, sans
+conclure que le fait inverse est etabli.
 
 ## Limites
 
