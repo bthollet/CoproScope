@@ -37,6 +37,60 @@
   overflow-y: auto;
 }
 
+.cs-rappro-detail-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.cs-rappro-summary-action {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.cs-rappro-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #c7d7ee;
+  border-left: 4px solid #1d5fd8;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f6f9ff;
+}
+
+.cs-rappro-action h4,
+.cs-rappro-action p,
+.cs-rappro-action small {
+  margin: 0;
+}
+
+.cs-rappro-action h4 {
+  color: #101828;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.cs-rappro-action p {
+  margin-top: 6px;
+  color: #344054;
+  line-height: 1.35;
+}
+
+.cs-rappro-action small {
+  display: block;
+  margin-top: 6px;
+  color: #667085;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .cs-rappro-matrix {
   display: grid;
   gap: 10px;
@@ -154,6 +208,15 @@
     flex: 0 1 auto;
   }
 
+  .cs-comptes-header h2,
+  .cs-comptes-header .lead {
+    margin-bottom: 0;
+  }
+
+  .cs-comptes-header .lead {
+    margin-top: 4px;
+  }
+
   .cs-rappro-workbench {
     grid-template-columns: 1fr;
   }
@@ -180,6 +243,14 @@
 }
 
 @media (max-width: 560px) {
+  .cs-rappro-action {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-rappro-action .button-link {
+    width: 100%;
+  }
+
   .cs-rappro-matrix-head {
     align-items: flex-start;
     flex-direction: column;

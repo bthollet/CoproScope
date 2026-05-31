@@ -20,6 +20,9 @@
       <summary class="panel-head cs-rappro-detail-summary">
         <h3>Controle de la ligne</h3>
         <span>{{ view.selected.status_label if view.selected else 'Aucune selection' }}</span>
+        {% if view.selected %}
+        <small class="cs-rappro-summary-action">Action immediate: {{ view.selected.suggestion.next_action }}</small>
+        {% endif %}
       </summary>
       {% if view.selected %}
       {% set item = view.selected %}
@@ -32,6 +35,16 @@
           <span class="badge is-public">{{ item.diffusion }}</span>
         </div>
       </article>
+
+      <section class="cs-rappro-action" aria-labelledby="rappro-action-title">
+        <div>
+          <p class="eyebrow">Action immediate</p>
+          <h4 id="rappro-action-title">{{ item.suggestion.next_action }}</h4>
+          <p>{{ item.suggestion.reason or 'Rapprochement a relire avant decision.' }}</p>
+          <small>Aucune validation de paiement: cette action prepare seulement un controle local.</small>
+        </div>
+        <a class="button-link secondary" href="#rappro-validation">Tracer le controle local</a>
+      </section>
 
       <section class="cs-rappro-matrix" aria-labelledby="rappro-matrix-title">
         <div class="cs-rappro-matrix-head">
@@ -74,7 +87,7 @@
         {% endif %}
       </section>
 
-      <section class="panel" aria-labelledby="rappro-validation-title">
+      <section class="panel" id="rappro-validation" aria-labelledby="rappro-validation-title">
         <div class="panel-head">
           <h3 id="rappro-validation-title">Trace conseil syndical</h3>
           <span>{{ item.validation.decision_label if item.validation else 'A tracer' }}</span>

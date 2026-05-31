@@ -329,6 +329,9 @@ def create_app(
             context=context(request, "documents", document_detail=detail),
         )
 
+    from .pdftrace_routes import register_pdftrace_routes
+    register_pdftrace_routes(app, instance, _require_token, _url_with_token, _invalidate_dashboard_model_cache)
+
     @app.get("/pieces", response_class=HTMLResponse)
     def pieces(request: FastAPIRequest):
         if request.query_params.get("proof") == "missing":
