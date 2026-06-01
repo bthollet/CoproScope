@@ -27,6 +27,7 @@ ANOMALY_LABELS = {
     "DOUBLON_POTENTIEL": "Doublon potentiel",
     "FACTURE_HORS_EXERCICE": "Facture hors exercice",
     "INCOHERENCE_HT_TVA_TTC": "HT, TVA et TTC incoherents",
+    "SECURITE_INCENDIE_A_DEVISER": "Securite incendie a deviser",
 }
 
 STATUS_LABELS = {
@@ -44,7 +45,12 @@ FILTERS = (
     ("fournisseur-absent", "Fournisseur absent"),
 )
 
-HIGH_PRIORITY_ANOMALIES = {"INCOHERENCE_HT_TVA_TTC", "DOUBLON_POTENTIEL", "FACTURE_HORS_EXERCICE"}
+HIGH_PRIORITY_ANOMALIES = {
+    "INCOHERENCE_HT_TVA_TTC",
+    "DOUBLON_POTENTIEL",
+    "FACTURE_HORS_EXERCICE",
+    "SECURITE_INCENDIE_A_DEVISER",
+}
 COMPLETION_ANOMALIES = {
     "FOURNISSEUR_ABSENT",
     "NUMERO_FACTURE_ABSENT",
@@ -198,6 +204,8 @@ def _next_action(priority_key: str, anomaly_tokens: list[str]) -> str:
         return "Verifier l'exercice avant de rapprocher la charge."
     if "FOURNISSEUR_ABSENT" in anomaly_tokens:
         return "Identifier le fournisseur puis relancer le controle machine."
+    if "SECURITE_INCENDIE_A_DEVISER" in anomaly_tokens:
+        return "Demander le devis ou la preuve de remise en conformite incendie."
     if priority_key == "P1":
         return "Completer la donnee bloquante avant rapprochement."
     return "Relire la facture puis rattacher au bon controle comptable."

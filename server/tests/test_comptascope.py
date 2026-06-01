@@ -180,6 +180,19 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertEqual(account, "615000")
         self.assertEqual(family, "entretien_maintenance")
 
+    def test_invoice_accounting_classifies_fire_safety_and_flags_quote_followup(self) -> None:
+        account, family = factureops._account_for_invoice(
+            "Maintenance preventive extincteurs avec frais de gestion dematerialisee",
+            "FEU TEST",
+        )
+
+        self.assertEqual(account, "615000")
+        self.assertEqual(family, "securite_incendie")
+        self.assertEqual(
+            factureops._fire_safety_anomalies("Extincteurs CO2 non satisfaisant, DLU depassee, a deviser."),
+            ["SECURITE_INCENDIE_A_DEVISER"],
+        )
+
     def test_factureops_extracts_invoice_evidence_and_anomalies(self) -> None:
         run = RunContext(self.instance, "invoices extract")
         result = extract_invoices(self.instance, run, 2025)

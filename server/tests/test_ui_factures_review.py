@@ -121,6 +121,31 @@ class UiFacturesReviewTests(unittest.TestCase):
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, rendered_model)
 
+    def test_fire_safety_anomaly_has_dedicated_next_action(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="DOC-FIRE-001",
+                    fournisseur="Fournisseur securite incendie",
+                    numero_facture="FIRE-001",
+                    date_facture="2025-01-22",
+                    ttc="454.01",
+                    compte_propose="615000",
+                    famille_charge="securite_incendie",
+                    statut_controle="INCERTAIN",
+                    anomalies="SECURITE_INCENDIE_A_DEVISER",
+                ),
+            ],
+        )
+
+        view = build_factures_review_view(self.instance, 2025)
+
+        self.assertEqual(view["rows"][0]["priority_label"], "Priorite haute")
+        self.assertIn("Securite incendie a deviser", view["rows"][0]["anomalies"])
+        self.assertIn("remise en conformite incendie", view["rows"][0]["next_action"])
+
     def _seed_invoice_exports(self) -> None:
         write_csv(
             self.year_dir / "invoice_evidence_2025.csv",

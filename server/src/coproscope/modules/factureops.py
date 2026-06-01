@@ -259,7 +259,14 @@ def _looks_like_invoice(row: dict[str, str], path: Path | None, text: str, year:
 def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
     haystack = f"{supplier}\n{text}".lower()
     rules = [
-        ("622000", "honoraires_syndic", [r"\b(syndic|honoraire|gestion)\b"]),
+        (
+            "615000",
+            "securite_incendie",
+            [
+                r"\b(extincteurs?|incendie|s[ée]curit[ée]\s+incendie|maintenance\s+pr[ée]ventive|"
+                r"ria|d[ée]senfumage|sparklet|afff)\b"
+            ],
+        ),
         (
             "615000",
             "entretien_maintenance",
@@ -268,6 +275,7 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
                 r"d[ée]chetterie|r[ée]manents?|espaces?\s+verts?|pin|arbre)\b"
             ],
         ),
+        ("622000", "honoraires_syndic", [r"\b(syndic|honoraire|gestion)\b"]),
         ("606100", "energie_eau", [r"\b(eau|[ée]lectric(?:it[ée])?|[ée]nergie|engie|gaz)\b"]),
         ("616000", "assurance", [r"\b(assurance|multirisque)\b"]),
         ("671000", "charges_exceptionnelles", [r"\b(sinistre|contentieux|expertise)\b"]),
@@ -276,6 +284,13 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
         if any(re.search(pattern, haystack, flags=re.IGNORECASE) for pattern in patterns):
             return account, family
     return "615000", "charges_courantes_a_confirmer"
+
+
+def _fire_safety_anomalies(text: str) -> list[str]:
+    haystack = text.lower()
+    if re.search(r"\bextincteurs?\b", haystack) and re.search(r"non\s+satisfaisant|[aà]\s+deviser|dlu\s+d[ée]pass", haystack):
+        return ["SECURITE_INCENDIE_A_DEVISER"]
+    return []
 
 
 def _load_configured_invoice_evidence(instance: InstanceConfig, year: int) -> list[dict[str, str]]:
@@ -357,6 +372,7 @@ def _extract_invoice_rows(instance: InstanceConfig, year: int) -> list[dict[str,
         extraction = extract_generic_invoice_from_evidence(evidence)
         account, family = _account_for_invoice(text, extraction.fournisseur)
         anomalies = list(extraction.anomalies)
+        anomalies.extend(_fire_safety_anomalies(text))
         if extraction.date_facture and str(year) not in extraction.date_facture:
             anomalies.append("FACTURE_HORS_EXERCICE")
         key = f"{extraction.fournisseur}|{extraction.numero_facture}|{extraction.ttc}"

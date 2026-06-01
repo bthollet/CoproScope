@@ -102,6 +102,29 @@ Total TTC
         self.assertEqual(extraction.ttc, "913.00")
         self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
 
+    def test_generic_extractor_uses_tax_summary_and_named_siret_supplier(self) -> None:
+        text = """FACTURE
+CLIENT: Syndicat demo
+TVA INTRACOMMUNAUTAIRE FR714341892211
+SIRET FEU TEST : 341 235 679 00139
+Facture n 861954
+Date 22/01/2025
+Base H.T. Taux TVA Mt TVA
+1
+378,34
+20 %
+75,67
+Montant : 454,01
+"""
+        extraction = extract_generic_invoice_fields(text, "Facture_2025012211010101.pdf")
+
+        self.assertEqual(extraction.fournisseur, "FEU TEST")
+        self.assertEqual(extraction.siren_siret, "34123567900139")
+        self.assertEqual(extraction.ht, "378.34")
+        self.assertEqual(extraction.tva, "75.67")
+        self.assertEqual(extraction.ttc, "454.01")
+        self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
+
     def test_docai_evidence_feeds_generic_extraction_and_generator_prompt(self) -> None:
         evidence = DocumentExtractionEvidence(
             file_name="Facture_ACME.pdf",

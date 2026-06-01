@@ -482,6 +482,7 @@ def _family_matches(invoice: dict[str, str], line: dict[str, str]) -> bool:
     prefixes = {
         "energie_eau": ("601", "602", "606"),
         "entretien_maintenance": ("611", "614", "615"),
+        "securite_incendie": ("615",),
         "honoraires_syndic": ("622",),
         "assurance": ("616",),
         "charges_exceptionnelles": ("671",),

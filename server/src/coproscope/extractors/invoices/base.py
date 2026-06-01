@@ -116,20 +116,61 @@ def _looks_like_building_reference(context: str) -> bool:
     return bool(re.search(r"\b(b[âa]timent|bat\.?|immeuble|cage)\b", context, flags=re.IGNORECASE))
 
 
+def _looks_like_identifier_amount(value: str) -> bool:
+    digits = re.sub(r"\D", "", value)
+    return len(digits) >= 9 and not re.search(r"[,.]\d{1,2}", value)
+
+
+def _amount_candidates(window: str) -> list[str]:
+    values: list[str] = []
+    for match in re.finditer(r"-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?", window):
+        raw = match.group(0)
+        following = window[match.end() : match.end() + 4]
+        if "%" in following:
+            continue
+        prefix = window[max(0, match.start() - 45) : match.start()]
+        if _looks_like_building_reference(prefix) or _looks_like_identifier_amount(raw):
+            continue
+        amount = normalize_amount(raw)
+        if amount:
+            values.append(amount)
+    return values
+
+
 def _amount_after(labels: list[str], text: str) -> str:
     for label in labels:
         for label_match in re.finditer(label, text, flags=re.IGNORECASE):
             window = text[label_match.end() : label_match.end() + 180]
-            for match in re.finditer(r"-?\d[\d\s.,]*(?:[,.]\d{1,2})?", window):
-                following = window[match.end() : match.end() + 3]
-                if "%" in following:
-                    continue
-                prefix = window[max(0, match.start() - 45) : match.start()]
-                if _looks_like_building_reference(prefix):
-                    continue
-                amount = normalize_amount(match.group(0))
-                if amount:
-                    return amount
+            candidates = _amount_candidates(window)
+            if candidates:
+                return candidates[0]
+    return ""
+
+
+def _tax_summary_amounts(text: str) -> tuple[str, str] | None:
+    for match in re.finditer(r"base\s+h\.?\s*t", text, flags=re.IGNORECASE):
+        window = text[match.end() : match.end() + 260]
+        if not re.search(r"taux\s+tva|mt\s+tva|montant\s+tva", window, flags=re.IGNORECASE):
+            continue
+        candidates = _amount_candidates(window)
+        if len(candidates) >= 3 and candidates[0].endswith(".00") and Decimal(candidates[0]) <= Decimal("9.00"):
+            candidates = candidates[1:]
+        if len(candidates) >= 2:
+            return candidates[0], candidates[1]
+    return None
+
+
+def _total_amount_hint(text: str) -> str:
+    patterns = [
+        r"\bmontant\s*:\s*(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
+        r"\bnet\s+[aàÃ€]\s+payer[^\d\-]{0,40}(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            amount = normalize_amount(match.group(1))
+            if amount:
+                return amount
     return ""
 
 
@@ -160,6 +201,12 @@ def _first_match(patterns: list[str], text: str) -> str:
 
 
 def _guess_supplier(text: str) -> str:
+    named_siret = _first_match([r"\bsiret\s+([A-Z][A-Z0-9&.' -]{2,40})\s*:"], text)
+    if named_siret:
+        supplier = _sanitize_supplier_line(named_siret)
+        if supplier:
+            return supplier
+
     skip = {"facture", "avoir", "invoice", "note de debit", "note d'honoraires"}
     bad_fragments = [
         "designation",
@@ -177,6 +224,7 @@ def _guess_supplier(text: str) -> str:
         "sdc ",
         "beauvallon",
         "chavissimmo",
+        "immobilier",
         "installation de chantier",
     ]
     for raw_line in text.splitlines()[:25]:
@@ -233,15 +281,32 @@ def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExt
     )
     siren_siret = re.sub(r"\D", "", siren_siret)
 
+    ht = _amount_after([r"total\s+hors\s+taxes", r"total\s+h\.?\s*t", r"montant\s+h\.?\s*t", r"base\s+h\.?\s*t"], text)
+    tva = _amount_after([r"total\s+tva", r"montant\s+tva", r"\btva\b"], text)
+    ttc = _amount_after([r"net\s+a\s+payer", r"net\s+Ã \s+payer", r"net\s+à\s+payer", r"total\s+ttc", r"\bttc\b"], text)
+
+    tax_summary = _tax_summary_amounts(text)
+    if tax_summary:
+        summary_ht, summary_tva = tax_summary
+        total_hint = _total_amount_hint(text) or ttc
+        if total_hint:
+            try:
+                if abs((Decimal(summary_ht) + Decimal(summary_tva)) - Decimal(total_hint)) <= Decimal("0.05"):
+                    ht = summary_ht
+                    tva = summary_tva
+                    ttc = total_hint
+            except InvalidOperation:
+                pass
+
     extraction = InvoiceExtraction(
         provider_key=provider_key_from_name(supplier),
         fournisseur=supplier,
         siren_siret=siren_siret,
         numero_facture=invoice_number,
         date_facture=date,
-        ht=_amount_after([r"total\s+hors\s+taxes", r"total\s+ht", r"montant\s+ht", r"base\s+ht"], text),
-        tva=_amount_after([r"total\s+tva", r"montant\s+tva", r"\btva\b"], text),
-        ttc=_amount_after([r"net\s+a\s+payer", r"net\s+à\s+payer", r"total\s+ttc", r"\bttc\b"], text),
+        ht=ht,
+        tva=tva,
+        ttc=ttc,
         confidence="medium" if supplier and invoice_number and date else "low",
     )
 
