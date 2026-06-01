@@ -78,10 +78,8 @@ def _find_document_row(instance: InstanceConfig, doc_id: str) -> dict[str, str] 
     except KeyError:
         return None
     _, rows = read_csv(documents_path)
-    for row in rows:
-        if row.get("doc_id") == doc_id:
-            return row
-    return None
+    matches = [row for row in rows if row.get("doc_id") == doc_id]
+    return max(matches, key=_document_row_score) if matches else None
 
 
 def _public_document(row: dict[str, str]) -> dict[str, str]:

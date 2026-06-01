@@ -51,10 +51,16 @@
     <tbody>
     {% for row in model.documents.documents.rows[:12] %}
       <tr>
-        <td>{{ row.file_name or row.doc_id }}<br><small>{{ row.doc_id }}</small></td>
-        <td>{{ row.document_type or row.extension }}</td>
-        <td>{{ row.derivative_max_college or row.raw_max_college or row.sensitivity }}</td>
-        <td><a class="button-link secondary" href="/documents/{{ row.doc_id }}{{ ui_token_query }}">Ouvrir</a></td>
+        <td>{{ row.display_file_name or "Document" }}<br><small>{{ row.display_doc_id }}</small></td>
+        <td>{{ row.display_document_type }}</td>
+        <td>{{ row.display_confidentiality }}</td>
+        <td>
+          {% if row.detail_href %}
+          <a class="button-link secondary" href="{{ row.detail_href }}{{ ui_token_query }}">Ouvrir</a>
+          {% else %}
+          <span class="muted">Reference a verifier</span>
+          {% endif %}
+        </td>
       </tr>
     {% else %}
       <tr><td colspan="4">Aucun document charge.</td></tr>
@@ -119,7 +125,7 @@
         <tr>
           <td>{{ row.status }}</td>
           <td>{{ row.expected_label or row.document_type }}</td>
-          <td><code>{{ row.evidence_paths or row.matched_doc_ids }}</code></td>
+          <td><code>{{ row.display_evidence_ref }}</code></td>
         </tr>
       {% else %}
         <tr><td colspan="3">Aucune piece obsolete ou a classer dans la matrice chargee.</td></tr>

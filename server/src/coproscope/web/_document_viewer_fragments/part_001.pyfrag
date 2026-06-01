@@ -7,6 +7,7 @@ _PART_FILES = (
     '00_invoice_context.py',
     '01_detail_sections.py',
     '02_preview_and_path_helpers.py',
+    '03_document_selection.py',
 )
 
 for _part_file in _PART_FILES:

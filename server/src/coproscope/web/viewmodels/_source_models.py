@@ -2,6 +2,114 @@ from __future__ import annotations
 
 from ._runtime import *
 
+_PUBLIC_DOC_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
+_PRIVATE_REFERENCE_RE = re.compile(
+    r"file://|(?<![A-Za-z])[A-Za-z]:[\\/]|(?:^|[\\/\s\"'=])/(?:Users|home)[\\/]|"
+    r"(?:^|[\\/_\s\"'=.-])(?:raw|restricted|logs|private|100_collecte_raw|220_assemblees)(?=$|[\\/_\s\"'=.-])",
+    re.IGNORECASE,
+)
+_PUBLIC_MASKED_REFERENCE = "[reference locale masquee]"
+
+
+def _document_display_label(row: dict[str, str]) -> str:
+    for key in ("file_name", "filename"):
+        label = _safe_basename(row.get(key, ""))
+        if label:
+            return label
+    return _public_doc_id(row.get("doc_id", "")) or "Document"
+
+
+def _safe_basename(value: object) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    basename = next((part for part in reversed(text.replace("\\", "/").split("/")) if part), "")
+    if basename in {"", ".", ".."} or _looks_private_reference(basename):
+        return ""
+    return _clip(basename, 100)
+
+
+def _public_doc_id(value: object) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if ".." in text or "/" in text or "\\" in text or not _PUBLIC_DOC_ID_RE.fullmatch(text):
+        return _PUBLIC_MASKED_REFERENCE
+    return text
+
+
+def _looks_private_reference(value: object) -> bool:
+    return bool(_PRIVATE_REFERENCE_RE.search(str(value or "").replace("\\", "/")))
+
+
+def _public_cell(value: object, fallback: str = _PUBLIC_MASKED_REFERENCE) -> str:
+    text = _clip(str(value or "").strip(), 160)
+    if not text:
+        return ""
+    return fallback if _looks_private_reference(text) else text
+
+
+def _public_report(report: dict[str, str]) -> dict[str, str]:
+    if not report.get("exists"):
+        return report
+    text = report.get("text", "")
+    if not _looks_private_reference(text):
+        return report
+    masked = "Rapport disponible localement; apercu masque car il contient des references locales privees."
+    return {**report, "text": masked, "html": html.escape(masked)}
+
+
+def _safe_document_rows(table: DataTable) -> DataTable:
+    rows = []
+    for row in table.rows:
+        safe = dict(row)
+        safe["display_file_name"] = _document_display_label(row)
+        safe["display_doc_id"] = _public_doc_id(row.get("doc_id", ""))
+        safe["display_document_type"] = _public_cell(row.get("document_type") or row.get("extension"))
+        safe["display_confidentiality"] = _public_cell(
+            row.get("derivative_max_college") or row.get("raw_max_college") or row.get("sensitivity")
+        )
+        doc_id = row.get("doc_id", "").strip()
+        safe["detail_href"] = f"/documents/{quote(doc_id)}" if _public_doc_id(doc_id) == doc_id else ""
+        rows.append(safe)
+    return DataTable(path=table.path, fields=table.fields, rows=rows)
+
+
+def _safe_document_actionable(actionable: dict[str, object]) -> dict[str, object]:
+    copied = dict(actionable)
+    for key in ("present", "missing", "obsolete", "to_classify", "to_request"):
+        rows = copied.get(key)
+        if isinstance(rows, list):
+            copied[key] = [_safe_docops_row(row) for row in rows if isinstance(row, dict)]
+    return copied
+
+
+def _safe_docops_row(row: dict[str, str]) -> dict[str, str]:
+    safe = dict(row)
+    for key, value in row.items():
+        safe[key] = _public_cell(value)
+    safe["display_evidence_ref"] = _public_cell(row.get("evidence_paths") or row.get("matched_doc_ids"))
+    return safe
+
+
+def _safe_privacy_rows(table: DataTable) -> DataTable:
+    rows = []
+    for row in table.rows:
+        safe = dict(row)
+        safe["display_file_name"] = _document_display_label(row)
+        safe["display_doc_id"] = _public_doc_id(row.get("doc_id", ""))
+        safe["display_review_status"] = _public_cell(row.get("privacy_review_status") or row.get("remediation_priority"))
+        safe["display_decision"] = _public_cell(row.get("review_status_recommendation") or row.get("required_transformations"))
+        safe["display_next_step"] = _public_cell(
+            row.get("publication_blocker") or row.get("review_next_step") or row.get("recommended_action")
+        )
+        safe["display_queue_status"] = _public_cell(row.get("queue_status"))
+        safe["display_transformations"] = _public_cell(row.get("required_transformations"))
+        safe["display_mode"] = _public_cell(row.get("recommended_mode"))
+        rows.append(safe)
+    return DataTable(path=table.path, fields=table.fields, rows=rows)
+
+
 def _decision_dedupe_key(row: dict[str, str], index: int) -> tuple[str, ...]:
     decision_id = row.get("decision_action_id", "").strip()
     if decision_id:
@@ -148,6 +256,7 @@ def _documents_model(instance: InstanceConfig) -> dict[str, object]:
     reports_dir = instance.artifact("reports_dir")
 
     documents = _read_table(documents_path) if documents_path else DataTable(Path(""), [], [])
+    documents = _safe_document_rows(documents)
     requests = _read_table(requests_path) if requests_path else DataTable(Path(""), [], [])
     ag = _read_table(ag_path) if ag_path else DataTable(Path(""), [], [])
     findings = _read_table(findings_path) if findings_path else DataTable(Path(""), [], [])
@@ -170,12 +279,12 @@ def _documents_model(instance: InstanceConfig) -> dict[str, object]:
         "ag": ag,
         "findings": findings,
         "kpi": kpi,
-        "missing_report": _read_report(missing_report),
-        "ag_report": _read_report(ag_report),
+        "missing_report": _public_report(_read_report(missing_report)),
+        "ag_report": _public_report(_read_report(ag_report)),
         "document_types": _counter(documents.rows, "document_type"),
         "source_zones": _counter(documents.rows, "source_zone"),
-        "stale_or_missing": stale_or_missing[:20],
-        "actionable": _docops_actionable_model(completeness_matrix, document_requests),
+        "stale_or_missing": [_safe_docops_row(row) for row in stale_or_missing[:20]],
+        "actionable": _safe_document_actionable(_docops_actionable_model(completeness_matrix, document_requests)),
         "artifacts": [
             _artifact(instance, "Registre documents", documents_path, "csv"),
             _artifact(instance, "Registre demandes", requests_path, "csv"),
@@ -324,9 +433,9 @@ def _accounting_model(instance: InstanceConfig, year: int) -> dict[str, object]:
 
 def _privacy_model(instance: InstanceConfig) -> dict[str, object]:
     paths = _privacy_paths(instance)
-    screening = _read_table(paths["screening"])
+    screening = _safe_privacy_rows(_read_table(paths["screening"]))
     redactions = _read_table(paths["redactions"])
-    queue = _read_table(paths["queue"])
+    queue = _safe_privacy_rows(_read_table(paths["queue"]))
     review_rows = [
         row
         for row in screening.rows
@@ -363,7 +472,7 @@ def _privacy_model(instance: InstanceConfig) -> dict[str, object]:
         },
         "priority_counts": _counter(screening.rows, "remediation_priority"),
         "queue_counts": _counter(queue.rows, "queue_status"),
-        "report": _read_report(paths["report"]),
+        "report": _public_report(_read_report(paths["report"])),
         "artifacts": [
             _artifact(instance, "Screening confidentialite", paths["screening"], "csv"),
             _artifact(instance, "File de biffage", paths["queue"], "csv"),

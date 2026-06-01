@@ -38,12 +38,12 @@
       {% for row in model.privacy.review_rows[:14] %}
         <tr>
           <td>
-            {{ row.privacy_review_status or row.remediation_priority }}
+            {{ row.display_review_status }}
             {% if row.review_justification_required %}<small>justification</small>{% endif %}
           </td>
-          <td>{{ row.file_name or row.doc_id }}<small>{{ row.original_path }}</small></td>
-          <td>{{ row.review_status_recommendation or row.required_transformations }}</td>
-          <td>{{ row.publication_blocker or row.review_next_step or row.recommended_action }}</td>
+          <td>{{ row.display_file_name }}<small>{{ row.display_doc_id }}</small></td>
+          <td>{{ row.display_decision }}</td>
+          <td>{{ row.display_next_step }}</td>
         </tr>
       {% else %}
         <tr><td colspan="4">Aucune revue confidentialite prioritaire chargee.</td></tr>
@@ -62,9 +62,9 @@
       <tbody>
       {% for row in model.privacy.queue_rows[:14] %}
         <tr>
-          <td>{{ row.queue_status }}</td>
-          <td>{{ row.file_name or row.doc_id }}<small>{{ row.required_transformations }}</small></td>
-          <td>{{ row.recommended_mode }}</td>
+          <td>{{ row.display_queue_status }}</td>
+          <td>{{ row.display_file_name }}<small>{{ row.display_transformations }}</small></td>
+          <td>{{ row.display_mode }}</td>
         </tr>
       {% else %}
         <tr><td colspan="3">La file de biffage n'est pas encore generee.</td></tr>
