@@ -428,6 +428,13 @@ Regles obligatoires:
 - Le smoke executable peut choisir un port loopback libre fourni par Windows,
   lancer son propre processus `CoproScope.exe`, puis fermer uniquement ce
   processus. Il ne doit jamais tuer un PID qu'il n'a pas cree.
+- Quand Brice demande explicitement de tester la derniere version de l'exe, le
+  coordinateur peut lancer `CoproScope.exe` en recette interactive, avec PID
+  trace, URL tokenisee et consigne d'arret. Ce lancement n'est ni un serveur
+  durable ni un heartbeat: il reste ouvert seulement pour la recette de Brice,
+  puis il est arrete sur demande ou en fin de lot. Preferer la plage `8780` a
+  `8799`; si elle est occupee ou douteuse, utiliser le prochain port documente
+  et noter la raison dans `docs/presence_agents.md`.
 - reserver un port avant de demarrer un serveur, avec `CONV-*`, role, instance,
   token de test et commande prevue;
 - choisir l'instance de recette la moins sensible possible: `examples/synthetic_copro`
@@ -440,7 +447,9 @@ Regles obligatoires:
   a change ou si l'owner change, repartir d'un port reserve frais dans `8780`
   a `8799` au lieu de reutiliser un serveur ambigu;
 - ne pas scanner les ports ou processus, ne pas tuer de PID, ne pas utiliser
-  `taskkill`, `Start-Process` cache ou ouverture navigateur automatique;
+  `taskkill`, `Start-Process` cache ou ouverture navigateur automatique, sauf
+  ouverture explicite d'une URL de recette quand Brice a demande a tester
+  l'executable;
 - si le port prevu est occupe ou douteux, ne pas enqueter par scan: publier le
   conflit dans la trace, choisir un autre port documente dans la plage de
   secours, et mettre a jour `presence_agents.md`;

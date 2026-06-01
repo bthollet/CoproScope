@@ -337,6 +337,14 @@ pour ce lot seulement, cite l'URL tokenisee dans sa trace, puis dit clairement
 s'il est arrete ou garde ouvert. Les points de reprise manuels d'un protocole
 local ne sont pas des automations Codex.
 
+Exception recette exe demandee par Brice: quand la demande porte explicitement
+sur "tester la derniere version de l'exe", le coordinateur peut ouvrir
+`CoproScope.exe` pour une recette interactive. La trace doit alors contenir le
+PID, le port, le token local, l'instance cible et la consigne d'arret. Ce n'est
+pas un serveur durable, pas un watchdog et pas une relance automatique. Preferer
+`8780` a `8799`; si cette plage est occupee ou douteuse, utiliser un port
+documente hors plage et expliquer pourquoi dans `presence_agents.md`.
+
 | Usage | Port |
 |---|---:|
 | Integration principale | 8765 |
@@ -363,6 +371,11 @@ visible, au premier plan ou minimise par l'utilisateur, puis l'arreter avec
 de ports/processus, de `taskkill`, ni d'ouverture navigateur automatique. Si une
 page ne repond pas, lire le terminal serveur visible plutot que chercher et tuer
 un PID.
+
+Pour la recette exe interactive ci-dessus, le processus `CoproScope.exe` ouvert
+pour Brice remplace le terminal serveur visible. Il doit rester identifiable par
+son PID dans `presence_agents.md`; seule cette instance peut etre arretee, et
+seulement quand Brice dit que le test est fini ou quand le `BOT-END` l'annonce.
 
 La plage `8780` a `8799` sert uniquement aux recettes temporaires, gates live et
 comparaisons. Avant de l'utiliser, annoncer le port, l'instance, le token et le
