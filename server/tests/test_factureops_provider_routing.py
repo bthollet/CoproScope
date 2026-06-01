@@ -127,6 +127,32 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ttc, "73.44")
         self.assertEqual((account, family), ("626000", "telecom_ligne_technique"))
 
+    def test_routes_asv_locksmith_invoice_to_access_maintenance(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_asv_serrure.pdf",
+            native_text=(
+                "Total HT\n600,00\nTotal TVA\n60,00\nTotal TTC\n660,00\nNET A PAYER\n660,00\n"
+                "TRAVAUX : REMPLACEMENT SERRURE D'ACCES A LA CAVE\n"
+                "POSE DE LA NOUVELLE SERRURE\nFOURNITURES DE 44 CLEFS\n"
+                "Lieu d'intervention : RESIDENCE DEMO BATIMENT 25\n"
+                "ASV\nFacture N F83582502CH\nDate\n15/02/2025\n"
+                "Depuis 1997 - S.A.R.L. au Capital de 300 000 EUR\n"
+                "R.C.S : 831525506\nSite Internet : http://www.asvdepannage.fr\n"
+                "Email : contact@orange.fr\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.provider_key, "asv")
+        self.assertEqual(extraction.fournisseur, "ASV")
+        self.assertEqual(extraction.numero_facture, "F83582502CH")
+        self.assertEqual(extraction.date_facture, "2025-02-15")
+        self.assertEqual(extraction.ht, "600.00")
+        self.assertEqual(extraction.tva, "60.00")
+        self.assertEqual(extraction.ttc, "660.00")
+        self.assertEqual((account, family), ("615000", "serrurerie_acces"))
+
 
 if __name__ == "__main__":
     unittest.main()

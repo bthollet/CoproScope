@@ -1,6 +1,7 @@
 """Provider-specific invoice extractors."""
 
 from .cogelec import CogelecInvoiceProviderExtractor
+from .asv import AsvInvoiceProviderExtractor
 from .edelen import EdelenInvoiceProviderExtractor
 from .engie import EngieInvoiceProviderExtractor
 from .generic import GenericInvoiceProviderExtractor
@@ -11,6 +12,7 @@ from .phocea import PhoceaInvoiceProviderExtractor
 
 __all__ = [
     "CogelecInvoiceProviderExtractor",
+    "AsvInvoiceProviderExtractor",
     "EdelenInvoiceProviderExtractor",
     "EngieInvoiceProviderExtractor",
     "GenericInvoiceProviderExtractor",

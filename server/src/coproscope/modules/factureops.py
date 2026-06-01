@@ -9,6 +9,7 @@ from typing import Any, Iterable
 from ..core.common import InstanceConfig, RunContext, read_csv, sha256_file, write_csv
 from ..extractors.invoices import DocumentExtractionEvidence, InvoiceExtraction, extract_generic_invoice_from_evidence
 from ..extractors.invoices.providers import (
+    AsvInvoiceProviderExtractor,
     CogelecInvoiceProviderExtractor,
     InsuranceNoticeProviderExtractor,
     OmegaAscenseurInvoiceProviderExtractor,
@@ -278,8 +279,9 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
         (
             "626000",
             "telecom_ligne_technique",
-            [r"\b(orange|ligne\s+fixe|contrat\s+professionnel|facture\s+ligne\s+fixe|telecom)\b"],
+            [r"\b(orange\s+sa|pro\.orange\.fr|ligne\s+fixe|contrat\s+professionnel|facture\s+ligne\s+fixe|telecom)\b"],
         ),
+        ("615000", "serrurerie_acces", [r"\b(serrures?|clefs?|cl[ée]s?|cylindre|acc[eè]s\s+(?:a\s+la\s+)?cave)\b"]),
         ("615000", "ascenseur_maintenance", [r"\b(ascenseurs?|porte\s+cabine|contact\s+de\s+porte)\b"]),
         (
             "615000",
@@ -329,6 +331,12 @@ def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> Invo
         return OrangeInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bcogelec\b", text, flags=re.IGNORECASE):
         return CogelecInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
+    if re.search(r"\basv\b|asvdepannage\.fr", text, flags=re.IGNORECASE) and re.search(
+        r"\b(serrures?|clefs?|cl[ée]s?|acc[eè]s\s+(?:a\s+la\s+)?cave)\b",
+        text,
+        flags=re.IGNORECASE,
+    ):
+        return AsvInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bprestations\s+du\s+mois\b", text, flags=re.IGNORECASE) and re.search(
         r"\bmontant\s+h\.?\s*t\s+tx\s+tva\s+tva\s+ttc\b",
         text,
