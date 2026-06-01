@@ -31,6 +31,7 @@ from coproscope.extractors.invoices.providers import (
     CogelecInvoiceProviderExtractor,
     EdelenInvoiceProviderExtractor,
     EngieInvoiceProviderExtractor,
+    InsuranceNoticeProviderExtractor,
     OmegaAscenseurInvoiceProviderExtractor,
     PhoceaInvoiceProviderExtractor,
 )
@@ -233,6 +234,32 @@ MTT_TTC:117,32NETAPAYER:117,32
         self.assertEqual(cogelec.siren_siret, "43418922100022")
         self.assertEqual(cogelec.numero_facture, "FC12345")
         self.assertEqual(cogelec.ttc, "117.32")
+
+        insurance = InsuranceNoticeProviderExtractor().extract(
+            """AVIS D'ECHEANCE
+Compagnie : SADA
+Multirisque Immeuble
+Prime HT
+19 570,25 EUR
+Taxes et accessoires
+2 563,15 EUR
+Frais de quittancement
+30,00 EUR
+Solde du :
+22 163,40 EUR
+Conformement a l'article 261 C, votre prime est exoneree de TVA.
+Marseille, le jeudi 09 janvier 2025
+No de Police : 1H0357854
+No de quittance : 2024RDG11664438
+CABINET RIPERT DE GRISSAC
+"""
+        )
+        self.assertEqual(insurance.fournisseur, "RIPERT DE GRISSAC")
+        self.assertEqual(insurance.numero_facture, "2024RDG11664438")
+        self.assertEqual(insurance.date_facture, "2025-01-09")
+        self.assertEqual(insurance.tva, "0.00")
+        self.assertEqual(insurance.ttc, "22163.40")
+        self.assertIn("ASSURANCE_RIB_A_CONTROLER", insurance.anomalies)
 
     def test_default_reconciler_uses_text_and_ledger_supplier_evidence(self) -> None:
         invoice = InvoiceReconciliationInput(

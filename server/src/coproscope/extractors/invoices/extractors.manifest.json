@@ -92,6 +92,13 @@
       "status": "generalizable",
       "fixtures": ["server/tests/test_invoice_extractors.py::InvoiceExtractorTests"],
       "notes": "Synthetic fixture only; extracts Cogelec compact key-value invoice text."
+    },
+    {
+      "provider_key": "insurance_notice",
+      "module_path": "server/src/coproscope/extractors/invoices/providers/insurance_notice.py",
+      "status": "generalizable",
+      "fixtures": ["server/tests/test_invoice_extractors.py::InvoiceExtractorTests"],
+      "notes": "Synthetic fixture only; extracts building insurance premium notices without treating taxes and accessories as VAT."
     }
   ],
   "default_reconciliation_modules": [

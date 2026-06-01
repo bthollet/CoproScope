@@ -8,7 +8,7 @@ from typing import Any, Iterable
 
 from ..core.common import InstanceConfig, RunContext, read_csv, sha256_file, write_csv
 from ..extractors.invoices import DocumentExtractionEvidence, InvoiceExtraction, extract_generic_invoice_from_evidence
-from ..extractors.invoices.providers import OmegaAscenseurInvoiceProviderExtractor
+from ..extractors.invoices.providers import InsuranceNoticeProviderExtractor, OmegaAscenseurInvoiceProviderExtractor
 from ..extractors.invoices.reconciliation import parse_amount
 
 
@@ -268,6 +268,7 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
                 r"ria|d[ée]senfumage|sparklet|afff)\b"
             ],
         ),
+        ("616000", "assurance", [r"\b(assurance|multirisque|police|quittance|prime\s+h\.?\s*t)\b"]),
         (
             "615000",
             "entretien_maintenance",
@@ -278,7 +279,6 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
         ),
         ("622000", "honoraires_syndic", [r"\b(syndic|honoraire|gestion)\b"]),
         ("606100", "energie_eau", [r"\b(eau|[ée]lectric(?:it[ée])?|[ée]nergie|engie|gaz)\b"]),
-        ("616000", "assurance", [r"\b(assurance|multirisque)\b"]),
         ("671000", "charges_exceptionnelles", [r"\b(sinistre|contentieux|expertise)\b"]),
     ]
     for account, family, patterns in rules:
@@ -296,6 +296,8 @@ def _fire_safety_anomalies(text: str) -> list[str]:
 
 def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> InvoiceExtraction:
     text = evidence.combined_text()
+    if re.search(r"\bavis\s+d.{0,6}echeance\b|\bmultirisque\s+immeuble\b|\bN\S*\s+de\s+quittance\b", text, flags=re.IGNORECASE):
+        return InsuranceNoticeProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bomega\s+ascenseur\b", text, flags=re.IGNORECASE):
         return OmegaAscenseurInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     return extract_generic_invoice_from_evidence(evidence)

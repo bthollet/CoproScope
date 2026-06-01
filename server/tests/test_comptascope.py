@@ -193,6 +193,38 @@ class ComptaScopeTests(unittest.TestCase):
             ["SECURITE_INCENDIE_A_DEVISER"],
         )
 
+    def test_invoice_accounting_classifies_insurance_before_maintenance_words(self) -> None:
+        account, family = factureops._account_for_invoice(
+            "Avis d'echeance assurance multirisque immeuble avec note sur entretien du risque assure.",
+            "COURTIER TEST",
+        )
+        self.assertEqual((account, family), ("616000", "assurance"))
+
+    def test_factureops_uses_insurance_notice_extractor(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Avis_echeance_assurance.pdf",
+            native_text="""AVIS D'ECHEANCE
+Compagnie : SADA
+Multirisque Immeuble
+Prime HT 19 570,25 EUR
+Taxes et accessoires 2 563,15 EUR
+Frais de quittancement 30,00 EUR
+Solde du : 22 163,40 EUR
+Conformement a l'article 261 C, votre prime est exoneree de TVA.
+Marseille, le jeudi 09 janvier 2025
+No de Police : 1H0357854
+No de quittance : 2024RDG11664438
+"""
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+        self.assertEqual(extraction.provider_key, "insurance_notice")
+        self.assertEqual(extraction.numero_facture, "2024RDG11664438")
+        self.assertEqual(extraction.date_facture, "2025-01-09")
+        self.assertEqual(extraction.tva, "0.00")
+        self.assertEqual(extraction.ttc, "22163.40")
+        self.assertEqual((account, family), ("616000", "assurance"))
+
     def test_factureops_uses_provider_specific_omega_extractor(self) -> None:
         evidence = factureops.DocumentExtractionEvidence(
             file_name="Facture_omega.pdf",

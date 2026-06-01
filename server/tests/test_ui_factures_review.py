@@ -146,6 +146,31 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertIn("Securite incendie a deviser", view["rows"][0]["anomalies"])
         self.assertIn("remise en conformite incendie", view["rows"][0]["next_action"])
 
+    def test_insurance_rib_anomaly_has_dedicated_next_action(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="DOC-INS-001",
+                    fournisseur="Courtier assurance",
+                    numero_facture="QUI-001",
+                    date_facture="2025-01-09",
+                    ttc="22163.40",
+                    compte_propose="616000",
+                    famille_charge="assurance",
+                    statut_controle="INCERTAIN",
+                    anomalies="ASSURANCE_RIB_A_CONTROLER",
+                ),
+            ],
+        )
+
+        view = build_factures_review_view(self.instance, 2025)
+
+        self.assertEqual(view["rows"][0]["priority_label"], "Priorite haute")
+        self.assertIn("RIB ou mandat assurance a controler", view["rows"][0]["anomalies"])
+        self.assertIn("mandat du courtier", view["rows"][0]["next_action"])
+
     def _seed_invoice_exports(self) -> None:
         write_csv(
             self.year_dir / "invoice_evidence_2025.csv",

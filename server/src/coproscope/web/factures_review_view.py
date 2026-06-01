@@ -28,6 +28,7 @@ ANOMALY_LABELS = {
     "FACTURE_HORS_EXERCICE": "Facture hors exercice",
     "INCOHERENCE_HT_TVA_TTC": "HT, TVA et TTC incoherents",
     "SECURITE_INCENDIE_A_DEVISER": "Securite incendie a deviser",
+    "ASSURANCE_RIB_A_CONTROLER": "RIB ou mandat assurance a controler",
 }
 
 STATUS_LABELS = {
@@ -50,6 +51,7 @@ HIGH_PRIORITY_ANOMALIES = {
     "DOUBLON_POTENTIEL",
     "FACTURE_HORS_EXERCICE",
     "SECURITE_INCENDIE_A_DEVISER",
+    "ASSURANCE_RIB_A_CONTROLER",
 }
 COMPLETION_ANOMALIES = {
     "FOURNISSEUR_ABSENT",
@@ -206,6 +208,8 @@ def _next_action(priority_key: str, anomaly_tokens: list[str]) -> str:
         return "Identifier le fournisseur puis relancer le controle machine."
     if "SECURITE_INCENDIE_A_DEVISER" in anomaly_tokens:
         return "Demander le devis ou la preuve de remise en conformite incendie."
+    if "ASSURANCE_RIB_A_CONTROLER" in anomaly_tokens:
+        return "Verifier le RIB connu ou le mandat du courtier avant paiement."
     if priority_key == "P1":
         return "Completer la donnee bloquante avant rapprochement."
     return "Relire la facture puis rattacher au bon controle comptable."
