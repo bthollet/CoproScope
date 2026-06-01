@@ -254,6 +254,8 @@ def _safe_doc_id(value: Any) -> str:
 
 def _public_text(value: Any, *, limit: int) -> str:
     text = " ".join(str(value or "").split())
+    if _looks_like_raw_file_label(text):
+        return ""
     text = re.sub(r"<\s*script\b.*?<\s*/\s*script\s*>", " ", text, flags=re.IGNORECASE | re.DOTALL)
     text = re.sub(r"<[^>]+>", " ", text)
     for pattern in FORBIDDEN_PATTERNS:
@@ -263,6 +265,14 @@ def _public_text(value: Any, *, limit: int) -> str:
     text = re.sub(r"(?:\[retire\]\s*)+", "information masquee ", text).strip()
     text = text.strip()
     return text if len(text) <= limit else f"{text[: limit - 1].rstrip()}..."
+
+
+def _looks_like_raw_file_label(value: str) -> bool:
+    text = value.strip()
+    lowered = text.replace("\\", "/").lower()
+    if "200_inbox" in lowered or "__bvl." in lowered:
+        return True
+    return bool(re.search(r"(?:^|[_\s-])facture[_\s-]*20\d{10,}(?:\D|$)", lowered))
 
 
 def _contains_private_marker(value: str) -> bool:

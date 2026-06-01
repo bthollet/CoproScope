@@ -102,6 +102,8 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertIn("Lien document masque", text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
+        self.assertNotIn("200_INBOX", text)
+        self.assertNotIn("Facture_2025030513520296", text)
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
             self.assertNotIn(marker, response.text)
@@ -209,6 +211,14 @@ class UiFacturesReviewTests(unittest.TestCase):
                     compte_propose="601000",
                     famille_charge="energie_eau",
                     statut_controle="PROBABLE",
+                ),
+                _invoice_row(
+                    doc_id="DOC-INV-RAW-LABEL",
+                    fournisseur="",
+                    numero_facture="200_INBOX__bvl.25__Facture_2025030513520296",
+                    date_facture="2025-03-05",
+                    ttc="120.00",
+                    statut_controle="A_CONTROLER",
                 ),
             ],
         )
