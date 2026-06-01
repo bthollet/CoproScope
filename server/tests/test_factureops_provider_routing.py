@@ -26,22 +26,25 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ttc, "22163.40")
 
     def test_uses_omega_extractor(self) -> None:
-        extraction = factureops._extract_invoice_from_evidence(
-            factureops.DocumentExtractionEvidence(
-                file_name="Facture_omega.pdf",
-                native_text=(
-                    "OMEGA ASCENSEUR\nSIRET: 815 051 974 00021\nFA.09.01.25.0700\n09/01/2025\n"
-                    "TTC : 9.873,60\nContrat de maintenance Ascenseurs\n2.407,20\n240,72\n"
-                    "2.647,92\n2.647,92\nTVA 10%\n09/02/25 : 2.647,92\nDELAIS DE PAIEMENT\n"
-                ),
-            )
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_omega.pdf",
+            native_text=(
+                "OMEGA ASCENSEUR\nSIRET: 815 051 974 00021\nFA.09.01.25.0700\n09/01/2025\n"
+                "TTC : 9.873,60\nContrat de maintenance Ascenseurs\n2.407,20\n240,72\n"
+                "2.647,92\n2.647,92\nTVA 10%\n09/02/25 : 2.647,92\nDELAIS DE PAIEMENT\n"
+            ),
         )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
 
         self.assertEqual(extraction.provider_key, "omega_ascenseur")
         self.assertEqual(extraction.numero_facture, "FA.09.01.25.0700")
         self.assertEqual(extraction.ht, "2407.20")
         self.assertEqual(extraction.tva, "240.72")
         self.assertEqual(extraction.ttc, "2647.92")
+        self.assertEqual(
+            factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur),
+            ("615000", "ascenseur_maintenance"),
+        )
 
     def test_uses_cogelec_extractor(self) -> None:
         evidence = factureops.DocumentExtractionEvidence(

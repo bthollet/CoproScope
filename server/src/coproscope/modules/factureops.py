@@ -273,6 +273,7 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
             ],
         ),
         ("616000", "assurance", [r"\b(assurance|multirisque|police|quittance|prime\s+h\.?\s*t)\b"]),
+        ("615000", "ascenseur_maintenance", [r"\b(ascenseurs?|porte\s+cabine|contact\s+de\s+porte)\b"]),
         ("615000", "entretien_maintenance", [r"\b(plomberie|chauffage|climatisation|robinet|wc|evacuation|pvc)\b"]),
         ("615000", "assainissement_degorgement", [r"\b(assainissement|degorgement|hydrocureur|eaux\s+usees|eaux\s+vannes)\b"]),
         (

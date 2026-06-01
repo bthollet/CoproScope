@@ -41,7 +41,7 @@ def build_document_detail(instance: InstanceConfig, doc_id: str) -> dict[str, ob
     row = _find_document_row(instance, doc_id)
     if row is None:
         raise DocumentNotFoundError(doc_id)
-
+    row = _with_invoice_context(instance, row)
     preview = _build_preview(instance, row)
     storage = _storage_summary(instance, row)
     diffusion = _diffusion_status(row)
