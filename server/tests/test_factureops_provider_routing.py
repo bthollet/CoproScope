@@ -97,6 +97,36 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ttc, "3693.12")
         self.assertEqual((account, family), ("615000", "nettoyage_parties_communes"))
 
+    def test_routes_orange_fixed_line_invoice_to_telecom(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_orange.pdf",
+            native_text=(
+                "Votre facture ligne fixe\nOrange SA au capital de 10 640 226 396 EUR - "
+                "380 129 866 RCS Nanterre\n"
+                "total du montant preleve au 21.01.2025\n"
+                "prochaine facture vers le 12.03.2025\n"
+                "votre facture du 10.01.2025\n"
+                "montant HT\n61,20 EUR\n"
+                "no de facture :\n0491308386 25A2- 2C01\n"
+                "montant total de la TVA payee 12,24 EUR\n"
+                "date de facture :\n10/01/25\n"
+                "73,44 EUR TTC\n"
+                "periode du 08.01.2025 au 07.03.2025\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.provider_key, "orange")
+        self.assertEqual(extraction.fournisseur, "ORANGE")
+        self.assertEqual(extraction.siren_siret, "380129866")
+        self.assertEqual(extraction.numero_facture, "0491308386 25A2- 2C01")
+        self.assertEqual(extraction.date_facture, "2025-01-10")
+        self.assertEqual(extraction.ht, "61.20")
+        self.assertEqual(extraction.tva, "12.24")
+        self.assertEqual(extraction.ttc, "73.44")
+        self.assertEqual((account, family), ("626000", "telecom_ligne_technique"))
+
 
 if __name__ == "__main__":
     unittest.main()

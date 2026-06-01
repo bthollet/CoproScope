@@ -33,6 +33,7 @@ from coproscope.extractors.invoices.providers import (
     EngieInvoiceProviderExtractor,
     InsuranceNoticeProviderExtractor,
     OmegaAscenseurInvoiceProviderExtractor,
+    OrangeInvoiceProviderExtractor,
     PhoceaInvoiceProviderExtractor,
 )
 
@@ -390,6 +391,27 @@ CABINET RIPERT DE GRISSAC
         self.assertEqual(insurance.tva, "0.00")
         self.assertEqual(insurance.ttc, "22163.40")
         self.assertIn("ASSURANCE_RIB_A_CONTROLER", insurance.anomalies)
+
+        orange = OrangeInvoiceProviderExtractor().extract(
+            """Votre facture ligne fixe
+Orange SA - 380 129 866 RCS Nanterre
+votre facture du 10.01.2025
+montant HT
+61,20 EUR
+n° de facture :
+0491308386 25A2- 2C01
+montant total de la TVA payee 12,24 EUR
+date de facture :
+10/01/25
+73,44 EUR TTC
+"""
+        )
+        self.assertEqual(orange.fournisseur, "ORANGE")
+        self.assertEqual(orange.numero_facture, "0491308386 25A2- 2C01")
+        self.assertEqual(orange.date_facture, "2025-01-10")
+        self.assertEqual(orange.ht, "61.20")
+        self.assertEqual(orange.tva, "12.24")
+        self.assertEqual(orange.ttc, "73.44")
 
     def test_default_reconciler_uses_text_and_ledger_supplier_evidence(self) -> None:
         invoice = InvoiceReconciliationInput(
