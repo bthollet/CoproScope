@@ -102,7 +102,7 @@ class ReconstructionProtocolToolTests(unittest.TestCase):
         temp, root, instance = self._workspace()
         try:
             self.assertEqual(0, self._run(root, self._base(instance) + ["init"])[0])
-            self.assertEqual(0, self._run(root, self._base(instance) + ["heartbeat"])[0])
+            self.assertEqual(0, self._run(root, self._base(instance) + ["checkpoint"])[0])
             self.assertEqual(0, self._run(root, self._base(instance) + ["next-doc"])[0])
 
             code, out, _err = self._run(root, self._base(instance) + ["gate"])
@@ -113,13 +113,27 @@ class ReconstructionProtocolToolTests(unittest.TestCase):
         finally:
             temp.cleanup()
 
+    def test_legacy_heartbeat_alias_records_manual_checkpoint(self) -> None:
+        temp, root, instance = self._workspace()
+        try:
+            self.assertEqual(0, self._run(root, self._base(instance) + ["init"])[0])
+
+            code, out, _err = self._run(root, self._base(instance) + ["heartbeat"])
+
+            self.assertEqual(0, code)
+            self.assertIn("Point de reprise protocole enregistre", out)
+            state = tool.read_json(tool.state_path(instance))
+            self.assertEqual(1, len(state["checkpoints"]))
+        finally:
+            temp.cleanup()
+
     def test_full_document_cycle_can_close(self) -> None:
         temp, root, instance = self._workspace()
         sha = "A" * 64
         try:
             commands = [
                 ["init"],
-                ["heartbeat"],
+                ["checkpoint"],
                 ["next-doc"],
                 ["record", "expert", "--note", "audit local", "--cloud-analysis", "--audit-analysis"],
                 ["record", "designer", "--note", "controle cible", "--cloud-analysis"],

@@ -138,7 +138,7 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
                 "ASV\nFacture N F83582502CH\nDate\n15/02/2025\n"
                 "Depuis 1997 - S.A.R.L. au Capital de 300 000 EUR\n"
                 "R.C.S : 123456789\nSite Internet : http://asv.example.test\n"
-                "Email : contact@orange.fr\n"
+                "Email : contact@example.test\n"
             ),
         )
         extraction = factureops._extract_invoice_from_evidence(evidence)
@@ -146,6 +146,7 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
 
         self.assertEqual(extraction.provider_key, "asv")
         self.assertEqual(extraction.fournisseur, "ASV")
+        self.assertEqual(extraction.siren_siret, "123456789")
         self.assertEqual(extraction.numero_facture, "F83582502CH")
         self.assertEqual(extraction.date_facture, "2025-02-15")
         self.assertEqual(extraction.ht, "600.00")
@@ -172,9 +173,39 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
 
         self.assertEqual(extraction.provider_key, "asv")
         self.assertEqual(extraction.fournisseur, "ASV")
+        self.assertEqual(extraction.siren_siret, "123456789")
         self.assertEqual(extraction.numero_facture, "F83592502CH")
         self.assertEqual(extraction.date_facture, "2025-02-15")
         self.assertEqual(extraction.ttc, "770.00")
+        self.assertEqual((account, family), ("615000", "serrurerie_acces"))
+
+    def test_routes_access_automation_invoice_to_access_maintenance(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_automatisme_acces.pdf",
+            native_text=(
+                "Siret : 12345678900024 - APE : 4321A\n"
+                "Date\n13/02/2025\nNumero\nFA20250256\n"
+                "EURL ACCES AUTOMATISME SERVICE\n"
+                "Facture\nDate de livraison : 13/02/2025\n"
+                "Transfere de : Devis N DE20241417 du 19/12/2024.\n"
+                "PORTILLON BATIMENT 28\nPREVOIR LE REMPLACEMENT DU PISTON DU GROOM DICTATOR\n"
+                "GROOM DICTATOR ACIER\nFORFAIT MAIN D'OEUVRE\n"
+                "Taux\nBase HT\nMontant TVA\n48,90\n489,00\n10,00\n"
+                "Total HT\nTotal TVA\nTotal TTC\n489,00\n48,90\n537,90\n"
+                "Net a payer\n537,90 EUR\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.provider_key, "access_automation")
+        self.assertEqual(extraction.fournisseur, "EURL ACCES AUTOMATISME SERVICE")
+        self.assertEqual(extraction.siren_siret, "12345678900024")
+        self.assertEqual(extraction.numero_facture, "FA20250256")
+        self.assertEqual(extraction.date_facture, "2025-02-13")
+        self.assertEqual(extraction.ht, "489.00")
+        self.assertEqual(extraction.tva, "48.90")
+        self.assertEqual(extraction.ttc, "537.90")
         self.assertEqual((account, family), ("615000", "serrurerie_acces"))
 
 

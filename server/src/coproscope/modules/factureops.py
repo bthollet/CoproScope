@@ -9,6 +9,7 @@ from typing import Any, Iterable
 from ..core.common import InstanceConfig, RunContext, read_csv, sha256_file, write_csv
 from ..extractors.invoices import DocumentExtractionEvidence, InvoiceExtraction, extract_generic_invoice_from_evidence
 from ..extractors.invoices.providers import (
+    AccessAutomationInvoiceProviderExtractor,
     AsvInvoiceProviderExtractor,
     CogelecInvoiceProviderExtractor,
     InsuranceNoticeProviderExtractor,
@@ -341,6 +342,12 @@ def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> Invo
         flags=re.IGNORECASE,
     ):
         return AsvInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
+    if re.search(r"\bautomatisme\s+service\b", text, flags=re.IGNORECASE) and re.search(
+        r"\b(groom|dictator|portillon|contr[ôo]le\s+d[' ]acc[eè]s)\b",
+        text,
+        flags=re.IGNORECASE,
+    ):
+        return AccessAutomationInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bprestations\s+du\s+mois\b", text, flags=re.IGNORECASE) and re.search(
         r"\bmontant\s+h\.?\s*t\s+tx\s+tva\s+tva\s+ttc\b",
         text,

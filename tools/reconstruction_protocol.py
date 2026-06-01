@@ -161,16 +161,23 @@ def new_state(instance: Path, root: Path) -> dict[str, Any]:
         "last_closed_doc": None,
         "documents": [],
         "series_rules": [],
-        "heartbeats": [],
+        "checkpoints": [],
         "preflight": preflight(root),
     }
 
 
-def has_recent_heartbeat(state: dict[str, Any], minutes: int = 120) -> bool:
-    heartbeats = state.get("heartbeats", [])
-    if not heartbeats:
+def _checkpoint_entries(state: dict[str, Any]) -> list[dict[str, Any]]:
+    checkpoints = state.get("checkpoints", [])
+    if checkpoints:
+        return list(checkpoints)
+    return list(state.get("heartbeats", []))
+
+
+def has_recent_checkpoint(state: dict[str, Any], minutes: int = 120) -> bool:
+    checkpoints = _checkpoint_entries(state)
+    if not checkpoints:
         return False
-    last = parse_time(str(heartbeats[-1].get("at", "")))
+    last = parse_time(str(checkpoints[-1].get("at", "")))
     if not last:
         return False
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=2)))
@@ -212,8 +219,8 @@ def gate_status(state: dict[str, Any], doc: dict[str, Any]) -> tuple[bool, list[
     exe = doc.get("executable_test", {})
     if exe.get("result") != "ok" or not exe.get("sha256"):
         missing.append("test OK sur dernier executable avec SHA-256")
-    if not has_recent_heartbeat(state):
-        missing.append("heartbeat de moins de 2 heures")
+    if not has_recent_checkpoint(state):
+        missing.append("point de reprise manuel de moins de 2 heures")
     return not missing, missing
 
 
@@ -272,7 +279,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         return 0
     print(f"Document courant: {state.get('current_doc') or 'aucun'}")
     print(f"Dernier document clos: {state.get('last_closed_doc') or 'aucun'}")
-    print(f"Heartbeat recent: {'oui' if has_recent_heartbeat(state) else 'non'}")
+    print(f"Point de reprise recent: {'oui' if has_recent_checkpoint(state) else 'non'}")
     if state.get("current_doc"):
         doc = load_doc(instance, state["current_doc"])
         ok, missing = gate_status(state, doc)
@@ -282,12 +289,12 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_heartbeat(args: argparse.Namespace) -> int:
+def cmd_checkpoint(args: argparse.Namespace) -> int:
     instance = validate_instance(args.instance_root)
     state = load_state(instance)
-    state.setdefault("heartbeats", []).append({"at": now_text(), "note": args.note or "heartbeat protocole"})
+    state.setdefault("checkpoints", []).append({"at": now_text(), "note": args.note or "checkpoint protocole"})
     save_state(instance, state)
-    print("Heartbeat protocole enregistre.")
+    print("Point de reprise protocole enregistre.")
     return 0
 
 
@@ -433,7 +440,7 @@ def safe_summary(state: dict[str, Any], doc: dict[str, Any] | None) -> str:
     lines.append(f"- Preflight: {state.get('preflight', {}).get('status', 'UNKNOWN')}")
     lines.append(f"- Document courant: {state.get('current_doc') or 'aucun'}")
     lines.append(f"- Dernier document clos: {state.get('last_closed_doc') or 'aucun'}")
-    lines.append(f"- Heartbeat recent: {'oui' if has_recent_heartbeat(state) else 'non'}")
+    lines.append(f"- Point de reprise recent: {'oui' if has_recent_checkpoint(state) else 'non'}")
     if doc:
         ok, missing = gate_status(state, doc)
         exe = doc.get("executable_test", {})
@@ -469,9 +476,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_init.add_argument("--restart", action="store_true")
     p_init.set_defaults(func=cmd_init)
     sub.add_parser("status").set_defaults(func=cmd_status)
-    p_hb = sub.add_parser("heartbeat")
+    p_checkpoint = sub.add_parser("checkpoint")
+    p_checkpoint.add_argument("--note")
+    p_checkpoint.set_defaults(func=cmd_checkpoint)
+    p_hb = sub.add_parser("heartbeat", help="Alias legacy de checkpoint; ne cree aucune automation Codex.")
     p_hb.add_argument("--note")
-    p_hb.set_defaults(func=cmd_heartbeat)
+    p_hb.set_defaults(func=cmd_checkpoint)
     p_next = sub.add_parser("next-doc")
     p_next.add_argument("--inbox-index", type=int)
     p_next.add_argument("--source-ref")

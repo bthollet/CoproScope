@@ -330,6 +330,13 @@ La reference canonique est la section `Ports locaux` de `AGENTS.md`. Un port
 est un ownership temporaire: il doit etre reserve dans le contrat agent, visible
 dans `presence_agents.md`, puis libere dans le `BOT-END`.
 
+Decision du 2026-06-01: `/objectif` porte la continuite longue. Aucun serveur,
+watchdog ou heartbeat Codex ne doit etre relance pour "surveiller" un lot par
+defaut. Si une equipe agile doit tester l'UI reelle, elle reserve un serveur
+pour ce lot seulement, cite l'URL tokenisee dans sa trace, puis dit clairement
+s'il est arrete ou garde ouvert. Les points de reprise manuels d'un protocole
+local ne sont pas des automations Codex.
+
 | Usage | Port |
 |---|---:|
 | Integration principale | 8765 |
