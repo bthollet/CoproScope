@@ -12,6 +12,7 @@ from ..extractors.invoices.providers import (
     AccessAutomationInvoiceProviderExtractor,
     AsvInvoiceProviderExtractor,
     CogelecInvoiceProviderExtractor,
+    EngieInvoiceProviderExtractor,
     InsuranceNoticeProviderExtractor,
     OmegaAscenseurInvoiceProviderExtractor,
     OrangeInvoiceProviderExtractor,
@@ -269,6 +270,11 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
     haystack = f"{supplier}\n{text}".lower()
     rules = [
         (
+            "606100",
+            "energie_electricite",
+            [r"\b(eau|(?:e|\u00e9)lectric(?:it(?:e|\u00e9))?|(?:e|\u00e9)nergie|engie|gaz|kwh|puissance\s+souscrite)\b"],
+        ),
+        (
             "615000",
             "securite_incendie",
             [
@@ -311,7 +317,6 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
             ],
         ),
         ("622000", "honoraires_syndic", [r"\b(syndic|honoraire|gestion)\b"]),
-        ("606100", "energie_eau", [r"\b(eau|[ée]lectric(?:it[ée])?|[ée]nergie|engie|gaz)\b"]),
         ("671000", "charges_exceptionnelles", [r"\b(sinistre|contentieux|expertise)\b"]),
     ]
     for account, family, patterns in rules:
@@ -335,6 +340,8 @@ def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> Invo
         return OmegaAscenseurInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\borange\s+sa\b|\bpro\.orange\.fr\b|\bfacture\s+ligne\s+fixe\b", text, flags=re.IGNORECASE):
         return OrangeInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
+    if re.search(r"\bengie\b|\bfacture\s+monosite\b|montant\s+ttc\s+[aà]?\s*payer", text, flags=re.IGNORECASE):
+        return EngieInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bcogelec\b", text, flags=re.IGNORECASE):
         return CogelecInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\basv\b", text, flags=re.IGNORECASE) and re.search(

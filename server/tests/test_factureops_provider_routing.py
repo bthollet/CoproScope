@@ -65,6 +65,33 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ttc, "117.32")
         self.assertEqual((account, family), ("615000", "entretien_maintenance"))
 
+    def test_routes_engie_scanned_ocr_to_energy(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_energie_scan.pdf",
+            ocr_text=(
+                "ENGIE Entreprises et Collectivites\n"
+                "Facture monosite\nN° 120009587520 - 4 mars 2025\n"
+                "MONTANT TTC a payer 107,97 EUR\n"
+                "Total electricite / hors TVA 85,56\n"
+                "Taxes et Contributions 10,89\n"
+                "Total electricite / hors TVA 96,45\n"
+                "Total TVA 5,5 % 2,95\nTotal TVA 20,0 % 8,57\n"
+                "Total TTC 107,97\nConsommation totale d electricite : 192 kWh\n"
+                "Puissance souscrite 12 kVA\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.provider_key, "engie")
+        self.assertEqual(extraction.fournisseur, "ENGIE")
+        self.assertEqual(extraction.numero_facture, "120009587520")
+        self.assertEqual(extraction.date_facture, "2025-03-04")
+        self.assertEqual(extraction.ht, "96.45")
+        self.assertEqual(extraction.tva, "11.52")
+        self.assertEqual(extraction.ttc, "107.97")
+        self.assertEqual((account, family), ("606100", "energie_electricite"))
+
     def test_routes_roof_repair_invoice_to_roof_works(self) -> None:
         account, family = factureops._account_for_invoice(
             "Travaux d'urgence toiture infiltration. Remplacement de tuiles cassees.",

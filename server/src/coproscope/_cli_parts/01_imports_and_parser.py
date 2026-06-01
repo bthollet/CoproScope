@@ -483,7 +483,7 @@ def build_parser() -> argparse.ArgumentParser:
     docai_subparsers = docai_parser.add_subparsers(dest="docai_command", required=True)
     docai_ocr = docai_subparsers.add_parser("ocr", parents=[instance_parent], help="Executer l'OCR local sur les documents OCR_REQUIRED.")
     docai_ocr.add_argument("--doc-id", help="Limiter l'OCR a un identifiant documentaire.")
-    docai_ocr.add_argument("--engine", choices=["sidecar-ocr", "rapidocr", "gutenocr"], help="Forcer un moteur OCR local.")
+    docai_ocr.add_argument("--engine", choices=["sidecar-ocr", "rapidocr", "tesseract", "gutenocr"], help="Forcer un moteur OCR local.")
     docai_ocr.add_argument("--mode", choices=["local-basic", "local-heavy"], default="local-basic", help="Mode DocAI a utiliser.")
 
     docai_enrich = docai_subparsers.add_parser("enrich", parents=[instance_parent], help="Enrichir des documents via un backend DocAI.")

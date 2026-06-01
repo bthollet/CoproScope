@@ -7,6 +7,23 @@ from ..base import InvoiceExtraction, normalize_amount
 
 
 AMOUNT = r"(-?\d[\d .]*[,.]\d{2})"
+MONTHS = {
+    "janvier": "01",
+    "fevrier": "02",
+    "février": "02",
+    "mars": "03",
+    "avril": "04",
+    "mai": "05",
+    "juin": "06",
+    "juillet": "07",
+    "aout": "08",
+    "août": "08",
+    "septembre": "09",
+    "octobre": "10",
+    "novembre": "11",
+    "decembre": "12",
+    "décembre": "12",
+}
 
 
 def _first(patterns: list[str], text: str) -> str:
@@ -22,14 +39,27 @@ def _amount(patterns: list[str], text: str) -> str:
     return normalize_amount(value) if value else ""
 
 
+def _last_amount(pattern: str, text: str) -> str:
+    values = [normalize_amount(match.group(1)) for match in re.finditer(pattern, text, flags=re.IGNORECASE | re.DOTALL)]
+    values = [value for value in values if value]
+    return values[-1] if values else ""
+
+
 def _date_to_iso(value: str) -> str:
-    match = re.match(r"(\d{2})/(\d{2})/(\d{2}|\d{4})$", value.strip())
-    if not match:
-        return ""
-    day, month, year = match.groups()
-    if len(year) == 2:
-        year = "20" + year
-    return f"{year}-{month}-{day}"
+    raw = re.sub(r"\s+", " ", value.strip().lower())
+    match = re.match(r"(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})$", raw)
+    if match:
+        day, month, year = match.groups()
+        if len(year) == 2:
+            year = "20" + year
+        return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+    match = re.match(r"(\d{1,2})\s+([a-zéû]+)\s+(\d{4})$", raw)
+    if match:
+        day, month_name, year = match.groups()
+        month = MONTHS.get(month_name)
+        if month:
+            return f"{year}-{month}-{day.zfill(2)}"
+    return ""
 
 
 def _difference(left: str, right: str) -> str:
@@ -50,6 +80,7 @@ class EngieInvoiceProviderExtractor:
         invoice_number = _first(
             [
                 r"Facture\s+n[^\dA-Z]{0,5}([A-Z0-9][A-Z0-9._/-]+)\s+du\s+\d{2}/\d{2}/\d{2,4}",
+                r"Facture\s+monosite.{0,160}?N[°o]\s*([0-9]{8,})\s*-",
                 r"n[^\dA-Z]{0,5}facture\s*[:#\- ]+\s*([A-Z0-9][A-Z0-9._/-]+)",
             ],
             text,
@@ -57,6 +88,7 @@ class EngieInvoiceProviderExtractor:
         date_raw = _first(
             [
                 r"Facture\s+n[^\dA-Z]{0,5}[A-Z0-9][A-Z0-9._/-]+\s+du\s+(\d{2}/\d{2}/\d{2,4})",
+                r"Facture\s+monosite.{0,160}?N[°o]\s*[0-9]{8,}\s*-\s*(\d{1,2}\s+[a-zéû]+\s+\d{4})",
                 r"\bdu\s+(\d{2}/\d{2}/\d{2,4})\b",
             ],
             text,
@@ -65,7 +97,7 @@ class EngieInvoiceProviderExtractor:
         if re.search(r"542\s*107\s*651|FR\s*13\s*542\s*107\s*651", text, flags=re.IGNORECASE):
             siren_siret = "542107651"
 
-        ht = _amount(
+        ht = _last_amount(rf"Total\s+[^\n]{{0,100}}hors\s+TVA\s+{AMOUNT}", text) or _amount(
             [
                 rf"Total\s+[^\n]{{0,100}}hors\s+TVA\s+{AMOUNT}",
                 rf"Total\s+HT[^\d\-]{{0,80}}{AMOUNT}",

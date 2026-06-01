@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +21,7 @@ DOCAI_FIELDS = [
 ]
 
 IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "tif", "tiff", "bmp"}
-OCR_BACKENDS = {"sidecar_ocr", "rapidocr", "gutenocr"}
+OCR_BACKENDS = {"sidecar_ocr", "rapidocr", "tesseract_ocr", "gutenocr"}
 ENRICH_BACKENDS = {"docling", "qwen_vl", "qwen-vl", "layoutlmv3", "layoutalm"}
 
 
@@ -184,6 +186,38 @@ def _rapidocr_document(instance: InstanceConfig, row: dict[str, str], source: Pa
     return ""
 
 
+def _tesseract_image(path: Path) -> str:
+    executable = shutil.which("tesseract")
+    if not executable:
+        return ""
+    command = [executable, str(path), "stdout", "-l", "eng", "--psm", "6"]
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    if completed.returncode != 0:
+        return ""
+    return (completed.stdout or "").strip()
+
+
+def _tesseract_document(instance: InstanceConfig, row: dict[str, str], source: Path, max_pages: int) -> str:
+    ext = row.get("extension", "").lower()
+    if ext in IMAGE_EXTENSIONS:
+        return _tesseract_image(source)
+    if ext == "pdf":
+        parts = [_tesseract_image(path) for path in _render_pdf_pages(instance, row, source, max_pages)]
+        return "\n\n".join(part for part in parts if part.strip())
+    return ""
+
+
 def _gutenocr_document(_instance: InstanceConfig, _row: dict[str, str], _source: Path) -> str:
     # GutenOCR is intentionally adapter-only for v1: wire the interface without
     # assuming a package name or model repository that may change.
@@ -227,6 +261,9 @@ def run_ocr(
         elif (not selected or selected == "rapidocr") and "rapidocr" in enabled_backends:
             text = _rapidocr_document(instance, row, source, int(settings["max_pages"]))
             used_engine = "rapidocr" if text else ""
+        elif (not selected or selected in {"tesseract", "tesseract_ocr"}) and "tesseract_ocr" in enabled_backends:
+            text = _tesseract_document(instance, row, source, int(settings["max_pages"]))
+            used_engine = "tesseract_ocr" if text else ""
         elif selected == "gutenocr" or "gutenocr" in enabled_backends:
             text = _gutenocr_document(instance, row, source)
             used_engine = "gutenocr" if text else ""
@@ -391,6 +428,7 @@ def docai_status(instance: InstanceConfig, mode: str | None = None) -> dict[str,
             "fitz": module_available("fitz"),
             "docling": module_available("docling"),
             "rapidocr": module_available("rapidocr"),
+            "tesseract": shutil.which("tesseract") is not None,
             "torch": module_available("torch"),
             "transformers": module_available("transformers"),
         },

@@ -411,9 +411,9 @@ class InstanceConfig:
         enabled = [str(item).strip().lower().replace("-", "_") for item in enabled_backends if str(item).strip()]
         if not enabled:
             if mode == "local_basic":
-                enabled = ["pymupdf", "docling", "rapidocr", "sidecar_ocr"]
+                enabled = ["pymupdf", "docling", "rapidocr", "tesseract_ocr", "sidecar_ocr"]
             elif mode == "local_heavy":
-                enabled = ["pymupdf", "docling", "rapidocr", "sidecar_ocr", "qwen_vl", "layoutlmv3"]
+                enabled = ["pymupdf", "docling", "rapidocr", "tesseract_ocr", "sidecar_ocr", "qwen_vl", "layoutlmv3"]
             else:
                 enabled = []
 

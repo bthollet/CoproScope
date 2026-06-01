@@ -30,6 +30,27 @@ SOUS-AGENTS LECTURE SEULE
 - Expert metier/privacy: NO-GO tant que les roles et le test executable SHA manquent; ne pas exposer extrait, nom, montant, adresse ou identifiant.
 - Novice/designer: CoproScope doit afficher le statut, ce qui bloque et ce qui reste a faire sans texte brut; GO seulement si tous les retours sont traces.
 
+## Cloture
+
+Le document a ete traite dans le journal prive du protocole reconstruction avec les roles expert, designer, novice, CoproScope et QA. La trace publique reste volontairement courte: aucun contenu brut, nom de fichier, chemin local, OCR, reference personnelle ou element bancaire n'est publie.
+
+Constat partageable: CoproScope a garde le document dans un parcours de verification, avec statut de reprise et reserve metier. Le point a retenir pour l'equipe produit est l'amelioration de lisibilite du suivi: l'utilisateur doit mieux distinguer ce qui est lu, ce qui est a revoir et ce qui bloque vraiment.
+
+Preuves:
+
+- protocole prive: `DOC-0143` ferme;
+- routes controlees: inbox, file factures et fiche protegee;
+- QA privacy: aucun marqueur cible de fuite dans les pages controlees;
+- smoke executable initial OK sur la file factures;
+- smoke executable supplementaire OK avec le build OCR/energie `2E9E5780265743B0B68A388BFA06603BC9334DF173A3665FFD7708F61470BFAF`.
+
+BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 16:11 +02:00
+
+Statut: `PRET_A_INTEGRER`
+Fichiers modifies: cette trace, `docs/presence_agents.md`, `docs/roadmap_backlog_central.md`, journal prive protocole.
+Fichiers volontairement evites: code applicatif, documents bruts, OCR/logs, exports bruts, secrets, Drive.
+Limites: pas de nouvelle fonctionnalite produit livree dans ce passage; l'amelioration de suivi reste en backlog.
+
 EXECUTION
 - `DOC-0143` a ete traite dans le journal prive uniquement, avec notes anonymisees des roles attendus.
 - Le tri designer ne signale pas de point bloquant avant le document suivant.

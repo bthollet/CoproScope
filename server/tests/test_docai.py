@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from coproscope.core.common import RunContext, load_instance, read_csv
 from coproscope.modules import docai, docuscope
@@ -51,6 +52,23 @@ class DocAITests(unittest.TestCase):
         self.assertIn("L2_LOCAL_OCR_SIDECAR_OCR", after.get("extraction_level", ""))
         self.assertTrue((self.example_root / after["text_path"]).exists())
 
+    def test_tesseract_ocr_lifts_scan_when_available(self) -> None:
+        scan = self.example_root / "raw" / "scan-tesseract.png"
+        scan.write_bytes(b"synthetic image placeholder")
+
+        run = RunContext(self.instance, "docai tesseract test")
+        docuscope.inventory(self.instance, run)
+        docuscope.extract_text(self.instance, run)
+        before = self._row_for_file("scan-tesseract.png")
+
+        with patch("coproscope.modules.docai._tesseract_document", return_value="Facture energie\nTotal TTC 107,97\n"):
+            docai.run_ocr(self.instance, run, doc_id=before["doc_id"], mode="local-basic", engine="tesseract")
+        after = self._row_for_file("scan-tesseract.png")
+
+        self.assertEqual(after.get("status_ocr"), "OCR_DONE")
+        self.assertEqual(after.get("ocr_engine"), "tesseract_ocr")
+        self.assertIn("L2_LOCAL_OCR_TESSERACT_OCR", after.get("extraction_level", ""))
+
     def test_docling_and_layout_enrichment_write_artifacts_without_heavy_dependencies(self) -> None:
         run = RunContext(self.instance, "docai enrich test")
         docuscope.inventory(self.instance, run)
@@ -71,6 +89,8 @@ class DocAITests(unittest.TestCase):
         self.assertEqual(status["mode"], "local_basic")
         self.assertEqual(status["privacy"], "local_only")
         self.assertIn("docling", status["modules"])
+        self.assertIn("tesseract_ocr", status["enabled_backends"])
+        self.assertIn("tesseract", status["modules"])
 
 
 if __name__ == "__main__":
