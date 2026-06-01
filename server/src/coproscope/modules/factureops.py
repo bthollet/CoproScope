@@ -12,6 +12,7 @@ from ..extractors.invoices.providers import (
     CogelecInvoiceProviderExtractor,
     InsuranceNoticeProviderExtractor,
     OmegaAscenseurInvoiceProviderExtractor,
+    PhoceaInvoiceProviderExtractor,
 )
 from ..extractors.invoices.reconciliation import parse_amount
 
@@ -276,6 +277,11 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
         ("615000", "ascenseur_maintenance", [r"\b(ascenseurs?|porte\s+cabine|contact\s+de\s+porte)\b"]),
         (
             "615000",
+            "nettoyage_parties_communes",
+            [r"\b(nettoyage|entretien\s+des\s+parties\s+communes|cages?\s+d[ '\u2019]?escaliers?)\b"],
+        ),
+        (
+            "615000",
             "travaux_toiture",
             [r"\b(toiture|tuiles?|chapeau\s+de\s+chemin[Ã©e]e|mistral)\b"],
         ),
@@ -315,6 +321,12 @@ def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> Invo
         return OmegaAscenseurInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bcogelec\b", text, flags=re.IGNORECASE):
         return CogelecInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
+    if re.search(r"\bprestations\s+du\s+mois\b", text, flags=re.IGNORECASE) and re.search(
+        r"\bmontant\s+h\.?\s*t\s+tx\s+tva\s+tva\s+ttc\b",
+        text,
+        flags=re.IGNORECASE,
+    ):
+        return PhoceaInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     return extract_generic_invoice_from_evidence(evidence)
 
 

@@ -73,6 +73,30 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
 
         self.assertEqual((account, family), ("615000", "travaux_toiture"))
 
+    def test_routes_cleaning_invoice_to_phocea_provider(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_nettoyage.pdf",
+            native_text=(
+                "Facture No\nDate de Facture\nPage\n250140731\n31/01/2025\n"
+                "PRESTATIONS DU MOIS DE : JANVIER 2025\n"
+                "Entretien des parties communes : halls et cages d escaliers\n"
+                "Selon Devis no 2018-10-20 PH du 19/10/18\n"
+                "Montant HT Tx TVA TVA TTC\n"
+                "3077.60 20.00 615.52 3693.12\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.provider_key, "phocea")
+        self.assertEqual(extraction.fournisseur, "PHOCEA NETTOYAGE ENTRETIEN")
+        self.assertEqual(extraction.numero_facture, "250140731")
+        self.assertEqual(extraction.date_facture, "2025-01-31")
+        self.assertEqual(extraction.ht, "3077.60")
+        self.assertEqual(extraction.tva, "615.52")
+        self.assertEqual(extraction.ttc, "3693.12")
+        self.assertEqual((account, family), ("615000", "nettoyage_parties_communes"))
+
 
 if __name__ == "__main__":
     unittest.main()

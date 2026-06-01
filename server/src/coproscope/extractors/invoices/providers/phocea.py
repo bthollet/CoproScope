@@ -5,7 +5,7 @@ import re
 from ..base import InvoiceExtraction, normalize_amount
 
 
-AMOUNT = r"-?\d[\d .]*[,.]\d{2}"
+AMOUNT = r"-?(?:\d{1,3}(?:[ .\u00a0\u202f]\d{3})+|\d+)[,.]\d{2}"
 
 
 def _first(patterns: list[str], text: str) -> str:
