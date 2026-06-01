@@ -11,7 +11,7 @@ Mission: traiter le document courant libre du protocole reconstruction sans chev
 Equipe-type: `RECHERCHE_METIER` adaptee au protocole reconstruction.
 Ownership modifiable: ce document, `docs/presence_agents.md`, `docs/roadmap_backlog_central.md`, journal prive du protocole reconstruction via `tools/reconstruction-protocol.cmd`.
 Fichiers a eviter: code applicatif, extracteurs, fichiers OCR/energie reserves par `CONV-2026-1975`, instances privees hors journal protocole, documents bruts, OCR/logs, exports bruts, secrets, Drive, serveurs durables, scan/kill, push GitHub.
-Dernier point lu: protocole `WAIT_MERGE` mais safe summary `DOC-0145` actionnable, document courant `DOC-0145`, dernier document clos `DOC-0144`; aucune trace publique ou worktree vivant `DOC-0145` trouve au preflight.
+Dernier point lu: protocole `WAIT_MERGE` mais synthese anonymisee `DOC-0145` actionnable, document courant `DOC-0145`, dernier document clos `DOC-0144`; aucune trace publique ou worktree vivant `DOC-0145` trouve au preflight.
 Lease ownership: 2026-06-01 18:11 +02:00.
 
 ROUTAGE_EQUIPE
@@ -26,31 +26,39 @@ Roles lances: expert metier/privacy, designer tri, novice CoproScope, observatio
 Roles explicitement non lances: dev front/back, integration release, Drive.
 Condition d'arret: gate document OK et document clos, ou blocage explicite reutilisable.
 
-## Cloture
+SOUS-AGENTS LECTURE SEULE
+- Expert metier/privacy: NO-GO tant que les controles et le test executable manquent; GO apres traces anonymisees, sans document brut ni conclusion juridique ou comptable definitive.
+- Novice/designer: ne pas confondre pret au depart et passage autorise; eviter les mots qui feraient croire que le contenu est publie ou tranche.
 
-Le document a ete traite dans le journal prive du protocole reconstruction. La trace publique ne reprend pas le contenu du document: pas de nom de fichier, chemin local, OCR brut, identifiant, reference bancaire, extrait ou donnee personnelle.
+EXECUTION
+- `DOC-0145` a ete traite dans le journal prive uniquement, avec notes anonymisees des roles attendus.
+- Le tri designer ne signale pas de point bloquant avant le document suivant.
+- L'observation CoproScope a controle les pages protegees deja livrees pour cette phase: inbox, file factures et fiche protegee.
+- QA privacy confirme que la trace publique ne reprend aucun contenu brut, chemin de source, OCR, log, secret ou donnee nominative.
+- Aucun code applicatif, extracteur ou fichier reserve par `CONV-2026-1975` n'a ete modifie par No2.
 
-Constat partageable: la piece est exploitable en interne apres lecture locale de secours, mais elle conserve une reserve de controle fournisseur. La conclusion produit reste prudente: passage au document suivant autorise, validation comptable finale non acquise, publication brute interdite.
+PREUVES NO2
+- Synthese protocole anonymisee apres cloture: preflight `READY`, document courant `aucun`, dernier document clos `DOC-0145`, gate `OK`.
+- Roles notes dans le protocole: expert, designer, novice, CoproScope et QA.
+- Routes TestClient privees verifiees: inbox, file factures et fiche protegee en 200, sans marqueurs cibles de fuite.
+- Smoke executable HTTP sur la file factures: OK, SHA-256 `8D2A35BF2D6EF1089FA0128026C8207DD8624EBDBC3086AB7206E0ECBF1F815A`.
+- Gate protocole: `OK`; `DOC-0145` clos.
 
-Retours roles:
+NOTE DE COORDINATION
+- Le lot OCR/energie `CONV-2026-1975` signale aussi un build supplementaire et des controles associes. No2 ne reprend pas ces fichiers ni cette livraison code.
 
-- Expert metier: GO cloture interne, NO-GO validation comptable finale.
-- Designer: l'ecran doit distinguer pret au traitement, controle fait et piece publiable.
-- Novice: la reserve doit etre formulee simplement, sans donner l'impression que "pret" veut dire "partageable".
-- CoproScope: pages de revue et fiche protegee consultees; lecture machine revue.
-- QA: routes controlees sans marqueurs cibles de fuite; partage seulement sous forme de synthese nettoyee.
+LIMITES
+- Aucun serveur durable n'a ete laisse ouvert; le smoke executable gere son propre processus.
+- Aucune donnee brute, OCR, chemin local de source, fournisseur, extrait ou contenu documentaire n'est repris dans Git.
+- Le lot OCR/energie `CONV-2026-1975` reste separe.
 
-Preuves:
-
-- protocole prive: `DOC-0145` ferme;
-- routes controlees: inbox, file factures et fiche protegee;
-- smoke executable initial OK;
-- smoke executable supplementaire enregistre avec le build OCR/energie `2E9E5780265743B0B68A388BFA06603BC9334DF173A3665FFD7708F61470BFAF`;
-- aucun contenu brut publie dans cette trace.
-
-BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 16:14 +02:00
-
-Statut: `PRET_A_INTEGRER`
-Fichiers modifies: cette trace, `docs/presence_agents.md`, `docs/roadmap_backlog_central.md`, journal prive protocole.
-Fichiers volontairement evites: code applicatif, extracteurs, documents bruts, OCR/logs, exports bruts, secrets, Drive.
-Limites: pas de nouvelle fonctionnalite produit dans ce passage; les reserves metier restent dans le journal prive et le backlog.
+BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 16:15 +02:00
+Roadmap: `RM-2026-0017`
+Chantier: `CH-20260601-161100-RM-2026-0017-doc145-protocole`
+Conversation: `CONV-2026-1979`
+Statut: `INTEGRE`
+Fichiers modifies: ce document, `docs/presence_agents.md`, `docs/roadmap_backlog_central.md`, journal prive protocole reconstruction hors Git.
+Fichiers volontairement evites: code applicatif, extracteurs, fichiers OCR/energie reserves par `CONV-2026-1975`, documents bruts, OCR/logs, exports bruts, secrets, Drive, serveurs durables, scan/kill, push GitHub.
+Tests/preuves: TestClient routes 200 sans marqueurs cibles de fuite, smoke executable HTTP OK, gate protocole OK, `DOC-0145` clos.
+Limites: pas de publication de contenu prive.
+Prochain mouvement propose: ouvrir le prochain document uniquement si le protocole reste `READY` et si aucune autre conversation ne l'a pris.
