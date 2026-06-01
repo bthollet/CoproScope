@@ -36,7 +36,7 @@ PREUVES
 - Smoke executable HTTP OK sur la route de revue factures.
 - Empreinte technique de l'executable: `CoproScope.exe` SHA-256 `68A720650BBF0951369F34FD45B5276F4ED952A1301C8B78E0F479E31E8946EB`.
 
-BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 18:08 +02:00
+BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 18:09 +02:00
 Roadmap: `RM-2026-0017`
 Chantier: `CH-20260601-180500-RM-2026-0017-doc172-protocole`
 Conversation: `CONV-2026-1997`

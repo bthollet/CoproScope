@@ -22,18 +22,20 @@ EXECUTION
 - `DOC-0166`, `DOC-0167`, `DOC-0168` et `DOC-0169` sont deja clos dans le protocole prive.
 - La regularisation ne reprend aucun contenu documentaire et ne remplace pas une validation metier.
 - La seule information publique ajoutee est l'etat du suivi: gate OK, roles notes et empreinte technique de l'executable.
+- Correction ulterieure `DOC-0169`: une divergence de methode a ete detectee apres cloture. Le document a ete repris comme contrat de maintenance, OCRise localement, reclasse en `Contrat_Maintenance`, puis reteste sur la fiche document. Les retours backlog portent sur la fiche contrat ascenseur, la page `/contrats`, l'harmonisation OCR/confidentialite et le rapprochement contrats-factures-actions.
 
 PREUVES
 - Syntheses anonymisees du protocole: `DOC-0166` a `DOC-0169`, gate OK, roles CoproScope/designer/expert/novice/QA notes.
 - `DOC-0166` et `DOC-0167`: `CoproScope.exe` SHA-256 `8D2A35BF2D6EF1089FA0128026C8207DD8624EBDBC3086AB7206E0ECBF1F815A`.
 - `DOC-0168` et `DOC-0169`: `CoproScope.exe` SHA-256 `68A720650BBF0951369F34FD45B5276F4ED952A1301C8B78E0F479E31E8946EB`.
 - Document courant lu au moment de la regularisation: `DOC-0170`.
+- Correction `DOC-0169` du 2026-06-01 18:09 +02:00: fiche document retestee OK avec `OCR_DONE`, `Contrats` et `Contrat_Maintenance`; la page `/contrats` reste a enrichir pour porter l'objet metier.
 
 BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 17:59 +02:00
 Roadmap: `RM-2026-0017`
 Chantier: `CH-20260601-175900-RM-2026-0017-doc166-doc169-trace`
 Conversation: `CONV-2026-1994`
-Statut: `INTEGRE`
+Statut: `INTEGRE_CORRIGE`
 Fichiers modifies: ce document, `docs/presence_agents.md`, `docs/roadmap_backlog_central.md`.
 Fichiers volontairement evites: documents bruts, OCR/logs, exports bruts, secrets, Drive, code applicatif, serveurs durables, chemins ou noms de fichiers sources.
-Limites: cette trace indique seulement que les quatre documents etaient deja clos dans le protocole prive; elle ne vaut pas validation metier definitive.
+Limites: cette trace indique seulement que les quatre documents etaient deja clos dans le protocole prive; elle ne vaut pas validation metier definitive. La correction `DOC-0169` ne publie aucun contenu brut et sert surtout a eviter une reprise future sur une qualification erronee.
