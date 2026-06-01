@@ -207,8 +207,18 @@ def _company_name_hint(text: str) -> str:
     return ""
 
 
+def _has_quote_invoice_layout(text: str) -> bool:
+    return bool(
+        re.search(r"\bremarque\s*:\s*devis\s*-\s*[A-Z]{1,6}\d+", text, flags=re.IGNORECASE)
+        and re.search(r"\bfacture\s+n\S*\s*\n\s*[A-Z]{1,6}\d+", text, flags=re.IGNORECASE)
+        and re.search(r"s\.?\s*i\.?\s*r\.?\s*e\.?\s*t", text, flags=re.IGNORECASE)
+    )
+
+
 def _guess_supplier(text: str) -> str:
-    company_hint = _company_name_hint(text)
+    company_hint = ""
+    if _has_quote_invoice_layout(text):
+        company_hint = _company_name_hint(text)
     if company_hint:
         return company_hint
 
@@ -230,7 +240,6 @@ def _guess_supplier(text: str) -> str:
         "payer en ligne",
         "nos references",
         "vos references",
-        "client",
         "numero de contrat",
         "numero de facture",
         "sdc ",
@@ -249,8 +258,6 @@ def _guess_supplier(text: str) -> str:
             continue
         normalized = line.lower()
         if any(fragment in normalized for fragment in bad_fragments):
-            continue
-        if re.fullmatch(r"cs\s*\d+", normalized):
             continue
         if re.search(r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d", line, flags=re.IGNORECASE):
             continue
@@ -331,8 +338,9 @@ def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExt
         date = f"{year}-{month}-{day}"
     if not date:
         date = filename_date(file_name)
-    invoice_number = _invoice_number(text, file_name)
-    date = _invoice_date(text, file_name)
+    if _has_quote_invoice_layout(text):
+        invoice_number = _invoice_number(text, file_name)
+        date = _invoice_date(text, file_name)
 
     siren_siret = _first_match(
         [
