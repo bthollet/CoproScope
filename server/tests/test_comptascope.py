@@ -171,6 +171,15 @@ class ComptaScopeTests(unittest.TestCase):
         self.assertTrue(any(check["name"] == "duckdb" for check in status["checks"]))
         self.assertTrue(any(check["name"] == "grist_api" for check in status["checks"]))
 
+    def test_invoice_accounting_does_not_classify_beauvallon_as_water(self) -> None:
+        account, family = factureops._account_for_invoice(
+            "Abattage d'un pin colle au batiment 22 - Copropriete Beauvallon Pinede",
+            "TY SERVICES",
+        )
+
+        self.assertEqual(account, "615000")
+        self.assertEqual(family, "entretien_maintenance")
+
     def test_factureops_extracts_invoice_evidence_and_anomalies(self) -> None:
         run = RunContext(self.instance, "invoices extract")
         result = extract_invoices(self.instance, run, 2025)

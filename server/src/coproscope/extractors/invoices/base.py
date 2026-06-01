@@ -112,15 +112,43 @@ def normalize_amount(value: str) -> str:
         return ""
 
 
+def _looks_like_building_reference(context: str) -> bool:
+    return bool(re.search(r"\b(b[âa]timent|bat\.?|immeuble|cage)\b", context, flags=re.IGNORECASE))
+
+
 def _amount_after(labels: list[str], text: str) -> str:
     for label in labels:
-        pattern = rf"{label}[^\d\-]{{0,80}}(-?\d[\d\s.,]*\d)"
-        match = re.search(pattern, text, flags=re.IGNORECASE)
-        if match:
-            amount = normalize_amount(match.group(1))
-            if amount:
-                return amount
+        for label_match in re.finditer(label, text, flags=re.IGNORECASE):
+            window = text[label_match.end() : label_match.end() + 180]
+            for match in re.finditer(r"-?\d[\d\s.,]*(?:[,.]\d{1,2})?", window):
+                following = window[match.end() : match.end() + 3]
+                if "%" in following:
+                    continue
+                prefix = window[max(0, match.start() - 45) : match.start()]
+                if _looks_like_building_reference(prefix):
+                    continue
+                amount = normalize_amount(match.group(0))
+                if amount:
+                    return amount
     return ""
+
+
+def _sanitize_supplier_line(line: str) -> str:
+    cleaned = re.split(
+        r"\s+-\s*(?:t[ée]l[ée]phone|tel\.?|courriel|email|e-mail)\b",
+        line,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    cleaned = re.sub(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", " ", cleaned)
+    cleaned = re.sub(r"\b(?:\+?\d[\d .-]{7,}\d)\b", " ", cleaned)
+    cleaned = re.split(
+        r"\b\d+\s+(?:avenue|av\.?|rue|all[ée]e|allee|boulevard|bd|chemin|place|traverse|impasse)\b",
+        cleaned,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    return re.sub(r"\s+", " ", cleaned).strip(" :-\t")[:120]
 
 
 def _first_match(patterns: list[str], text: str) -> str:
@@ -164,7 +192,9 @@ def _guess_supplier(text: str) -> str:
             continue
         if re.search(r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d", line, flags=re.IGNORECASE):
             continue
-        return line[:120]
+        supplier = _sanitize_supplier_line(line)
+        if supplier:
+            return supplier
     return ""
 
 
@@ -209,7 +239,7 @@ def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExt
         siren_siret=siren_siret,
         numero_facture=invoice_number,
         date_facture=date,
-        ht=_amount_after([r"total\s+ht", r"montant\s+ht", r"base\s+ht"], text),
+        ht=_amount_after([r"total\s+hors\s+taxes", r"total\s+ht", r"montant\s+ht", r"base\s+ht"], text),
         tva=_amount_after([r"total\s+tva", r"montant\s+tva", r"\btva\b"], text),
         ttc=_amount_after([r"net\s+a\s+payer", r"net\s+à\s+payer", r"total\s+ttc", r"\bttc\b"], text),
         confidence="medium" if supplier and invoice_number and date else "low",

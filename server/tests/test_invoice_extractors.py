@@ -61,6 +61,47 @@ Total TTC 120,00
         self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
         self.assertIn("decision_ref", REQUIRED_ACCOUNTING_FIELDS)
 
+    def test_generic_extractor_ignores_building_numbers_and_supplier_contacts(self) -> None:
+        text = """TY SERVICES 53 Avenue de Frais Vallon 13013 MARSEILLE - Telephone : 0600000000 - Courriel : contact@example.test
+Designation
+Prix Total HT
+Abattage d'un pin colle au batiment 22
+Total Hors Taxes
+1 200,00
+TVA non applicable
+0
+Total TTC en euros
+1 200,00
+Numero de facture
+06/2024/0250-BP-Abt-Pin-BT22-Supp
+Date
+20/01/2025
+"""
+        extraction = extract_generic_invoice_fields(text, "Facture_2025012116211809.pdf")
+
+        self.assertEqual(extraction.fournisseur, "TY SERVICES")
+        self.assertEqual(extraction.ht, "1200.00")
+        self.assertEqual(extraction.tva, "0.00")
+        self.assertEqual(extraction.ttc, "1200.00")
+        self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
+
+    def test_generic_extractor_distinguishes_vat_rate_from_vat_amount(self) -> None:
+        text = """CARRE TRAVAUX
+Facture n F202500141
+Date 20/01/2025
+Total HT
+830,00
+TVA 10 %
+83,00
+Total TTC
+913,00
+"""
+        extraction = extract_generic_invoice_fields(text, "Facture_2025012115015485.pdf")
+
+        self.assertEqual(extraction.tva, "83.00")
+        self.assertEqual(extraction.ttc, "913.00")
+        self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
+
     def test_docai_evidence_feeds_generic_extraction_and_generator_prompt(self) -> None:
         evidence = DocumentExtractionEvidence(
             file_name="Facture_ACME.pdf",

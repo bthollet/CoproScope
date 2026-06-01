@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -258,14 +259,21 @@ def _looks_like_invoice(row: dict[str, str], path: Path | None, text: str, year:
 def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
     haystack = f"{supplier}\n{text}".lower()
     rules = [
-        ("622000", "honoraires_syndic", ["syndic", "honoraire", "gestion"]),
-        ("615000", "entretien_maintenance", ["entretien", "maintenance", "nettoyage", "ascenseur", "jardin"]),
-        ("606100", "energie_eau", ["eau", "electric", "energie", "engie", "gaz"]),
-        ("616000", "assurance", ["assurance", "multirisque"]),
-        ("671000", "charges_exceptionnelles", ["sinistre", "contentieux", "expertise"]),
+        ("622000", "honoraires_syndic", [r"\b(syndic|honoraire|gestion)\b"]),
+        (
+            "615000",
+            "entretien_maintenance",
+            [
+                r"\b(entretien|maintenance|nettoyage|ascenseur|jardin|[ée]lagage|abattage|d[ée]bitage|"
+                r"d[ée]chetterie|r[ée]manents?|espaces?\s+verts?|pin|arbre)\b"
+            ],
+        ),
+        ("606100", "energie_eau", [r"\b(eau|[ée]lectric(?:it[ée])?|[ée]nergie|engie|gaz)\b"]),
+        ("616000", "assurance", [r"\b(assurance|multirisque)\b"]),
+        ("671000", "charges_exceptionnelles", [r"\b(sinistre|contentieux|expertise)\b"]),
     ]
-    for account, family, needles in rules:
-        if any(needle in haystack for needle in needles):
+    for account, family, patterns in rules:
+        if any(re.search(pattern, haystack, flags=re.IGNORECASE) for pattern in patterns):
             return account, family
     return "615000", "charges_courantes_a_confirmer"
 
