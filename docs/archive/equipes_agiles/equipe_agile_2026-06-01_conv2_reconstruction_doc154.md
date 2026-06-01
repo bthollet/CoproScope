@@ -37,7 +37,7 @@ TRI DESIGNER
 PREUVES
 - Smoke executable HTTP sur la fiche document protegee: OK.
 - Smoke executable HTTP sur la file des factures a revoir: OK.
-- Version testee: `CoproScope.exe` SHA-256 `C0469833C8C61566965CC7C309ABDED54B0850285D9B8BAF6DA3B591B3E263F4`.
+- Version testee: `CoproScope.exe` SHA-256 `7E685F2DB5B1F7CFA38E38C69788955AE168E75A2FF97B6A2FCC0AE1F8B1B6D4`.
 - Protocole prive: roles expert, designer, novice, CoproScope et QA notes; tri realise; gate clos.
 
 BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 16:49 +02:00
