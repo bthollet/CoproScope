@@ -270,6 +270,14 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
     haystack = f"{supplier}\n{text}".lower()
     rules = [
         (
+            "615000",
+            "entretien_maintenance",
+            [
+                r"\b(r[ée]fection|reparation|main\s+d[' ]?oeuvre|travaux)\b[\s\S]{0,160}"
+                r"\b([ée]lectrique|[ée]lectricit[ée]|lampe|prise|interrupteur|cable|tube\s+iro)\b"
+            ],
+        ),
+        (
             "606100",
             "energie_electricite",
             [r"\b(eau|(?:e|\u00e9)lectric(?:it(?:e|\u00e9))?|(?:e|\u00e9)nergie|engie|gaz|kwh|puissance\s+souscrite)\b"],

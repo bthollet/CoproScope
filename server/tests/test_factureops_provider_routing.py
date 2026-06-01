@@ -287,6 +287,51 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ttc, "537.90")
         self.assertEqual((account, family), ("615000", "serrurerie_acces"))
 
+    def test_routes_electric_repair_invoice_keeps_vat_and_supplier(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_electricien_demo.pdf",
+            native_text=(
+                "electricite\nATELIER DEMO\nBATIMENT & INDUSTRIE\n"
+                "Facture N 25031447\nDEMO, le 17 mars 2025\n"
+                "Bon de commande :\nBatiment 24\nLogement LOCAL TECHNIQUE\n"
+                "Date des travaux : 14/03/25\n"
+                "Objet:\nREFECTION ELECTRIQUE DU PETIT LOCAL TECHNIQUE.\n"
+                "N Article Designation Un Qte Prix unit. Montant H.T.\n"
+                "1 GLOBE E27 U 1,00 38,00 38,00\n"
+                "2 LAMPE E27 13W LED U 1,00 8,50 8,50\n"
+                "8 MAIN D OEUVRE AVEC DEPOSE ANCIENNE INSTALLATION ENS 1,00 280,00 280,00\n"
+                "Total H.T. 400,70\n"
+                "Total T.V.A. 10,00 % 40,07\n"
+                "Net a payer (Euros) 440,77\n"
+                "Reglement : COMPTANT\n"
+                "Echeance de 100,00 % au 18/03/25 : 440,77 EUR\n"
+                "S.A.S. au capital de 1000,00 EUR - SIRET 123 456 789 00012 - CODE A.P.E 4321A\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.fournisseur, "ATELIER DEMO")
+        self.assertEqual(extraction.siren_siret, "12345678900012")
+        self.assertEqual(extraction.numero_facture, "25031447")
+        self.assertEqual(extraction.date_facture, "2025-03-17")
+        self.assertEqual(extraction.ht, "400.70")
+        self.assertEqual(extraction.tva, "40.07")
+        self.assertEqual(extraction.ttc, "440.77")
+        self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
+        self.assertEqual((account, family), ("615000", "entretien_maintenance"))
+
+    def test_energy_invoice_with_installation_word_stays_energy(self) -> None:
+        text = (
+            "ENGIE\nFacture Monosite\nInstallation electrique copropriete\n"
+            "Consommation totale d electricite : 144 kWh\nPuissance souscrite 12 kVA\n"
+            "Total electricite / hors TVA 85,77 EUR\nTotal TTC 107,97\n"
+        )
+        self.assertEqual(
+            factureops._account_for_invoice(text, "ENGIE"),
+            ("606100", "energie_electricite"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

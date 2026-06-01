@@ -167,6 +167,15 @@ def _amount_after(labels: list[str], text: str) -> str:
     return ""
 
 
+def _amount_after_percent_total(label: str, text: str) -> str:
+    amount = r"(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)"
+    pattern = rf"{label}[^\n\r\d-]{{0,40}}\d{{1,2}}[,.]\d{{2}}\s*%[^\d-]{{0,20}}{amount}"
+    match = re.search(pattern, text, flags=re.IGNORECASE)
+    if not match:
+        return ""
+    return normalize_amount(match.group(1))
+
+
 def _amounts_after(label: str, text: str) -> list[str]:
     values: list[str] = []
     for label_match in re.finditer(label, text, flags=re.IGNORECASE):
@@ -268,6 +277,16 @@ def _bad_supplier_fragments() -> list[str]:
         "total ht",
         "total ttc",
         "net ht",
+        "net a payer",
+        "net à payer",
+        "echeance",
+        "échéance",
+        "reglement",
+        "règlement",
+        "comptant",
+        "date des travaux",
+        "bon de commande",
+        "logement",
         "payer en ligne",
         "nos references",
         "vos references",
@@ -284,6 +303,8 @@ def _bad_supplier_fragments() -> list[str]:
         "conditions de paiement",
         "objet",
         "adresse du chantier",
+        "capital",
+        "sage",
         "www.",
     ]
 
@@ -292,9 +313,21 @@ def _is_bad_supplier_candidate(line: str) -> bool:
     normalized = _match_text(line)
     if normalized in {"facture", "avoir", "invoice", "note de debit", "note d'honoraires"}:
         return True
+    if normalized in {"electricite", "local", "local technique"}:
+        return True
     if any(fragment in normalized for fragment in _bad_supplier_fragments()):
         return True
     if normalized.startswith(("facture n", "facture no", "facture numero")):
+        return True
+    if re.search(r"\d{2}/\d{2}/\d{2,4}", line):
+        return True
+    if re.search(
+        r"\ble\s+[0-3]?\d\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\s+20\d{2}\b",
+        _match_text(line),
+        flags=re.IGNORECASE,
+    ):
+        return True
+    if re.search(r"\d[\d \u00a0\u202f]*[,.]\d{2}\s*(?:%|eur|€)?", line, flags=re.IGNORECASE):
         return True
     if re.search(
         r"^\d+\s+(?:avenue|av\.?|rue|all[ée]e|allee|all\.?|boulevard|bd|chemin|place|traverse|impasse)\b",
@@ -306,9 +339,13 @@ def _is_bad_supplier_candidate(line: str) -> bool:
         return True
     if re.search(r"^bp\s+\d+\b", line, flags=re.IGNORECASE):
         return True
+    if normalized in {"batiment", "batiment & industrie", "batiment industrie"}:
+        return True
+    if re.match(r"^batiment\s+\d+\b", normalized):
+        return True
     return bool(
         re.search(
-            r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d|@|telephone|tel\.?|devis",
+            r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d|@|telephone|\btel\.?|devis",
             line,
             flags=re.IGNORECASE,
         )
@@ -393,6 +430,34 @@ def _normalize_invoice_date(value: str) -> str:
     return value
 
 
+def _french_text_date(text: str) -> str:
+    months = {
+        "janvier": "01",
+        "fevrier": "02",
+        "mars": "03",
+        "avril": "04",
+        "mai": "05",
+        "juin": "06",
+        "juillet": "07",
+        "aout": "08",
+        "septembre": "09",
+        "octobre": "10",
+        "novembre": "11",
+        "decembre": "12",
+    }
+    normalized = _match_text(text)
+    bad_context = ("travaux", "echeance", "livraison", "intervention", "devis")
+    for match in re.finditer(r"\ble\s+([0-3]?\d)\s+([a-z]+)\s+(20\d{2})\b", normalized, flags=re.IGNORECASE):
+        context = normalized[max(0, match.start() - 45) : match.start()]
+        if any(marker in context for marker in bad_context):
+            continue
+        day, month, year = match.groups()
+        month_number = months.get(month.lower())
+        if month_number:
+            return f"{year}-{month_number}-{int(day):02d}"
+    return ""
+
+
 def _invoice_date(text: str, file_name: str) -> str:
     invoice_context_patterns = [
         r"facture[\s\S]{0,100}\bdate\b[^\d]{0,30}(\d{2}/\d{2}/20\d{2})",
@@ -402,6 +467,10 @@ def _invoice_date(text: str, file_name: str) -> str:
         date = _first_match([pattern], text)
         if date:
             return _normalize_invoice_date(date)
+
+    textual_date = _french_text_date(text)
+    if textual_date:
+        return textual_date
 
     for match in re.finditer(r"\d{2}/\d{2}/20\d{2}|\d{2}-\d{2}-20\d{2}|20\d{2}-[01]\d-[0-3]\d", text):
         context = text[max(0, match.start() - 35) : match.start()].lower()
@@ -423,7 +492,7 @@ def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExt
     if not invoice_number:
         invoice_number = filename_invoice_reference(file_name)
 
-    date = _first_match(
+    date = _french_text_date(text) or _first_match(
         [
             r"(\d{2}/\d{2}/20\d{2})",
             r"(\d{2}-\d{2}-20\d{2})",
@@ -451,7 +520,16 @@ def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExt
     siren_siret = re.sub(r"\D", "", siren_siret)
 
     ht = _amount_after([r"total\s+hors\s+taxes", r"total\s+h\.?\s*t", r"montant\s+h\.?\s*t", r"base\s+h\.?\s*t"], text)
-    tva = _amount_after([r"total\s+tva", r"montant\s+tva", r"\btva\b"], text)
+    tva = _amount_after_percent_total(r"total\s+t\.?\s*v\.?\s*a\.?", text) or _amount_after(
+        [
+            r"total\s+t\.?\s*v\.?\s*a\.?",
+            r"total\s+tva",
+            r"montant\s+t\.?\s*v\.?\s*a\.?",
+            r"montant\s+tva",
+            r"\btva\b",
+        ],
+        text,
+    )
     ttc = _amount_after([r"net\s+a\s+payer", r"net\s+Ã \s+payer", r"net\s+à\s+payer", r"total\s+ttc", r"\bttc\b"], text)
 
     labeled_totals = _labeled_totals(text)
