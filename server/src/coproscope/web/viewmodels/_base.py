@@ -24,6 +24,11 @@ FORBIDDEN_UX_PUBLIC_ROOTS = {"users", "home", "var", "tmp", "etc", "opt", "root"
 UX_REDACTED_REFERENCE = "reference locale masquee"
 _FORBIDDEN_UX_PUBLIC_TOKEN_RE = re.compile(r"(?<![0-9a-z_])(?:raw|restricted|logs|private)(?![0-9a-z_])")
 _UX_PUBLIC_TOKEN_RE = re.compile(r"[0-9a-z]+")
+_UX_PRIVATE_SUBSTRINGS = (
+    "100_collecte_raw",
+    "200_inbox",
+    "220_assemblees",
+)
 _UX_SUSPICIOUS_SUBSTRINGS = (
     "://",
     "/",
@@ -32,6 +37,7 @@ _UX_SUSPICIOUS_SUBSTRINGS = (
     "restricted",
     "logs",
     "private",
+    *_UX_PRIVATE_SUBSTRINGS,
 )
 
 

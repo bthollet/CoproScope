@@ -186,6 +186,8 @@ def _contains_forbidden_ux_reference_cached(normalized: str, allow_route: bool =
         return False
     if not any(marker in normalized for marker in _UX_SUSPICIOUS_SUBSTRINGS):
         return False
+    if any(marker in normalized for marker in _UX_PRIVATE_SUBSTRINGS):
+        return True
     first_match = _UX_PUBLIC_TOKEN_RE.search(normalized)
     first_token = first_match.group(0) if first_match else ""
     has_absolute_marker = (

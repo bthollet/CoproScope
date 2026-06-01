@@ -401,6 +401,12 @@
                     "fournisseur": r"C:\Users\ExampleUser\CoproScope\restricted\fournisseur.txt",
                     "numero_facture": "F-PRIVATE",
                     "ttc": "120.00",
+                },
+                {
+                    "doc_id": "DOC-RAW-LABEL",
+                    "fournisseur": "200_INBOX__bvl.25__Facture_2025030513520296.pdf",
+                    "numero_facture": "200_INBOX__bvl.25__Facture_2025030513520296",
+                    "ttc": "240.00",
                 }
             ],
         )
