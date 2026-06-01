@@ -288,6 +288,7 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
             [r"\b(serrures?|clefs?|cl[ée]s?|cylindre|ferme\s+porte|groom|portillon|acc[eè]s\s+(?:a\s+la\s+)?cave)\b"],
         ),
         ("615000", "ascenseur_maintenance", [r"\b(ascenseurs?|porte\s+cabine|contact\s+de\s+porte)\b"]),
+        ("615000", "assainissement_degorgement", [r"\b(assainissement|degorgement|eaux\s+usees|eaux\s+vannes)\b"]),
         (
             "615000",
             "nettoyage_parties_communes",
@@ -299,7 +300,7 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
             [r"\b(toiture|tuiles?|chapeau\s+de\s+chemin[Ã©e]e|mistral)\b"],
         ),
         ("615000", "entretien_maintenance", [r"\b(plomberie|chauffage|climatisation|robinet|wc|evacuation|pvc)\b"]),
-        ("615000", "assainissement_degorgement", [r"\b(assainissement|degorgement|hydrocureur|eaux\s+usees|eaux\s+vannes)\b"]),
+        ("615000", "assainissement_degorgement", [r"\b(hydrocureur)\b"]),
         (
             "615000",
             "entretien_maintenance",

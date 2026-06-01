@@ -304,6 +304,8 @@ def _is_bad_supplier_candidate(line: str) -> bool:
         return True
     if re.search(r"^\d{5}\s+\S+", line):
         return True
+    if re.search(r"^bp\s+\d+\b", line, flags=re.IGNORECASE):
+        return True
     return bool(
         re.search(
             r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d|@|telephone|tel\.?|devis",

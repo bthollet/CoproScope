@@ -97,6 +97,32 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ttc, "3693.12")
         self.assertEqual((account, family), ("615000", "nettoyage_parties_communes"))
 
+    def test_routes_assainissement_invoice_before_cleaning_terms(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_assainissement.pdf",
+            native_text=(
+                "Payer en ligne\nFacture N F250201691\nDate de creation : 21/02/2025\n"
+                "SMA ASSAINISSEMENT\nBP 242\n13308 MARSEILLE, France\nSIREN 805271822\n"
+                "FACTURE LIEE A L'INTERVENTION - DEPANNAGE - TRAVAUX DE DEGORGEMENT\n"
+                "BATIMENT / ENTREE: 28\n"
+                "DE LA CONDUITE VERTICALE EAUX USEES CUISINE DEPUIS LE 6 EME ETAGE\n"
+                "VERIFICATION DE L'ECOULEMENT\nNETTOYAGE ET DESINFECTION\n"
+                "INTERVENTION DU 19/02/2025\n"
+                "Total HT\n340,00 EUR\nMontant TVA (10%)\n34,00 EUR\nTotal TTC\n374,00 EUR\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.fournisseur, "SMA ASSAINISSEMENT")
+        self.assertEqual(extraction.siren_siret, "805271822")
+        self.assertEqual(extraction.numero_facture, "F250201691")
+        self.assertEqual(extraction.date_facture, "2025-02-21")
+        self.assertEqual(extraction.ht, "340.00")
+        self.assertEqual(extraction.tva, "34.00")
+        self.assertEqual(extraction.ttc, "374.00")
+        self.assertEqual((account, family), ("615000", "assainissement_degorgement"))
+
     def test_routes_orange_fixed_line_invoice_to_telecom(self) -> None:
         evidence = factureops.DocumentExtractionEvidence(
             file_name="Facture_orange.pdf",
