@@ -10,7 +10,7 @@ Mission: regulariser la trace publique de `DOC-0163`, deja clos dans le protocol
 Equipe-type: petite iteration agile avec QA confidentialite, novice/designer et coordinateur-scribe.
 Ownership modifiable: ce document, `docs/presence_agents.md`, `docs/roadmap_backlog_central.md`.
 Fichiers a eviter: code applicatif, instances privees hors synthese anonymisee du protocole, documents bruts, OCR/logs, exports bruts, secrets, Drive, serveurs durables, scan/kill, push GitHub hors integration du suivi.
-Dernier point lu: protocole `READY`, document courant `aucun`, dernier document clos `DOC-0163`; aucune trace publique `DOC-0163` trouvee au preflight.
+Dernier point lu: protocole `READY`, document courant `DOC-0164`, dernier document clos `DOC-0163`; aucune trace publique `DOC-0163` trouvee au preflight.
 Lease ownership: 2026-06-01 19:36 +02:00.
 
 ROUTAGE_EQUIPE
