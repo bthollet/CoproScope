@@ -137,7 +137,7 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
                 "Lieu d'intervention : RESIDENCE DEMO BATIMENT 25\n"
                 "ASV\nFacture N F83582502CH\nDate\n15/02/2025\n"
                 "Depuis 1997 - S.A.R.L. au Capital de 300 000 EUR\n"
-                "R.C.S : 831525506\nSite Internet : http://www.asvdepannage.fr\n"
+                "R.C.S : 123456789\nSite Internet : http://asv.example.test\n"
                 "Email : contact@orange.fr\n"
             ),
         )
@@ -151,6 +151,30 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ht, "600.00")
         self.assertEqual(extraction.tva, "60.00")
         self.assertEqual(extraction.ttc, "660.00")
+        self.assertEqual((account, family), ("615000", "serrurerie_acces"))
+
+    def test_routes_asv_door_closer_invoice_to_access_maintenance(self) -> None:
+        evidence = factureops.DocumentExtractionEvidence(
+            file_name="Facture_asv_ferme_porte.pdf",
+            native_text=(
+                "TRAVAUX : REMPLACEMENT DU FERME PORTE EXISTANT HORS SERVICE SUR LE PORTILLON\n"
+                "DEMANDE D'INTERVENTION DU 8/01/25\n"
+                "MISE EN PLACE D'UN FERME PORTE DICTATOR DIREKT\n"
+                "FIXATION ET REGLAGE DU GROOM\n"
+                "ASV\nFacture N F83592502CH\nDate\n15/02/2025\n"
+                "Total HT\n700,00\nTotal TVA\n70,00\nTotal TTC\n770,00\nNET A PAYER\n770,00\n"
+                "Depuis 1997 - S.A.R.L. au Capital de 300 000 EUR\nR.C.S : 123456789\n"
+                "Site Internet : http://asv.example.test\nEmail : contact@example.test\n"
+            ),
+        )
+        extraction = factureops._extract_invoice_from_evidence(evidence)
+        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
+
+        self.assertEqual(extraction.provider_key, "asv")
+        self.assertEqual(extraction.fournisseur, "ASV")
+        self.assertEqual(extraction.numero_facture, "F83592502CH")
+        self.assertEqual(extraction.date_facture, "2025-02-15")
+        self.assertEqual(extraction.ttc, "770.00")
         self.assertEqual((account, family), ("615000", "serrurerie_acces"))
 
 

@@ -281,7 +281,11 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
             "telecom_ligne_technique",
             [r"\b(orange\s+sa|pro\.orange\.fr|ligne\s+fixe|contrat\s+professionnel|facture\s+ligne\s+fixe|telecom)\b"],
         ),
-        ("615000", "serrurerie_acces", [r"\b(serrures?|clefs?|cl[ée]s?|cylindre|acc[eè]s\s+(?:a\s+la\s+)?cave)\b"]),
+        (
+            "615000",
+            "serrurerie_acces",
+            [r"\b(serrures?|clefs?|cl[ée]s?|cylindre|ferme\s+porte|groom|portillon|acc[eè]s\s+(?:a\s+la\s+)?cave)\b"],
+        ),
         ("615000", "ascenseur_maintenance", [r"\b(ascenseurs?|porte\s+cabine|contact\s+de\s+porte)\b"]),
         (
             "615000",
@@ -331,8 +335,8 @@ def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> Invo
         return OrangeInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bcogelec\b", text, flags=re.IGNORECASE):
         return CogelecInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
-    if re.search(r"\basv\b|asvdepannage\.fr", text, flags=re.IGNORECASE) and re.search(
-        r"\b(serrures?|clefs?|cl[ée]s?|acc[eè]s\s+(?:a\s+la\s+)?cave)\b",
+    if re.search(r"\basv\b", text, flags=re.IGNORECASE) and re.search(
+        r"\b(serrures?|clefs?|cl[ée]s?|ferme\s+porte|groom|portillon|acc[eè]s\s+(?:a\s+la\s+)?cave)\b",
         text,
         flags=re.IGNORECASE,
     ):

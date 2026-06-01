@@ -42,7 +42,7 @@ class AsvInvoiceProviderExtractor:
         siren_siret = re.sub(
             r"\D",
             "",
-            _first([r"R\.?\s*C\.?\s*S\.?\s*:?\s*([0-9 .]{9,20})", r"\b(831\s*525\s*506)\b"], text),
+            _first([r"R\.?\s*C\.?\s*S\.?\s*:?\s*([0-9 .]{9,20})", r"R\.?\s*C\.?\s*S\.?\s*(?::)?\s*([0-9 .]{9,20})"], text),
         )
         ht = _amount([rf"Total\s+H\.?\s*T[^\d-]{{0,40}}{AMOUNT}", rf"Net\s+H\.?\s*T[^\d-]{{0,40}}{AMOUNT}"], text)
         tva = _amount([rf"Total\s+TVA[^\d-]{{0,40}}{AMOUNT}"], text)
