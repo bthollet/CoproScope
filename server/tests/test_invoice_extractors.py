@@ -235,6 +235,29 @@ MTT_TTC:117,32NETAPAYER:117,32
         self.assertEqual(cogelec.numero_facture, "FC12345")
         self.assertEqual(cogelec.ttc, "117.32")
 
+        cogelec_summary = CogelecInvoiceProviderExtractor().extract(
+            """COGELEC
+Facture n 1641180 du 27/01/2025
+SIRET:43418922100022
+MTT_TTC:117,32
+NETAPAYER:117,32
+97,77
+20,00
+T1
+117,32
+19,55
+97,77
+Montant TVA
+Base
+Taux
+"""
+        )
+        self.assertEqual(cogelec_summary.numero_facture, "1641180")
+        self.assertEqual(cogelec_summary.date_facture, "2025-01-27")
+        self.assertEqual(cogelec_summary.ht, "97.77")
+        self.assertEqual(cogelec_summary.tva, "19.55")
+        self.assertEqual(cogelec_summary.ttc, "117.32")
+
         insurance = InsuranceNoticeProviderExtractor().extract(
             """AVIS D'ECHEANCE
 Compagnie : SADA

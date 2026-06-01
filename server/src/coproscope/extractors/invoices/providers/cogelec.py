@@ -24,6 +24,18 @@ def _date_to_iso(value: str) -> str:
     return f"{year}-{month}-{day}"
 
 
+def _amounts_from_summary(text: str) -> tuple[str, str]:
+    match = re.search(
+        rf"{AMOUNT}\s+{AMOUNT}\s+20[,.]00\s+T1\s+{AMOUNT}\s+{AMOUNT}\s+{AMOUNT}\s+Montant\s+TVA\s+Base\s+Taux",
+        text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return "", ""
+    _line_tva, _line_base, _ttc, total_tva, total_ht = match.groups()
+    return normalize_amount(total_ht), normalize_amount(total_tva)
+
+
 class CogelecInvoiceProviderExtractor:
     """Extractor for Cogelec access-control invoices."""
 
@@ -37,6 +49,7 @@ class CogelecInvoiceProviderExtractor:
         siren_siret = re.sub(r"\D", "", _first([r"SIRET\s*:?\s*([0-9 .]{14,22})", r"\b(434\s*189\s*221\s*00022)\b"], text))
         ttc_raw = _first([rf"(?:MTT_TTC|NETAPAYER|Net\s+a\s+payer)\s*:?\s*{AMOUNT}", rf"Total\s+TTC[^\d\-]{{0,80}}{AMOUNT}"], text)
         ttc = normalize_amount(ttc_raw) if ttc_raw else ""
+        ht, tva = _amounts_from_summary(text)
 
         extraction = InvoiceExtraction(
             provider_key=self.provider_key,
@@ -44,6 +57,8 @@ class CogelecInvoiceProviderExtractor:
             siren_siret=siren_siret,
             numero_facture=invoice_number,
             date_facture=_date_to_iso(date_raw),
+            ht=ht,
+            tva=tva,
             ttc=ttc,
             confidence="high" if invoice_number and ttc else "medium",
         )

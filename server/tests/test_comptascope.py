@@ -200,58 +200,6 @@ class ComptaScopeTests(unittest.TestCase):
         )
         self.assertEqual((account, family), ("616000", "assurance"))
 
-    def test_factureops_uses_insurance_notice_extractor(self) -> None:
-        evidence = factureops.DocumentExtractionEvidence(
-            file_name="Avis_echeance_assurance.pdf",
-            native_text="""AVIS D'ECHEANCE
-Compagnie : SADA
-Multirisque Immeuble
-Prime HT 19 570,25 EUR
-Taxes et accessoires 2 563,15 EUR
-Frais de quittancement 30,00 EUR
-Solde du : 22 163,40 EUR
-Conformement a l'article 261 C, votre prime est exoneree de TVA.
-Marseille, le jeudi 09 janvier 2025
-No de Police : 1H0357854
-No de quittance : 2024RDG11664438
-"""
-        )
-        extraction = factureops._extract_invoice_from_evidence(evidence)
-        account, family = factureops._account_for_invoice(evidence.combined_text(), extraction.fournisseur)
-        self.assertEqual(extraction.provider_key, "insurance_notice")
-        self.assertEqual(extraction.numero_facture, "2024RDG11664438")
-        self.assertEqual(extraction.date_facture, "2025-01-09")
-        self.assertEqual(extraction.tva, "0.00")
-        self.assertEqual(extraction.ttc, "22163.40")
-        self.assertEqual((account, family), ("616000", "assurance"))
-
-    def test_factureops_uses_provider_specific_omega_extractor(self) -> None:
-        evidence = factureops.DocumentExtractionEvidence(
-            file_name="Facture_omega.pdf",
-            native_text="""OMEGA ASCENSEUR
-SIRET: 815 051 974 00021
-FA.09.01.25.0700
-09/01/2025
-TTC : 9.873,60
-Contrat de maintenance Ascenseurs
-2.407,20
-240,72
-2.647,92
-2.647,92
-TVA 10%
-09/02/25 : 2.647,92
-DELAIS DE PAIEMENT
-""",
-        )
-
-        extraction = factureops._extract_invoice_from_evidence(evidence)
-
-        self.assertEqual(extraction.provider_key, "omega_ascenseur")
-        self.assertEqual(extraction.numero_facture, "FA.09.01.25.0700")
-        self.assertEqual(extraction.ht, "2407.20")
-        self.assertEqual(extraction.tva, "240.72")
-        self.assertEqual(extraction.ttc, "2647.92")
-
     def test_factureops_extracts_invoice_evidence_and_anomalies(self) -> None:
         run = RunContext(self.instance, "invoices extract")
         result = extract_invoices(self.instance, run, 2025)

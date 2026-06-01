@@ -8,7 +8,11 @@ from typing import Any, Iterable
 
 from ..core.common import InstanceConfig, RunContext, read_csv, sha256_file, write_csv
 from ..extractors.invoices import DocumentExtractionEvidence, InvoiceExtraction, extract_generic_invoice_from_evidence
-from ..extractors.invoices.providers import InsuranceNoticeProviderExtractor, OmegaAscenseurInvoiceProviderExtractor
+from ..extractors.invoices.providers import (
+    CogelecInvoiceProviderExtractor,
+    InsuranceNoticeProviderExtractor,
+    OmegaAscenseurInvoiceProviderExtractor,
+)
 from ..extractors.invoices.reconciliation import parse_amount
 
 
@@ -274,7 +278,8 @@ def _account_for_invoice(text: str, supplier: str) -> tuple[str, str]:
             "entretien_maintenance",
             [
                 r"\b(entretien|maintenance|nettoyage|ascenseur|jardin|[ée]lagage|abattage|d[ée]bitage|"
-                r"d[ée]chetterie|r[ée]manents?|espaces?\s+verts?|pin|arbre)\b"
+                r"d[ée]chetterie|r[ée]manents?|espaces?\s+verts?|pin|arbre|cogelec|interphone|"
+                r"contr[ôo]le\s+d[' ]acc[eè]s|portail|badge|vigik)\b"
             ],
         ),
         ("622000", "honoraires_syndic", [r"\b(syndic|honoraire|gestion)\b"]),
@@ -300,6 +305,8 @@ def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> Invo
         return InsuranceNoticeProviderExtractor().extract(text, file_name=evidence.file_name)
     if re.search(r"\bomega\s+ascenseur\b", text, flags=re.IGNORECASE):
         return OmegaAscenseurInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
+    if re.search(r"\bcogelec\b", text, flags=re.IGNORECASE):
+        return CogelecInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
     return extract_generic_invoice_from_evidence(evidence)
 
 
