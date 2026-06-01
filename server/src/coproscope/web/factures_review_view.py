@@ -17,6 +17,35 @@ FORBIDDEN_PATTERNS = (
     re.compile(r"(?:^|[\s`'\"(])(?:raw|restricted|logs|private|system)[\\/]\S*", re.IGNORECASE),
     re.compile(r"\b[a-f0-9]{24,}\b", re.IGNORECASE),
 )
+CONTACT_PATTERNS = (
+    re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE),
+    re.compile(r"(?:\+|00)[\s().-]*33[\s().-]*0?[1-9](?:[\s().-]*\d{2}){4}"),
+    re.compile(r"\b(?:\+|00)?33[\s().-]*0?[1-9](?:[\s().-]*\d{2}){4}\b"),
+    re.compile(r"\b0[1-9](?:[\s().-]*\d{2}){4}\b"),
+    re.compile(r"\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]){11,30}\b", re.IGNORECASE),
+)
+ADDRESS_PATTERN = re.compile(
+    r"\b(?:\d{1,5}\s+)?(?:avenue|av\.?|rue|boulevard|bd|place|chemin|traverse|impasse|route)\s+[^,;|)]{2,80}",
+    re.IGNORECASE,
+)
+ADMIN_NUMBER_PATTERNS = (
+    re.compile(r"\b(?:siren|siret|rna|tva|vat|rcs|ape|naf|nic)\s*[:#-]?\s*[A-Z0-9](?:[\s.-]*[A-Z0-9]){5,}\b", re.IGNORECASE),
+    re.compile(r"\b\d(?:[\s.-]*\d){8,}\b"),
+)
+PUBLIC_PRIVATE_PATTERNS = CONTACT_PATTERNS + (ADDRESS_PATTERN, *ADMIN_NUMBER_PATTERNS)
+SUPPLIER_CUT_PATTERN = re.compile(
+    r"\s+(?:\d{1,5}\s+)?(?:avenue|av\.?|rue|boulevard|bd|place|chemin|traverse|impasse|route)\b|"
+    r"\s+-\s+|\b(?:tel|telephone|courriel|mail|email|iban|bic)\b\s*:?",
+    re.IGNORECASE,
+)
+SUPPLIER_PRIVATE_PATTERNS = PUBLIC_PRIVATE_PATTERNS + (re.compile(r"\d(?:[\s().-]*\d){5,}"),)
+INTERNAL_TABLE_FIELDS = {
+    "acteur",
+    "controle",
+    "resultat_id",
+    "resultat_premier",
+    "sources_utilisees",
+}
 
 ANOMALY_LABELS = {
     "FOURNISSEUR_ABSENT": "Fournisseur absent",
@@ -96,19 +125,19 @@ def build_factures_review_view(instance: Any | None, year: int = 2025, active_fi
     filtered_items = sorted(filtered_items, key=_sort_key)
     counts = Counter(item["priority_key"] for item in review_items)
     status_counts = Counter(item["status_key"] for item in items)
-    critical = sum(1 for item in review_items if item["priority_key"] == "P1")
+    critical = sum(1 for item in review_items if set(item["anomaly_tokens"]) & HIGH_PRIORITY_ANOMALIES)
     return {
         "title": "Factures a revoir",
         "eyebrow": "ComptaScope / factures",
         "year": str(year),
-        "source_label": "Table derivee locale",
+        "source_label": "Liste de travail locale",
         "summary": [
             {"label": "A traiter", "value": str(counts.get("P1", 0)), "detail": "Donnee bloquante ou doublon."},
-            {"label": "A controler", "value": str(status_counts.get("A_CONTROLER", 0)), "detail": "Statut machine prioritaire."},
+            {"label": "A controler", "value": str(status_counts.get("A_CONTROLER", 0)), "detail": "A verifier en premier."},
             {"label": "Incertaines", "value": str(status_counts.get("INCERTAIN", 0)), "detail": "Lecture partielle a reprendre."},
-            {"label": "Anomalies critiques", "value": str(critical), "detail": "A regarder avant rapprochement."},
+            {"label": "Anomalies critiques", "value": str(critical), "detail": "A regarder avant de relier aux comptes."},
             {"label": "Probables", "value": str(status_counts.get("PROBABLE", 0)), "detail": "A garder en controle simple."},
-            {"label": "Total candidates", "value": str(len(invoices)), "detail": "Depuis les textes locaux."},
+            {"label": "Factures reperees", "value": str(len(invoices)), "detail": "Depuis les textes locaux."},
         ],
         "filters": _filter_links(active_filter),
         "active_filter": active_filter,
@@ -117,7 +146,7 @@ def build_factures_review_view(instance: Any | None, year: int = 2025, active_fi
         "total_review": len(review_items),
         "has_source": bool(invoices),
         "empty": _empty_message(invoices, filtered_items),
-        "privacy_notice": "File locale: chemins, noms bruts et preuves internes ne sont pas affiches.",
+        "privacy_notice": "Liste locale: chemins, noms bruts et preuves internes ne sont pas affiches.",
     }
 
 
@@ -155,8 +184,9 @@ def _invoice_item(row: dict[str, str], anomalies: list[dict[str, str]]) -> dict[
     priority_label = _priority_label(priority_key, anomaly_tokens)
     needs_review = bool(anomaly_tokens or status_key != "PROBABLE")
     amount = _money(row.get("ttc"))
+    invoice_number = _invoice_reference_text(row.get("numero_facture"), limit=48)
     return {
-        "id": doc_id or _public_text(row.get("numero_facture"), limit=36) or "facture-a-identifier",
+        "id": doc_id or invoice_number or "facture-a-identifier",
         "doc_id": doc_id,
         "priority_key": priority_key,
         "priority_label": priority_label,
@@ -165,8 +195,8 @@ def _invoice_item(row: dict[str, str], anomalies: list[dict[str, str]]) -> dict[
         "status_key": status_key,
         "status_label": status_label,
         "needs_review": needs_review,
-        "supplier": _public_text(row.get("fournisseur"), limit=72) or "Fournisseur a identifier",
-        "invoice_number": _public_text(row.get("numero_facture"), limit=48) or "Reference a identifier",
+        "supplier": _supplier_text(row.get("fournisseur"), limit=72) or "Fournisseur a identifier",
+        "invoice_number": invoice_number or "Reference a identifier",
         "date": _public_text(row.get("date_facture"), limit=24) or "Date a verifier",
         "amount": amount,
         "account": _public_text(row.get("compte_propose"), limit=32) or "Compte a confirmer",
@@ -201,20 +231,20 @@ def _priority_label(priority_key: str, anomaly_tokens: list[str]) -> str:
 
 def _next_action(priority_key: str, anomaly_tokens: list[str]) -> str:
     if "MONTANT_TTC_ABSENT" in anomaly_tokens:
-        return "Lecture locale insuffisante: retrouver le montant TTC dans la piece ou relancer OCR avant conclusion."
+        return "Lecture locale insuffisante: retrouver le montant TTC dans la piece ou refaire la lecture automatique du document avant conclusion."
     if "DOUBLON_POTENTIEL" in anomaly_tokens:
         return "Comparer les doublons avant de retenir une seule piece."
     if "FACTURE_HORS_EXERCICE" in anomaly_tokens:
-        return "Verifier l'exercice avant de rapprocher la charge."
+        return "Verifier l'exercice avant de relier la charge aux comptes."
     if "FOURNISSEUR_ABSENT" in anomaly_tokens:
-        return "Identifier le fournisseur puis relancer le controle machine."
+        return "Identifier le fournisseur puis refaire la verification automatique."
     if "SECURITE_INCENDIE_A_DEVISER" in anomaly_tokens:
         return "Demander le devis ou la preuve de remise en conformite incendie."
     if "ASSURANCE_RIB_A_CONTROLER" in anomaly_tokens:
         return "Verifier le RIB connu ou le mandat du courtier avant paiement."
     if priority_key == "P1":
-        return "Completer la donnee bloquante avant rapprochement."
-    return "Relire la facture puis rattacher au bon controle comptable."
+        return "Completer la donnee bloquante avant de relier la facture aux comptes."
+    return "Relire la facture puis la rattacher au bon controle comptable."
 
 
 def _blocking_alert(status_key: str, anomaly_tokens: list[str]) -> str:
@@ -229,7 +259,10 @@ def _anomaly_label(value: Any) -> str:
 
 
 def _anomaly_token(value: Any) -> str:
-    return re.sub(r"[^A-Z0-9_]+", "_", str(value or "").strip().upper()).strip("_")
+    raw = str(value or "").strip()
+    if _contains_sensitive_text(raw):
+        return ""
+    return re.sub(r"[^A-Z0-9_]+", "_", raw.upper()).strip("_")
 
 
 def _row_anomaly_tokens(row: dict[str, str]) -> list[str]:
@@ -243,7 +276,7 @@ def _status_key(value: Any) -> str:
 
 
 def _money(value: Any) -> str:
-    if _contains_private_marker(str(value or "")):
+    if _contains_sensitive_text(str(value or "")):
         return "Montant a verifier"
     text = str(value or "").strip().replace(",", ".")
     match = re.search(r"-?\d+(?:\.\d{1,2})?", text)
@@ -252,20 +285,22 @@ def _money(value: Any) -> str:
 
 def _safe_doc_id(value: Any) -> str:
     raw = str(value or "").strip()
-    if _contains_private_marker(raw) or re.search(r"\b[a-f0-9]{24,}\b", raw, re.IGNORECASE):
+    if _contains_sensitive_text(raw) or _looks_like_person_initials(raw) or re.search(r"\b[a-f0-9]{24,}\b", raw, re.IGNORECASE):
         return ""
     text = re.sub(r"[^A-Za-z0-9_.:-]+", "-", raw)[:128].strip("-")
-    if _contains_private_marker(text) or re.search(r"\b[a-f0-9]{24,}\b", text, re.IGNORECASE):
+    if _contains_sensitive_text(text) or _looks_like_person_initials(text) or re.search(r"\b[a-f0-9]{24,}\b", text, re.IGNORECASE):
         return ""
     return text
 
 
 def _public_text(value: Any, *, limit: int) -> str:
     text = " ".join(str(value or "").split())
-    if _looks_like_raw_file_label(text):
+    if _looks_like_raw_file_label(text) or _looks_like_internal_table_text(text):
         return ""
     text = re.sub(r"<\s*script\b.*?<\s*/\s*script\s*>", " ", text, flags=re.IGNORECASE | re.DOTALL)
     text = re.sub(r"<[^>]+>", " ", text)
+    for pattern in PUBLIC_PRIVATE_PATTERNS:
+        text = pattern.sub("[retire]", text)
     for pattern in FORBIDDEN_PATTERNS:
         text = pattern.sub("[retire]", text)
     text = re.sub(r"(?<!\w)[^\s,;:|()]+\.(?:pdf|docx?|xlsx?)(?!\w)", "piece comptable", text, flags=re.IGNORECASE)
@@ -273,6 +308,31 @@ def _public_text(value: Any, *, limit: int) -> str:
     text = re.sub(r"(?:\[retire\]\s*)+", "information masquee ", text).strip()
     text = text.strip()
     return text if len(text) <= limit else f"{text[: limit - 1].rstrip()}..."
+
+
+def _invoice_reference_text(value: Any, *, limit: int) -> str:
+    text = _public_text(value, limit=limit)
+    if _looks_like_person_initials(text):
+        return ""
+    return text
+
+
+def _supplier_text(value: Any, *, limit: int) -> str:
+    raw = " ".join(str(value or "").split())
+    if not raw:
+        return ""
+    cut_at = _first_private_text_position(raw)
+    if cut_at is not None:
+        raw = raw[:cut_at]
+    text = _public_text(raw, limit=limit)
+    if any(pattern.search(text) for pattern in CONTACT_PATTERNS):
+        return ""
+    return text
+
+
+def _first_private_text_position(value: str) -> int | None:
+    positions = [match.start() for pattern in (*SUPPLIER_PRIVATE_PATTERNS, SUPPLIER_CUT_PATTERN) if (match := pattern.search(value))]
+    return min(positions) if positions else None
 
 
 def _looks_like_raw_file_label(value: str) -> bool:
@@ -283,10 +343,28 @@ def _looks_like_raw_file_label(value: str) -> bool:
     return bool(re.search(r"(?:^|[_\s-])facture[_\s-]*20\d{10,}(?:\D|$)", lowered))
 
 
+def _looks_like_internal_table_text(value: str) -> bool:
+    lowered = value.strip().strip("\"'").lower()
+    if not lowered:
+        return False
+    field_hits = {field for field in INTERNAL_TABLE_FIELDS if field in lowered}
+    return len(field_hits) >= 2 or lowered in INTERNAL_TABLE_FIELDS
+
+
+def _looks_like_person_initials(value: str) -> bool:
+    return bool(re.fullmatch(r"[A-Z]{1,3}", value.strip()))
+
+
 def _contains_private_marker(value: str) -> bool:
     lowered = value.replace("\\", "/").lower()
     return any(marker in lowered for marker in ("file://", "raw/", "restricted/", "logs/", "private/", "system/")) or bool(
         re.search(r"(?<![a-z])[a-z]:/", lowered)
+    )
+
+
+def _contains_sensitive_text(value: str) -> bool:
+    return _contains_private_marker(value) or _looks_like_raw_file_label(value) or any(
+        pattern.search(value) for pattern in PUBLIC_PRIVATE_PATTERNS
     )
 
 
@@ -306,7 +384,7 @@ def _filter_links(active_filter: str) -> list[dict[str, str]]:
 def _matches_filter(item: dict[str, Any], active_filter: str) -> bool:
     tokens = set(item["anomaly_tokens"])
     if active_filter == "priorite-haute":
-        return item["priority_key"] == "P1"
+        return bool(tokens & HIGH_PRIORITY_ANOMALIES)
     if active_filter == "doublons":
         return "DOUBLON_POTENTIEL" in tokens
     if active_filter == "montants-incomplets":

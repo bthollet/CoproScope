@@ -22,12 +22,16 @@ REQUIRED_LABELS = (
     "Priorite haute",
     "A completer",
     "A verifier",
-    "File factures, anomalies et action suivante",
+    "Liste factures, anomalies et action suivante",
     "Montant TTC absent",
     "Lecture locale insuffisante",
     "Doublon potentiel",
     "Action suivante",
     "Ouvrir le document protege",
+    "Liste de travail locale",
+    "A verifier en premier",
+    "Factures reperees",
+    "Voir les factures a verifier",
 )
 
 FORBIDDEN_VISIBLE_MARKERS = (
@@ -46,6 +50,13 @@ FORBIDDEN_VISIBLE_MARKERS = (
     "excerpt",
     "secretValue",
     "secret_facture.pdf",
+    "resultat_id",
+    "sources_utilisees",
+    "resultat_premier",
+    "relancer OCR",
+    "Table derivee locale",
+    "Total candidates",
+    "Statut machine prioritaire",
     "restricted",
     "private",
     "raw/",
@@ -105,6 +116,8 @@ class UiFacturesReviewTests(unittest.TestCase):
             self.assertIn(label, text)
         self.assertNotIn("200_INBOX", text)
         self.assertNotIn("Facture_2025030513520296", text)
+        self.assertIn("refaire la lecture automatique du document", text)
+        self.assertNotIn("relancer OCR", text)
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, visible)
             self.assertNotIn(marker, response.text)
@@ -123,8 +136,132 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertIn("Doublon potentiel", view["rows"][0]["anomalies"])
         self.assertEqual(view["rows"][0]["blocking_alert"], "Lecture locale insuffisante")
         self.assertIn("avant conclusion", view["rows"][0]["next_action"])
+        priority_view = build_factures_review_view(self.instance, 2025, active_filter="priorite-haute")
+        self.assertEqual([row["doc_id"] for row in priority_view["rows"]], ["DOC-INV-001"])
+        summary = {item["label"]: item["value"] for item in build_factures_review_view(self.instance, 2025)["summary"]}
+        self.assertEqual(summary["Anomalies critiques"], "1")
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, rendered_model)
+
+    def test_supplier_contact_details_are_not_rendered(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="DOC-CONTACT-001",
+                    fournisseur=(
+                        "Entretien exemple 12345678900330611223344 53 Avenue Fictive 13000 Ville - "
+                        "Telephone : (0033) 06.11.22.33.44 - Courriel : contact@example.test"
+                    ),
+                    numero_facture="EV-001",
+                    date_facture="2025-04-24",
+                    ttc="1340.00",
+                    compte_propose="615000",
+                    famille_charge="entretien_maintenance",
+                    statut_controle="INCERTAIN",
+                    anomalies="SIREN_SIRET_ABSENT",
+                ),
+            ],
+        )
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/comptes/factures-a-revoir?token=local-secret")
+        text = unescape(response.text)
+        visible = _visible_text(text)
+        view = build_factures_review_view(self.instance, 2025)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(view["rows"][0]["supplier"], "Entretien exemple")
+        self.assertIn("Entretien exemple", text)
+        for marker in ("123456", "0033", "06.11", "contact@example.test", "Avenue Fictive", "Telephone", "Courriel"):
+            self.assertNotIn(marker, visible)
+            self.assertNotIn(marker, response.text)
+
+    def test_public_invoice_fields_mask_private_details(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="contact@example.test",
+                    fournisseur="Prestataire demo 12 rue Locale 13000 Ville",
+                    numero_facture=(
+                        "SIRET 123 456 789 00033 tel 06 11 22 33 44 "
+                        "IBAN FR7630006000011234567890189"
+                    ),
+                    date_facture="2025-04-24 53 Avenue Fictive 13000 Ville",
+                    ttc="1340.00",
+                    compte_propose=r"615000 C:\\Users\\demo\\raw\\piece.pdf",
+                    famille_charge="maintenance 98765432100012 raw/private",
+                    statut_controle="INCERTAIN",
+                    anomalies="SIREN_SIRET_ABSENT|contact@example.test|12 rue cachee",
+                ),
+            ],
+        )
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/comptes/factures-a-revoir?token=local-secret")
+        text = unescape(response.text)
+        visible = _visible_text(text)
+        view = build_factures_review_view(self.instance, 2025)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(view["rows"][0]["supplier"], "Prestataire demo")
+        self.assertEqual(view["rows"][0]["href"], "")
+        self.assertIn("Lien document masque", text)
+        for marker in (
+            "contact@example.test",
+            "contact-example",
+            "06 11",
+            "FR763",
+            "123 456",
+            "987654",
+            "rue Locale",
+            "rue cachee",
+            "Avenue Fictive",
+            "raw/private",
+            "C:\\",
+        ):
+            self.assertNotIn(marker, visible)
+            self.assertNotIn(marker, response.text)
+
+    def test_internal_table_headers_and_actor_initials_are_not_rendered(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="JR",
+                    fournisseur='"resultat_id","acteur","controle","sources_utilisees","resultat_premier"',
+                    numero_facture="JR",
+                    date_facture="2025-11-24",
+                    ttc="IBAN FR7630006000011234567890189",
+                    compte_propose="606100",
+                    famille_charge="energie_eau",
+                    statut_controle="A_CONTROLER",
+                    anomalies="MONTANT_TTC_ABSENT",
+                ),
+            ],
+        )
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/comptes/factures-a-revoir?token=local-secret")
+        text = unescape(response.text)
+        visible = _visible_text(text)
+        view = build_factures_review_view(self.instance, 2025)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(view["rows"][0]["id"], "facture-a-identifier")
+        self.assertEqual(view["rows"][0]["doc_id"], "")
+        self.assertEqual(view["rows"][0]["href"], "")
+        self.assertEqual(view["rows"][0]["supplier"], "Fournisseur a identifier")
+        self.assertEqual(view["rows"][0]["invoice_number"], "Reference a identifier")
+        self.assertEqual(view["rows"][0]["amount"], "Montant a verifier")
+        self.assertIn("refaire la lecture automatique du document", text)
+        for marker in ("resultat_id", "sources_utilisees", "resultat_premier", '"acteur"', ">JR<", "FR763", "relancer OCR"):
+            self.assertNotIn(marker, visible)
+            self.assertNotIn(marker, response.text)
 
     def test_fire_safety_anomaly_has_dedicated_next_action(self) -> None:
         write_csv(

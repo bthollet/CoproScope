@@ -421,6 +421,7 @@ th {
   padding: 4px 8px;
   font-size: 12px;
   font-weight: 760;
+  white-space: nowrap;
   background: var(--blue-soft);
   color: var(--blue);
 }

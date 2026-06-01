@@ -16,12 +16,12 @@
     <div>
       <p class="eyebrow">{{ view.eyebrow }}</p>
       <h2 id="factures-review-title">{{ view.title }}</h2>
-      <p class="lead">File de travail pour reprendre les factures detectees par la machine, exercice {{ view.year }}.</p>
+      <p class="lead">Liste de travail pour verifier les factures reperees automatiquement, exercice {{ view.year }}.</p>
     </div>
     <div class="cs-header-tools" aria-label="Actions factures">
       <span class="cs-status-badge">Mode prive local</span>
       <a class="button-link secondary" href="{{ token_href('/comptes') }}">Retour aux comptes</a>
-      <a class="cs-primary-action" href="#factures-file">Traiter la file</a>
+      <a class="cs-primary-action" href="#factures-file">Voir les factures a verifier</a>
     </div>
   </header>
 
@@ -50,11 +50,11 @@
   <section class="cs-comptes-guide" aria-label="Mode de lecture factures">
     <div>
       <strong>Priorite haute</strong>
-      <span>Doublon, incoherence ou exercice a verifier avant rapprochement.</span>
+      <span>Doublon, incoherence ou exercice a verifier avant de relier aux comptes.</span>
     </div>
     <div>
       <strong>A completer</strong>
-      <span>Montant, fournisseur, date ou reference manque dans la lecture machine.</span>
+      <span>Montant, fournisseur, date ou reference manque dans l'analyse automatique.</span>
     </div>
     <div>
       <strong>A verifier</strong>
@@ -66,7 +66,7 @@
     <div class="cs-panel-head">
       <div>
         <p class="eyebrow">{{ view.privacy_notice }}</p>
-        <h3 id="factures-file-title">File factures, anomalies et action suivante</h3>
+        <h3 id="factures-file-title">Liste factures, anomalies et action suivante</h3>
       </div>
       <span>{{ view.count }} lignes</span>
     </div>
