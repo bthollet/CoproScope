@@ -106,7 +106,8 @@ class EngieInvoiceProviderExtractor:
         )
         ttc = _amount(
             [
-                rf"MONTANT\s+TTC.{{0,60}}?payer[^\d\-]{{0,30}}{AMOUNT}",
+                rf"montant\s+TTC\s+pr\S+lev\S+\s+le\s*:?.{{0,80}}?{AMOUNT}\s+euros",
+                rf"MONTANT\s+TTC[^\n\r]{{0,60}}?payer[^\d\n\r\-]{{0,30}}{AMOUNT}",
                 rf"Total\s+TTC[^\d\-]{{0,80}}{AMOUNT}",
             ],
             text,
