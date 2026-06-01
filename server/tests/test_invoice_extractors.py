@@ -173,6 +173,31 @@ Echeance 21/03/25 : 1.185,80DELAIS DE PAIEMENT
         self.assertEqual(omega.numero_facture, "FA.21.02.25.1083")
         self.assertEqual(omega.ttc, "1185.80")
 
+        omega_contract = OmegaAscenseurInvoiceProviderExtractor().extract(
+            """OMEGA ASCENSEUR
+SIRET: 815 051 974 00021
+FACTURE
+FA.09.01.25.0700
+09/01/2025
+TTC : 9.873,60
+Contrat de maintenance Ascenseurs
+2.407,20
+240,72
+2.647,92
+2.647,92
+TVA 10%
+TOTAL
+BASE
+T.V.A.
+09/02/25 : 2.647,92
+DELAIS DE PAIEMENT
+"""
+        )
+        self.assertEqual(omega_contract.numero_facture, "FA.09.01.25.0700")
+        self.assertEqual(omega_contract.ht, "2407.20")
+        self.assertEqual(omega_contract.tva, "240.72")
+        self.assertEqual(omega_contract.ttc, "2647.92")
+
         edelen = EdelenInvoiceProviderExtractor().extract(
             """EDELEN contact@edelen.fr
 SIRET 519 028 641 00016

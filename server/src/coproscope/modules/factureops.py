@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from ..core.common import InstanceConfig, RunContext, read_csv, sha256_file, write_csv
-from ..extractors.invoices import DocumentExtractionEvidence, extract_generic_invoice_from_evidence
+from ..extractors.invoices import DocumentExtractionEvidence, InvoiceExtraction, extract_generic_invoice_from_evidence
+from ..extractors.invoices.providers import OmegaAscenseurInvoiceProviderExtractor
 from ..extractors.invoices.reconciliation import parse_amount
 
 
@@ -293,6 +294,13 @@ def _fire_safety_anomalies(text: str) -> list[str]:
     return []
 
 
+def _extract_invoice_from_evidence(evidence: DocumentExtractionEvidence) -> InvoiceExtraction:
+    text = evidence.combined_text()
+    if re.search(r"\bomega\s+ascenseur\b", text, flags=re.IGNORECASE):
+        return OmegaAscenseurInvoiceProviderExtractor().extract(text, file_name=evidence.file_name)
+    return extract_generic_invoice_from_evidence(evidence)
+
+
 def _load_configured_invoice_evidence(instance: InstanceConfig, year: int) -> list[dict[str, str]]:
     settings = _factureops_settings(instance)
     candidates = _configured_paths(
@@ -369,7 +377,7 @@ def _extract_invoice_rows(instance: InstanceConfig, year: int) -> list[dict[str,
         text = evidence.combined_text()
         if not _looks_like_invoice(row, path, text, year):
             continue
-        extraction = extract_generic_invoice_from_evidence(evidence)
+        extraction = _extract_invoice_from_evidence(evidence)
         account, family = _account_for_invoice(text, extraction.fournisseur)
         anomalies = list(extraction.anomalies)
         anomalies.extend(_fire_safety_anomalies(text))

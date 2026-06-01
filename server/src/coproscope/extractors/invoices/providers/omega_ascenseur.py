@@ -21,6 +21,18 @@ def _amount(patterns: list[str], text: str) -> str:
     return normalize_amount(value) if value else ""
 
 
+def _totals(text: str) -> tuple[str, str, str]:
+    match = re.search(
+        rf"{AMOUNT}\s+{AMOUNT}\s+{AMOUNT}\s+{AMOUNT}\s+TVA\s*10%",
+        text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return "", "", ""
+    values = [normalize_amount(value) for value in match.groups()]
+    return values[0], values[1], values[2]
+
+
 def _date_to_iso(value: str) -> str:
     match = re.match(r"(\d{2})/(\d{2})/(\d{2}|\d{4})$", value.strip())
     if not match:
@@ -46,6 +58,7 @@ class OmegaAscenseurInvoiceProviderExtractor:
             "",
             _first([r"SIRET\s*:?\s*([0-9 .]{14,22})", r"\b(815\s*051\s*974\s*00021)\b"], text),
         )
+        ht, tva, ttc_from_totals = _totals(text)
         ttc = _amount(
             [
                 rf":\s*{AMOUNT}\s*DELAIS\s+DE\s+PAIEMENT",
@@ -53,7 +66,7 @@ class OmegaAscenseurInvoiceProviderExtractor:
                 rf"Net\s+a\s+payer[^\d\-]{{0,80}}{AMOUNT}",
             ],
             text,
-        )
+        ) or ttc_from_totals
 
         extraction = InvoiceExtraction(
             provider_key=self.provider_key,
@@ -61,6 +74,8 @@ class OmegaAscenseurInvoiceProviderExtractor:
             siren_siret=siren_siret,
             numero_facture=invoice_number,
             date_facture=_date_to_iso(date_raw),
+            ht=ht,
+            tva=tva,
             ttc=ttc,
             confidence="high" if invoice_number and ttc else "medium",
         )
