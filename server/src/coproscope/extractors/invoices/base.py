@@ -200,7 +200,18 @@ def _first_match(patterns: list[str], text: str) -> str:
     return ""
 
 
+def _company_name_hint(text: str) -> str:
+    supplier = _first_match([r"\bsoci\S*t\S*\s+([A-Z][A-Z0-9&.' -]{2,60})"], text)
+    if supplier:
+        return _sanitize_supplier_line(supplier)
+    return ""
+
+
 def _guess_supplier(text: str) -> str:
+    company_hint = _company_name_hint(text)
+    if company_hint:
+        return company_hint
+
     named_siret = _first_match([r"\bsiret\s+([A-Z][A-Z0-9&.' -]{2,40})\s*:"], text)
     if named_siret:
         supplier = _sanitize_supplier_line(named_siret)
@@ -219,6 +230,7 @@ def _guess_supplier(text: str) -> str:
         "payer en ligne",
         "nos references",
         "vos references",
+        "client",
         "numero de contrat",
         "numero de facture",
         "sdc ",
@@ -238,12 +250,60 @@ def _guess_supplier(text: str) -> str:
         normalized = line.lower()
         if any(fragment in normalized for fragment in bad_fragments):
             continue
+        if re.fullmatch(r"cs\s*\d+", normalized):
+            continue
         if re.search(r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d", line, flags=re.IGNORECASE):
             continue
         supplier = _sanitize_supplier_line(line)
         if supplier:
             return supplier
     return ""
+
+
+def _looks_like_invoice_number(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"payable", "date", "client", "code", "devis", "total", "virement", "facture"}:
+        return False
+    return bool(re.search(r"\d", value))
+
+
+def _invoice_number(text: str, file_name: str) -> str:
+    patterns = [
+        r"(?:facture|invoice|avoir|note\s+d'honoraires|note\s+de\s+debit)\s*n[^A-Z0-9]{0,12}([A-Z]{1,6}\d{2,}[A-Z0-9_\-/.]*)",
+        r"(?:facture|invoice|avoir|note\s+d'honoraires|note\s+de\s+debit)\s*(?:n[Â°o.]?|numero|number)?\s*[:#\- ]+\s*([A-Z0-9][A-Z0-9_\-/.]+)",
+        r"(?:n[Â°o.]?|numero)\s*(?:facture|invoice)?\s*[:#\- ]+\s*([A-Z0-9][A-Z0-9_\-/.]+)",
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+            candidate = re.sub(r"\s+", " ", match.group(1)).strip()
+            if _looks_like_invoice_number(candidate):
+                return candidate
+    return filename_invoice_reference(file_name)
+
+
+def _normalize_invoice_date(value: str) -> str:
+    if re.match(r"\d{2}[/-]\d{2}[/-]20\d{2}", value):
+        day, month, year = re.split(r"[/-]", value)
+        return f"{year}-{month}-{day}"
+    return value
+
+
+def _invoice_date(text: str, file_name: str) -> str:
+    invoice_context_patterns = [
+        r"facture[\s\S]{0,100}\bdate\b[^\d]{0,30}(\d{2}/\d{2}/20\d{2})",
+        r"\bdate\b[^\d]{0,30}(\d{2}/\d{2}/20\d{2})",
+    ]
+    for pattern in invoice_context_patterns:
+        date = _first_match([pattern], text)
+        if date:
+            return _normalize_invoice_date(date)
+
+    for match in re.finditer(r"\d{2}/\d{2}/20\d{2}|\d{2}-\d{2}-20\d{2}|20\d{2}-[01]\d-[0-3]\d", text):
+        context = text[max(0, match.start() - 35) : match.start()].lower()
+        if "devis" in context:
+            continue
+        return _normalize_invoice_date(match.group(0))
+    return filename_date(file_name)
 
 
 def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExtraction:
@@ -271,9 +331,12 @@ def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExt
         date = f"{year}-{month}-{day}"
     if not date:
         date = filename_date(file_name)
+    invoice_number = _invoice_number(text, file_name)
+    date = _invoice_date(text, file_name)
 
     siren_siret = _first_match(
         [
+            r"(?:s\.?\s*i\.?\s*r\.?\s*e\.?\s*t\.?)\s*[:#.\- ]+\s*([0-9][0-9 .]{8,20})",
             r"(?:siret|siren)\s*[:#\- ]+\s*([0-9][0-9 .]{8,20})",
             r"\b([0-9]{3}\s?[0-9]{3}\s?[0-9]{3}(?:\s?[0-9]{5})?)\b",
         ],

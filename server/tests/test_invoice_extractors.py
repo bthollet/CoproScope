@@ -103,6 +103,38 @@ Total TTC
         self.assertEqual(extraction.ttc, "913.00")
         self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
 
+    def test_generic_extractor_keeps_invoice_primary_when_quote_is_mentioned(self) -> None:
+        text = """SDC DEMO
+Remarque : Devis - DC1354 du 09/12/2024
+Facture N
+FC3595
+Date
+16/01/2025
+Facture payable le 16/01/2025 pour la somme de 1 837,00 Euros par Virement.
+Societe TEST RENOVATION
+Plomberie Chauffage
+S.I.R.E.T.
+12345678900012
+Total HT
+1 670,00
+Total TVA
+167,00
+Total TTC
+1 837,00
+NET A PAYER
+1 837,00
+Designation
+Travaux plomberie batiment 26
+"""
+        extraction = extract_generic_invoice_fields(text, "Facture_2025013011421029.pdf")
+
+        self.assertEqual(extraction.fournisseur, "TEST RENOVATION")
+        self.assertEqual(extraction.siren_siret, "12345678900012")
+        self.assertEqual(extraction.numero_facture, "FC3595")
+        self.assertEqual(extraction.date_facture, "2025-01-16")
+        self.assertEqual(extraction.ttc, "1837.00")
+        self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
+
     def test_generic_extractor_uses_tax_summary_and_named_siret_supplier(self) -> None:
         text = """FACTURE
 CLIENT: Syndicat demo
