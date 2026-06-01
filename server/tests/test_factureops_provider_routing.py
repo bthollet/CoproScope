@@ -65,6 +65,14 @@ class FactureOpsProviderRoutingTests(unittest.TestCase):
         self.assertEqual(extraction.ttc, "117.32")
         self.assertEqual((account, family), ("615000", "entretien_maintenance"))
 
+    def test_routes_roof_repair_invoice_to_roof_works(self) -> None:
+        account, family = factureops._account_for_invoice(
+            "Travaux d'urgence toiture infiltration. Remplacement de tuiles cassees.",
+            "TRAVAUX TOITURE TEST",
+        )
+
+        self.assertEqual((account, family), ("615000", "travaux_toiture"))
+
 
 if __name__ == "__main__":
     unittest.main()

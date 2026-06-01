@@ -103,6 +103,49 @@ Total TTC
         self.assertEqual(extraction.ttc, "913.00")
         self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
 
+    def test_generic_extractor_prefers_coherent_totals_and_legal_supplier(self) -> None:
+        text = """N°
+Désignation
+Qté.
+Prix U. HT
+Total HT
+1
+Installation de chantier
+Remplacement de tuiles cassées et nettoyage de la zone
+Total HT
+990,00 EUR
+TVA 10 %
+99,00 EUR
+Total TTC
+1 089,00 EUR
+Net à payer
+1 089,00 EUR
+CLIENT
+Syndicat demo
+Objet : Travaux d'urgence bâtiment 23 infiltration
+FACTURE
+n° F202500148
+Devis :
+D202500324
+En date du :
+06/02/2025
+TRAVAUX TOITURE TEST
+71 All Des Tests
+13000 Ville Demo
+RCS Aix-en-Provence 123 456 789
+TVA : FR00123456789
+Facture n°F202500148
+"""
+        extraction = extract_generic_invoice_fields(text, "Facture_2025020615521798.pdf")
+
+        self.assertEqual(extraction.fournisseur, "TRAVAUX TOITURE TEST")
+        self.assertEqual(extraction.numero_facture, "F202500148")
+        self.assertEqual(extraction.date_facture, "2025-02-06")
+        self.assertEqual(extraction.ht, "990.00")
+        self.assertEqual(extraction.tva, "99.00")
+        self.assertEqual(extraction.ttc, "1089.00")
+        self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
+
     def test_generic_extractor_keeps_invoice_primary_when_quote_is_mentioned(self) -> None:
         text = """SDC DEMO
 Remarque : Devis - DC1354 du 09/12/2024

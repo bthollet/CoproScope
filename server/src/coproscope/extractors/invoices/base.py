@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
@@ -112,6 +113,23 @@ def normalize_amount(value: str) -> str:
         return ""
 
 
+def _normalize_text(value: str) -> str:
+    text = value.replace("\u00a0", " ").replace("\u202f", " ")
+    if any(marker in text for marker in ("Ã", "Â", "â")):
+        try:
+            repaired = text.encode("latin1", errors="ignore").decode("utf-8", errors="ignore")
+            if repaired:
+                text = repaired
+        except UnicodeError:
+            pass
+    return unicodedata.normalize("NFKC", text).strip()
+
+
+def _match_text(value: str) -> str:
+    text = unicodedata.normalize("NFKD", _normalize_text(value)).lower()
+    return "".join(char for char in text if not unicodedata.combining(char))
+
+
 def _looks_like_building_reference(context: str) -> bool:
     return bool(re.search(r"\b(b[âa]timent|bat\.?|immeuble|cage)\b", context, flags=re.IGNORECASE))
 
@@ -127,6 +145,8 @@ def _amount_candidates(window: str) -> list[str]:
         raw = match.group(0)
         following = window[match.end() : match.end() + 4]
         if "%" in following:
+            continue
+        if re.fullmatch(r"(?:19|20)\d{2}", raw.strip()):
             continue
         prefix = window[max(0, match.start() - 45) : match.start()]
         if _looks_like_building_reference(prefix) or _looks_like_identifier_amount(raw):
@@ -147,6 +167,16 @@ def _amount_after(labels: list[str], text: str) -> str:
     return ""
 
 
+def _amounts_after(label: str, text: str) -> list[str]:
+    values: list[str] = []
+    for label_match in re.finditer(label, text, flags=re.IGNORECASE):
+        window = text[label_match.end() : label_match.end() + 180]
+        for amount in _amount_candidates(window):
+            if amount not in values:
+                values.append(amount)
+    return values
+
+
 def _tax_summary_amounts(text: str) -> tuple[str, str] | None:
     for match in re.finditer(r"base\s+h\.?\s*t", text, flags=re.IGNORECASE):
         window = text[match.end() : match.end() + 260]
@@ -161,24 +191,24 @@ def _tax_summary_amounts(text: str) -> tuple[str, str] | None:
 
 
 def _labeled_totals(text: str) -> tuple[str, str, str] | None:
-    patterns = [
-        r"total\s+h\.?\s*t\s+(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
-        r"montant\s+tva\s*(?:\(\s*\d+\s*%\s*\))?\s+(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
-        r"total\s+ttc\s+(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
-    ]
-    amounts = []
-    for pattern in patterns:
-        match = re.search(pattern, text, flags=re.IGNORECASE)
-        if not match:
-            return None
-        amounts.append(normalize_amount(match.group(1)))
-    if not all(amounts):
+    ht_values = _amounts_after(r"(?:total\s+hors\s+taxes|total\s+h\.?\s*t)", text)
+    tva_values = _amounts_after(r"(?:montant\s+)?tva\s*(?:\(\s*\d+\s*%\s*\))?", text)
+    ttc_values = _amounts_after(r"total\s+ttc", text)
+    if not ht_values or not tva_values or not ttc_values:
         return None
-    try:
-        if abs((Decimal(amounts[0]) + Decimal(amounts[1])) - Decimal(amounts[2])) <= Decimal("0.05"):
-            return amounts[0], amounts[1], amounts[2]
-    except InvalidOperation:
-        return None
+    coherent: list[tuple[Decimal, str, str, str]] = []
+    for ht in ht_values:
+        for tva in tva_values:
+            for ttc in ttc_values:
+                try:
+                    ht_decimal = Decimal(ht)
+                    if abs((ht_decimal + Decimal(tva)) - Decimal(ttc)) <= Decimal("0.05"):
+                        coherent.append((ht_decimal, ht, tva, ttc))
+                except InvalidOperation:
+                    continue
+    if coherent:
+        _, ht, tva, ttc = max(coherent, key=lambda item: item[0])
+        return ht, tva, ttc
     return None
 
 
@@ -206,7 +236,7 @@ def _sanitize_supplier_line(line: str) -> str:
     cleaned = re.sub(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", " ", cleaned)
     cleaned = re.sub(r"\b(?:\+?\d[\d .-]{7,}\d)\b", " ", cleaned)
     cleaned = re.split(
-        r"\b\d+\s+(?:avenue|av\.?|rue|all[ée]e|allee|boulevard|bd|chemin|place|traverse|impasse)\b",
+        r"\b\d+\s+(?:avenue|av\.?|rue|all[ée]e|allee|all\.?|boulevard|bd|chemin|place|traverse|impasse)\b",
         cleaned,
         maxsplit=1,
         flags=re.IGNORECASE,
@@ -226,6 +256,74 @@ def _company_name_hint(text: str) -> str:
     supplier = _first_match([r"\bsoci\S*t\S*\s+([A-Z][A-Z0-9&.' -]{2,60})"], text)
     if supplier:
         return _sanitize_supplier_line(supplier)
+    return ""
+
+
+def _bad_supplier_fragments() -> list[str]:
+    return [
+        "designation",
+        "quantite",
+        "prix uni",
+        "montant ht",
+        "total ht",
+        "total ttc",
+        "net ht",
+        "payer en ligne",
+        "nos references",
+        "vos references",
+        "numero de contrat",
+        "numero de facture",
+        "sdc ",
+        "syndicat",
+        "client",
+        "beauvallon",
+        "chavissimmo",
+        "immobilier",
+        "installation de chantier",
+        "modes de paiement",
+        "conditions de paiement",
+        "objet",
+        "adresse du chantier",
+        "www.",
+    ]
+
+
+def _is_bad_supplier_candidate(line: str) -> bool:
+    normalized = _match_text(line)
+    if normalized in {"facture", "avoir", "invoice", "note de debit", "note d'honoraires"}:
+        return True
+    if any(fragment in normalized for fragment in _bad_supplier_fragments()):
+        return True
+    if normalized.startswith(("facture n", "facture no", "facture numero")):
+        return True
+    if re.search(
+        r"^\d+\s+(?:avenue|av\.?|rue|all[ée]e|allee|all\.?|boulevard|bd|chemin|place|traverse|impasse)\b",
+        line,
+        flags=re.IGNORECASE,
+    ):
+        return True
+    if re.search(r"^\d{5}\s+\S+", line):
+        return True
+    return bool(
+        re.search(
+            r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d|@|telephone|tel\.?|devis",
+            line,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _supplier_near_legal_markers(text: str) -> str:
+    lines = [re.sub(r"\s+", " ", raw_line).strip(" :-\t") for raw_line in text.splitlines()]
+    for index, line in enumerate(lines):
+        if not re.search(r"\b(rcs|siret|siren|tva\s*:|capital|rcp|d[ée]cennale)\b", line, flags=re.IGNORECASE):
+            continue
+        for candidate in reversed(lines[max(0, index - 8) : index]):
+            if len(candidate) < 3 or _is_bad_supplier_candidate(candidate):
+                continue
+            supplier = _sanitize_supplier_line(candidate)
+            if supplier and not _is_bad_supplier_candidate(supplier):
+                return supplier
     return ""
 
 
@@ -249,43 +347,18 @@ def _guess_supplier(text: str) -> str:
         if supplier:
             return supplier
 
-    skip = {"facture", "avoir", "invoice", "note de debit", "note d'honoraires"}
-    bad_fragments = [
-        "designation",
-        "quantite",
-        "prix uni",
-        "montant ht",
-        "total ht",
-        "total ttc",
-        "net ht",
-        "payer en ligne",
-        "nos references",
-        "vos references",
-        "numero de contrat",
-        "numero de facture",
-        "sdc ",
-        "beauvallon",
-        "chavissimmo",
-        "immobilier",
-        "installation de chantier",
-    ]
+    legal_hint = _supplier_near_legal_markers(text)
+    if legal_hint:
+        return legal_hint
+
     for raw_line in text.splitlines()[:25]:
         line = re.sub(r"\s+", " ", raw_line).strip(" :-\t")
         if len(line) < 3:
             continue
         if line.startswith("====="):
             continue
-        if line.lower() in skip:
-            continue
-        normalized = line.lower()
-        if normalized.startswith(("facture n", "facture no", "facture numero")):
-            continue
-        if any(fragment in normalized for fragment in bad_fragments):
-            continue
-        if re.search(r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d", line, flags=re.IGNORECASE):
-            continue
         supplier = _sanitize_supplier_line(line)
-        if supplier:
+        if supplier and not _is_bad_supplier_candidate(supplier):
             return supplier
     return ""
 
