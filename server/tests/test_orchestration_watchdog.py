@@ -117,6 +117,48 @@ class OrchestrationWatchdogQuietTraceTests(unittest.TestCase):
         self.assertIsNotNone(when)
         self.assertIn("POINT_REPRISE_OBJECTIF", line or "")
 
+    def test_latest_trace_accepts_canonical_bot_end_hyphen(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presence_agents.md"
+            path.write_text(
+                "\n".join(
+                    [
+                        "| Date | Agent | Evenement | Detail |",
+                        "|---|---|---|---|",
+                        "| 2026-05-30 13:20 +02:00 | `CONV-1` | `BOT_END_OLD_STYLE` | Ancienne trace. |",
+                        "| 2026-06-01 15:10 +02:00 | `CONV-2` | `BOT-END` | Trace canonique actuelle. |",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            when, line = watchdog.latest_watchdog_trace(path)
+
+        self.assertIsNotNone(when)
+        self.assertIn("BOT-END", line or "")
+
+    def test_latest_trace_reads_conversation_table_heartbeat_date(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "presence_agents.md"
+            path.write_text(
+                "\n".join(
+                    [
+                        "| Conversation | Roadmap | Chantier | Role | Statut | Ownership | Worktree / branche | Dernier heartbeat | Expire | Prochain geste | Trace finale |",
+                        "|---|---|---|---|---|---|---|---|---|---|---|",
+                        "| `CONV-2026-1970` | `RM-2026-0017` | `CH-20260601-151000-RM-2026-0017-test` | Coordinateur | `INTEGRE` | docs | main | 2026-06-01 15:10 +02:00 | n/a | Continuer. | BOT-END: trace recente. |",
+                        "",
+                        "## Journal",
+                        "| 2026-05-31 20:18 +02:00 | `CONV-OLD` | `BOT_END_OLD` | Ancienne trace. |",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            when, line = watchdog.latest_watchdog_trace(path)
+
+        self.assertEqual("2026-06-01 15:10 +0200", when.strftime("%Y-%m-%d %H:%M %z"))
+        self.assertIn("CONV-2026-1970", line or "")
+
     def test_auto_prompt_routes_live_recipe(self) -> None:
         prompt = watchdog.emit_prompt(
             "auto",

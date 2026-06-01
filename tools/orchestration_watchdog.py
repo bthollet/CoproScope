@@ -15,7 +15,9 @@ ORCHESTRATION_TRACE_MARKERS = (
     "POINT_REPRISE_",
     "ROUTAGE_EQUIPE",
     "BOT_START",
+    "BOT-START",
     "BOT_END",
+    "BOT-END",
     "REVISION_START_",
     "REVISION_END_",
     "REVISION_VERIF_",
@@ -324,6 +326,8 @@ def latest_watchdog_trace(path: Path) -> tuple[dt.datetime | None, str | None]:
         if not parts:
             continue
         when = parse_time(parts[0])
+        if when is None and len(parts) >= 8:
+            when = parse_time(parts[7])
         if when and (latest_at is None or when > latest_at):
             latest_at = when
             latest_line = line
