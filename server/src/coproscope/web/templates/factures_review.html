@@ -96,6 +96,9 @@
             <td>
               <strong>{{ row.amount }}</strong>
               <br><small>{{ row.date }}</small>
+              {% if row.blocking_alert %}
+              <br><span class="pill severity-p1">{{ row.blocking_alert }}</span>
+              {% endif %}
             </td>
             <td>
               <strong>{{ row.account }}</strong>

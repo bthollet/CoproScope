@@ -154,6 +154,7 @@ def _invoice_item(row: dict[str, str], anomalies: list[dict[str, str]]) -> dict[
     priority_key = _priority_key(status_key, anomaly_tokens, severities)
     priority_label = _priority_label(priority_key, anomaly_tokens)
     needs_review = bool(anomaly_tokens or status_key != "PROBABLE")
+    amount = _money(row.get("ttc"))
     return {
         "id": doc_id or _public_text(row.get("numero_facture"), limit=36) or "facture-a-identifier",
         "doc_id": doc_id,
@@ -167,11 +168,12 @@ def _invoice_item(row: dict[str, str], anomalies: list[dict[str, str]]) -> dict[
         "supplier": _public_text(row.get("fournisseur"), limit=72) or "Fournisseur a identifier",
         "invoice_number": _public_text(row.get("numero_facture"), limit=48) or "Reference a identifier",
         "date": _public_text(row.get("date_facture"), limit=24) or "Date a verifier",
-        "amount": _money(row.get("ttc")),
+        "amount": amount,
         "account": _public_text(row.get("compte_propose"), limit=32) or "Compte a confirmer",
         "family": _public_text(row.get("famille_charge"), limit=60) or "Nature a confirmer",
         "anomalies": anomaly_labels or ["A relire"],
         "anomaly_tokens": anomaly_tokens,
+        "blocking_alert": _blocking_alert(status_key, anomaly_tokens),
         "next_action": _next_action(priority_key, anomaly_tokens),
         "href": f"/documents/{quote(doc_id)}?source=factures" if doc_id else "",
     }
@@ -199,7 +201,7 @@ def _priority_label(priority_key: str, anomaly_tokens: list[str]) -> str:
 
 def _next_action(priority_key: str, anomaly_tokens: list[str]) -> str:
     if "MONTANT_TTC_ABSENT" in anomaly_tokens:
-        return "Retrouver le montant TTC dans la piece ou lancer OCR si besoin."
+        return "Lecture locale insuffisante: retrouver le montant TTC dans la piece ou relancer OCR avant conclusion."
     if "DOUBLON_POTENTIEL" in anomaly_tokens:
         return "Comparer les doublons avant de retenir une seule piece."
     if "FACTURE_HORS_EXERCICE" in anomaly_tokens:
@@ -213,6 +215,12 @@ def _next_action(priority_key: str, anomaly_tokens: list[str]) -> str:
     if priority_key == "P1":
         return "Completer la donnee bloquante avant rapprochement."
     return "Relire la facture puis rattacher au bon controle comptable."
+
+
+def _blocking_alert(status_key: str, anomaly_tokens: list[str]) -> str:
+    if "MONTANT_TTC_ABSENT" in anomaly_tokens and status_key in {"A_CONTROLER", "INCERTAIN", "A_CONFIRMER"}:
+        return "Lecture locale insuffisante"
+    return ""
 
 
 def _anomaly_label(value: Any) -> str:

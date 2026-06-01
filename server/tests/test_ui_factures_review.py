@@ -24,6 +24,7 @@ REQUIRED_LABELS = (
     "A verifier",
     "File factures, anomalies et action suivante",
     "Montant TTC absent",
+    "Lecture locale insuffisante",
     "Doublon potentiel",
     "Action suivante",
     "Ouvrir le document protege",
@@ -120,6 +121,8 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertEqual(view["rows"][0]["supplier"], "Fournisseur fictif")
         self.assertEqual(view["rows"][0]["priority_label"], "Priorite haute")
         self.assertIn("Doublon potentiel", view["rows"][0]["anomalies"])
+        self.assertEqual(view["rows"][0]["blocking_alert"], "Lecture locale insuffisante")
+        self.assertIn("avant conclusion", view["rows"][0]["next_action"])
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, rendered_model)
 
