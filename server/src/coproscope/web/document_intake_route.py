@@ -351,7 +351,7 @@ def _document_intake_rows_from_register(
             {
                 "doc_id": doc_id,
                 "display_name": f"Fichier inbox {len(rows) + 1}" if source_id == SOURCE_INBOX else f"Fichier source locale {len(rows) + 1}",
-                "local_reference": f"inbox-reconstruction:{doc_id}",
+                "local_reference": "Reference locale masquee",
                 "sha256": sha256,
                 "file_format": str(register_row.get("extension") or "").strip().lower().lstrip("."),
                 "size_bytes": str(register_row.get("size_bytes") or ""),
