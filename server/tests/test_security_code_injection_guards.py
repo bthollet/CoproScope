@@ -58,6 +58,7 @@ ALLOWED_SUBPROCESS_FILES = {
     "modules/instancegit.py",
     "modules/tools.py",
     "tools/orchestration_supervisor.py",
+    "tools/reconstruction_protocol.py",
 }
 
 DENIED_CLOUD_AI_IMPORTS = {
