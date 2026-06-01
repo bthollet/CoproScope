@@ -59,6 +59,7 @@ class DocumentPrivacyPublicLabelTests(unittest.TestCase):
         write_csv(self.instance.register("documents"), fields, rows)
 
         reports_dir = self.instance.artifact("reports_dir")
+        reports_dir.mkdir(parents=True, exist_ok=True)
         (reports_dir / "rapport_completude_documentaire.md").write_text(
             r"Piece locale: C:\Users\Example\100_Collecte_RAW\source.pdf",
             encoding="utf-8",
