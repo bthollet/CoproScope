@@ -25,7 +25,7 @@ EXECUTION
 
 PREUVES
 - Synthese anonymisee du protocole: `DOC-0158`, controles obligatoires termines, roles CoproScope/designer/expert/novice/QA notes.
-- Version executable referencee par le protocole: `CoproScope.exe` SHA-256 `8D2A35BF2D6EF1089FA0128026C8207DD8624EBDBC3086AB7206E0ECBF1F815A`.
+- Version executable referencee par le protocole: `CoproScope.exe` SHA-256 `7E685F2DB5B1F7CFA38E38C69788955AE168E75A2FF97B6A2FCC0AE1F8B1B6D4`.
 - Aucune trace publique `DOC-0158` existante trouvee avant cette regularisation.
 
 BOT-END - Coordinateur-scribe reconstruction P0 - 2026-06-01 17:11 +02:00
