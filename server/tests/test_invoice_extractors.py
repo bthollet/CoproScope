@@ -158,6 +158,38 @@ Montant : 454,01
         self.assertEqual(extraction.ttc, "454.01")
         self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
 
+    def test_generic_extractor_prefers_labeled_totals_over_site_identifiers(self) -> None:
+        text = """Payer en ligne
+Facture N F250100990
+Date de creation : 31/01/2025
+SMA ASSAINISSEMENT
+SIREN 805271822
+FACTURE LIEE A L'INTERVENTION - DEPANNAGE - TRAVAUX DE DEGORGEMENT
+LIEU D'INTERVENTION (23782): RESIDENCE DEMO
+BATIMENT / ENTREE: 27
+DEGORGEMENT PAR VEHICULE HYDROCUREUR
+Sous-total
+170,00
+Total HT
+170,00 EUR
+Montant TVA (10%)
+17,00 EUR
+Total TTC
+187,00 EUR
+A payer : 187,00 EUR
+En cas de retard de paiement, indemnite forfaitaire legale pour frais de recouvrement :40 EUR
+"""
+        extraction = extract_generic_invoice_fields(text, "Facture_2025020512155728.pdf")
+
+        self.assertEqual(extraction.fournisseur, "SMA ASSAINISSEMENT")
+        self.assertEqual(extraction.siren_siret, "805271822")
+        self.assertEqual(extraction.numero_facture, "F250100990")
+        self.assertEqual(extraction.date_facture, "2025-01-31")
+        self.assertEqual(extraction.ht, "170.00")
+        self.assertEqual(extraction.tva, "17.00")
+        self.assertEqual(extraction.ttc, "187.00")
+        self.assertNotIn("INCOHERENCE_HT_TVA_TTC", extraction.anomalies)
+
     def test_docai_evidence_feeds_generic_extraction_and_generator_prompt(self) -> None:
         evidence = DocumentExtractionEvidence(
             file_name="Facture_ACME.pdf",

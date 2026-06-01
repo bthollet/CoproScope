@@ -160,6 +160,28 @@ def _tax_summary_amounts(text: str) -> tuple[str, str] | None:
     return None
 
 
+def _labeled_totals(text: str) -> tuple[str, str, str] | None:
+    patterns = [
+        r"total\s+h\.?\s*t\s+(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
+        r"montant\s+tva\s*(?:\(\s*\d+\s*%\s*\))?\s+(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
+        r"total\s+ttc\s+(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
+    ]
+    amounts = []
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if not match:
+            return None
+        amounts.append(normalize_amount(match.group(1)))
+    if not all(amounts):
+        return None
+    try:
+        if abs((Decimal(amounts[0]) + Decimal(amounts[1])) - Decimal(amounts[2])) <= Decimal("0.05"):
+            return amounts[0], amounts[1], amounts[2]
+    except InvalidOperation:
+        return None
+    return None
+
+
 def _total_amount_hint(text: str) -> str:
     patterns = [
         r"\bmontant\s*:\s*(-?\d[\d \u00a0\u202f.,]*(?:[,.]\d{1,2})?)",
@@ -256,6 +278,8 @@ def _guess_supplier(text: str) -> str:
         if line.lower() in skip:
             continue
         normalized = line.lower()
+        if normalized.startswith(("facture n", "facture no", "facture numero")):
+            continue
         if any(fragment in normalized for fragment in bad_fragments):
             continue
         if re.search(r"\d{2}/\d{2}/\d{4}|total|tva|siret|siren|iban|bic|page\s+\d", line, flags=re.IGNORECASE):
@@ -354,6 +378,10 @@ def extract_generic_invoice_fields(text: str, file_name: str = "") -> InvoiceExt
     ht = _amount_after([r"total\s+hors\s+taxes", r"total\s+h\.?\s*t", r"montant\s+h\.?\s*t", r"base\s+h\.?\s*t"], text)
     tva = _amount_after([r"total\s+tva", r"montant\s+tva", r"\btva\b"], text)
     ttc = _amount_after([r"net\s+a\s+payer", r"net\s+Ã \s+payer", r"net\s+à\s+payer", r"total\s+ttc", r"\bttc\b"], text)
+
+    labeled_totals = _labeled_totals(text)
+    if labeled_totals:
+        ht, tva, ttc = labeled_totals
 
     tax_summary = _tax_summary_amounts(text)
     if tax_summary:
