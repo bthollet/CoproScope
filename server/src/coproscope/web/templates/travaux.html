@@ -20,15 +20,31 @@
   </div>
 </section>
 
-<section class="travaux-kpis" aria-label="Resume travaux">
-  <div><strong>{{ view.summary.confirmed }}</strong><span>Pieces confirmees</span></div>
-  <div><strong>{{ view.summary.to_verify }}</strong><span>Pieces a verifier</span></div>
-  <div><strong>{{ view.summary.missing }}</strong><span>Pieces manquantes</span></div>
-  <div><strong>{{ view.summary.blockers }}</strong><span>Ce qui bloque</span></div>
+<section class="travaux-kpis" aria-label="Resume travaux oriente action">
+  <a class="travaux-kpi" href="#actions-travaux" title="Preparer une demande de preuves manquantes">
+    <strong>{{ view.summary.missing }}</strong>
+    <span>A faire maintenant</span>
+    <small>Demander les preuves</small>
+  </a>
+  <a class="travaux-kpi" href="#travaux-blockers" title="Voir les blocages a lever">
+    <strong>{{ view.summary.blockers }}</strong>
+    <span>Blocages</span>
+    <small>A lever</small>
+  </a>
+  <a class="travaux-kpi" href="#travaux-pieces-to-verify" title="Voir les pieces a relire">
+    <strong>{{ view.summary.to_verify }}</strong>
+    <span>A relire</span>
+    <small>Pieces a verifier</small>
+  </a>
+  <a class="travaux-kpi" href="#travaux-pieces-confirmed" title="Voir les pieces deja securisees">
+    <strong>{{ view.summary.confirmed }}</strong>
+    <span>Deja securise</span>
+    <small>Pieces confirmees</small>
+  </a>
 </section>
 
 <section class="grid two">
-  <div class="panel">
+  <div class="panel" id="travaux-blockers">
     <div class="panel-head">
       <h3>Ou en est-on ?</h3>
       <span>{{ view.chantier.owner }}</span>
@@ -44,7 +60,7 @@
     </ol>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="travaux-pieces-confirmed">
     <div class="panel-head">
       <h3>Ce qui bloque</h3>
       <span>{{ view.blockers|length }}</span>
@@ -79,7 +95,7 @@
 </section>
 
 <section class="grid three" aria-label="Pieces du suivi travaux">
-  <div class="panel">
+  <div class="panel" id="travaux-pieces-to-verify">
     <div class="panel-head">
       <h3>Pieces confirmees</h3>
       <span>{{ view.pieces.confirmed|length }}</span>
@@ -91,7 +107,7 @@
     </ul>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="travaux-pieces-missing">
     <div class="panel-head">
       <h3>Pieces a verifier</h3>
       <span>{{ view.pieces.to_verify|length }}</span>

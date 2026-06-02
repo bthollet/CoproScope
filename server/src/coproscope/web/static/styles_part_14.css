@@ -40,11 +40,11 @@
 
 .travaux-kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
 }
 
-.travaux-kpis div,
+.travaux-kpi,
 .travaux-proof-list article,
 .travaux-blocker,
 .travaux-action-list a {
@@ -55,8 +55,34 @@
   background: #ffffff;
 }
 
-.travaux-kpis strong {
-  font-size: 1.8rem;
+.travaux-kpi {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 8px;
+  align-items: baseline;
+  min-height: 54px;
+  padding: 10px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.travaux-kpi:hover,
+.travaux-kpi:focus-visible {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.travaux-kpi strong {
+  grid-row: 1 / span 2;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.travaux-kpi span {
+  font-weight: 700;
+}
+
+.travaux-kpi small {
+  color: var(--muted);
 }
 
 .travaux-progress {
@@ -129,9 +155,12 @@
   .travaux-missing,
   .travaux-preview,
   .travaux-proof-list,
-  .travaux-share-grid,
-  .travaux-kpis {
+  .travaux-share-grid {
     grid-template-columns: 1fr;
+  }
+
+  .travaux-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .travaux-actions {

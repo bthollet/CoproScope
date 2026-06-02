@@ -93,6 +93,12 @@ class UiWorksOpsTravauxTests(unittest.TestCase):
         self.assertIn(TOKEN_COOKIE_NAME, response.cookies)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
+        self.assertIn('href="#actions-travaux"', response.text)
+        self.assertIn('href="#travaux-blockers"', response.text)
+        self.assertIn('href="#travaux-pieces-to-verify"', response.text)
+        self.assertIn('href="#travaux-pieces-confirmed"', response.text)
+        self.assertIn("Demander les preuves", text)
+        self.assertIn("Deja securise", text)
         self.assertIn('href="/travaux?view=apercu&amp;token=local-secret"', response.text)
         self.assertIn(
             'href="/demandes?from=travaux&amp;preuve=autorisation-echafaudage&amp;token=local-secret"',
@@ -123,6 +129,17 @@ class UiWorksOpsTravauxTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Travaux suivis", response.text)
         self.assertIn("A verifier avant partage", response.text)
+
+    def test_travaux_summary_is_compact_and_action_oriented(self) -> None:
+        static_dir = Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static"
+        travaux_css = (static_dir / "styles_part_14.css").read_text(encoding="utf-8")
+
+        self.assertIn("travaux-kpi", travaux_css)
+        self.assertIn("repeat(auto-fit, minmax(145px, 1fr))", travaux_css)
+        self.assertIn("grid-template-columns: repeat(2, minmax(0, 1fr))", travaux_css)
+        self.assertIn("padding: 10px 12px", travaux_css)
+        self.assertIn(".travaux-kpi:hover", travaux_css)
+        self.assertNotIn(".travaux-kpis div,", travaux_css)
 
     def test_responsive_navigation_uses_wrapping_grid(self) -> None:
         static_dir = Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static"
