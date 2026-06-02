@@ -115,6 +115,8 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertIn('href="/comptes?token=local-secret"', response.text)
         self.assertIn('aria-current="page">Toutes</a>', response.text)
         self.assertIn('href="/documents/DOC-INV-001?source=factures&amp;token=local-secret"', response.text)
+        self.assertNotIn('<a class="cs-comptes-kpi', response.text)
+        self.assertEqual(response.text.count('<div class="cs-comptes-kpi'), 6)
         self.assertIn("Lien document masque", text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
