@@ -2,6 +2,9 @@
 {% block topbar_title %}Factures a revoir{% endblock %}
 {% block content %}
 {% set view = factures_review %}
+{% set count_label = view.count_label if view.count_label is defined else view.count ~ (' facture affichee' if view.count == 1 else ' factures affichees') %}
+{% set total_review_label = view.total_review_label if view.total_review_label is defined else view.total_review ~ (' facture' if view.total_review == 1 else ' factures') %}
+{% set count_rows_label = view.count_rows_label if view.count_rows_label is defined else view.count ~ (' ligne' if view.count == 1 else ' lignes') %}
 {% macro token_href(href) -%}
   {%- set raw_href = href|default('#') -%}
   {%- if ui_token_param and raw_href != '#' -%}
@@ -38,11 +41,11 @@
   <section class="cs-comptes-next" aria-label="Confidentialite de la file factures">
     <div>
       <p class="eyebrow">{{ view.source_label }}</p>
-      <strong>{{ view.count }} factures affichees sur {{ view.total_review }} a revoir</strong>
+      <strong>{{ count_label }} sur {{ total_review_label }} a revoir</strong>
     </div>
     <div class="cs-comptes-next-actions">
       {% for filter in view.filters %}
-      <a class="{{ 'active' if filter.active == 'true' else '' }}" href="{{ token_href(filter.href) }}">{{ filter.label }}</a>
+      <a class="{{ 'active' if filter.active == 'true' else '' }}" href="{{ token_href(filter.href) }}"{% if filter.active == 'true' %} aria-current="page"{% endif %}>{{ filter.label }}</a>
       {% endfor %}
     </div>
   </section>
@@ -68,7 +71,7 @@
         <p class="eyebrow">{{ view.privacy_notice }}</p>
         <h3 id="factures-file-title">Liste factures, anomalies et action suivante</h3>
       </div>
-      <span>{{ view.count }} lignes</span>
+      <span>{{ count_rows_label }}</span>
     </div>
     <div class="cs-comptes-table-scroll">
       <table class="cs-comptes-table">
@@ -76,7 +79,7 @@
           <tr>
             <th>Priorite</th>
             <th>Facture detectee</th>
-            <th>Date et montant</th>
+            <th>Montant et date</th>
             <th>Compte</th>
             <th>Anomalies</th>
             <th>Action suivante</th>

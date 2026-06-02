@@ -9,6 +9,7 @@ from urllib.parse import quote
 from fastapi import Request as FastAPIRequest
 
 from ..core.common import read_csv
+from ..extractors.invoices.reconciliation import parse_amount
 
 
 FORBIDDEN_PATTERNS = (
@@ -116,10 +117,10 @@ def build_factures_review_view(instance: Any | None, year: int = 2025, active_fi
     anomalies = _read_anomaly_rows(instance, year)
     anomalies_by_doc: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in anomalies:
-        doc_id = _safe_doc_id(row.get("doc_id"))
+        doc_id = _join_doc_key(row.get("doc_id"))
         if doc_id:
             anomalies_by_doc[doc_id].append(row)
-    items = [_invoice_item(row, anomalies_by_doc.get(_safe_doc_id(row.get("doc_id")), [])) for row in invoices]
+    items = [_invoice_item(row, anomalies_by_doc.get(_join_doc_key(row.get("doc_id")), [])) for row in invoices]
     review_items = [item for item in items if item["needs_review"]]
     filtered_items = [item for item in review_items if _matches_filter(item, active_filter)]
     filtered_items = sorted(filtered_items, key=_sort_key)
@@ -143,7 +144,10 @@ def build_factures_review_view(instance: Any | None, year: int = 2025, active_fi
         "active_filter": active_filter,
         "rows": filtered_items,
         "count": len(filtered_items),
+        "count_label": _count_label(len(filtered_items), "facture affichee", "factures affichees"),
+        "count_rows_label": _count_label(len(filtered_items), "ligne", "lignes"),
         "total_review": len(review_items),
+        "total_review_label": _count_label(len(review_items), "facture", "factures"),
         "has_source": bool(invoices),
         "empty": _empty_message(invoices, filtered_items),
         "privacy_notice": "Liste locale: chemins, noms bruts et preuves internes ne sont pas affiches.",
@@ -248,7 +252,7 @@ def _next_action(priority_key: str, anomaly_tokens: list[str]) -> str:
 
 
 def _blocking_alert(status_key: str, anomaly_tokens: list[str]) -> str:
-    if "MONTANT_TTC_ABSENT" in anomaly_tokens and status_key in {"A_CONTROLER", "INCERTAIN", "A_CONFIRMER"}:
+    if "MONTANT_TTC_ABSENT" in anomaly_tokens:
         return "Lecture locale insuffisante"
     return ""
 
@@ -278,9 +282,12 @@ def _status_key(value: Any) -> str:
 def _money(value: Any) -> str:
     if _contains_sensitive_text(str(value or "")):
         return "Montant a verifier"
-    text = str(value or "").strip().replace(",", ".")
-    match = re.search(r"-?\d+(?:\.\d{1,2})?", text)
-    return f"{float(match.group(0)):.2f} EUR" if match else "Montant a verifier"
+    amount = parse_amount(str(value or ""))
+    return f"{amount:.2f} EUR" if amount is not None else "Montant a verifier"
+
+
+def _join_doc_key(value: Any) -> str:
+    return str(value or "").strip()
 
 
 def _safe_doc_id(value: Any) -> str:
@@ -339,6 +346,8 @@ def _looks_like_raw_file_label(value: str) -> bool:
     text = value.strip()
     lowered = text.replace("\\", "/").lower()
     if "200_inbox" in lowered or "__bvl." in lowered:
+        return True
+    if "native_text" in lowered:
         return True
     return bool(re.search(r"(?:^|[_\s-])facture[_\s-]*20\d{10,}(?:\D|$)", lowered))
 
@@ -402,6 +411,10 @@ def _empty_message(invoices: list[dict[str, str]], filtered_items: list[dict[str
     if not filtered_items:
         return "Aucune facture ne correspond a ce filtre."
     return ""
+
+
+def _count_label(count: int, singular: str, plural: str) -> str:
+    return f"{count} {singular if count == 1 else plural}"
 
 
 def _unique(values: list[str]) -> list[str]:

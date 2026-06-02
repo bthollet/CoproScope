@@ -32,6 +32,7 @@ REQUIRED_LABELS = (
     "A verifier en premier",
     "Factures reperees",
     "Voir les factures a verifier",
+    "Montant et date",
 )
 
 FORBIDDEN_VISIBLE_MARKERS = (
@@ -61,6 +62,8 @@ FORBIDDEN_VISIBLE_MARKERS = (
     "private",
     "raw/",
     "raw\\",
+    "NATIVE_TEXT",
+    "=====",
 )
 
 
@@ -110,6 +113,7 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(TOKEN_COOKIE_NAME, response.cookies)
         self.assertIn('href="/comptes?token=local-secret"', response.text)
+        self.assertIn('aria-current="page">Toutes</a>', response.text)
         self.assertIn('href="/documents/DOC-INV-001?source=factures&amp;token=local-secret"', response.text)
         self.assertIn("Lien document masque", text)
         for label in REQUIRED_LABELS:
@@ -142,6 +146,36 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertEqual(summary["Anomalies critiques"], "1")
         for marker in FORBIDDEN_VISIBLE_MARKERS:
             self.assertNotIn(marker, rendered_model)
+
+    def test_filter_active_state_and_singular_labels_are_readable(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="DOC-HORS-001",
+                    fournisseur="Fournisseur exercice",
+                    numero_facture="EX-001",
+                    date_facture="2024-12-31",
+                    ttc="120.00",
+                    compte_propose="615000",
+                    famille_charge="entretien_maintenance",
+                    statut_controle="INCERTAIN",
+                    anomalies="FACTURE_HORS_EXERCICE",
+                ),
+            ],
+        )
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/comptes/factures-a-revoir?filtre=hors-exercice&token=local-secret")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('aria-current="page">Hors exercice</a>', response.text)
+        self.assertIn("1 facture affichee sur 1 facture a revoir", text)
+        self.assertIn("1 ligne", text)
+        self.assertNotIn("1 factures", text)
+        self.assertNotIn("1 lignes", text)
 
     def test_supplier_contact_details_are_not_rendered(self) -> None:
         write_csv(
@@ -263,6 +297,68 @@ class UiFacturesReviewTests(unittest.TestCase):
             self.assertNotIn(marker, visible)
             self.assertNotIn(marker, response.text)
 
+    def test_anomalies_stay_linked_when_public_doc_id_is_masked(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="JR",
+                    fournisseur="Fournisseur sans lien public",
+                    numero_facture="JR",
+                    date_facture="2025-11-24",
+                    ttc="1340.00",
+                    compte_propose="606100",
+                    famille_charge="energie_eau",
+                    statut_controle="PROBABLE",
+                ),
+            ],
+        )
+        write_csv(
+            self.year_dir / "invoice_anomalies_2025.csv",
+            INVOICE_ANOMALY_FIELDS,
+            [
+                _anomaly_row(
+                    doc_id="JR",
+                    severity="P0",
+                    anomaly="MONTANT_TTC_ABSENT",
+                ),
+            ],
+        )
+
+        view = build_factures_review_view(self.instance, 2025)
+        rendered_model = str(view)
+
+        self.assertEqual(len(view["rows"]), 1)
+        self.assertEqual(view["rows"][0]["doc_id"], "")
+        self.assertEqual(view["rows"][0]["href"], "")
+        self.assertEqual(view["rows"][0]["priority_key"], "P1")
+        self.assertIn("Montant TTC absent", view["rows"][0]["anomalies"])
+        self.assertIn("Lecture locale insuffisante", view["rows"][0]["blocking_alert"])
+        self.assertNotIn("JR", rendered_model)
+
+    def test_french_amount_format_is_rendered_correctly(self) -> None:
+        write_csv(
+            self.year_dir / "invoice_evidence_2025.csv",
+            INVOICE_EVIDENCE_FIELDS,
+            [
+                _invoice_row(
+                    doc_id="DOC-MONTANT-FR",
+                    fournisseur="Fournisseur montant",
+                    numero_facture="FR-001",
+                    date_facture="2025-04-24",
+                    ttc="1 340,00 EUR",
+                    compte_propose="615000",
+                    famille_charge="entretien_maintenance",
+                    statut_controle="INCERTAIN",
+                ),
+            ],
+        )
+
+        view = build_factures_review_view(self.instance, 2025)
+
+        self.assertEqual(view["rows"][0]["amount"], "1340.00 EUR")
+
     def test_fire_safety_anomaly_has_dedicated_next_action(self) -> None:
         write_csv(
             self.year_dir / "invoice_evidence_2025.csv",
@@ -355,7 +451,7 @@ class UiFacturesReviewTests(unittest.TestCase):
                 _invoice_row(
                     doc_id="DOC-INV-RAW-LABEL",
                     fournisseur="",
-                    numero_facture="200_INBOX__bvl.25__Facture_2025030513520296",
+                    numero_facture="===== NATIVE_TEXT ===== FA2025030513520296",
                     date_facture="2025-03-05",
                     ttc="120.00",
                     statut_controle="A_CONTROLER",
