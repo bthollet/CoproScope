@@ -125,7 +125,8 @@ class UiContextBannerTests(unittest.TestCase):
         self.assertNotIn("extends", source)
         self.assertNotIn("base.html", source)
         self.assertIn("context_banner", source)
-        self.assertIn("Prochaine action", source)
+        self.assertIn("Voir le contexte", source)
+        self.assertNotIn("context-banner__details", source)
 
         try:
             from jinja2 import Environment, FileSystemLoader, select_autoescape  # type: ignore
@@ -138,11 +139,13 @@ class UiContextBannerTests(unittest.TestCase):
         env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=select_autoescape(("html", "xml")))
         rendered = unescape(env.get_template("_context_banner.html").render(context_banner=banner))
 
-        self.assertIn('aria-label="Contexte du coffre, du role et de la synchronisation"', rendered)
+        self.assertIn('aria-label="Contexte actif"', rendered)
         self.assertIn("Residence Alpha", rendered)
-        self.assertIn("Coproprietaire", rendered)
-        self.assertIn("Sync non branchee", rendered)
-        self.assertIn("Prochaine action", rendered)
+        self.assertIn('href="/gouvernance"', rendered)
+        self.assertIn("Voir le contexte", rendered)
+        self.assertNotIn("Coproprietaire", rendered)
+        self.assertNotIn("Sync non branchee", rendered)
+        self.assertNotIn("Prochaine action", rendered)
 
     def test_document_explains_integration_contract_without_route_refactor(self) -> None:
         text = DOC.read_text(encoding="utf-8")

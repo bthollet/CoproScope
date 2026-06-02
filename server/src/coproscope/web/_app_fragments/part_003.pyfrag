@@ -144,7 +144,7 @@ def create_app(
         if page in CONTEXT_BANNER_PAGES:
             values["context_banner"] = build_context_banner(
                 instance,
-                next_action_href=_url_with_token(request, "/gouvernance"),
+                next_action_href="/gouvernance",
             )
         values.update(extra)
         return values

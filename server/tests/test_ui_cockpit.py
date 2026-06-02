@@ -322,12 +322,29 @@ class CockpitOverviewUiTests(unittest.TestCase):
         self.assertIn("Pourquoi", text)
         self.assertIn("Preuve ou source", text)
         self.assertIn("Prochaine action", text)
-        self.assertIn("Diffusion", text)
-        self.assertIn("Alertes simples pour test 21h15", text)
+        self.assertIn("Partage autorise", text)
+        self.assertIn("Raccourcis de travail", text)
+        self.assertIn("Actions concretes", text)
+        self.assertIn("Filtrer", text)
+        self.assertIn("Ouvrir", text)
+        self.assertIn("Demander au syndic: Contrat syndic signe", text)
+        self.assertIn("Devis vote et ordre de service.", text)
+        self.assertIn("Relancer le syndic sur la date d'intervention.", text)
+        html_source = response.text if "response" in locals() else text
+        self.assertGreaterEqual(html_source.count('class="cs-now-card'), 3)
+        self.assertIn('class="cs-metric-chip', html_source)
+        self.assertLess(
+            html_source.index('class="cs-compact-metrics'),
+            html_source.index('class="cs-now-grid'),
+        )
+        self.assertIn('class="cs-secondary-group"', html_source)
+        self.assertIn('class="cs-risk-group"', html_source)
         self.assertIn("Comptes", text)
         self.assertIn("Statut sync a verifier", text)
-        self.assertIn("Placeholder synthetique", text)
-        self.assertIn("Coffre chiffre/signe a controler", text)
+        self.assertIn("Partage externe: non lance", text)
+        self.assertNotIn("Placeholder synthetique", text)
+        self.assertNotIn("Alertes simples pour test 21h15", text)
+        self.assertNotIn("Coffre chiffre/signe a controler", text)
         self.assertIn("Alertes en mots simples", text)
         self.assertIn("Decisions, actions, preuves", text)
         self.assertIn("Confiance, signature, coffre", text)
@@ -349,10 +366,20 @@ class CockpitOverviewUiTests(unittest.TestCase):
         for label in CYCLE1_ROUTE_LABELS:
             with self.subTest(label=label):
                 self.assertTrue(label in text, f"Missing Cycle 1 cockpit label: {label!r}")
-        for label in ["Pourquoi", "Preuve", "Prochaine action", "Diffusion"]:
+        for label in ["Pourquoi", "Preuve", "Prochaine action", "Partage autorise"]:
             with self.subTest(actionable_label=label):
                 self.assertTrue(label in text, f"Missing actionable cockpit label: {label!r}")
         self.assertNoPrivateCockpitLeak(text)
+
+    def test_cycle1_route_uses_compact_action_inbox_css(self) -> None:
+        static_dir = Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static"
+        manifest = (static_dir / "styles.css").read_text(encoding="utf-8")
+        cockpit_css = (static_dir / "styles_part_32.css").read_text(encoding="utf-8")
+
+        self.assertIn("styles_part_32.css", manifest)
+        for selector in (".cs-metric-chip", ".cs-now-card", ".cs-secondary-group", ".cs-risk-group"):
+            with self.subTest(selector=selector):
+                self.assertIn(selector, cockpit_css)
 
     def test_cycle1_ux_cockpit_contract_has_cards_links_and_actionable_items(self) -> None:
         self._seed_cockpit_outputs()

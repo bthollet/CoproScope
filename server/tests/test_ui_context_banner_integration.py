@@ -75,11 +75,12 @@ class UiContextBannerIntegrationTests(unittest.TestCase):
         html_with_banner = self._render_base(context_banner=self._banner())
 
         self.assertIn('class="context-banner context-banner--review"', html_with_banner)
-        self.assertIn('aria-label="Contexte du coffre, du role et de la synchronisation"', html_with_banner)
+        self.assertIn('aria-label="Contexte actif"', html_with_banner)
         self.assertIn("Residence Test", html_with_banner)
-        self.assertIn("Role a confirmer", html_with_banner)
-        self.assertIn("Sync non branchee", html_with_banner)
-        self.assertIn("Prochaine action", html_with_banner)
+        self.assertIn("Voir le contexte", html_with_banner)
+        self.assertNotIn("Role a confirmer", html_with_banner)
+        self.assertNotIn("Sync non branchee", html_with_banner)
+        self.assertNotIn("Prochaine action", html_with_banner)
 
     def test_base_uses_partial_without_route_or_viewmodel_contract(self) -> None:
         source = BASE_HTML.read_text(encoding="utf-8")
@@ -95,10 +96,10 @@ class UiContextBannerIntegrationTests(unittest.TestCase):
         self.assertIn(".context-banner--ok", css)
         self.assertIn(".context-banner--review", css)
         self.assertIn(".context-banner--risk", css)
-        self.assertIn(".context-banner__next a", css)
+        self.assertIn(".context-banner__link", css)
         self.assertIn("text-decoration: underline", css)
         self.assertIn("@media (max-width: 980px)", css)
-        self.assertIn(".context-banner__facts", css)
+        self.assertIn(".context-banner__line", css)
 
     def test_document_records_minimal_integration_contract(self) -> None:
         text = DOC.read_text(encoding="utf-8")

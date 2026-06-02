@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from html import unescape
 from pathlib import Path
@@ -23,6 +24,11 @@ class UiContextBannerRouteTests(unittest.TestCase):
             self.skipTest(f"FastAPI test client unavailable: {exc}")
         return TestClient(create_app(self.instance, year=2025, access_token=token))
 
+    def _banner_html(self, text: str) -> str:
+        match = re.search(r'(<section class="context-banner\b.*?</section>)', text, re.S)
+        self.assertIsNotNone(match, "context banner section missing")
+        return match.group(1) if match else ""
+
     def test_main_pages_render_context_banner_without_configured_vault(self) -> None:
         client = self._client()
 
@@ -32,11 +38,14 @@ class UiContextBannerRouteTests(unittest.TestCase):
                 text = unescape(response.text)
 
                 self.assertEqual(response.status_code, 200)
-                self.assertIn('class="context-banner context-banner--review"', text)
-                self.assertIn("Residence Les Platanes", text)
-                self.assertIn("Coffre signe a declarer", text)
-                self.assertIn("Sync non branchee", text)
-                self.assertIn("Prochaine action", text)
+                banner = self._banner_html(text)
+                self.assertIn('class="context-banner context-banner--review"', banner)
+                self.assertIn("Residence Les Platanes", banner)
+                self.assertIn("Voir le contexte", banner)
+                self.assertIn('href="/gouvernance"', banner)
+                self.assertNotIn("Coffre signe a declarer", banner)
+                self.assertNotIn("Sync non branchee", banner)
+                self.assertNotIn("Prochaine action", banner)
 
     def test_context_banner_next_action_preserves_local_token(self) -> None:
         client = self._client(token="local-secret")
@@ -47,6 +56,8 @@ class UiContextBannerRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="context-banner context-banner--review"', text)
         self.assertIn('href="/gouvernance?token=local-secret"', text)
+        banner = self._banner_html(response.text)
+        self.assertNotIn("token=local-secret&amp;token=local-secret", banner)
 
     def test_non_main_pages_keep_existing_no_banner_contract(self) -> None:
         client = self._client()

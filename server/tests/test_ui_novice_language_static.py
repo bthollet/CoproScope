@@ -94,15 +94,17 @@ class UiNoviceLanguageStaticTests(unittest.TestCase):
                 "Depot local et exports prepares",
             ),
             "_context_banner.html": (
-                "Contexte du coffre, du role et de la synchronisation",
-                "Prochaine action",
+                "Contexte actif",
+                "Voir le contexte",
+                "coffre, role et synchronisation",
             ),
             "overview.html": (
                 "Statut sync a verifier",
                 "aucune synchronisation externe",
-                "Coffre chiffre/signe a controler",
+                "Partage externe: non lance",
                 "Preuve ou source",
                 "Prochaine action",
+                "Partage autorise",
             ),
             "governance.html": (
                 "preuves restent dans quel coffre",

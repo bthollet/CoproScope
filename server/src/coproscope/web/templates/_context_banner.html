@@ -1,45 +1,14 @@
 {% if context_banner %}
-{% set compact = namespace(role='Role a confirmer', sync='Sync a verifier') %}
-{% for item in context_banner["items"] %}
-  {% set item_label = item.label|lower %}
-  {% if item_label == 'role' %}
-    {% set compact.role = item.value %}
-  {% elif 'sync' in item_label %}
-    {% set compact.sync = item.value %}
-  {% endif %}
-{% endfor %}
-<details class="context-banner context-banner--{{ context_banner.tone }}" aria-label="Contexte du coffre, du role et de la synchronisation">
-  <summary class="context-banner__compact">
+{% set context_href = context_banner.next_action_href|default('/gouvernance') %}
+<section class="context-banner context-banner--{{ context_banner.tone }}" aria-label="Contexte actif">
+  <div class="context-banner__line">
     <span class="context-banner__compact-label">Contexte actif</span>
     <strong>{{ context_banner.coffre_label }}</strong>
-    <span class="context-banner__chip">Role: {{ compact.role }}</span>
-    <span class="context-banner__chip">Sync: {{ compact.sync }}</span>
-    <span class="context-banner__toggle" aria-hidden="true">Details</span>
-  </summary>
-
-  <div class="context-banner__details">
-    <div class="context-banner__summary">
-      <p class="eyebrow">Contexte actif</p>
-      <h2>{{ context_banner.coffre_label }}</h2>
-      <p>{{ context_banner.novice_text }}</p>
-    </div>
-
-    <dl class="context-banner__facts">
-      {% for item in context_banner["items"] %}
-      <div class="context-banner__fact context-banner__fact--{{ item.tone }}">
-        <dt>{{ item.label }}</dt>
-        <dd>
-          <strong>{{ item.value }}</strong>
-          <span>{{ item.help }}</span>
-        </dd>
-      </div>
-      {% endfor %}
-    </dl>
-
-    <div class="context-banner__next" aria-label="Prochaine action conseillee">
-      <span>Prochaine action</span>
-      <a href="{{ context_banner.next_action_href }}">{{ context_banner.next_action }}</a>
-    </div>
+    <a
+      class="context-banner__link"
+      href="{% if token_href is defined %}{{ token_href(context_href) }}{% else %}{{ context_href }}{% endif %}"
+      title="Ouvrir la page de contexte detaille: coffre, role et synchronisation."
+    ><span class="context-banner__link-full">Voir le contexte</span><span class="context-banner__link-short">Contexte</span></a>
   </div>
-</details>
+</section>
 {% endif %}
