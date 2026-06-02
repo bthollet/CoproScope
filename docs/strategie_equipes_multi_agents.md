@@ -14,10 +14,11 @@ recherche metier, une recette live ou un owner backend unique.
 Le routage se fait dans cet ordre:
 
 1. **Preflight anti-collision**: lire `docs/presence_agents.md` et
-   `docs/roadmap_backlog_central.md`; si `EN_ATTENTE_USER`, incident doublon ou
-   `BLOQUE` non stationne existe sur le meme perimetre, ne pas choisir de
-   nouveau `ORD-*`. Les chantiers isoles dans d'autres worktrees, branches,
-   fichiers ou serveurs ne bloquent pas par principe.
+   `docs/roadmap_backlog_central.md`; ne pas choisir de nouveau `ORD-*` seulement
+   si le meme perimetre porte un arbitrage utilisateur, un incident de doublon,
+   un owner concurrent, un serveur partage ou un conflit technique reel. Les
+   chantiers isoles dans d'autres worktrees, branches, fichiers ou serveurs ne
+   bloquent pas par principe.
 2. **Reprise avant dispatch**: si un `CH-*` vivant existe, relancer seulement
    ses roles manquants, idle, bloques ou expires, sans changer d'objectif.
 3. **Classification du travail**: classer l'objectif par nature dominante:
@@ -43,7 +44,7 @@ sequentiellement et traces; cela ne rend pas l'equipe optionnelle.
 
 | Type | Quand le choisir | Roles usuels | Orchestration | Livrable attendu |
 |---|---|---|---|---|
-| `INCIDENT_STATIONNEMENT` | Doublon detecte, arbitrage ouvert, blocage non stationne, reprise a cadrer. | Coordinateur-scribe, superviseur lecture seule. | Monitor-only: check-in persistant, aucun nouveau role, aucun nouveau `ORD-*`. | Trace de blocage, etat des conversations, question d'arbitrage. |
+| `INCIDENT_STATIONNEMENT` | Doublon detecte, arbitrage ouvert ou conflit concret sur le meme perimetre. | Coordinateur-scribe, superviseur lecture seule. | Monitor-only: check-in persistant, aucun nouveau role, aucun nouveau `ORD-*` sur ce perimetre. | Trace de conflit, etat des conversations, question d'arbitrage. |
 | `FANIN_CONSOLIDATION` | Plusieurs conversations ont travaille le meme sujet ou des retours arrivent en decalage. | Coordinateur-scribe, eventuellement un QA privacy en lecture. | Collecte par angle stable, dedoublonnage, contradictions conservees comme arbitrages. | Synthese convergence/divergence, un seul prochain dispatch propose. |
 | `RECHERCHE_METIER` | Question juridique, syndic, compta, travaux, CS, SHS, veille, challenge sans dev. | Juriste/syndic, compta, travaux/process, CS/usage, privacy/QA novice, coordinateur. | Fan-out/fan-in borne: chaque expert rend son angle, le coordinateur consolide. | Note ou matrice `fait -> preuve -> regle/process -> action`; aucun code. |
 | `UXUI_RECHERCHE` | Recherche UX/UI sans dev, parcours a explorer, directions visuelles, images candidates. | Orchestrateur UX/UI, chercheur utilisateur, architecte UX, designer visuel, testeur metier, novice/accessibilite. | Divergence puis convergence: images candidates, tests, selection, decisions. | Doc de mission, images retenues, decisions UX/UI, marqueur `UXUI-DONE`. |
@@ -66,7 +67,7 @@ le moins dangereux, donc recherche ou fan-in plutot que dev.
 
 | Signal dominant | Equipe-type | Strategie |
 |---|---|---|
-| `EN_ATTENTE_USER`, `BLOQUE incident dispatch`, doublon backlog | `INCIDENT_STATIONNEMENT` | Monitor-only, aucune lecture de la file `ORD-*` pour dispatch. |
+| Arbitrage utilisateur sur le meme perimetre, incident dispatch, doublon backlog | `INCIDENT_STATIONNEMENT` | Monitor-only, aucune lecture de la file `ORD-*` pour dispatch sur ce perimetre. |
 | Plusieurs retours sur le meme sujet, conversations fermees par Brice, WIP concurrent | `FANIN_CONSOLIDATION` | Fan-in obligatoire avant tout nouveau lot. |
 | Mots `veille`, `challenge`, `cadrage`, `juridique`, `syndic`, `compta`, `travaux`, `SHS`, `sources`, et pas de patch attendu | `RECHERCHE_METIER` | Fan-out expert puis synthese. |
 | Commande explicite `equipe UX/UI`, `recherche UX`, `images candidates`, `parcours`, sans dev | `UXUI_RECHERCHE` | Divergence visuelle puis convergence. |
@@ -84,7 +85,7 @@ explicites de Brice.
 
 | Pattern | Usage | Regle anti-chevauchement |
 |---|---|---|
-| `monitor-only` | Incident, arbitrage, lease expire, blocage. | Aucun nouveau `CH-*`, aucun nouveau `ORD-*`; check-in seulement. |
+| `monitor-only` | Incident, arbitrage, lease expire ou conflit concret sur le meme perimetre. | Aucun nouveau `CH-*`, aucun nouveau `ORD-*` sur ce perimetre; check-in seulement. |
 | `fan-out/fan-in` | Recherche metier, veille, challenge, plusieurs angles. | Les agents ont des angles stables; le coordinateur consolide avant dispatch. |
 | `pipeline decale` | UI produit. | `N+1` design, `N` dev, `N-1` QA; dev attend visuel IA + blueprint + GO novice. |
 | `hub-and-spoke owner` | Backend/data/Drive/DB. | Un seul owner ecrit le code; experts et QA rendent des notes ou tests. |

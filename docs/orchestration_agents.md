@@ -44,10 +44,13 @@ creer le `CH-*`:
 - `INTEGRATION_RELEASE`: integration serie, une branche/worktree a la fois;
 - `DOCTRINE_SIDEQUEST`: protocole ou cadrage transverse borne.
 
-Le choix automatique ne saute jamais le preflight: `EN_ATTENTE_USER`, incident
-de doublon ou `BLOQUE` non stationne gagnent sur toute priorite backlog. Si un
-`CH-*` vivant existe deja, le routeur reprend seulement ses roles manquants,
-idle, bloques ou expires.
+Le choix automatique ne saute jamais le preflight. Seuls un arbitrage utilisateur
+sur le meme perimetre, un incident de doublon sur le meme `ORD-*`, un owner
+concurrent sur les memes fichiers, un serveur/port partage ou un conflit
+technique reel suspendent le dispatch. Si un `CH-*` vivant existe deja sur ce
+perimetre, le routeur reprend seulement ses roles manquants, idle, bloques ou
+expires. Un statut `BLOQUE` dans un autre chantier isole ne bloque pas les
+chantiers independants.
 
 Apres le choix d'un `ORD-*` et d'un `CH-*`, le coordinateur trace
 `ROUTAGE_EQUIPE` et les roles dans `presence_agents.md`. Les sous-agents, ou
