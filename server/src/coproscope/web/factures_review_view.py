@@ -137,8 +137,6 @@ def build_factures_review_view(instance: Any | None, year: int = 2025, active_fi
             {"label": "A controler", "value": str(status_counts.get("A_CONTROLER", 0)), "detail": "A verifier en premier."},
             {"label": "Incertaines", "value": str(status_counts.get("INCERTAIN", 0)), "detail": "Lecture partielle a reprendre."},
             {"label": "Anomalies critiques", "value": str(critical), "detail": "A regarder avant de relier aux comptes."},
-            {"label": "Probables", "value": str(status_counts.get("PROBABLE", 0)), "detail": "A garder en controle simple."},
-            {"label": "Factures reperees", "value": str(len(invoices)), "detail": "Depuis les textes locaux."},
         ],
         "filters": _filter_links(active_filter),
         "active_filter": active_filter,

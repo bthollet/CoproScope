@@ -233,6 +233,42 @@
   overflow-wrap: anywhere;
 }
 
+.cs-comptes-summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.cs-summary-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-height: 32px;
+  border: 1px solid #dce3ec;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #fff;
+  cursor: help;
+}
+
+.cs-summary-chip dt,
+.cs-summary-chip dd {
+  margin: 0;
+}
+
+.cs-summary-chip dt {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-summary-chip dd {
+  color: #101828;
+  font-size: 15px;
+  font-weight: 800;
+}
+
 .cs-comptes-filters {
   padding: 12px;
 }

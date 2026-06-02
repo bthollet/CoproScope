@@ -30,7 +30,6 @@ REQUIRED_LABELS = (
     "Ouvrir le document protege",
     "Liste de travail locale",
     "A verifier en premier",
-    "Factures reperees",
     "Voir les factures a verifier",
     "Montant et date",
 )
@@ -116,7 +115,10 @@ class UiFacturesReviewTests(unittest.TestCase):
         self.assertIn('aria-current="page">Toutes</a>', response.text)
         self.assertIn('href="/documents/DOC-INV-001?source=factures&amp;token=local-secret"', response.text)
         self.assertNotIn('<a class="cs-comptes-kpi', response.text)
-        self.assertEqual(response.text.count('<div class="cs-comptes-kpi'), 6)
+        self.assertNotIn('<div class="cs-comptes-kpi', response.text)
+        self.assertEqual(response.text.count('<div class="cs-summary-chip'), 4)
+        self.assertNotIn("Factures reperees", text)
+        self.assertNotIn("Probables", text)
         self.assertIn("Lien document masque", text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
