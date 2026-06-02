@@ -47,29 +47,51 @@ class PdfTraceUserRouteTests(unittest.TestCase):
         return TestClient(create_app(self.instance, 2025, access_token="local-secret"))
 
     def _add_pdf_document(self, doc_id: str, *, page_count: str = "3") -> tuple[Path, bytes]:
+        return self._add_document(doc_id, extension="pdf", page_count=page_count)
+
+    def _add_document(self, doc_id: str, *, extension: str, page_count: str = "") -> tuple[Path, bytes]:
         fields, rows = read_csv(self.instance.register("documents"))
         fields = fields or list(DEFAULT_DOCUMENT_FIELDS)
-        pdf_bytes = b"%PDF-1.4\n% FICTIF pdf trace user route test\n"
-        pdf_path = self.instance_root / "staging" / "pdf" / f"{doc_id}.pdf"
-        pdf_path.parent.mkdir(parents=True, exist_ok=True)
-        pdf_path.write_bytes(pdf_bytes)
+        content = f"FICTIF {extension} trace user route test\n".encode("utf-8")
+        if extension == "pdf":
+            content = b"%PDF-1.4\n% FICTIF pdf trace user route test\n"
+        doc_path = self.instance_root / "staging" / extension / f"{doc_id}.{extension}"
+        doc_path.parent.mkdir(parents=True, exist_ok=True)
+        doc_path.write_bytes(content)
         rows.append(
             {
                 **{field: "" for field in fields},
                 "doc_id": doc_id,
-                "file_name": f"{doc_id}.pdf",
-                "extension": "pdf",
-                "sha256": _sha256(pdf_bytes),
-                "size_bytes": str(pdf_path.stat().st_size),
-                "original_path": relative_to(self.instance_root, pdf_path),
+                "file_name": f"{doc_id}.{extension}",
+                "extension": extension,
+                "sha256": _sha256(content),
+                "size_bytes": str(doc_path.stat().st_size),
+                "original_path": relative_to(self.instance_root, doc_path),
                 "source_zone": "STAGING",
-                "document_type": "PDF FICTIF",
+                "document_type": f"{extension.upper()} FICTIF",
                 "page_count": page_count,
                 "text_char_count": "120",
             }
         )
         write_csv(self.instance.register("documents"), fields, rows)
-        return pdf_path, pdf_bytes
+        return doc_path, content
+
+    def test_pdf_trace_queue_empty_state_explains_local_guardrails(self) -> None:
+        client = self._client()
+
+        queue = client.get("/pdf-traces?token=local-secret")
+        documents = client.get("/documents?token=local-secret")
+        body = unescape(queue.text)
+
+        self.assertEqual(queue.status_code, 200)
+        self.assertEqual(documents.status_code, 200)
+        self.assertIn("File locale de reprise PDF", body)
+        self.assertIn("0", body)
+        self.assertIn("Aucune trace PDF candidate a relire.", body)
+        self.assertIn("Aucun export global PDF/Zotero n'est active.", body)
+        self.assertIn("Le PDF original n'est pas modifie.", body)
+        self.assertIn("File reprises PDF", unescape(documents.text))
+        self._assert_public_pages_are_clean(body)
 
     def test_user_can_save_and_resume_pdf_trace_without_public_leaks(self) -> None:
         doc_id = "DOC-PDF-USER-TRACE"
@@ -138,6 +160,42 @@ class PdfTraceUserRouteTests(unittest.TestCase):
         self.assertEqual(blocked_queue.status_code, 403)
         self.assertEqual(invalid_page.status_code, 422)
         self.assertIn("page de trace hors document", invalid_page.text)
+        self.assertEqual(rows, [])
+
+    def test_pdf_trace_save_rejects_non_pdf_and_missing_document_without_side_effect(self) -> None:
+        doc_id = "DOC-NON-PDF-USER-TRACE"
+        self._add_document(doc_id, extension="txt")
+        client = self._client()
+
+        non_pdf = client.post(
+            f"/documents/{doc_id}/traces?token=local-secret",
+            data={
+                "page": "1",
+                "zone_x": "0.20",
+                "zone_y": "0.25",
+                "zone_width": "0.40",
+                "zone_height": "0.10",
+            },
+            follow_redirects=False,
+        )
+        missing = client.post(
+            "/documents/DOC-MISSING-TRACE/traces?token=local-secret",
+            data={
+                "page": "1",
+                "zone_x": "0.20",
+                "zone_y": "0.25",
+                "zone_width": "0.40",
+                "zone_height": "0.10",
+            },
+            follow_redirects=False,
+        )
+        trace_path = pdftrace_registry.trace_register_path(self.instance)
+        rows = read_csv(trace_path)[1] if trace_path.exists() else []
+
+        self.assertEqual(non_pdf.status_code, 422)
+        self.assertIn("trace reservee aux PDF", non_pdf.text)
+        self.assertEqual(missing.status_code, 404)
+        self.assertIn("Document introuvable.", missing.text)
         self.assertEqual(rows, [])
 
     def _assert_public_pages_are_clean(self, *bodies: str) -> None:
