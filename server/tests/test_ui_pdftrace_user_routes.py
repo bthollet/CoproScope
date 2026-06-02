@@ -47,51 +47,47 @@ class PdfTraceUserRouteTests(unittest.TestCase):
         return TestClient(create_app(self.instance, 2025, access_token="local-secret"))
 
     def _add_pdf_document(self, doc_id: str, *, page_count: str = "3") -> tuple[Path, bytes]:
-        return self._add_document(doc_id, extension="pdf", page_count=page_count)
-
-    def _add_document(self, doc_id: str, *, extension: str, page_count: str = "") -> tuple[Path, bytes]:
         fields, rows = read_csv(self.instance.register("documents"))
         fields = fields or list(DEFAULT_DOCUMENT_FIELDS)
-        content = f"FICTIF {extension} trace user route test\n".encode("utf-8")
-        if extension == "pdf":
-            content = b"%PDF-1.4\n% FICTIF pdf trace user route test\n"
-        doc_path = self.instance_root / "staging" / extension / f"{doc_id}.{extension}"
-        doc_path.parent.mkdir(parents=True, exist_ok=True)
-        doc_path.write_bytes(content)
+        pdf_bytes = b"%PDF-1.4\n% FICTIF pdf trace user route test\n"
+        pdf_path = self.instance_root / "staging" / "pdf" / f"{doc_id}.pdf"
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_path.write_bytes(pdf_bytes)
         rows.append(
             {
                 **{field: "" for field in fields},
                 "doc_id": doc_id,
-                "file_name": f"{doc_id}.{extension}",
-                "extension": extension,
-                "sha256": _sha256(content),
-                "size_bytes": str(doc_path.stat().st_size),
-                "original_path": relative_to(self.instance_root, doc_path),
+                "file_name": f"{doc_id}.pdf",
+                "extension": "pdf",
+                "sha256": _sha256(pdf_bytes),
+                "size_bytes": str(pdf_path.stat().st_size),
+                "original_path": relative_to(self.instance_root, pdf_path),
                 "source_zone": "STAGING",
-                "document_type": f"{extension.upper()} FICTIF",
+                "document_type": "PDF FICTIF",
                 "page_count": page_count,
                 "text_char_count": "120",
             }
         )
         write_csv(self.instance.register("documents"), fields, rows)
-        return doc_path, content
+        return pdf_path, pdf_bytes
 
-    def test_pdf_trace_queue_empty_state_explains_local_guardrails(self) -> None:
-        client = self._client()
-
-        queue = client.get("/pdf-traces?token=local-secret")
-        documents = client.get("/documents?token=local-secret")
-        body = unescape(queue.text)
-
-        self.assertEqual(queue.status_code, 200)
-        self.assertEqual(documents.status_code, 200)
-        self.assertIn("File locale de reprise PDF", body)
-        self.assertIn("0", body)
-        self.assertIn("Aucune trace PDF candidate a relire.", body)
-        self.assertIn("Aucun export global PDF/Zotero n'est active.", body)
-        self.assertIn("Le PDF original n'est pas modifie.", body)
-        self.assertIn("File reprises PDF", unescape(documents.text))
-        self._assert_public_pages_are_clean(body)
+    def _add_text_document(self, doc_id: str) -> None:
+        fields, rows = read_csv(self.instance.register("documents"))
+        fields = fields or list(DEFAULT_DOCUMENT_FIELDS)
+        rows.append(
+            {
+                **{field: "" for field in fields},
+                "doc_id": doc_id,
+                "file_name": f"{doc_id}.txt",
+                "extension": "txt",
+                "sha256": _sha256(b"document texte fictif"),
+                "size_bytes": "23",
+                "source_zone": "STAGING",
+                "document_type": "NOTE FICTIVE",
+                "text_char_count": "23",
+            }
+        )
+        write_csv(self.instance.register("documents"), fields, rows)
 
     def test_user_can_save_and_resume_pdf_trace_without_public_leaks(self) -> None:
         doc_id = "DOC-PDF-USER-TRACE"
@@ -132,6 +128,10 @@ class PdfTraceUserRouteTests(unittest.TestCase):
         self.assertIn("Page 2 sur 3", detail_body)
         self.assertIn("Point de reprise ouvert", detail_body)
         self.assertIn("Vous reprenez ici: Zone encadree page 2.", detail_body)
+        self.assertIn("Repere court", detail_body)
+        self.assertNotIn("<small>Ancre", detail_body)
+        self.assertIn("Note courte: Point budget fictif a relire", detail_body)
+        self.assertNotIn("Commentaire: Point budget fictif a relire", detail_body)
         self.assertIn("File locale de reprise PDF", queue_body)
         self.assertIn(f"/documents/{doc_id}?trace_id={trace_id}", queue.text)
         self.assertIn(f"/documents/{doc_id}?trace_id={trace_id}&amp;token=local-secret#pdf-reader", queue.text)
@@ -164,40 +164,88 @@ class PdfTraceUserRouteTests(unittest.TestCase):
         self.assertIn("page de trace hors document", invalid_page.text)
         self.assertEqual(rows, [])
 
-    def test_pdf_trace_save_rejects_non_pdf_and_missing_document_without_side_effect(self) -> None:
-        doc_id = "DOC-NON-PDF-USER-TRACE"
-        self._add_document(doc_id, extension="txt")
+    def test_pdf_trace_save_without_token_is_forbidden_without_sidecar(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-NO-TOKEN"
+        self._add_pdf_document(doc_id)
         client = self._client()
 
-        non_pdf = client.post(
-            f"/documents/{doc_id}/traces?token=local-secret",
+        response = client.post(
+            f"/documents/{doc_id}/traces",
             data={
                 "page": "1",
                 "zone_x": "0.20",
                 "zone_y": "0.25",
                 "zone_width": "0.40",
                 "zone_height": "0.10",
-            },
-            follow_redirects=False,
-        )
-        missing = client.post(
-            "/documents/DOC-MISSING-TRACE/traces?token=local-secret",
-            data={
-                "page": "1",
-                "zone_x": "0.20",
-                "zone_y": "0.25",
-                "zone_width": "0.40",
-                "zone_height": "0.10",
+                "comment": "Trace sans jeton",
             },
             follow_redirects=False,
         )
         trace_path = pdftrace_registry.trace_register_path(self.instance)
         rows = read_csv(trace_path)[1] if trace_path.exists() else []
 
-        self.assertEqual(non_pdf.status_code, 422)
-        self.assertIn("trace reservee aux PDF", non_pdf.text)
-        self.assertEqual(missing.status_code, 404)
-        self.assertIn("Document introuvable.", missing.text)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(rows, [])
+
+    def test_pdf_trace_queue_empty_state_is_clear_and_private(self) -> None:
+        client = self._client()
+
+        response = client.get("/pdf-traces?token=local-secret")
+
+        body = unescape(response.text)
+        self.assertIn("File locale de reprise PDF", body)
+        self.assertIn("<strong>0</strong><span>traces a relire</span>", response.text)
+        self.assertIn("Aucune trace PDF candidate a relire.", body)
+        self.assertIn("File locale uniquement: pas d'export, pas de PDF modifie", body)
+        self.assertNotIn("Ouvrir la trace", body)
+        self._assert_public_pages_are_clean(body)
+
+    def test_pdf_trace_save_unknown_document_returns_404_without_sidecar(self) -> None:
+        client = self._client()
+
+        response = self._save_trace(client, "DOC-UNKNOWN-USER-TRACE", "1", "Trace document inconnu", follow_redirects=False)
+        trace_path = pdftrace_registry.trace_register_path(self.instance)
+        rows = read_csv(trace_path)[1] if trace_path.exists() else []
+
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Document introuvable", response.text)
+        self.assertEqual(rows, [])
+
+    def test_pdf_trace_save_rejects_non_pdf_document_without_sidecar(self) -> None:
+        doc_id = "DOC-NON-PDF-USER-TRACE"
+        self._add_text_document(doc_id)
+        client = self._client()
+
+        response = self._save_trace(client, doc_id, "1", "Tentative sur document texte", follow_redirects=False)
+        trace_path = pdftrace_registry.trace_register_path(self.instance)
+        rows = read_csv(trace_path)[1] if trace_path.exists() else []
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("trace reservee aux PDF", response.text)
+        self.assertEqual(rows, [])
+
+    def test_pdf_trace_save_rejects_zone_outside_page_without_sidecar(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-ZONE-OUT"
+        self._add_pdf_document(doc_id)
+        client = self._client()
+
+        response = client.post(
+            f"/documents/{doc_id}/traces?token=local-secret",
+            data={
+                "page": "1",
+                "zone_x": "0.80",
+                "zone_y": "0.25",
+                "zone_width": "0.40",
+                "zone_height": "0.10",
+                "comment": "Zone qui deborde de la page",
+            },
+            follow_redirects=False,
+        )
+        trace_path = pdftrace_registry.trace_register_path(self.instance)
+        rows = read_csv(trace_path)[1] if trace_path.exists() else []
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("zone de trace hors page", response.text)
         self.assertEqual(rows, [])
 
     def test_pdf_trace_save_rejects_incomplete_zone_without_sidecar(self) -> None:
@@ -234,25 +282,6 @@ class PdfTraceUserRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 422)
         self.assertIn("page de trace invalide", response.text)
-        self.assertEqual(rows, [])
-
-    def test_pdf_trace_save_rejects_local_path_note_without_sidecar(self) -> None:
-        doc_id = "DOC-PDF-USER-TRACE-PATH-NOTE"
-        self._add_pdf_document(doc_id)
-        client = self._client()
-
-        response = self._save_trace(
-            client,
-            doc_id,
-            "1",
-            r"Relire C:\Users\Example\raw\piece.pdf avant partage",
-            follow_redirects=False,
-        )
-        trace_path = pdftrace_registry.trace_register_path(self.instance)
-        rows = read_csv(trace_path)[1] if trace_path.exists() else []
-
-        self.assertEqual(response.status_code, 422)
-        self.assertIn("note trop sensible", response.text)
         self.assertEqual(rows, [])
 
     def test_pdf_trace_queue_counts_multiple_traces_and_blocks_sensitive_notes(self) -> None:
@@ -311,33 +340,35 @@ class PdfTraceUserRouteTests(unittest.TestCase):
         self.assertNotIn("Second point fictif", body)
         self._assert_public_pages_are_clean(body)
 
-    def test_pdf_trace_queue_ignores_legacy_raw_document_ref_without_leak(self) -> None:
+    def test_pdf_trace_save_rejects_local_path_note_without_sidecar(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-PATH-NOTE"
+        self._add_pdf_document(doc_id)
+        client = self._client()
+
+        response = self._save_trace(
+            client,
+            doc_id,
+            "1",
+            r"Relire C:\Users\Example\raw\piece.pdf avant partage",
+            follow_redirects=False,
+        )
         trace_path = pdftrace_registry.trace_register_path(self.instance)
-        write_csv(
-            trace_path,
-            pdftrace_registry.PDF_TRACE_FIELDS,
-            [
-                {
-                    **{field: "" for field in pdftrace_registry.PDF_TRACE_FIELDS},
-                    "trace_id": "TRACE-LEGACY-RAW",
-                    "document_ref": "raw/DOC-LEGACY",
-                    "page": "1",
-                    "zone_x": "0.10",
-                    "zone_y": "0.10",
-                    "zone_width": "0.20",
-                    "zone_height": "0.20",
-                    "document_hash_status": "document_hash_not_checked",
-                    "diffusion": "non_diffusable",
-                    "text_status": "non_confirme",
-                    "comment": r"C:\Users\Example\raw\piece.pdf",
-                }
-            ],
+        rows = read_csv(trace_path)[1] if trace_path.exists() else []
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("note trop sensible", response.text)
+        self.assertEqual(rows, [])
+
+    def test_pdf_trace_queue_ignores_legacy_raw_document_ref_without_leak(self) -> None:
+        self._write_legacy_trace(
+            trace_id="TRACE-LEGACY-RAW",
+            document_ref="raw/DOC-LEGACY",
+            comment=r"C:\Users\Example\raw\piece.pdf",
         )
         client = self._client()
 
         response = client.get("/pdf-traces?token=local-secret")
 
-        self.assertEqual(response.status_code, 200)
         body = unescape(response.text)
         self.assertIn("<strong>0</strong><span>traces a relire</span>", response.text)
         self.assertIn("Aucune trace PDF candidate a relire.", body)
@@ -346,6 +377,130 @@ class PdfTraceUserRouteTests(unittest.TestCase):
         self.assertNotIn("piece.pdf", body)
         self._assert_public_pages_are_clean(body)
 
+    def test_pdf_trace_queue_ignores_orphan_trace_without_broken_link(self) -> None:
+        self._write_legacy_trace(
+            trace_id="TRACE-ORPHAN-LEGACY",
+            document_ref="DOC-REMOVED-LEGACY",
+            page="2",
+            comment="Trace issue d'un document supprime",
+        )
+        client = self._client()
+
+        response = client.get("/pdf-traces?token=local-secret")
+
+        body = unescape(response.text)
+        self.assertIn("<strong>0</strong><span>traces a relire</span>", response.text)
+        self.assertIn("Aucune trace PDF candidate a relire.", body)
+        self.assertNotIn("TRACE-ORPHAN-LEGACY", body)
+        self.assertNotIn("DOC-REMOVED-LEGACY", body)
+        self.assertNotIn("/documents/DOC-REMOVED-LEGACY", response.text)
+        self._assert_public_pages_are_clean(body)
+
+    def test_pdf_trace_queue_hides_technical_legacy_fields_for_valid_trace(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-LEGACY-TECH"
+        self._add_pdf_document(doc_id)
+        self._write_legacy_trace(
+            trace_id="TRACE-LEGACY-TECH",
+            document_ref=doc_id,
+            page="2",
+            selected_text_hash="sha256:secret-demo-hash",
+            source_engine="zotero_position",
+            comment="Commentaire interne legacy a masquer",
+        )
+        client = self._client()
+
+        response = client.get("/pdf-traces?token=local-secret")
+
+        body = unescape(response.text)
+        self.assertIn("<strong>1</strong><span>traces a relire</span>", response.text)
+        self.assertIn(f"Document {doc_id}", body)
+        self.assertIn("Zone encadree page 2", body)
+        self.assertIn("Version du document non verifiee", body)
+        self.assertIn("Verifier la version du PDF", body)
+        self.assertIn(f"/documents/{doc_id}?trace_id=TRACE-LEGACY-TECH&amp;token=local-secret#pdf-reader", response.text)
+        self.assertNotIn("Commentaire interne legacy a masquer", body)
+        self.assertNotIn("document_hash_not_checked", body)
+        self.assertNotIn("non_confirme", body)
+        self.assertNotIn("secret-demo-hash", body)
+        self._assert_public_pages_are_clean(body)
+
+    def test_pdf_trace_legacy_without_usable_zone_has_no_resume_link(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-NO-ZONE"
+        self._add_pdf_document(doc_id)
+        self._write_legacy_trace(
+            trace_id="TRACE-LEGACY-NO-ZONE",
+            document_ref=doc_id,
+            page="2",
+            zone_width="",
+            comment="Zone legacy incomplete",
+        )
+        client = self._client()
+
+        queue = client.get("/pdf-traces?token=local-secret")
+        detail = client.get(f"/documents/{doc_id}?trace_id=TRACE-LEGACY-NO-ZONE&token=local-secret")
+
+        queue_body, detail_body = self._assert_no_legacy_resume(queue, detail, doc_id, "TRACE-LEGACY-NO-ZONE")
+        self.assertNotIn("Reprendre cette trace", detail_body)
+        self.assertNotIn("Zone legacy incomplete", detail_body)
+
+    def test_pdf_trace_legacy_page_outside_document_has_no_resume_link(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-PAGE-OUT"
+        self._add_pdf_document(doc_id, page_count="3")
+        self._write_legacy_trace(
+            trace_id="TRACE-LEGACY-PAGE-99",
+            document_ref=doc_id,
+            page="99",
+            comment="Page legacy hors PDF",
+        )
+        client = self._client()
+
+        queue = client.get("/pdf-traces?token=local-secret")
+        detail = client.get(f"/documents/{doc_id}?trace_id=TRACE-LEGACY-PAGE-99&token=local-secret")
+
+        _, detail_body = self._assert_no_legacy_resume(queue, detail, doc_id, "TRACE-LEGACY-PAGE-99")
+        self.assertNotIn("Page legacy hors PDF", detail_body)
+        self.assertNotIn("Page 99", detail_body)
+
+    def test_pdf_trace_legacy_zero_page_has_no_resume_link(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-PAGE-ZERO"
+        self._add_pdf_document(doc_id, page_count="3")
+        self._write_legacy_trace(
+            trace_id="TRACE-LEGACY-PAGE-ZERO",
+            document_ref=doc_id,
+            page="0",
+            comment="Page legacy nulle",
+        )
+        client = self._client()
+
+        queue = client.get("/pdf-traces?token=local-secret")
+        detail = client.get(f"/documents/{doc_id}?trace_id=TRACE-LEGACY-PAGE-ZERO&token=local-secret")
+
+        _, detail_body = self._assert_no_legacy_resume(queue, detail, doc_id, "TRACE-LEGACY-PAGE-ZERO")
+        self.assertNotIn("Page legacy nulle", detail_body)
+
+    def test_pdf_trace_legacy_polluted_anchor_fallback_has_no_resume_link(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-POLLUTED-ANCHOR"
+        response = self._queue_with_legacy_anchor(doc_id, "raw/SECRET-ANCHOR-HASH", "Ancre legacy polluee")
+
+        body = unescape(response.text)
+        self.assertIn("<strong>0</strong><span>traces a relire</span>", response.text)
+        self.assertNotIn("SECRET-ANCHOR", body)
+        self.assertNotIn("Ancre legacy polluee", body)
+        self.assertNotIn(f"/documents/{doc_id}?trace_id=", response.text)
+        self._assert_public_pages_are_clean(body)
+
+    def test_pdf_trace_legacy_clean_anchor_fallback_keeps_resume_link(self) -> None:
+        doc_id = "DOC-PDF-USER-TRACE-CLEAN-ANCHOR"
+        response = self._queue_with_legacy_anchor(doc_id, "SAFEANCHOR123456", "Ancre legacy saine")
+
+        detail_body = unescape(self._client().get(f"/documents/{doc_id}?trace_id=SAFEANCH&token=local-secret").text)
+        self.assertIn("<strong>1</strong><span>traces a relire</span>", response.text)
+        self.assertIn(f"/documents/{doc_id}?trace_id=SAFEANCH&amp;token=local-secret#pdf-reader", response.text)
+        self.assertIn("Point de reprise ouvert", detail_body)
+        self.assertIn("Vous reprenez ici: Zone encadree page 2.", detail_body)
+        self.assertNotIn("SAFEANCHOR123456", detail_body)
+        self._assert_public_pages_are_clean(unescape(response.text), detail_body)
+
     def test_document_detail_ignores_unknown_trace_id_without_leak(self) -> None:
         doc_id = "DOC-PDF-USER-TRACE-UNKNOWN-TRACE"
         self._add_pdf_document(doc_id)
@@ -353,11 +508,31 @@ class PdfTraceUserRouteTests(unittest.TestCase):
 
         response = client.get(f"/documents/{doc_id}?trace_id=raw/TRACE-SECRET&token=local-secret")
 
-        self.assertEqual(response.status_code, 200)
         body = unescape(response.text)
         self.assertIn("Tracer une preuve candidate", body)
         self.assertNotIn("Point de reprise ouvert", body)
         self.assertNotIn("TRACE-SECRET", body)
+        self._assert_public_pages_are_clean(body)
+
+    def test_document_detail_ignores_trace_id_from_another_document(self) -> None:
+        first_doc_id = "DOC-PDF-USER-TRACE-CROSS-A"
+        second_doc_id = "DOC-PDF-USER-TRACE-CROSS-B"
+        self._add_pdf_document(first_doc_id)
+        self._add_pdf_document(second_doc_id)
+        client = self._client()
+
+        save_response = self._save_trace(client, second_doc_id, "2", "Trace du second document")
+        trace_rows = read_csv(pdftrace_registry.trace_register_path(self.instance))[1]
+        foreign_trace_id = trace_rows[0]["trace_id"]
+        response = client.get(f"/documents/{first_doc_id}?trace_id={foreign_trace_id}&token=local-secret")
+
+        self.assertEqual(save_response.status_code, 303)
+        body = unescape(response.text)
+        self.assertIn("Tracer une preuve candidate", body)
+        self.assertNotIn("Point de reprise ouvert", body)
+        self.assertNotIn("Vous reprenez ici", body)
+        self.assertNotIn(foreign_trace_id, body)
+        self.assertNotIn("Trace du second document", body)
         self._assert_public_pages_are_clean(body)
 
     def _save_trace(self, client, doc_id: str, page: str, comment: str, *, follow_redirects: bool = False):
@@ -373,6 +548,45 @@ class PdfTraceUserRouteTests(unittest.TestCase):
             },
             follow_redirects=follow_redirects,
         )
+
+    def _write_legacy_trace(self, **overrides: str) -> None:
+        row = {
+            **{field: "" for field in pdftrace_registry.PDF_TRACE_FIELDS},
+            "page": "1",
+            "zone_x": "0.10",
+            "zone_y": "0.10",
+            "zone_width": "0.20",
+            "zone_height": "0.20",
+            "document_hash_status": "document_hash_not_checked",
+            "diffusion": "non_diffusable",
+            "text_status": "non_confirme",
+            **overrides,
+        }
+        write_csv(pdftrace_registry.trace_register_path(self.instance), pdftrace_registry.PDF_TRACE_FIELDS, [row])
+
+    def _queue_with_legacy_anchor(self, doc_id: str, anchor_hash: str, comment: str):
+        self._add_pdf_document(doc_id, page_count="3")
+        self._write_legacy_trace(
+            trace_id="",
+            document_ref=doc_id,
+            page="2",
+            anchor_hash=anchor_hash,
+            comment=comment,
+        )
+        return self._client().get("/pdf-traces?token=local-secret")
+
+    def _assert_no_legacy_resume(self, queue, detail, doc_id: str, trace_id: str) -> tuple[str, str]:
+        self.assertEqual(queue.status_code, 200)
+        self.assertEqual(detail.status_code, 200)
+        queue_body = unescape(queue.text)
+        detail_body = unescape(detail.text)
+        self.assertIn("<strong>0</strong><span>traces a relire</span>", queue.text)
+        self.assertNotIn(trace_id, queue_body)
+        self.assertNotIn(f"/documents/{doc_id}?trace_id={trace_id}", queue.text)
+        self.assertNotIn("Point de reprise ouvert", detail_body)
+        self.assertNotIn("Vous reprenez ici", detail_body)
+        self._assert_public_pages_are_clean(queue_body, detail_body)
+        return queue_body, detail_body
 
     def _assert_public_pages_are_clean(self, *bodies: str) -> None:
         for body in bodies:

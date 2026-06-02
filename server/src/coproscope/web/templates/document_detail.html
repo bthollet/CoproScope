@@ -20,7 +20,7 @@
 {% set requested_trace_id = request.query_params.get('trace_id', '') %}
 {% set selected_trace = namespace(value=None) %}
 {% for trace in document_detail.pdf_trace.saved_traces %}
-  {% if requested_trace_id and trace.trace_id == requested_trace_id %}
+  {% if requested_trace_id and trace.trace_id == requested_trace_id and trace.resume_path %}
     {% set selected_trace.value = trace %}
   {% endif %}
 {% endfor %}
@@ -226,7 +226,7 @@
             {% if is_selected_trace %}<br><small>Point de reprise ouvert</small>{% endif %}
           </th>
           <td>
-            {{ trace.zone }}<br><small>Ancre {{ trace.anchor }}</small><br>
+            {{ trace.zone }}<br><small>Repere court {{ trace.anchor }}</small><br>
             {% if trace.resume_path %}
             <a class="button-link secondary" href="{{ token_href(trace.resume_path) }}#pdf-reader" data-pdf-trace-replay data-pdf-trace-id="{{ trace.trace_id }}" data-pdf-trace-page="{{ trace.page }}" data-pdf-trace-x="{{ trace.zone_x }}" data-pdf-trace-y="{{ trace.zone_y }}" data-pdf-trace-width="{{ trace.zone_width }}" data-pdf-trace-height="{{ trace.zone_height }}" data-pdf-trace-label="Point de reprise: {{ trace.zone }}">Reprendre cette trace</a>
             {% endif %}
@@ -238,7 +238,7 @@
             Aucun extrait repere
             {% endif %}
             {% if trace.comment %}
-            <br><small>Commentaire: {{ trace.comment }}</small>
+            <br><small>Note courte: {{ trace.comment }}</small>
             {% endif %}
           </td>
           <td>{{ trace.diffusion }}<br><small>{{ trace.text }}</small></td>

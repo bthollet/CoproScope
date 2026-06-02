@@ -99,8 +99,8 @@ class DocumentViewerTraceExcerptTests(unittest.TestCase):
         self.assertIn("Texte repere automatiquement, a relire. Preuve non validee par CoproScope.", body)
         self.assertIn("Extrait repere", body)
         self.assertIn("Texte repere: Budget vote", body)
-        self.assertIn("Commentaire: Budget previsionnel a relire", body)
-        self.assertLess(body.index("Texte repere: Budget vote"), body.index("Commentaire: Budget previsionnel a relire"))
+        self.assertIn("Note courte: Budget previsionnel a relire", body)
+        self.assertLess(body.index("Texte repere: Budget vote"), body.index("Note courte: Budget previsionnel a relire"))
         self.assertNotIn("hors-zone", body)
         self._assert_no_private_or_technical_leak(body)
 

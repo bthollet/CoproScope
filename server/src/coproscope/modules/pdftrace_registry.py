@@ -171,18 +171,23 @@ def save_zone_trace(
 
 
 def public_trace_summaries(instance: InstanceConfig, document_ref: str) -> list[dict[str, str]]:
-    return [_public_trace_summary(row) for row in read_document_trace_rows(instance, document_ref)]
+    page_count = _positive_int(_registered_document(instance, document_ref).get("page_count"))
+    return [_public_trace_summary(row, page_count=page_count) for row in read_document_trace_rows(instance, document_ref)]
 
 
 def public_trace_reprise_queue(instance: InstanceConfig) -> dict[str, object]:
     documents = _document_summary_index(instance)
     items: list[dict[str, str]] = []
     for row in read_trace_rows(instance):
-        summary = _public_trace_summary(row)
+        document_ref = _safe_ref(row.get("document_ref"))
+        document = documents.get(document_ref)
+        page_count = _positive_int(document.get("page_count")) if document else 0
+        summary = _public_trace_summary(row, page_count=page_count)
         document_ref = summary["document_ref"]
         if not document_ref or not summary["trace_id"] or not summary["resume_path"]:
             continue
-        document = documents.get(document_ref, {})
+        if document is None:
+            continue
         items.append(
             {
                 "document_ref": document_ref,
@@ -191,7 +196,7 @@ def public_trace_reprise_queue(instance: InstanceConfig) -> dict[str, object]:
                 "created_at": summary["created_at"],
                 "page": summary["page"],
                 "zone": summary["zone"],
-                "status": summary["status"],
+                "status": summary["text"] or summary["status"],
                 "diffusion": summary["diffusion"],
                 "text": summary["text"],
                 "next_action": summary["next_action"],
@@ -226,10 +231,30 @@ def _page_label(row: Mapping[str, str]) -> str:
     return str(max(1, _positive_int(row.get("page", ""))))
 
 
-def _public_trace_summary(row: Mapping[str, str]) -> dict[str, str]:
+def _is_page_in_document(page: str, page_count: int) -> bool:
+    parsed = _positive_int(page)
+    return parsed > 0 and (page_count <= 0 or parsed <= page_count)
+
+
+def _public_trace_summary(row: Mapping[str, str], *, page_count: int = 0) -> dict[str, str]:
     safe_document_ref = _safe_ref(row.get("document_ref"))
-    trace_id = _safe_ref(row.get("trace_id")) or _short_hash(row.get("anchor_hash", ""))
+    raw_trace_id = _safe_ref(row.get("trace_id")) or _safe_ref(_short_hash(row.get("anchor_hash", "")))
+    raw_page = _cell(row.get("page", ""))
     page = _page_label(row)
+    zone_x = _safe_unit(row.get("zone_x", ""))
+    zone_y = _safe_unit(row.get("zone_y", ""))
+    zone_width = _safe_unit(row.get("zone_width", ""))
+    zone_height = _safe_unit(row.get("zone_height", ""))
+    can_resume = (
+        safe_document_ref
+        and raw_trace_id
+        and _is_page_in_document(raw_page, page_count)
+        and _has_resume_zone(zone_x, zone_y, zone_width, zone_height)
+    )
+    trace_id = raw_trace_id if can_resume else ""
+    resume_path = ""
+    if can_resume:
+        resume_path = f"/documents/{safe_document_ref}?trace_id={trace_id}"
     return {
         "document_ref": safe_document_ref,
         "trace_id": trace_id,
@@ -237,16 +262,16 @@ def _public_trace_summary(row: Mapping[str, str]) -> dict[str, str]:
         "anchor": _short_hash(row.get("anchor_hash", "")),
         "page": page,
         "zone": f"Zone encadree page {page}",
-        "zone_x": _safe_unit(row.get("zone_x", "")),
-        "zone_y": _safe_unit(row.get("zone_y", "")),
-        "zone_width": _safe_unit(row.get("zone_width", "")),
-        "zone_height": _safe_unit(row.get("zone_height", "")),
-        "resume_path": f"/documents/{safe_document_ref}?trace_id={trace_id}" if safe_document_ref and trace_id else "",
+        "zone_x": zone_x,
+        "zone_y": zone_y,
+        "zone_width": zone_width,
+        "zone_height": zone_height,
+        "resume_path": resume_path,
         "status": _trace_status_label(row.get("document_hash_status", "")),
         "diffusion": _diffusion_label(row.get("diffusion", "")),
         "text": _text_label(row.get("text_status", ""), row.get("document_hash_status", "")),
-        "excerpt": _public_text(row.get("selected_text_excerpt", "")),
-        "comment": _public_comment(row.get("comment", "")),
+        "excerpt": _public_text(row.get("selected_text_excerpt", "")) if can_resume else "",
+        "comment": _public_comment(row.get("comment", "")) if can_resume else "",
         "next_action": _reprise_next_action(row.get("text_status", ""), row.get("document_hash_status", "")),
     }
 
@@ -264,6 +289,7 @@ def _document_summary_index(instance: InstanceConfig) -> dict[str, dict[str, str
         index[document_ref] = {
             "label": f"Document {document_ref}",
             "document_type": _public_text(row.get("document_type", "")) or "Document",
+            "page_count": _cell(row.get("page_count", "")),
         }
     return index
 
@@ -462,8 +488,19 @@ def _safe_unit(value: Any) -> str:
     return _format_float(parsed)
 
 
+def _has_resume_zone(x: str, y: str, width: str, height: str) -> bool:
+    return bool(x and y and _safe_zone_size(width) and _safe_zone_size(height))
+
+
+def _safe_zone_size(value: str) -> bool:
+    try:
+        return float(value) >= MIN_ZONE_SIZE
+    except (TypeError, ValueError):
+        return False
+
+
 def _reprise_bucket(text_status: str, hash_status: str) -> str:
-    normalized_hash_status = _cell(hash_status)
+    normalized_hash_status = _normalized_hash_status(hash_status)
     normalized_text_status = _cell(text_status)
     if normalized_hash_status == DOCUMENT_HASH_MISMATCH:
         return "document_a_reverifier"
@@ -490,19 +527,26 @@ def _diffusion_label(value: str) -> str:
 
 
 def _trace_status_label(hash_status: str) -> str:
-    if _cell(hash_status) == DOCUMENT_HASH_MISMATCH:
+    if _normalized_hash_status(hash_status) == DOCUMENT_HASH_MISMATCH:
         return "Trace candidate enregistree - a verifier"
     return "Trace candidate enregistree"
 
 
 def _text_label(value: str, hash_status: str) -> str:
-    if _cell(hash_status) == DOCUMENT_HASH_MISMATCH:
+    normalized_hash_status = _normalized_hash_status(hash_status)
+    if normalized_hash_status == DOCUMENT_HASH_MISMATCH:
         return "Le document a change depuis son ajout dans CoproScope. Verifiez que la zone encadree montre toujours le bon passage."
-    if _cell(hash_status) == DOCUMENT_HASH_NOT_CHECKED:
+    if normalized_hash_status == DOCUMENT_HASH_NOT_CHECKED:
         return "Version du document non verifiee: relisez la zone encadree avant usage."
     if _cell(value) == TEXT_STATUS_UNCONFIRMED:
         return "Texte non confirme : seule la zone encadree est gardee."
     return "Texte repere automatiquement, a relire. Preuve non validee par CoproScope."
+
+
+def _normalized_hash_status(value: Any) -> str:
+    status = _cell(value)
+    aliases = {"document_hash_not_checked": DOCUMENT_HASH_NOT_CHECKED}
+    return aliases.get(status, status)
 
 
 def _actionable_issues(issues):
