@@ -4,7 +4,7 @@ Date: 2026-06-02 12:49 +02:00
 Conversation: `CONV-2026-2063`
 Chantier: `CH-20260602-122944-RM-2026-0008-audit360-points-verifier`
 Roadmap: `RM-2026-0008` / `ORD-P1-110`
-Worktree: `C:\Users\brice\CoproScope\dev\worktrees\coproscope-audit360-points-tests-utilisateur-20260602`
+Worktree: branche dediee `codex/20260602-audit360-points-tests-utilisateur`
 
 ## Decision
 
@@ -61,7 +61,6 @@ pretendre que cette page est livree.
 
 - Capture actuelle desktop: `docs/assets/audit360-points-verifier-20260602/suggestions-current-desktop.png`
 - Capture actuelle mobile: `docs/assets/audit360-points-verifier-20260602/suggestions-current-mobile.png`
-- HTML de capture: `docs/assets/audit360-points-verifier-20260602/suggestions-current.html`
 - Visuel cible mobile: `docs/assets/audit360-points-verifier-20260602/audit360-point-verifier-mobile-target.png`
 
 ## Backlog clair
