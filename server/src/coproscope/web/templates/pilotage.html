@@ -1,65 +1,62 @@
 {% extends "base.html" %}
 {% set view = pilotage if pilotage is defined else model.pilotage %}
 {% block content %}
-<section class="band" aria-labelledby="pilotage-title">
+<section class="band pilotage-band" aria-labelledby="pilotage-title">
   <div>
-    <p class="eyebrow">Pilotage indicateurs</p>
+    <p class="eyebrow">A surveiller</p>
     <h2 id="pilotage-title">{{ view.title }}</h2>
     <p>{{ view.intro }}</p>
-  </div>
-  <div class="kpi-grid" aria-label="Resume des indicateurs">
-    <div><strong>{{ view.summary.total }}</strong><span>cartes</span></div>
-    <div><strong>{{ view.summary.alerts }}</strong><span>prioritaires</span></div>
-    <div><strong>{{ view.summary.to_verify }}</strong><span>a verifier</span></div>
-    <div><strong>{{ view.summary.domains }}</strong><span>domaines</span></div>
-  </div>
-</section>
-
-{% if view.period_label or view.source_label %}
-<section class="panel" aria-label="Contexte de lecture">
-  <div class="badge-row">
-    {% if view.period_label %}
-    <span class="badge is-public">Periode {{ view.period_label }}</span>
-    {% endif %}
-    {% if view.source_label %}
-    <span class="badge is-review">Source {{ view.source_label }}</span>
+    {% if view.period_label or view.source_label %}
+    <p class="pilotage-context">
+      {% if view.period_label %}<span>Periode {{ view.period_label }}</span>{% endif %}
+      {% if view.source_label %}<span>Source {{ view.source_label }}</span>{% endif %}
+    </p>
     {% endif %}
   </div>
+  <div class="pilotage-summary" aria-label="Resume des indicateurs">
+    <span title="{{ view.summary.total }} indicateurs suivis"><strong>{{ view.summary.alerts }}</strong> prioritaires</span>
+    <span title="{{ view.summary.total }} indicateurs suivis"><strong>{{ view.summary.to_verify }}</strong> a verifier</span>
+    <small>{{ view.summary.total }} indicateurs suivis</small>
+  </div>
 </section>
-{% endif %}
 
 {% if view.has_cards %}
-<section class="module-grid wide" aria-label="Cartes indicateurs">
+<section class="module-grid wide pilotage-grid" aria-label="Indicateurs a surveiller">
   {% for card in view.cards %}
-  <article class="module-card" id="{{ card.card_id }}" data-status="{{ card.status }}">
+  <article class="module-card pilotage-card" id="{{ card.card_id }}" data-status="{{ card.status }}">
     <div class="panel-head">
       <strong>{{ card.title }}</strong>
       <span class="badge {{ card.status_class }}" title="{{ card.status_help }}">{{ card.status_label }}</span>
     </div>
-    <span>{{ card.novice_reading }}</span>
-    <dl class="compact-list">
-      <dt>Domaine</dt>
-      <dd>{{ card.domain_label }}</dd>
+    <p class="pilotage-reading">{{ card.novice_reading }}</p>
+    <dl class="compact-list pilotage-card-facts">
+      <dt>Valeur</dt>
+      <dd><strong>{{ card.value }}</strong></dd>
       <dt>Periode</dt>
       <dd>{{ card.period }}</dd>
-      <dt>Valeur</dt>
-      <dd>{{ card.value }}</dd>
       <dt>Preuve ou source</dt>
       <dd>{{ card.proof_source }}</dd>
       <dt>Seuil</dt>
       <dd>{{ card.threshold }}</dd>
+    </dl>
+    <div class="pilotage-action">
+      <small>Prochaine action</small>
+      <p>{{ card.next_action }}</p>
+      <a class="button-link secondary pilotage-card-action" href="{{ token_href(card.action_href) }}">{{ card.action_label }}</a>
+    </div>
+    <details class="pilotage-card-details">
+      <summary>Voir le controle complet</summary>
+      <dl class="compact-list pilotage-card-facts">
+      <dt>Domaine</dt>
+      <dd>{{ card.domain_label }}</dd>
       <dt>Confiance</dt>
       <dd>{{ card.confidence_label }}</dd>
-      <dt>Prochaine action</dt>
-      <dd>{{ card.next_action }}</dd>
       <dt>Diffusion</dt>
       <dd>{{ card.diffusion_label }}</dd>
       <dt>Rattachement</dt>
       <dd>{{ card.attachment_label }}</dd>
-    </dl>
-    <div class="badge-row">
-      <a class="button-link secondary" href="{{ token_href(card.action_href) }}">{{ card.action_label }}</a>
-    </div>
+      </dl>
+    </details>
     {% if card.owner or card.due_at %}
     <small>{{ card.owner }}{% if card.owner and card.due_at %} - {% endif %}{{ card.due_at }}</small>
     {% endif %}
@@ -77,8 +74,9 @@
 </section>
 {% endif %}
 
-<section class="grid two">
-  <div class="panel">
+<section class="grid two pilotage-secondary">
+  <details class="panel">
+    <summary><strong>Voir les domaines suivis</strong> <span>{{ view.domain_counts|length }}</span></summary>
     <div class="panel-head">
       <h3>Domaines suivis</h3>
       <span>{{ view.domain_counts|length }}</span>
@@ -90,9 +88,10 @@
       <span class="badge is-review">aucun domaine alimente</span>
       {% endfor %}
     </div>
-  </div>
+  </details>
 
-  <div class="panel">
+  <details class="panel">
+    <summary><strong>Comprendre les statuts</strong> <span>mots simples</span></summary>
     <div class="panel-head">
       <h3>Lecture des statuts</h3>
       <span>mots simples</span>
@@ -102,6 +101,6 @@
       <li><span class="badge {{ item.class }}">{{ item.label }}</span> {{ item.help }}</li>
       {% endfor %}
     </ul>
-  </div>
+  </details>
 </section>
 {% endblock %}
