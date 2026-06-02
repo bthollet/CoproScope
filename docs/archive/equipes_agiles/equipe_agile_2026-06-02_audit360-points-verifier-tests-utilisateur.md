@@ -107,4 +107,3 @@ Preuves produites:
 - pas de serveur durable.
 
 Tests applicatifs non lances: aucun code applicatif n'a ete modifie.
-
