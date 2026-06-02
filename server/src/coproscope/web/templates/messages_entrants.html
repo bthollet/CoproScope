@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 {% set view = messages_entrants %}
 {% block topbar_title %}{{ view.title }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+{% block topbar_action %}{% endblock %}
 {% block content %}
 <section class="mei-hero" aria-labelledby="mei-title">
   <div>
     <p class="eyebrow">{{ view.notice }}</p>
     <h2 id="mei-title">{{ view.headline }}</h2>
     <p class="lead">{{ view.status.summary }}</p>
+    <p class="mei-guardrail">{{ view.status.guardrail }}</p>
     <div class="mei-hero__actions">
       <a class="button-link" href="#messages">{{ view.status.cta }}</a>
       <a class="button-link secondary" href="#decisions">Voir les decisions</a>
@@ -32,7 +35,7 @@
 <section class="panel" aria-labelledby="mei-definitions-title">
   <div class="panel-head">
     <h3 id="mei-definitions-title">Mots utiles pour trier</h3>
-    <span>File de qualification</span>
+    <span>Tri humain</span>
   </div>
   <div class="mei-definitions">
     {% for definition in view.definitions %}
@@ -46,32 +49,63 @@
 
 <section class="panel" id="messages" aria-labelledby="mei-messages-title">
   <div class="panel-head">
-    <h3 id="mei-messages-title">File de qualification</h3>
+    <h3 id="mei-messages-title">Messages a lire en premier</h3>
     <span>{{ view.messages|length }} messages fictifs</span>
   </div>
-  <div class="mei-table" role="table" aria-label="Messages entrants et qualification fictive">
-    <div class="mei-row is-head" role="row">
-      <span role="columnheader">Message</span>
-      <span role="columnheader">Source</span>
-      <span role="columnheader">Sujet</span>
-      <span role="columnheader">Pourquoi maintenant</span>
-      <span role="columnheader">Urgence</span>
-      <span role="columnheader">Diffusion</span>
-      <span role="columnheader">Preuve</span>
-      <span role="columnheader">Suite</span>
+  <div class="mei-workbench" aria-label="Messages recus fictifs et detail du message prioritaire">
+    <div class="mei-message-list" aria-label="Liste des messages fictifs">
+      {% for message in view.messages %}
+      <article class="mei-message-card{% if loop.first %} is-selected{% endif %}">
+        <div class="mei-message-card__top">
+          <strong>{{ message.subject }}</strong>
+          <span>{{ message.urgency }}</span>
+        </div>
+        <p>{{ message.attention }}</p>
+        <dl>
+          <div>
+            <dt>Qui parle</dt>
+            <dd>{{ message.source }}</dd>
+          </div>
+          <div>
+            <dt>Preuve</dt>
+            <dd>{{ message.proof }}</dd>
+          </div>
+          <div>
+            <dt>Qui peut lire</dt>
+            <dd>{{ message.diffusion }}</dd>
+          </div>
+        </dl>
+      </article>
+      {% endfor %}
     </div>
-    {% for message in view.messages %}
-    <div class="mei-row" role="row">
-      <strong role="cell">{{ message.id }}</strong>
-      <span role="cell">{{ message.source }}</span>
-      <span role="cell">{{ message.subject }}</span>
-      <span role="cell">{{ message.attention }}</span>
-      <span role="cell">{{ message.urgency }}</span>
-      <span role="cell">{{ message.diffusion }}</span>
-      <span role="cell">{{ message.proof }}</span>
-      <span role="cell">{{ message.next_action }}</span>
-    </div>
-    {% endfor %}
+
+    <aside class="mei-detail" aria-label="Detail du message prioritaire fictif">
+      <span class="mei-detail__kicker">Message prioritaire fictif</span>
+      <h3>{{ view.selected_message.subject }}</h3>
+      <p>{{ view.selected_message.attention }}</p>
+      <dl>
+        <div>
+          <dt>Qui parle, sans nom</dt>
+          <dd>{{ view.selected_message.source }}</dd>
+        </div>
+        <div>
+          <dt>Resume prudent</dt>
+          <dd>{{ view.selected_message.moderation }}</dd>
+        </div>
+        <div>
+          <dt>Preuve attendue</dt>
+          <dd>{{ view.selected_message.proof }}</dd>
+        </div>
+        <div>
+          <dt>Qui peut lire</dt>
+          <dd>{{ view.selected_message.diffusion }}</dd>
+        </div>
+        <div>
+          <dt>Suite humaine</dt>
+          <dd>{{ view.selected_message.next_action }}</dd>
+        </div>
+      </dl>
+    </aside>
   </div>
 </section>
 
@@ -109,15 +143,16 @@
 
 <section class="panel" id="actions">
   <div class="panel-head">
-    <h3>Actions disponibles et bloquees</h3>
-    <span>Pas de suite automatique</span>
+    <h3>Suites preparees et bloquees</h3>
+    <span>Aucun clic n'envoie quoi que ce soit</span>
   </div>
   <div class="mei-actions">
     {% for action in view.actions %}
-    <button type="button" {% if action.enabled != "true" %}disabled aria-disabled="true"{% endif %}>
+    <article class="{% if action.blocked == 'true' %}is-blocked{% endif %}">
       <strong>{{ action.label }}</strong>
+      <span>{{ action.state }}</span>
       <small>{{ action.reason }}</small>
-    </button>
+    </article>
     {% endfor %}
   </div>
 </section>
