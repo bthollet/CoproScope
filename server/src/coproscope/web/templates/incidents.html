@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% set view = incidents %}
 {% block topbar_title %}{{ view.title }}{% endblock %}
+{% block topbar_action %}
+<a class="button-link cs-top-action inc-top-action" href="#inc-actions">Actions</a>
+{% endblock %}
 {% block content %}
 <section class="inc-hero" aria-labelledby="inc-title">
   <div>
@@ -9,13 +12,13 @@
     <p class="lead">{{ view.status.summary }}</p>
     <div class="inc-hero__actions">
       <a class="button-link" href="#incidents-file">{{ view.status.cta }}</a>
-      <a class="button-link secondary" href="#inc-actions">Voir les suites</a>
+      <a class="button-link secondary" href="#inc-actions">Voir les actions a faire</a>
     </div>
   </div>
-  <aside class="inc-status" aria-label="Statut IncidentOps">
+  <aside class="inc-status" aria-label="Statut suivi incidents">
     <span>Statut</span>
     <strong>{{ view.status.label }}</strong>
-    <small>Aucune declaration depuis CoproScope</small>
+    <small>Aucune declaration assurance ou syndic envoyee</small>
   </aside>
 </section>
 
@@ -29,11 +32,11 @@
   {% endfor %}
 </section>
 
-<section class="panel" aria-labelledby="inc-definitions-title">
-  <div class="panel-head">
-    <h3 id="inc-definitions-title">Mots utiles pour qualifier</h3>
-    <span>IncidentOps</span>
-  </div>
+<details class="panel inc-definitions-panel" aria-labelledby="inc-definitions-title">
+  <summary class="panel-head">
+    <h3 id="inc-definitions-title">Mots utiles</h3>
+    <span>Afficher definitions</span>
+  </summary>
   <div class="inc-definitions">
     {% for definition in view.definitions %}
     <article>
@@ -42,11 +45,11 @@
     </article>
     {% endfor %}
   </div>
-</section>
+</details>
 
 <section class="panel" id="incidents-file" aria-labelledby="inc-table-title">
   <div class="panel-head">
-    <h3 id="inc-table-title">File incidents et sinistres</h3>
+    <h3 id="inc-table-title">Liste des signalements</h3>
     <span>{{ view.incidents|length }} lignes</span>
   </div>
   <div class="inc-table" role="table" aria-label="Incidents, urgence, assurance, preuves et cloture">
@@ -62,14 +65,14 @@
     </div>
     {% for incident in view.incidents %}
     <div class="inc-row" role="row">
-      <strong role="cell">{{ incident.id }}<small>{{ incident.date }} - {{ incident.source_label }}</small></strong>
-      <span role="cell">{{ incident.location }}<small>{{ incident.summary }}</small></span>
-      <span role="cell">{{ incident.status_label }}<small>{{ incident.proof_state }}</small></span>
-      <span role="cell">{{ incident.priority_label }}<small>{{ incident.due_at }}</small></span>
-      <span role="cell">{{ incident.assurance }}</span>
-      <span role="cell">{{ incident.expected_proof }}</span>
-      <span role="cell">{{ incident.next_action }}</span>
-      <span role="cell">{{ incident.diffusion }}</span>
+      <strong role="cell" data-label="Incident">{{ incident.id }}<small>{{ incident.date }} - {{ incident.source_label }}</small></strong>
+      <span role="cell" data-label="Lieu">{{ incident.location }}<small>{{ incident.summary }}</small></span>
+      <span role="cell" data-label="Statut">{{ incident.status_label }}<small>{{ incident.proof_state }}</small></span>
+      <span role="cell" data-label="Urgence">{{ incident.priority_label }}<small>{{ incident.due_at }}</small></span>
+      <span role="cell" data-label="Assurance">{{ incident.assurance }}</span>
+      <span role="cell" data-label="Preuve">{{ incident.expected_proof }}</span>
+      <span role="cell" data-label="Action">{{ incident.next_action }}</span>
+      <span role="cell" data-label="Diffusion">{{ incident.diffusion }}</span>
     </div>
     {% endfor %}
   </div>
@@ -94,7 +97,7 @@
   <div class="panel">
     <div class="panel-head">
       <h3>Garde-fous diffusion</h3>
-      <span>References opaques</span>
+      <span>Documents originaux non affiches</span>
     </div>
     <div class="inc-checks">
       {% for item in view.boundaries %}
@@ -110,7 +113,7 @@
 <section class="panel" id="inc-actions" aria-labelledby="inc-actions-title">
   <div class="panel-head">
     <h3 id="inc-actions-title">Actions disponibles et bloquees</h3>
-    <span>Pas de declaration depuis CoproScope</span>
+    <span>Pas de declaration assurance ou syndic</span>
   </div>
   <div class="inc-actions">
     {% for action in view.actions %}
@@ -129,10 +132,10 @@
   </div>
 </section>
 
-<section class="panel" aria-labelledby="inc-version-title">
+<section class="panel inc-version-panel" aria-labelledby="inc-version-title">
   <div class="panel-head">
-    <h3 id="inc-version-title">Journal de versions</h3>
-    <span>Trace locale</span>
+    <h3 id="inc-version-title">Limites de cette page</h3>
+    <span>Garde-fous locaux</span>
   </div>
   <ul class="compact-list">
     {% for event in view.version_log %}

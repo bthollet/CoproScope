@@ -16,24 +16,29 @@ from coproscope.web.incidentops_view import build_incidentops_view
 
 REQUIRED_LABELS = (
     "Incidents et sinistres",
-    "Signalements a qualifier",
-    "Qualifier un signalement",
-    "Incidents ouverts",
-    "Preuves de cloture",
+    "Suites a preparer",
+    "Completer un signalement",
+    "A faire maintenant",
+    "Infos a completer",
+    "Preuves attendues",
+    "Preuve recue",
     "Signalement",
     "Fait remonte localement",
     "Sinistre",
     "Preuve de cloture",
+    "Photo ou document masque",
     "Synthese neutre",
-    "File incidents et sinistres",
+    "Liste des signalements",
     "Assurance",
     "Preuve attendue",
     "Decisions avant cloture",
     "Validation humaine",
-    "Voir actions incidents",
-    "Ajouter preuve locale",
-    "Declaration assurance",
-    "Partager aux coproprietaires",
+    "Voir les actions a faire",
+    "Joindre photo ou document masque",
+    "Declaration assurance externe",
+    "Partager largement",
+    "Limites de cette page",
+    "Aucune declaration assurance ou syndic envoyee",
 )
 
 FORBIDDEN_VISIBLE_MARKERS = (
@@ -48,9 +53,21 @@ FORBIDDEN_VISIBLE_MARKERS = (
     "SMTP",
     "Drive",
     "photo originale",
+    "preuve controlee",
+    "preuve derivee",
+    "trace derivee",
+    "suite humaine",
+    "References opaques",
+    "Deja securise",
     "assurance reelle",
     "declaration automatique",
     "Envoyer",
+    "Qualifier un signalement",
+    "Preparer la qualification",
+    "Mots utiles pour qualifier",
+    "Ajouter preuve locale",
+    "Voir actions incidents",
+    "Journal de versions",
     "secretValue",
 )
 
@@ -79,10 +96,16 @@ class UiIncidentOpsTests(unittest.TestCase):
 
         self.assertEqual(view["title"], "Incidents et sinistres")
         self.assertIn("FICTIF", view["notice"])
+        self.assertEqual(view["status"]["label"], "Suites a preparer")
+        self.assertIn("Il n'envoie pas de declaration", view["status"]["summary"])
         self.assertEqual(len(view["summary"]), 4)
         self.assertEqual(len(view["incidents"]), 3)
+        self.assertEqual(view["summary"][0]["label"], "A faire maintenant")
+        self.assertEqual(view["summary"][2]["detail"], "Photo ou document masque a verifier avant cloture.")
         self.assertTrue(any(action["enabled"] == "false" for action in view["actions"]))
         self.assertTrue(all(row["id"].startswith("INC-FICTIF-") for row in view["incidents"]))
+        self.assertEqual(view["incidents"][2]["assurance"], "Verification faite")
+        self.assertEqual(view["incidents"][2]["expected_proof"], "Preuve recue ou verification faite")
         self.assertEqual(view["shell_model"]["instance"]["id"], "FICTIF")
 
     def test_incidentops_view_model_reads_local_register_without_leaking_paths(self) -> None:
@@ -107,9 +130,9 @@ class UiIncidentOpsTests(unittest.TestCase):
         visible = str(view)
 
         self.assertEqual(view["incidents"][0]["source_label"], "Registre local")
-        self.assertEqual(view["incidents"][0]["status_label"], "a qualifier")
+        self.assertEqual(view["incidents"][0]["status_label"], "a completer")
         self.assertEqual(view["incidents"][0]["proof_state"], "Piece candidate a verifier")
-        self.assertIn("Assurance a qualifier", view["incidents"][0]["assurance"])
+        self.assertIn("Assurance a verifier", view["incidents"][0]["assurance"])
         self.assertNotIn("raw/photo.jpg", visible)
         self.assertNotIn("C:\\", visible)
 
@@ -128,6 +151,7 @@ class UiIncidentOpsTests(unittest.TestCase):
         self.assertIn('aria-current="page"', response.text)
         self.assertIn('href="/incidents?token=local-secret"', response.text)
         self.assertIn('href="/actions?scope=incidents&amp;token=local-secret"', response.text)
+        self.assertIn('href="#inc-actions"', response.text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
 
@@ -146,7 +170,8 @@ class UiIncidentOpsTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Incidents et sinistres", response.text)
-        self.assertIn("Aucune declaration", response.text)
+        self.assertIn("Aucune declaration assurance ou syndic envoyee", response.text)
+        self.assertNotIn("Qualifier un signalement", response.text)
 
     def test_incidentops_css_stacks_table_on_mobile(self) -> None:
         css_path = Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static" / "styles_part_22.css"
@@ -155,6 +180,8 @@ class UiIncidentOpsTests(unittest.TestCase):
         self.assertIn(".inc-table", css)
         self.assertIn("@media (max-width: 760px)", css)
         self.assertIn("grid-template-columns: 1fr", css)
+        self.assertIn(".inc-top-action", css)
+        self.assertIn('content: attr(data-label)', css)
         mobile_block = re.search(r"@media.*", css, flags=re.DOTALL).group(0)
         self.assertNotIn("overflow-x: auto", mobile_block)
 
