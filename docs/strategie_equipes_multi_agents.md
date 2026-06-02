@@ -15,7 +15,9 @@ Le routage se fait dans cet ordre:
 
 1. **Preflight anti-collision**: lire `docs/presence_agents.md` et
    `docs/roadmap_backlog_central.md`; si `EN_ATTENTE_USER`, incident doublon ou
-   `BLOQUE` non stationne existe, ne pas choisir de nouveau `ORD-*`.
+   `BLOQUE` non stationne existe sur le meme perimetre, ne pas choisir de
+   nouveau `ORD-*`. Les chantiers isoles dans d'autres worktrees, branches,
+   fichiers ou serveurs ne bloquent pas par principe.
 2. **Reprise avant dispatch**: si un `CH-*` vivant existe, relancer seulement
    ses roles manquants, idle, bloques ou expires, sans changer d'objectif.
 3. **Classification du travail**: classer l'objectif par nature dominante:
@@ -88,6 +90,10 @@ explicites de Brice.
 | `hub-and-spoke owner` | Backend/data/Drive/DB. | Un seul owner ecrit le code; experts et QA rendent des notes ou tests. |
 | `serie stricte` | Integration, release, recette live. | Une branche, un serveur ou un verdict a la fois. |
 | `red-team borne` | Cadrage sensible, securite, modele metier. | Lecture seule, objections sourcees, puis arbitrage. |
+
+Un pattern d'orchestration ne bloque pas les autres patterns par defaut. Il
+bloque seulement ce qui partage le meme owner, fichier, serveur, instance ou
+decision d'arbitrage.
 
 ## Sortie obligatoire du routeur
 

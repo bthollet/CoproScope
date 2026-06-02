@@ -83,6 +83,11 @@ Prochaine action:
 - `server/src/coproscope/web/viewmodel.py`, `server/src/coproscope/cli.py`, routes web, schemas vault, registres partages et docs de synthese demandent un owner explicite.
 - Un bot qui n'est pas owner propose une note d'integration au lieu de modifier le fichier.
 - Les changements hors ownership sont des no-go de coordination, sauf correction minime explicitement demandee par le coordinateur.
+- Non-blocage par defaut: un autre chantier actif ne bloque pas le bot si son
+  worktree, sa branche, ses fichiers, son serveur et ses donnees sont distincts.
+  Le bot se gare seulement sur conflit concret: arbre courant sale, fichier
+  partage, `WAIT_MERGE` reel, serveur durable ambigu, instance affectee ou
+  consigne explicite du coordinateur.
 
 ## Passerelles
 

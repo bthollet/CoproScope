@@ -6,6 +6,13 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
 
 - Un agent = une branche `codex/<sprint>-<scope>` = un worktree dedie.
 - Un agent possede un perimetre de fichiers explicite.
+- Non-blocage par defaut: un chantier isole dans son worktree, sa branche ou
+  son perimetre ne doit pas arreter les autres chantiers. Un agent se gare
+  seulement sur conflit concret: `main` sale dans son propre arbre de travail,
+  fichier partage effectivement touche par deux owners, protocole `WAIT_MERGE`
+  reel, serveur durable ambigu, instance privee affectee, ou demande explicite
+  du coordinateur. Ne pas attendre "tous les autres chantiers" si ces conditions
+  ne sont pas reunies.
 - Aucun fichier de code ne doit depasser 600 lignes. Cette limite s'applique
   aux sources applicatives, tests, templates, CSS, scripts et configurations
   maintenus dans le depot. Si un fichier depasse 600 lignes, le chantier
