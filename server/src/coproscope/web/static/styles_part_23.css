@@ -47,7 +47,6 @@
 
 .ctr-status span,
 .ctr-status small,
-.ctr-summary p,
 .ctr-summary span,
 .ctr-definitions p,
 .ctr-checks small,
@@ -70,6 +69,50 @@
 .ctr-summary article,
 .ctr-definitions article {
   flex: 1 1 190px;
+}
+
+.ctr-summary {
+  gap: 0.5rem;
+}
+
+.ctr-summary article {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.2rem 0.55rem;
+  align-items: baseline;
+  flex: 1 1 155px;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+}
+
+.ctr-summary strong {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.ctr-summary span {
+  font-size: 0.82rem;
+}
+
+.ctr-help {
+  margin-bottom: 1rem;
+}
+
+.ctr-help summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.ctr-help summary small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.ctr-help .ctr-definitions {
+  margin: 0.75rem 0 0;
 }
 
 .ctr-table {

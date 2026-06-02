@@ -21,19 +21,18 @@
 
 <section class="ctr-summary" aria-label="Resume des contrats">
   {% for metric in view.summary %}
-  <article>
-    <span>{{ metric.label }}</span>
+  <article title="{{ metric.detail }}" aria-label="{{ metric.label }}: {{ metric.value }}. {{ metric.detail }}">
     <strong>{{ metric.value }}</strong>
-    <p>{{ metric.detail }}</p>
+    <span>{{ metric.label }}</span>
   </article>
   {% endfor %}
 </section>
 
-<section class="panel" aria-labelledby="ctr-definitions-title">
-  <div class="panel-head">
-    <h3 id="ctr-definitions-title">Mots utiles pour verifier</h3>
-    <span>ContractOps</span>
-  </div>
+<details class="panel ctr-help" aria-labelledby="ctr-definitions-title">
+  <summary>
+    <span id="ctr-definitions-title">Mots utiles pour verifier</span>
+    <small>{{ view.definitions|length }} definitions</small>
+  </summary>
   <div class="ctr-definitions">
     {% for definition in view.definitions %}
     <article>
@@ -42,7 +41,7 @@
     </article>
     {% endfor %}
   </div>
-</section>
+</details>
 
 <section class="panel" id="contracts-file" aria-labelledby="ctr-table-title">
   <div class="panel-head">

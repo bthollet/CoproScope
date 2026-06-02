@@ -135,6 +135,9 @@ class UiContractOpsTests(unittest.TestCase):
         self.assertIn('href="/contrats?token=local-secret"', response.text)
         self.assertIn('href="/pieces?proof=missing&amp;group=contrats&amp;token=local-secret"', response.text)
         self.assertIn('href="/incidents?scope=contrats&amp;token=local-secret"', response.text)
+        self.assertIn('title="Points qui demandent une preuve ou une verification."', response.text)
+        self.assertIn('class="panel ctr-help"', response.text)
+        self.assertIn("6 definitions", text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
 
@@ -160,6 +163,10 @@ class UiContractOpsTests(unittest.TestCase):
         css = css_path.read_text(encoding="utf-8")
 
         self.assertIn(".ctr-table", css)
+        self.assertIn(".ctr-summary article", css)
+        self.assertIn("padding: 0.55rem 0.7rem", css)
+        self.assertIn("grid-template-columns: auto minmax(0, 1fr)", css)
+        self.assertIn(".ctr-help summary", css)
         self.assertIn("@media (max-width: 760px)", css)
         self.assertIn("grid-template-columns: 1fr", css)
         mobile_block = re.search(r"@media.*", css, flags=re.DOTALL).group(0)

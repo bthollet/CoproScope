@@ -99,10 +99,10 @@ def build_contractops_view(instance: Any | None = None, year: int = 2025) -> dic
             "cta": "Verifier une obligation",
         },
         "summary": [
-            _metric("Contrats suivis", str(len(rows)), "Contrats ou attestations visibles dans la synthese."),
             _metric("Obligations ouvertes", str(len(open_rows)), "Points qui demandent une preuve ou une verification."),
             _metric("Attestations attendues", str(len(attestations)), "Assurance, entretien ou attestation a rattacher."),
             _metric("Echeances visibles", str(sum(1 for row in rows if row["due_at"])), "Dates a relire avant relance humaine."),
+            _metric("Contrats suivis", str(len(rows)), "Contrats ou attestations visibles dans la synthese."),
         ],
         "definitions": [
             _entry("Contrat", "Accord ou police a suivre: syndic, assurance, maintenance ou travaux."),
