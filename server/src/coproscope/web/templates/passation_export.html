@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block topbar_title %}Apercu de passation{% endblock %}
+{% block topbar_title %}Dossier a transmettre{% endblock %}
 {% block content %}
 {% set ux = model.ux|default({}) %}
 {% set export = passation_export|default(ux.passation_export|default({})) %}
@@ -24,30 +24,30 @@
   <header class="cs-passation-hero">
     <div class="cs-passation-heading">
       <p class="eyebrow">{{ context.as_of_label|default(summary.last_updated_label|default('Situation actuelle')) }}</p>
-      <h2 id="passation-export-title">{{ context.title|default('Apercu de passation') }}</h2>
-      <p>{{ context.subtitle|default('Verifiez ce qui sera transmis, ce qui est exclu et les restrictions avant de telecharger.') }}</p>
+      <h2 id="passation-export-title">Dossier a transmettre</h2>
+      <p>{{ context.subtitle|default('Verifiez les anomalies, les preuves utiles et ce qui reste bloque avant de preparer le dossier.')|replace('telecharges', 'prepares dans le dossier') }}</p>
     </div>
-    <div class="cs-passation-hero-actions" aria-label="Actions principales export passation">
+    <div class="cs-passation-hero-actions" aria-label="Actions principales dossier de transmission">
       <a class="cs-passation-secondary" href="{{ token_href('/chantiers') }}">Retour memoire</a>
       <a class="cs-passation-secondary" href="{{ token_href('/actions') }}">Retour actions</a>
-      <a class="cs-passation-primary" href="{{ token_href(text_href) }}">Telecharger TXT</a>
-      <a class="cs-passation-primary" href="{{ token_href(json_href) }}">Telecharger JSON</a>
+      <a class="cs-passation-primary" href="{{ token_href(text_href) }}">Preparer version texte</a>
+      <a class="cs-passation-primary" href="{{ token_href(json_href) }}">Preparer version structuree</a>
     </div>
   </header>
 
   <section class="cs-passation-status" aria-label="Statut de l'export">
     <div>
       <strong>{{ summary.can_export_label|default('A verifier avant export') }}</strong>
-      <span>{{ context.watermark|default('Export derive, non source collaborative') }}</span>
-      <span>source_of_truth false</span>
+      <span>Dossier derive, non preuve officielle</span>
+      <span>Ne remplace pas les pieces originales</span>
     </div>
-    <p>{{ audit.generated_from|default('Memoire, actions, preuves et decisions de diffusion') }}. Cet apercu ne remplace pas les preuves originales.</p>
+    <p>{{ audit.generated_from|default('Memoire, actions, preuves et decisions de diffusion') }}. Il rassemble anomalies, actions et preuves utiles; il ne prouve rien seul.</p>
   </section>
 
   {% if empty_states.no_content.is_visible|default(false) %}
   <section class="cs-passation-empty" aria-labelledby="passation-empty-title">
-    <h3 id="passation-empty-title">Aucun contenu a exporter</h3>
-    <p>{{ empty_states.no_content.label|default('Ajoutez des evenements memoire ou des actions ouvertes avant de preparer une passation.') }}</p>
+    <h3 id="passation-empty-title">Aucun contenu a preparer</h3>
+    <p>{{ empty_states.no_content.label|default('Ajoutez des evenements memoire ou des actions ouvertes avant de preparer un dossier.') }}</p>
     <a href="{{ token_href(empty_states.no_content.href|default('/chantiers')) }}">Revenir a la memoire</a>
   </section>
   {% endif %}
@@ -64,14 +64,14 @@
     <section class="cs-passation-preview" aria-labelledby="passation-preview-title">
       <div class="cs-passation-section-head">
         <div>
-          <p class="eyebrow">Apercu lisible</p>
+        <p class="eyebrow">A relire avant transmission</p>
           <h3 id="passation-preview-title">{{ preview.title|default('Passation conseil syndical') }}</h3>
         </div>
         <span>{{ audience.selected_label|default('Conseil syndical') }}</span>
       </div>
       <p>{{ preview.intro|default('Synthese derivee des actions, evenements memoire et documents utiles.') }}</p>
 
-      <h4>Sections incluses</h4>
+      <h4>Parties du dossier</h4>
       <div class="cs-passation-preview-sections">
         {% for section in preview.sections|default([]) %}
         <section>
@@ -133,14 +133,14 @@
       </div>
     </section>
 
-    <aside class="cs-passation-side" aria-label="Verification avant telechargement">
+    <aside class="cs-passation-side" aria-label="Verification avant preparation du dossier">
       <section class="cs-passation-side-section">
         <div class="cs-passation-section-head">
-          <h3>Formats disponibles</h3>
+          <h3>Versions a preparer</h3>
           <span>{{ 'pret' if can_export else 'a relire' }}</span>
         </div>
         {% if can_export %}
-        <p>Les formats restent derives et doivent etre relus avant partage.</p>
+        <p>Les versions restent derivees et doivent etre relues avant partage.</p>
         {% else %}
         <p>{{ downloads.download_disabled_reason|default('Relisez cet apercu avant usage.') }}</p>
         {% endif %}
@@ -149,19 +149,19 @@
           {% if item.id|default('') in ['txt', 'json'] %}
           <a class="{{ 'is-disabled' if not item.enabled|default(can_export) else '' }}" href="{{ token_href(item.href|default('/exports/passation.' ~ item.id|default('txt'))) }}" aria-disabled="{{ 'true' if not item.enabled|default(can_export) else 'false' }}">
             <strong>{{ item.label|default(item.id|upper) }}</strong>
-            <span>{{ item.description|default('Export derive a telecharger.') }}</span>
+            <span>{{ item.description|default('Dossier derive a preparer.') }}</span>
           </a>
           {% endif %}
           {% else %}
-          <a href="{{ token_href(text_href) }}"><strong>TXT</strong><span>Synthese lisible et copiable.</span></a>
-          <a href="{{ token_href(json_href) }}"><strong>JSON</strong><span>Export structure pour audit ou reprise.</span></a>
+          <a href="{{ token_href(text_href) }}"><strong>Version texte</strong><span>Synthese lisible et copiable.</span></a>
+          <a href="{{ token_href(json_href) }}"><strong>Version structuree</strong><span>Dossier pour audit ou reprise.</span></a>
           {% endfor %}
         </div>
       </section>
 
       <section class="cs-passation-side-section">
         <div class="cs-passation-section-head">
-          <h3>Restrictions</h3>
+          <h3>Diffusion a verifier</h3>
           <span>{{ restrictions.label|default('Diffusion a relire') }}</span>
         </div>
         <p>{{ restrictions.reason|default('Relire les documents et les donnees sensibles avant partage externe.') }}</p>
@@ -191,8 +191,8 @@
     <div class="cs-passation-section-head">
       <div>
         <p class="eyebrow">Exclusions et limites</p>
-        <h3 id="passation-omissions-title">Elements exclus ou bloques</h3>
-        <p>Ce qui n'est pas transmis tel quel.</p>
+          <h3 id="passation-omissions-title">Ce qui ne sort pas</h3>
+        <p>Ce qui reste masque, exclu ou a reprendre avant partage.</p>
       </div>
       <span>{{ omitted.summary_label|default('Elements exclus, masques ou signales.') }}</span>
     </div>
@@ -203,7 +203,7 @@
         <span>{{ item.type_label|default('Element de passation') }} - {{ item.reason|default('Diffusion a verifier.') }}</span>
       </a>
       {% else %}
-      <p>Aucune omission prioritaire. Gardez quand meme le watermark derive dans l'export.</p>
+      <p>Aucune omission prioritaire. Gardez quand meme la mention dossier derive.</p>
       {% endfor %}
     </div>
   </section>
@@ -218,7 +218,7 @@
       {% for blocker in blockers %}
       <a href="{{ token_href(blocker.href|default('/actions')) }}">
         <strong>{{ blocker.label|default('Point bloquant') }}</strong>
-        <span>{{ blocker.detail|default('A relire avant export.') }}</span>
+        <span>{{ blocker.detail|default('A relire avant dossier.') }}</span>
       </a>
       {% endfor %}
     </div>
@@ -226,9 +226,9 @@
   {% endif %}
 
   <section class="cs-passation-audit" aria-label="Trace de generation">
-    <span>{{ context.watermark|default('Export derive, non source collaborative') }}</span>
+    <span>Dossier derive, non preuve officielle</span>
     <span>{{ audit.generated_at_label|default(summary.last_updated_label|default('Date a confirmer')) }}</span>
-    <span>{% if audit.source_of_truth|default(false) %}Source a verifier{% else %}Non source de verite{% endif %}</span>
+    <span>{% if audit.source_of_truth|default(false) %}Source a verifier{% else %}Non preuve officielle{% endif %}</span>
   </section>
 </section>
 {% endblock %}

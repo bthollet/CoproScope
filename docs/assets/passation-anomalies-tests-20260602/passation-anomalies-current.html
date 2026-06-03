@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoproScope - Residence Les Platanes</title>
+  <link rel="stylesheet" href="http://testserver/static/styles.css?v=20260530-drive-convergence">
+</head>
+<body class="cs-shell">
+  
+  
+  
+  
+  
+  
+  
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+  <div class="cs-app-shell">
+    <aside class="cs-sidebar" aria-label="Navigation CoproScope">
+      <div class="cs-sidebar-brand">
+        <span class="cs-brand-mark" aria-hidden="true">CS</span>
+        <strong>Cockpit Conseil Syndical</strong>
+      </div>
+
+      <p id="navigation-aide" class="sr-only">
+        Navigation principale: accueil des priorites, actions, comptes, documents, ajout de document, pieces, travaux suivis, demandes novice, AG contentieux passation, indicateurs a surveiller, droits, roles et commissions, confidentialite, chantiers et depot local.
+      </p>
+      <nav class="nav cs-sidebar-nav" aria-label="Navigation principale" aria-describedby="navigation-aide">
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Activites</span>
+          <a class="" href="/?token=local-secret" aria-label="Tableau de bord, accueil des priorites">
+            <span class="cs-nav-icon" aria-hidden="true">01</span>
+            <span>Tableau de bord</span>
+          </a>
+          <a class="" href="/actions?token=local-secret" aria-label="A traiter, actions a suivre">
+            <span class="cs-nav-icon" aria-hidden="true">02</span>
+            <span>A traiter</span>
+            <span class="cs-nav-count">6</span>
+          </a>
+          <a class="" href="/suggestions?token=local-secret" aria-label="Suggestions utiles, source, preuve et revue humaine">
+            <span class="cs-nav-icon" aria-hidden="true">24</span>
+            <span>Suggestions</span>
+          </a>
+          <a class="" href="/pieces?proof=missing&amp;token=local-secret" aria-label="Atelier pieces, relier piece, point, action et preuve">
+            <span class="cs-nav-icon" aria-hidden="true">03</span>
+            <span>Pieces manquantes</span>
+            <span class="cs-nav-count">2</span>
+          </a>
+          <a class="" href="/travaux?token=local-secret" aria-label="Travaux suivis, preuves manquantes et partage a verifier">
+            <span class="cs-nav-icon" aria-hidden="true">04</span>
+            <span>Travaux suivis</span>
+          </a>
+          <a class="" href="/demandes?token=local-secret" aria-label="Demandes syndic et coproprietaires">
+            <span class="cs-nav-icon" aria-hidden="true">05</span>
+            <span>Demandes syndic</span>
+            <span class="cs-nav-count">5</span>
+          </a>
+          <a class="" href="/ag-contentieux?token=local-secret" aria-label="AG, contentieux et passation, lecture novice">
+            <span class="cs-nav-icon" aria-hidden="true">06</span>
+            <span>AG / contentieux</span>
+            <span class="cs-nav-count">0</span>
+          </a>
+          <a class="" href="/comptes?token=local-secret" aria-label="Comptes et controles">
+            <span class="cs-nav-icon" aria-hidden="true">07</span>
+            <span>Controle comptes</span>
+            <span class="cs-nav-count">3</span>
+          </a>
+        </div>
+
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Documents</span>
+          <a class="" href="/documents?token=local-secret" aria-label="Documents, pieces et preuves">
+            <span class="cs-nav-icon" aria-hidden="true">08</span>
+            <span>Documents</span>
+          </a>
+          <a class="" href="/documents/ajouter?token=local-secret" aria-label="Ajouter un document dans le coffre local">
+            <span class="cs-nav-icon" aria-hidden="true">09</span>
+            <span>Ajouter un document</span>
+          </a>
+          <a class="" href="/courriers/preuves?token=local-secret" aria-label="Courriers et preuves, brouillons sans envoi automatique">
+            <span class="cs-nav-icon" aria-hidden="true">18</span>
+            <span>Courriers preuves</span>
+          </a>
+          <a class="" href="/messages/entrants?token=local-secret" aria-label="Messages entrants, qualifier avant diffusion">
+            <span class="cs-nav-icon" aria-hidden="true">19</span>
+            <span>Messages recus</span>
+          </a>
+          <a class="" href="/incidents?token=local-secret" aria-label="Incidents et sinistres, preuves de cloture">
+            <span class="cs-nav-icon" aria-hidden="true">21</span>
+            <span>Incidents</span>
+          </a>
+          <a class="" href="/contrats?token=local-secret" aria-label="Contrats, obligations et attestations a verifier">
+            <span class="cs-nav-icon" aria-hidden="true">22</span>
+            <span>Contrats</span>
+          </a>
+          
+          <a class="" href="/pilotage?token=local-secret" aria-label="Indicateurs, quoi surveiller en priorite">
+            <span class="cs-nav-icon" aria-hidden="true">10</span>
+            <span>A surveiller</span>
+          </a>
+          <a class="" href="/pilotage/activite?token=local-secret" aria-label="Activite en cours, travaux agents et blocages">
+            <span class="cs-nav-icon" aria-hidden="true">23</span>
+            <span>Activite en cours</span>
+          </a>
+          
+          <a class="active" href="/chantiers?token=local-secret" aria-label="Memoire de copropriete et passation" aria-current="page">
+            <span class="cs-nav-icon" aria-hidden="true">11</span>
+            <span>Memoire copropriete</span>
+          </a>
+          <a class="" href="/depot?token=local-secret" aria-label="Depot local et exports prepares">
+            <span class="cs-nav-icon" aria-hidden="true">12</span>
+            <span>Depot local</span>
+          </a>
+        </div>
+
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Parametres</span>
+          <a class="" href="/gouvernance?token=local-secret" aria-label="Droits, roles et gouvernance">
+            <span class="cs-nav-icon" aria-hidden="true">13</span>
+            <span>Droits et roles</span>
+          </a>
+          <a class="" href="/gouvernance/compte-rendu-cs?token=local-secret" aria-label="Compte rendu du conseil syndical, validation interne">
+            <span class="cs-nav-icon" aria-hidden="true">16</span>
+            <span>Compte rendu conseil</span>
+          </a>
+          <a class="" href="/gouvernance/atelier-ag?token=local-secret" aria-label="Atelier AG, projet conseil syndical non officiel">
+            <span class="cs-nav-icon" aria-hidden="true">20</span>
+            <span>Atelier AG</span>
+          </a>
+          <a class="" href="/gouvernance/participants-ag?token=local-secret" aria-label="Participants AG, droits et pouvoirs a verifier">
+            <span class="cs-nav-icon" aria-hidden="true">17</span>
+            <span>Participants AG</span>
+          </a>
+          <a class="" href="/gouvernance/roles-commissions?token=local-secret" aria-label="Roles et commissions, droits par ressource a relire">
+            <span class="cs-nav-icon" aria-hidden="true">25</span>
+            <span>Roles commissions</span>
+          </a>
+          <a class="" href="/confidentialite?token=local-secret" aria-label="Confidentialite, diffusion et masquage">
+            <span class="cs-nav-icon" aria-hidden="true">14</span>
+            <span>Diffusion et masquage</span>
+          </a>
+          <a class="" href="/coffre/partage?token=local-secret" aria-label="Coffre et partage, droits et invitations bloquees">
+            <span class="cs-nav-icon" aria-hidden="true">15</span>
+            <span>Coffre et partage</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="cs-share-card" aria-label="Contexte local">
+        <span>Mode de partage</span>
+        <strong>Mode prive local</strong>
+        <small>Aucune synchronisation externe lancee</small>
+      </div>
+    </aside>
+
+    <div class="cs-workspace">
+      <header class="topbar cs-topbar">
+        <div class="cs-topbar-title">
+          <p class="eyebrow">CoproScope local</p>
+          <h1>Apercu de passation</h1>
+        </div>
+        
+        <form class="cs-search" action="/documents?token=local-secret" method="get" role="search">
+          
+          <input type="hidden" name="token" value="local-secret">
+          
+          <label class="sr-only" for="cs-global-search">Rechercher</label>
+          <input id="cs-global-search" name="q" type="search" placeholder="Rechercher document, action, decision, fournisseur...">
+        </form>
+        
+        <div class="instance-meta" aria-label="Contexte du coffre local">
+          <span>Exercice 2025</span>
+          <span>Coffre synthetic-copro</span>
+          
+        </div>
+        
+        <a class="button-link cs-top-action" href="/demandes?token=local-secret"><span aria-hidden="true">+</span> Nouvelle demande</a>
+        
+      </header>
+
+      <form id="cs-global-drop-form" class="cs-global-drop-form" action="/depot?token=local-secret" method="post" enctype="multipart/form-data" aria-label="Depot global dans le coffre local">
+        <input type="hidden" name="intent" value="document">
+        <input type="hidden" name="return" value="document_intake">
+        <input type="hidden" name="source" value="global_drop">
+        <label class="sr-only" for="cs-global-drop-input">Choisir un fichier depuis ce poste</label>
+        <input id="cs-global-drop-input" type="file" name="files" multiple>
+        <div id="cs-global-drop-overlay" class="cs-global-drop-overlay" hidden>
+          <div>
+            <strong>Deposer dans le coffre local</strong>
+            <span>Les fichiers seront envoyes vers Ajouter un document pour qualification humaine.</span>
+          </div>
+        </div>
+      </form>
+
+      
+
+      <section class="quick-help" aria-label="Aide rapide">
+        <details>
+          <summary>Aide rapide</summary>
+          <ul>
+            <li>Au clavier: utilisez Tab pour parcourir les liens et Entree pour ouvrir l'element selectionne.</li>
+            <li>Sur ecran tactile: touchez une carte ou un bouton, puis revenez a Actions pour savoir quoi faire ensuite.</li>
+            <li>Les tableaux doivent etre lus avec leur titre ou leur texte d'introduction; les statuts ne reposent pas seulement sur la couleur.</li>
+          </ul>
+        </details>
+      </section>
+
+      <main id="contenu" tabindex="-1" class="cs-main" aria-describedby="navigation-aide">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section class="cs-passation-page" aria-labelledby="passation-export-title">
+  <header class="cs-passation-hero">
+    <div class="cs-passation-heading">
+      <p class="eyebrow">Situation 2025</p>
+      <h2 id="passation-export-title">Apercu de passation - extrait evenement</h2>
+      <p>Perimetre filtre: seuls cet evenement, ses preuves et ses points ouverts seront telecharges.</p>
+    </div>
+    <div class="cs-passation-hero-actions" aria-label="Actions principales export passation">
+      <a class="cs-passation-secondary" href="/chantiers?token=local-secret">Retour memoire</a>
+      <a class="cs-passation-secondary" href="/actions?token=local-secret">Retour actions</a>
+      <a class="cs-passation-primary" href="/exports/passation.txt?scope=event&amp;selected=MEM-DOC-7D412766&amp;token=local-secret">Telecharger TXT</a>
+      <a class="cs-passation-primary" href="/exports/passation.json?scope=event&amp;selected=MEM-DOC-7D412766&amp;token=local-secret">Telecharger JSON</a>
+    </div>
+  </header>
+
+  <section class="cs-passation-status" aria-label="Statut de l'export">
+    <div>
+      <strong>Extrait pret a relire avant telechargement</strong>
+      <span>export dérivé, non source collaborative</span>
+      <span>source_of_truth false</span>
+    </div>
+    <p>Memoire, actions, preuves et decisions de diffusion. Cet apercu ne remplace pas les preuves originales.</p>
+  </section>
+
+  
+
+  <section class="cs-passation-kpis" aria-label="Resume de l'apercu">
+    <div><strong>1</strong><span>evenements inclus</span></div>
+    <div><strong>3</strong><span>sujets ouverts</span></div>
+    <div><strong>2</strong><span>documents cites</span></div>
+    <div><strong>1</strong><span>restrictions a relire</span></div>
+    <div><strong>1</strong><span>elements exclus ou masques</span></div>
+  </section>
+
+  <div class="cs-passation-layout">
+    <section class="cs-passation-preview" aria-labelledby="passation-preview-title">
+      <div class="cs-passation-section-head">
+        <div>
+          <p class="eyebrow">Apercu lisible</p>
+          <h3 id="passation-preview-title">Extrait passation - 12/05/2026 demande pieces syndic.txt - Communication</h3>
+        </div>
+        <span>Conseil syndical</span>
+      </div>
+      <p>Apercu strictement limite a l&#39;evenement selectionne dans la memoire.</p>
+
+      <h4>Sections incluses</h4>
+      <div class="cs-passation-preview-sections">
+        
+        <section>
+          <h4>Perimetre de l&#39;extrait</h4>
+          <ul>
+            
+            <li>Evenement selectionne: MEM-DOC-7D412766</li>
+            
+            <li>1 evenement inclus</li>
+            
+            <li>2 reference(s) preuve citee(s)</li>
+            
+          </ul>
+        </section>
+        
+        <section>
+          <h4>Points ouverts</h4>
+          <ul>
+            
+            <li>12/05/2026 demande pieces syndic.txt - Communication</li>
+            
+            <li>Document utile pour comprendre l&#39;historique de la copropriete.</li>
+            
+            <li>clos</li>
+            
+          </ul>
+        </section>
+        
+      </div>
+
+      <div class="cs-passation-included" aria-label="Ce qui est inclus">
+        <section>
+          <h4>Evenements memoire inclus</h4>
+          
+          <a href="/chantiers?selected=MEM-DOC-7D412766&amp;token=local-secret">
+            <strong>12/05/2026 demande pieces syndic.txt - Communication</strong>
+            <span>12/05/2026 - clos</span>
+          </a>
+          
+        </section>
+        <section>
+          <h4>Actions ouvertes incluses</h4>
+          
+          <p>Aucune action ouverte incluse.</p>
+          
+        </section>
+        <section>
+          <h4>Documents cites</h4>
+          
+          <a href="/documents?token=local-secret">
+            <strong>DOC-840453CA134B</strong>
+            <span>Reference citee dans l&#39;extrait</span>
+          </a>
+          
+          <a href="/documents?token=local-secret">
+            <strong>MEM-DOC-7D412766</strong>
+            <span>Reference citee dans l&#39;extrait</span>
+          </a>
+          
+        </section>
+      </div>
+    </section>
+
+    <aside class="cs-passation-side" aria-label="Verification avant telechargement">
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Formats disponibles</h3>
+          <span>pret</span>
+        </div>
+        
+        <p>Les formats restent derives et doivent etre relus avant partage.</p>
+        
+        <div class="cs-passation-downloads">
+          
+          
+          <a class="is-disabled" href="/exports/passation.txt?scope=event&amp;selected=MEM-DOC-7D412766&amp;token=local-secret" aria-disabled="true">
+            <strong>TXT</strong>
+            <span>Synthese lisible et copiable.</span>
+          </a>
+          
+          
+          
+          <a class="is-disabled" href="/exports/passation.json?scope=event&amp;selected=MEM-DOC-7D412766&amp;token=local-secret" aria-disabled="true">
+            <strong>JSON</strong>
+            <span>Export structure pour audit ou reprise.</span>
+          </a>
+          
+          
+        </div>
+      </section>
+
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Restrictions</h3>
+          <span>Diffusion limitee</span>
+        </div>
+        <p>Le pack contient des sujets ouverts ou des pieces a arbitrer.</p>
+        <a class="cs-passation-inline-link" href="/confidentialite?scope=export&amp;export=passation&amp;token=local-secret">Verifier la diffusion</a>
+      </section>
+
+      <section class="cs-passation-side-section">
+        <div class="cs-passation-section-head">
+          <h3>Checklist</h3>
+          <span>4</span>
+        </div>
+        <div class="cs-passation-checklist">
+          
+          <a class="is-done" href="/exports/passation?token=local-secret">
+            <strong>Public vise choisi</strong>
+            <span>Pret - Version conseil syndical.</span>
+          </a>
+          
+          <a class="is-blocked" href="/confidentialite?scope=export&amp;export=passation&amp;token=local-secret">
+            <strong>Diffusion relue</strong>
+            <span>A verifier - Relire les elements limites avant partage.</span>
+          </a>
+          
+          <a class="is-blocked" href="/pieces?proof=missing&amp;token=local-secret">
+            <strong>Preuves manquantes visibles</strong>
+            <span>A obtenir - 2 piece(s) ou preuve(s) a obtenir.</span>
+          </a>
+          
+          <a class="is-done" href="/exports/passation?token=local-secret">
+            <strong>Mention export derive presente</strong>
+            <span>Pret - Export derive, non source collaborative.</span>
+          </a>
+          
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="cs-passation-omissions" aria-labelledby="passation-omissions-title">
+    <div class="cs-passation-section-head">
+      <div>
+        <p class="eyebrow">Exclusions et limites</p>
+        <h3 id="passation-omissions-title">Elements exclus ou bloques</h3>
+        <p>Ce qui n'est pas transmis tel quel.</p>
+      </div>
+      <span>1 element(s) exclus dans cet extrait.</span>
+    </div>
+    <div class="cs-passation-omission-list">
+      
+      <a href="/exports/passation/blocages/BLOCK-FICTIF-RELANCE-ASCENSEUR?scope=event&amp;selected=MEM-DOC-7D412766&amp;token=local-secret">
+        <strong>Relance ascenseur non tracee</strong>
+        <span>Blocage export - Date, canal et destinataire doivent etre notes avant de presenter la relance comme faite.</span>
+      </a>
+      
+    </div>
+  </section>
+
+  
+  <section class="cs-passation-blockers" aria-labelledby="passation-blockers-title">
+    <div class="cs-passation-section-head">
+      <h3 id="passation-blockers-title">A verifier avant partage</h3>
+      <span>1</span>
+    </div>
+    <div class="cs-passation-blocker-list">
+      
+      <a href="/exports/passation/blocages/BLOCK-FICTIF-RELANCE-ASCENSEUR?scope=event&amp;selected=MEM-DOC-7D412766&amp;token=local-secret">
+        <strong>Relance ascenseur non tracee</strong>
+        <span>Il manque la date et le canal d&#39;envoi hors CoproScope.</span>
+      </a>
+      
+    </div>
+  </section>
+  
+
+  <section class="cs-passation-audit" aria-label="Trace de generation">
+    <span>export dérivé, non source collaborative</span>
+    <span>Situation 2025</span>
+    <span>Non source de verite</span>
+  </section>
+</section>
+
+      </main>
+
+      <footer class="cs-footer">
+        Interface locale en lecture prioritaire. Les bruts, secrets, cartes de correspondance et dossiers restreints ne sont pas servis par l'application.
+      </footer>
+    </div>
+  </div>
+  
+  <script>
+  (function () {
+    var form = document.getElementById("cs-global-drop-form");
+    var input = document.getElementById("cs-global-drop-input");
+    var overlay = document.getElementById("cs-global-drop-overlay");
+    if (!form || !input || !overlay || !window.DataTransfer) {
+      return;
+    }
+    var dragDepth = 0;
+    function hasFiles(event) {
+      var types = event.dataTransfer && event.dataTransfer.types;
+      return types && Array.prototype.indexOf.call(types, "Files") !== -1;
+    }
+    function show() {
+      overlay.hidden = false;
+      document.body.classList.add("cs-is-global-dragging");
+    }
+    function hide() {
+      overlay.hidden = true;
+      document.body.classList.remove("cs-is-global-dragging");
+      dragDepth = 0;
+    }
+    document.addEventListener("dragenter", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      dragDepth += 1;
+      show();
+    });
+    document.addEventListener("dragover", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    });
+    document.addEventListener("dragleave", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      dragDepth -= 1;
+      if (dragDepth <= 0) {
+        hide();
+      }
+    });
+    document.addEventListener("drop", function (event) {
+      if (!hasFiles(event)) {
+        return;
+      }
+      event.preventDefault();
+      var transfer = new DataTransfer();
+      Array.prototype.forEach.call(event.dataTransfer.files || [], function (file) {
+        transfer.items.add(file);
+      });
+      if (!transfer.files.length) {
+        hide();
+        return;
+      }
+      input.files = transfer.files;
+      form.submit();
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        hide();
+      }
+    });
+  }());
+  </script>
+</body>
+</html>
