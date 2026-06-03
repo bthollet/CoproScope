@@ -250,8 +250,8 @@
       "lot": "Communication",
       "type_document": "Communication",
       "priorite": 96,
-      "motifs_nom_fichier": ["mail", "email", "e-mail", "courriel", "echange"],
-      "mots_cles": ["email recu", "courriel", "message du syndic", "trace locale"]
+      "motifs_nom_fichier": ["mail", "email", "e-mail", "courriel", "echange", "relance", "reponse"],
+      "mots_cles": ["email recu", "mail", "e-mail", "courriel", "message du syndic", "trace locale", "relance", "reponse du syndic"]
     },
     {
       "lot": "Communication",
@@ -266,13 +266,6 @@
       "priorite": 36,
       "motifs_nom_fichier": ["preuve.*envoi", "accuse.*reception", "lrar"],
       "mots_cles": ["preuve d'envoi", "accuse de reception", "lettre recommandee"]
-    },
-    {
-      "lot": "Communication",
-      "type_document": "Communication",
-      "priorite": 30,
-      "motifs_nom_fichier": ["mail", "email", "e-mail", "courriel", "relance", "note", "reponse"],
-      "mots_cles": ["mail", "email", "e-mail", "courriel", "relance", "demande", "reponse"]
     }
   ]
 }
