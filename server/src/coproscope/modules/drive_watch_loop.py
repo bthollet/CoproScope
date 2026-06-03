@@ -70,9 +70,14 @@ def _cycle(index: int, result: dict[str, object]) -> dict[str, object]:
     inbound = result.get("inbound") if isinstance(result.get("inbound"), dict) else {}
     outbound = result.get("outbound") if isinstance(result.get("outbound"), dict) else {}
     changes = result.get("changes") if isinstance(result.get("changes"), dict) else {}
+    conflict = result.get("conflict") if isinstance(result.get("conflict"), dict) else {}
+    merge = result.get("merge") if isinstance(result.get("merge"), dict) else {}
     return {
         "index": index,
         "status": str(result.get("status") or "blocked"),
+        "blocker_code": str(result.get("blocker_code") or ""),
+        "conflict": {"type": str(conflict.get("type") or "")} if conflict else {},
+        "merge": {"status": str(merge.get("status") or "")} if merge else {},
         "remote_changed": bool(changes.get("remote")),
         "local_changed": bool(changes.get("local")),
         "applied": bool(inbound.get("applied")),

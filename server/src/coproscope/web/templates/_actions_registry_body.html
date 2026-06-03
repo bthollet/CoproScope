@@ -179,8 +179,8 @@
         </article>
         {% else %}
         <div class="cs-empty-state">
-          <strong>Aucune preuve validee pour cette action.</strong>
-          <p>Ajouter une piece, choisir une preuve existante ou preparer une demande au syndic.</p>
+          <strong>{{ 'Aucune preuve relue pour cette action comptes.' if is_reprise_comptes else 'Aucune preuve validee pour cette action.' }}</strong>
+          <p>{{ 'Ajouter une piece, choisir une preuve existante ou preparer une question au syndic. CoproScope ne valide pas les comptes.' if is_reprise_comptes else 'Ajouter une piece, choisir une preuve existante ou preparer une demande au syndic.' }}</p>
           <div class="cs-empty-actions">
             <a href="{{ token_href('/actions?selected=' ~ selected_id ~ '&add=proof') }}">Ajouter une preuve</a>
             <a href="{{ token_href('/demandes/relance?action_id=' ~ selected_id) }}">Preparer une relance syndic</a>

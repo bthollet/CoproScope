@@ -232,7 +232,7 @@ def _known_detail(blocker: dict[str, Any], query: dict[str, str]) -> dict[str, A
         ],
         "actions": {
             "download": {
-                "label": "Telecharger export derive - verrouille",
+                "label": "Preparer dossier derive - verrouille",
                 "enabled": False,
                 "disabled_reason": title,
             },
@@ -282,7 +282,7 @@ def _missing_detail(blocker_id: str, query: dict[str, str]) -> dict[str, Any]:
         "format_impact": [],
         "actions": {
             "download": {
-                "label": "Telecharger export derive - verrouille",
+                "label": "Preparer dossier derive - verrouille",
                 "enabled": False,
                 "disabled_reason": "Blocage introuvable dans cet apercu.",
             },

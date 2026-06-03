@@ -128,6 +128,25 @@ class GoogleDriveRightsTests(unittest.TestCase):
         self.assertEqual(result["blocker_code"], "folder_unavailable")
         self.assertNotIn("folder-secret", serialized)
 
+    def test_sync_validation_blocks_public_domain_unreadable_and_no_write(self) -> None:
+        public = _rights("lien_public", can_write=True, permissions_readable=True)
+        domain = _rights("partage_domaine", can_write=True, permissions_readable=True)
+        unreadable = _rights("droits_non_lisibles", can_write=True, permissions_readable=False)
+        no_write = _rights("prive", can_write=False, permissions_readable=True)
+
+        self.assertEqual(gdrive_rights.validate_drive_sync_rights(public)["blocker_code"], "public_link")
+        self.assertEqual(gdrive_rights.validate_drive_sync_rights(domain)["blocker_code"], "domain_share")
+        self.assertEqual(gdrive_rights.validate_drive_sync_rights(unreadable)["blocker_code"], "permissions_unreadable")
+        self.assertEqual(gdrive_rights.validate_drive_sync_rights(no_write)["blocker_code"], "missing_write_access")
+
+    def test_sync_validation_allows_private_and_nominal_shared_folders(self) -> None:
+        private = gdrive_rights.validate_drive_sync_rights(_rights("prive", can_write=True, permissions_readable=True))
+        nominal = gdrive_rights.validate_drive_sync_rights(_rights("partage_nominal", can_write=True, permissions_readable=True))
+
+        self.assertEqual(private["status"], "ok")
+        self.assertEqual(nominal["status"], "ok")
+        self.assertIn("autorisee", str(nominal["summary"]))
+
     def test_cli_exposes_folder_rights(self) -> None:
         args = build_parser().parse_args(
             [
@@ -152,6 +171,23 @@ def _metadata(*, shared: bool, can_share: bool = True) -> dict[str, Any]:
         "ownedByMe": True,
         "shared": shared,
         "capabilities": {"canAddChildren": True, "canEdit": True, "canShare": can_share},
+    }
+
+
+def _rights(share_status: str, *, can_write: bool, permissions_readable: bool) -> dict[str, object]:
+    return {
+        "status": "inspected" if permissions_readable else "limited",
+        "folder": {"is_folder": True, "folder_id_present": True, "id_disclosure": "redacted"},
+        "current_google_account": {"can_write_files": can_write, "can_manage_sharing": True},
+        "sharing": {
+            "status": share_status,
+            "permissions_readable": permissions_readable,
+            "permission_count": 1,
+            "public_link_present": share_status == "lien_public",
+            "domain_share_present": share_status == "partage_domaine",
+        },
+        "payload_disclosure": "counts_only",
+        "path_disclosure": "none",
     }
 
 

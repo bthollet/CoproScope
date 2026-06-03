@@ -16,16 +16,12 @@
     <span>Statut</span>
     <strong>{{ view.status.label }}</strong>
     <small>{{ view.status.version }}</small>
+    <ul class="crcs-guardrails" aria-label="A retenir avant partage">
+      {% for item in view.boundary %}
+      <li><strong>{{ item.label }}</strong><span>{{ item.detail }}</span></li>
+      {% endfor %}
+    </ul>
   </aside>
-</section>
-
-<section class="crcs-boundary" aria-label="Frontieres a ne pas confondre">
-  {% for item in view.boundary %}
-  <article>
-    <strong>{{ item.label }}</strong>
-    <p>{{ item.detail }}</p>
-  </article>
-  {% endfor %}
 </section>
 
 <section class="grid two">
@@ -85,7 +81,7 @@
 <section class="grid two">
   <div class="panel">
     <div class="panel-head">
-      <h3>Actions du compte rendu</h3>
+      <h3>Prochaines actions</h3>
       <span>Aucun envoi</span>
     </div>
     <div class="crcs-actions">

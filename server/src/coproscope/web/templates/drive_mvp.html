@@ -11,7 +11,7 @@
         <p class="lead">{{ view.status.summary }}</p>
       </div>
       <div class="drive-config-state" aria-label="Etat Drive de cet ordinateur">
-        <span class="drive-state-dot drive-state-dot--{{ view.sync_status_bar.state }}" aria-hidden="true"></span>
+        <span class="drive-state-dot drive-state-dot--{{ view.status.dot_state }}" aria-hidden="true"></span>
         <strong>{{ view.status.label }}</strong>
       </div>
     </div>
@@ -42,6 +42,27 @@
     </div>
     <p>{{ view.instance_sync.summary }}</p>
     <div class="drive-real-sync" aria-label="Synchronisation Drive reelle">
+      {% if view.local_setup.enabled %}
+      <form method="post" action="{{ token_href(view.local_setup.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.local_setup.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.local_setup.label }}</button>
+      {% endif %}
+      {% if view.oauth_connect.enabled %}
+      <form method="post" action="{{ token_href(view.oauth_connect.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.oauth_connect.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.oauth_connect.label }}</button>
+      {% endif %}
+      {% if view.google_folder.enabled %}
+      <form method="post" action="{{ token_href(view.google_folder.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.google_folder.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.google_folder.label }}</button>
+      {% endif %}
       {% if view.real_sync.enabled %}
       <form method="post" action="{{ token_href(view.real_sync.href) }}">
         <button class="button-link" type="submit">{{ view.real_sync.label }}</button>
@@ -49,7 +70,34 @@
       {% else %}
       <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.real_sync.label }}</button>
       {% endif %}
+      {% if view.watch_control.enabled %}
+      <form method="post" action="{{ token_href(view.watch_control.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.watch_control.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.watch_control.label }}</button>
+      {% endif %}
+      {% if view.watch_auto.running %}
+      <form method="post" action="{{ token_href(view.watch_auto.stop_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.watch_auto.stop_label }}</button>
+      </form>
+      {% elif view.watch_auto.enabled_start %}
+      <form method="post" action="{{ token_href(view.watch_auto.start_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.watch_auto.start_label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.watch_auto.start_label }}</button>
+      {% endif %}
+      {% if view.real_sync.help == view.watch_control.help %}
       <small>{{ view.real_sync.help }}</small>
+      {% else %}
+      <small>{{ view.real_sync.help }}</small>
+      <small>{{ view.watch_control.help }}</small>
+      {% endif %}
+      <small>{{ view.local_setup.help }}</small>
+      <small>{{ view.oauth_connect.help }}</small>
+      <small>{{ view.google_folder.help }}</small>
+      <small>{{ view.watch_auto.status_label }}. {{ view.watch_auto.help }}</small>
     </div>
     <div class="drive-action-row" aria-label="Actions de test Drive">
       <form method="post" action="{{ token_href(view.instance_sync.publish_href) }}">
@@ -89,6 +137,33 @@
       {% endfor %}
     </div>
     <p class="drive-watch-note">{{ view.watch.label }}. {{ view.watch.remote_package_count }} paquet chiffre connu.</p>
+  </section>
+
+  <section class="panel drive-key-panel" aria-labelledby="drive-key-title" data-testid="drive-key-transfer">
+    <div class="panel-head">
+      <h3 id="drive-key-title">{{ view.key_transfer.title }}</h3>
+      <span>{{ view.key_transfer.status_label }}</span>
+    </div>
+    <p>{{ view.key_transfer.summary }}</p>
+    <div class="drive-key-actions">
+      <form method="post" action="{{ token_href(view.key_transfer.export_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.key_transfer.export_label }}</button>
+      </form>
+      <form method="post" action="{{ token_href(view.key_transfer.import_href) }}">
+        <label for="drive-secret-code-input">Code recu hors Drive</label>
+        <textarea id="drive-secret-code-input" name="secret_code" rows="2" autocomplete="off" spellcheck="false"></textarea>
+        <button class="button-link secondary" type="submit">{{ view.key_transfer.import_label }}</button>
+      </form>
+    </div>
+    {% if view.key_transfer.secret_code %}
+    <div class="drive-key-secret" aria-label="Code d'acces a transmettre">
+      <label for="drive-secret-code-output">Code a transmettre hors Drive</label>
+      <textarea id="drive-secret-code-output" rows="3" readonly spellcheck="false">{{ view.key_transfer.secret_code }}</textarea>
+      <small>{{ view.key_transfer.secret_help }}</small>
+    </div>
+    {% else %}
+    <p class="drive-result">{{ view.key_transfer.secret_help }}</p>
+    {% endif %}
   </section>
 
   <section class="panel drive-next" aria-labelledby="drive-next-title">

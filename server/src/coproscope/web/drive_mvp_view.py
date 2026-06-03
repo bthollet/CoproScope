@@ -7,8 +7,9 @@ from urllib.parse import urlencode
 
 from fastapi import Request
 
-from coproscope.modules import drive_ui_state
+from coproscope.modules import drive_key_transfer, drive_local_setup, drive_ui_state
 from coproscope.modules.drive_instance_sync import publish_instance_update, recover_instance_update
+from coproscope.web import drive_mvp_oauth_view, drive_mvp_watch_view
 
 
 def register_drive_mvp_routes(
@@ -25,7 +26,8 @@ def register_drive_mvp_routes(
     def drive_mvp(request: Request):
         require_token(request)
         result = _stored_result(app, request.query_params.get("drive_sync_id"))
-        view = build_drive_mvp_view(instance, year, result, drive_ui_state.inspect_drive_ui_state(instance))
+        runtime = drive_mvp_watch_view.runtime_with_watch_service(app, instance)
+        view = build_drive_mvp_view(instance, year, result, drive_mvp_oauth_view.runtime_with_google_connection(app, instance, runtime))
         return templates.TemplateResponse(
             request=request,
             name="drive_mvp.html",
@@ -38,9 +40,61 @@ def register_drive_mvp_routes(
         result = drive_ui_state.sync_now_from_instance(
             instance=instance,
             drive_service_factory=getattr(app.state, "drive_service_factory", None),
-            media_factory=getattr(app.state, "drive_media_factory", None),
-            media_downloader_factory=getattr(app.state, "drive_media_downloader_factory", None),
         )
+        return _redirect(app, request, result)
+
+    @app.post("/coffre/drive/surveiller")
+    async def drive_mvp_watch_once(request: Request):
+        require_token(request)
+        result = drive_ui_state.watch_once_from_instance(
+            instance=instance,
+            drive_service_factory=getattr(app.state, "drive_service_factory", None),
+        )
+        return _redirect(app, request, result)
+
+    @app.post("/coffre/drive/preparer-poste")
+    async def drive_mvp_prepare_local(request: Request):
+        require_token(request)
+        result = drive_local_setup.prepare_drive_local_workspace(instance)
+        return _redirect(app, request, result)
+
+    @app.post("/coffre/drive/connecter-google")
+    async def drive_mvp_connect_google(request: Request):
+        require_token(request)
+        runtime = drive_mvp_oauth_view.runtime_with_google_connection(
+            app,
+            instance,
+            drive_mvp_watch_view.runtime_with_watch_service(app, instance),
+        )
+        control = runtime.get("oauth_connect") if isinstance(runtime.get("oauth_connect"), Mapping) else {}
+        if not control.get("enabled"):
+            result = drive_mvp_oauth_view.google_connection_config_blocked(runtime)
+        else:
+            result = drive_mvp_oauth_view.ensure_oauth_service(app, instance).start()
+        return _redirect(app, request, result)
+
+    @app.post("/coffre/drive/dossier-google/creer")
+    async def drive_mvp_create_google_folder(request: Request):
+        require_token(request)
+        result = drive_ui_state.create_google_folder_from_instance(
+            instance=instance,
+            drive_service_factory=getattr(app.state, "drive_service_factory", None),
+        )
+        return _redirect(app, request, result)
+
+    @app.post("/coffre/drive/surveillance/activer")
+    async def drive_mvp_watch_service_start(request: Request):
+        require_token(request)
+        runtime = drive_ui_state.inspect_drive_ui_state(instance)
+        if not runtime.get("can_sync"):
+            return _redirect(app, request, drive_mvp_watch_view.watch_service_config_blocked(runtime))
+        result = drive_mvp_watch_view.ensure_watch_service(app, instance).start()
+        return _redirect(app, request, result)
+
+    @app.post("/coffre/drive/surveillance/arreter")
+    async def drive_mvp_watch_service_stop(request: Request):
+        require_token(request)
+        result = drive_mvp_watch_view.stop_watch_service(app)
         return _redirect(app, request, result)
 
     @app.post("/coffre/drive/publier-test")
@@ -63,6 +117,24 @@ def register_drive_mvp_routes(
         )
         return _redirect(app, request, result)
 
+    @app.post("/coffre/drive/code-acces")
+    async def drive_mvp_key_export(request: Request):
+        require_token(request)
+        result = drive_key_transfer.create_sync_key_code(
+            local_state_root=_artifact(instance, "drive_instance_sync_state"),
+        )
+        return _redirect(app, request, result)
+
+    @app.post("/coffre/drive/importer-code")
+    async def drive_mvp_key_import(request: Request):
+        require_token(request)
+        form = await request.form()
+        result = drive_key_transfer.import_sync_key_code(
+            local_state_root=_artifact(instance, "drive_instance_sync_state"),
+            secret_code=str(form.get("secret_code") or ""),
+        )
+        return _redirect(app, request, result)
+
 
 def build_drive_mvp_view(
     instance: Any,
@@ -80,11 +152,17 @@ def build_drive_mvp_view(
         "folder_setup": folder,
         "instance_sync": panel,
         "real_sync": runtime["real_sync"],
+        "local_setup": runtime["local_setup"],
+        "oauth_connect": runtime["oauth_connect"],
+        "google_folder": runtime["google_folder"],
+        "watch_control": runtime["watch_control"],
+        "watch_auto": drive_mvp_watch_view.watch_auto(runtime),
+        "key_transfer": _key_transfer(result),
         "oauth": runtime["oauth"],
         "watch": runtime["watch"],
         "next_steps": _next_steps(runtime),
         "next_steps_label": _next_steps_label(runtime),
-        "sync_status_bar": _status_bar(panel, runtime),
+        "sync_status_bar": drive_mvp_watch_view.status_bar(panel, runtime),
         "local_vs_drive": [
             {"label": "Reste ici", "items": ["Cle du coffre", "Documents lisibles", "Etat de cet ordinateur", "Cache temporaire"]},
             {"label": "Va dans Drive", "items": ["Paquets chiffres", "Empreintes de version", "Preuves de controle"]},
@@ -110,9 +188,10 @@ def _folder_status(runtime: Mapping[str, object]) -> dict[str, object]:
 
 
 def _panel(result: Mapping[str, object] | None) -> dict[str, object]:
-    if not result:
+    if not result or str(result.get("action") or "").startswith("key-"):
         return {
             "tone": "idle",
+            "source": "manual",
             "state": "Pret",
             "title": "Synchronisation de ce poste",
             "summary": "La synchronisation lit les paquets chiffres dans Drive, applique ce qui manque ici, puis envoie la version chiffree de ce poste.",
@@ -128,9 +207,20 @@ def _panel(result: Mapping[str, object] | None) -> dict[str, object]:
                 _step("Relire", "A lancer", "Verifie puis applique sur ce poste."),
             ],
         }
+    if str(result.get("action") or "") == "watch-once":
+        return drive_mvp_watch_view.watch_panel(result)
+    if str(result.get("action") or "") == "watch-service":
+        return drive_mvp_watch_view.watch_service_panel(result)
+    if str(result.get("action") or "") == "prepare-local":
+        return _local_setup_panel(result)
+    if str(result.get("action") or "") == "google-connect":
+        return drive_mvp_oauth_view.google_connect_panel(result)
+    if str(result.get("action") or "") == "google-folder":
+        return _google_folder_panel(result)
     status = str(result.get("status") or "blocked")
     return {
         "tone": "ready" if status in {"published", "recovered", "idle", "synced"} else "error",
+        "source": "sync-now" if str(result.get("action") or "") == "sync-now" else "manual",
         "state": _state(status),
         "title": "Test sans envoi lisible",
         "summary": _safe(result.get("summary"), "Action Drive terminee."),
@@ -144,54 +234,83 @@ def _panel(result: Mapping[str, object] | None) -> dict[str, object]:
     }
 
 
-def _status_bar(panel: Mapping[str, object], runtime: Mapping[str, object]) -> dict[str, object]:
-    if panel.get("tone") == "ready":
-        return {
-            "state": "ok",
-            "icon": "cloud",
-            "label": str(panel["state"]),
-            "summary": str(panel["summary"]),
-            "aria_label": "Etat Drive teste sur ce poste, ouvrir les details",
-            "details": [
-                "Cet ordinateur prepare seulement des fichiers chiffres.",
-                "La recuperation est verifiee localement.",
-                "Partage Google non verifie par ce test.",
-                "L'etat affiche est limite a cet ordinateur.",
-            ],
-        }
-    if panel.get("tone") == "error":
-        return {
-            "state": "error",
-            "icon": "error",
-            "label": "Drive bloque",
-            "summary": str(panel["summary"]),
-            "aria_label": "Etat Drive bloque, ouvrir les details",
-            "details": [
-                str(panel["result_label"]),
-                str(panel["share_label"]),
-                "La copie lisible reste sur cet ordinateur.",
-            ],
-        }
-    runtime_state = str(runtime.get("bar_state") or "setup")
-    real_sync = runtime.get("real_sync") if isinstance(runtime.get("real_sync"), Mapping) else {}
-    icon = {"ok": "cloud", "error": "error", "working": "sync"}.get(runtime_state, "gear")
-    label = {"ok": "Pret", "error": "Bloque", "working": "Synchronise"}.get(runtime_state, "A configurer")
-    aria_label = {
-        "ok": "Etat Drive pret sur ce poste, ouvrir les details",
-        "error": "Etat Drive bloque sur ce poste, ouvrir les details",
-        "working": "Synchronisation Drive en cours sur ce poste, ouvrir les details",
-    }.get(runtime_state, "Etat Drive a configurer sur ce poste, ouvrir les details")
+def _local_setup_panel(result: Mapping[str, object]) -> dict[str, object]:
     return {
-        "state": runtime_state,
-        "icon": icon,
-        "label": label,
-        "summary": str(real_sync.get("help") or "Le vrai dossier Drive reste a choisir."),
-        "aria_label": aria_label,
-        "details": [
-            str(real_sync.get("help") or "Aucun dossier Drive reel n'est choisi."),
-            "La synchronisation reelle reste limitee a cet ordinateur dans cet affichage.",
-            "Aucun document lisible ni cle du coffre n'est envoye dans Drive.",
-        ],
+        "tone": "ready" if str(result.get("status") or "") == "prepared" else "error",
+        "source": "local-setup",
+        "state": _state(str(result.get("status") or "blocked")),
+        "title": "Preparation locale de ce poste",
+        "summary": _safe(result.get("summary"), "Preparation locale terminee."),
+        "result_label": _safe(result.get("result_label"), "Poste prepare"),
+        "share_label": _safe(result.get("share_label"), "Aucun envoi Drive."),
+        "publish_href": "/coffre/drive/publier-test",
+        "recover_href": "/coffre/drive/recuperer-test",
+        "publish_label": "Tester la preparation",
+        "recover_label": "Tester la recuperation",
+        "steps": _steps(result),
+    }
+
+
+def _google_folder_panel(result: Mapping[str, object]) -> dict[str, object]:
+    ready = str(result.get("status") or "") == "configured"
+    return {
+        "tone": "ready" if ready else "error",
+        "source": "google-folder",
+        "state": "Dossier Google pret" if ready else "Dossier Google bloque",
+        "title": "Dossier Google chiffre",
+        "summary": _safe(result.get("summary"), "Dossier Google non prepare."),
+        "result_label": _safe(result.get("result_label"), "Dossier Google"),
+        "share_label": _safe(result.get("share_label"), "Aucun identifiant Google n'est affiche."),
+        "publish_href": "/coffre/drive/publier-test",
+        "recover_href": "/coffre/drive/recuperer-test",
+        "publish_label": "Tester la preparation",
+        "recover_label": "Tester la recuperation",
+        "steps": _steps(result),
+    }
+
+
+def _key_transfer(result: Mapping[str, object] | None) -> dict[str, object]:
+    state = str(result.get("status") or "") if result else ""
+    action = str(result.get("action") or "") if result else ""
+    code = str(result.get("secret_code") or "") if action == "key-export" else ""
+    if action == "key-import":
+        imported = state == "imported"
+        return {
+            "title": "Code d'acces coffre",
+            "summary": "Ce code sert seulement a autoriser ce coffre sur un nouvel ordinateur.",
+            "export_href": "/coffre/drive/code-acces",
+            "import_href": "/coffre/drive/importer-code",
+            "export_label": "Creer un code",
+            "import_label": "Importer le code",
+            "status_label": "Code importe" if imported else "Code refuse",
+            "status_tone": "ready" if imported else "error",
+            "secret_code": "",
+            "secret_help": "Le code n'est pas enregistre dans Drive.",
+        }
+    if code:
+        return {
+            "title": "Code d'acces coffre",
+            "summary": "Copiez ce code seulement vers la personne ou l'ordinateur autorise.",
+            "export_href": "/coffre/drive/code-acces",
+            "import_href": "/coffre/drive/importer-code",
+            "export_label": "Recreer un code",
+            "import_label": "Importer le code",
+            "status_label": "Code pret",
+            "status_tone": "ready",
+            "secret_code": code,
+            "secret_help": "Ne placez pas ce code dans Drive: il ouvre le coffre chiffre.",
+        }
+    return {
+        "title": "Code d'acces coffre",
+        "summary": "Un nouvel ordinateur doit recevoir ce code en dehors de Drive pour lire les paquets chiffres.",
+        "export_href": "/coffre/drive/code-acces",
+        "import_href": "/coffre/drive/importer-code",
+        "export_label": "Creer un code",
+        "import_label": "Importer le code",
+        "status_label": "Non cree",
+        "status_tone": "idle",
+        "secret_code": "",
+        "secret_help": "Drive ne recoit jamais ce code.",
     }
 
 
@@ -200,6 +319,7 @@ def _page_status(runtime: Mapping[str, object]) -> dict[str, str]:
     if status == "ready":
         return {
             "tone": "ready",
+            "dot_state": "ok",
             "label": "Pret",
             "summary": "Le dossier Drive chiffre et la connexion Google sont prets pour ce poste.",
             "source": "Controle local",
@@ -207,6 +327,7 @@ def _page_status(runtime: Mapping[str, object]) -> dict[str, str]:
     if status == "blocked":
         return {
             "tone": "risk",
+            "dot_state": "error",
             "label": "A verifier",
             "summary": "La configuration existe, mais la surface chiffree locale doit etre preparee.",
             "source": "Controle local",
@@ -214,12 +335,14 @@ def _page_status(runtime: Mapping[str, object]) -> dict[str, str]:
     if status == "action_required":
         return {
             "tone": "review",
+            "dot_state": "setup",
             "label": "Connexion a faire",
             "summary": "Le dossier Drive est choisi, mais Google doit encore etre connecte avec l'autorisation minimale.",
             "source": "Controle local",
         }
     return {
         "tone": "review",
+        "dot_state": "setup",
         "label": "A configurer",
         "summary": "Aucun dossier Google n'est relie. Le test prepare seulement des paquets chiffres.",
         "source": "Controle local",
@@ -231,7 +354,7 @@ def _next_steps(runtime: Mapping[str, object]) -> list[dict[str, str]]:
     if status == "ready":
         return [
             _item("1", "Synchroniser maintenant", "Lit Drive puis envoie seulement des paquets chiffres."),
-            _item("2", "Laisser surveiller", "Le futur service relancera ce controle quand ce poste change."),
+            _item("2", "Activer la surveillance", "CoproScope relance le controle pendant que l'application est ouverte."),
             _item("3", "Verifier les droits", "Google garde la gestion des personnes autorisees au dossier."),
         ]
     if status == "action_required":
@@ -331,13 +454,14 @@ def _state(status: str) -> str:
     return {
         "published": "Preparation test terminee",
         "recovered": "Recuperation test terminee",
+        "prepared": "Poste prepare",
         "idle": "Aucune nouvelle version",
         "synced": "Synchronisation terminee",
     }.get(status, "Bloque")
 
 
 def _state_text(value: object) -> str:
-    return {"ok": "OK", "waiting": "A lancer", "blocked": "Bloque"}.get(str(value or ""), "A lancer")
+    return {"ok": "OK", "waiting": "A lancer", "blocked": "Bloque"}.get(str(value or "").lower(), "A lancer")
 
 
 def _safe(value: object, fallback: str) -> str:

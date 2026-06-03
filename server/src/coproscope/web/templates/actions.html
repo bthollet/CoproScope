@@ -71,7 +71,7 @@
   {%- set value = source|default('', true)|string|trim -%}
   {%- if value == 'DocOps' -%}Document a verifier
   {%- elif value == 'PrivacyOps' -%}Diffusion a arbitrer
-  {%- elif value == 'ComptaScope' -%}Controle comptes
+  {%- elif value == 'ComptaScope' -%}Point comptes a verifier
   {%- elif value == 'DecisionOps' -%}Decision AG
   {%- elif value == 'IncidentOps' -%}Signalement a suivre
   {%- else -%}{{ safe_text(value, fallback) }}
@@ -170,11 +170,29 @@
 
 {% include "_actions_reprise_syndic.html" %}
 
+{% if is_reprise_comptes %}
+<section class="band notice-band" aria-labelledby="actions-compta-guard-title">
+  <div class="cs-notice-body">
+    <strong id="actions-compta-guard-title">Action humaine sur les comptes</strong>
+    <p>Cette page aide a preparer une question, une preuve attendue ou une reserve. CoproScope ne valide pas les comptes et ne remplace pas le conseil syndical.</p>
+  </div>
+  <div class="cs-empty-actions" aria-label="Reperes comptes">
+    <span>Question a poser</span>
+    <span>Preuve a relire</span>
+    <span>Decision humaine</span>
+  </div>
+</section>
+{% endif %}
+
 <section class="cs-page-header cs-registry-header" aria-labelledby="registre-title">
   <div>
     <p class="eyebrow">Registre decisions - actions - preuves</p>
-    <h2 id="registre-title">Actions a traiter <span class="sr-only">Registre des decisions</span></h2>
+    <h2 id="registre-title">{{ 'Actions comptes a traiter' if is_reprise_comptes else 'Actions a traiter' }} <span class="sr-only">Registre des decisions</span></h2>
+    {% if is_reprise_comptes %}
+    <p class="lead">Suivi des anomalies et demandes comptables: chaque fiche dit quelle question poser, quelle preuve relire, qui suit et ce qui restera en memoire.</p>
+    {% else %}
     <p class="lead">Suivi des decisions et relances en Boite de travail du conseil syndical: chaque decision dit quoi faire, qui suit, quelle preuve manque, quelle relance preparer et ce qui restera en memoire.</p>
+    {% endif %}
   </div>
 
   <div class="cs-header-tools" aria-label="Outils du registre">
@@ -186,7 +204,7 @@
       <input id="actions-search" name="q" type="search" value="" placeholder="Rechercher decisions, actions, preuves...">
     </form>
 
-    <span class="cs-status-badge">Mode prive local</span>
+    <span class="cs-status-badge">{{ 'Comptes: aide a verifier' if is_reprise_comptes else 'Mode prive local' }}</span>
 
     <details class="cs-help-menu">
       <summary class="cs-icon-button" aria-label="Aide sur les mots du registre">?</summary>
@@ -209,12 +227,12 @@
 </section>
 
 <section class="cs-register-summary" aria-label="Parcours jour de conseil syndical">
-  <a class="cs-summary-card cs-tone-danger" href="{{ token_href('/actions?status=a_demander') }}">
+  <a class="cs-summary-card cs-tone-danger" href="{{ token_href('/actions?status=a_demander' ~ ('&scope=comptes' if is_reprise_comptes else '')) }}">
     <span>{{ model.action_summary.by_status.a_demander|default(0) }} a demander</span>
-    <strong>Demander au syndic</strong>
+    <strong>{{ 'Poser la question comptes' if is_reprise_comptes else 'Demander au syndic' }}</strong>
     <dl>
       <dt>Pourquoi</dt>
-      <dd>Obtenir les pieces ou explications qui manquent avant de dire que la decision est suivie.</dd>
+      <dd>{{ 'Obtenir l explication, la facture ou le rapprochement qui manque avant toute conclusion.' if is_reprise_comptes else 'Obtenir les pieces ou explications qui manquent avant de dire que la decision est suivie.' }}</dd>
       <dt>Preuve / source</dt>
       <dd>Decision AG, facture, devis, reponse ecrite ou note de verification.</dd>
       <dt>Prochaine action</dt>
@@ -223,12 +241,12 @@
       <dd>Ne pas transferer de document complet tant que le public autorise n'est pas clair.</dd>
     </dl>
   </a>
-  <a class="cs-summary-card cs-tone-warn" href="{{ token_href('/actions?status=a_verifier') }}">
+  <a class="cs-summary-card cs-tone-warn" href="{{ token_href('/actions?status=a_verifier' ~ ('&scope=comptes' if is_reprise_comptes else '')) }}">
     <span>{{ model.action_summary.by_status.a_verifier|default(0) }} a verifier</span>
     <strong>Verifier la preuve</strong>
     <dl>
       <dt>Pourquoi</dt>
-      <dd>Confirmer qu'une piece prouve bien la date, le montant, le vote, l'execution ou la reponse.</dd>
+      <dd>{{ 'Relire la piece et noter ce qu elle permet de verifier, sans valider les comptes.' if is_reprise_comptes else 'Confirmer qu une piece prouve bien la date, le montant, le vote, l execution ou la reponse.' }}</dd>
       <dt>Preuve / source</dt>
       <dd>Piece rattachee, preuve candidate ou reponse du syndic a controler.</dd>
       <dt>Prochaine action</dt>
@@ -265,14 +283,14 @@
       <dd>Bloquer l'export tant qu'aucune decision lisible n'est inscrite.</dd>
     </dl>
   </a>
-  <a class="cs-summary-card cs-tone-ok" href="{{ token_href('/actions?status=clos') }}">
+  <a class="cs-summary-card cs-tone-ok" href="{{ token_href('/actions?status=clos' ~ ('&scope=comptes' if is_reprise_comptes else '')) }}">
     <span>{{ model.action_summary.by_status.clos|default(0) }} terminees</span>
-    <strong>Cloturer avec preuve</strong>
+    <strong>{{ 'Archiver avec trace' if is_reprise_comptes else 'Cloturer avec preuve' }}</strong>
     <dl>
       <dt>Pourquoi</dt>
-      <dd>Sortir de la reunion avec des sujets prouves, pas seulement commentes.</dd>
+      <dd>{{ 'Garder la trace de la relecture et de la decision humaine prise en conseil syndical.' if is_reprise_comptes else 'Sortir de la reunion avec des sujets prouves, pas seulement commentes.' }}</dd>
       <dt>Preuve / source</dt>
-      <dd>Preuve validee, source citee et role de la piece explicite.</dd>
+      <dd>{{ 'Piece relue, source citee et limite de la verification explicite.' if is_reprise_comptes else 'Preuve validee, source citee et role de la piece explicite.' }}</dd>
       <dt>Prochaine action</dt>
       <dd>Ajouter la note de passation ou exporter la fiche si la diffusion est claire.</dd>
       <dt>Prudence diffusion</dt>

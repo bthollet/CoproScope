@@ -179,6 +179,10 @@
         <div class="instance-meta" aria-label="Contexte du coffre local">
           <span>Exercice {{ instance.year|default('2025') }}</span>
           <span>Coffre {{ instance.id|default('local') }}</span>
+          <button id="cs-instance-switcher-button" class="instance-switch-button" type="button" aria-describedby="cs-instance-switcher-status">
+            Changer de coffre
+          </button>
+          <span id="cs-instance-switcher-status" class="instance-switch-status" aria-live="polite"></span>
           {% if instance_switcher_href is defined and instance_switcher_href %}
           <a class="instance-switch-link" href="{{ instance_switcher_href }}">Changer</a>
           {% endif %}
@@ -298,5 +302,7 @@
     });
   }());
   </script>
+  <script src="{{ url_for('static', path='instance_switcher.js') }}?v=20260603-instance-switcher"></script>
 </body>
 </html>
+

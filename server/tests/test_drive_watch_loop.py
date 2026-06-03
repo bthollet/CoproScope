@@ -28,6 +28,16 @@ class _FakeDriveFiles:
     def __init__(self) -> None:
         self.records: dict[str, dict[str, Any]] = {}
 
+    def get(self, **_: object) -> _FakeRequest:
+        return _FakeRequest(
+            {
+                "mimeType": "application/vnd.google-apps.folder",
+                "ownedByMe": True,
+                "shared": False,
+                "capabilities": {"canAddChildren": True, "canEdit": True, "canShare": True},
+            }
+        )
+
     def list(self, **_: object) -> _FakeRequest:
         return _FakeRequest({"files": [record["metadata"] for record in self.records.values()]})
 
@@ -55,9 +65,18 @@ class _FakeDriveFiles:
 class _FakeDriveService:
     def __init__(self) -> None:
         self.files_api = _FakeDriveFiles()
+        self.permissions_api = _FakePermissions()
 
     def files(self) -> _FakeDriveFiles:
         return self.files_api
+
+    def permissions(self) -> "_FakePermissions":
+        return self.permissions_api
+
+
+class _FakePermissions:
+    def list(self, **_: object) -> _FakeRequest:
+        return _FakeRequest({"permissions": [{"type": "user", "role": "owner", "emailAddress": "owner@example.invalid"}]})
 
 
 class DriveWatchLoopTests(unittest.TestCase):
@@ -138,6 +157,65 @@ class DriveWatchLoopTests(unittest.TestCase):
             self.assertEqual(result["cycles_completed"], 1)
             self.assertFalse(result["cycles"][0]["uploaded"])
             self.assertEqual(len(service.files_api.records), 1)
+            self.assertNotIn("folder-secret", serialized)
+            self.assertNotIn("file-", serialized)
+            self.assertNotIn(str(root).lower(), serialized)
+
+    def test_watch_loop_stops_on_concurrent_remote_and_local_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            service = _FakeDriveService()
+            instance = SimpleNamespace(instance_id="copro-fictive")
+            state_a = root / "state-a"
+            state_b = root / "state-b"
+
+            _loop(instance, service, root / "sync-a", state_a, marker="a-v1", cycles=1)
+            state_b.mkdir()
+            (state_b / drive_instance_sync.SYNC_KEY_FILE).write_bytes((state_a / drive_instance_sync.SYNC_KEY_FILE).read_bytes())
+            _loop(instance, service, root / "sync-b", state_b, marker="b-v1", cycles=1)
+            _loop(instance, service, root / "sync-a", state_a, marker="a-v1", cycles=1)
+            _loop(instance, service, root / "sync-b", state_b, marker="b-v2", cycles=1)
+
+            result = _loop(instance, service, root / "sync-a", state_a, marker="a-v2", cycles=3)
+            serialized = json.dumps(result, ensure_ascii=True).lower()
+
+            self.assertEqual(result["status"], "blocked")
+            self.assertEqual(result["cycles_completed"], 1)
+            self.assertEqual(result["cycles"][0]["blocker_code"], "concurrent_changes")
+            self.assertEqual(result["cycles"][0]["conflict"]["type"], "remote_and_local_changed")
+            self.assertFalse(result["cycles"][0]["applied"])
+            self.assertFalse(result["cycles"][0]["uploaded"])
+            self.assertEqual(len(service.files_api.records), 3)
+            self.assertNotIn("folder-secret", serialized)
+            self.assertNotIn("file-", serialized)
+            self.assertNotIn(str(root).lower(), serialized)
+
+    def test_watch_loop_reports_automatic_merge_for_disjoint_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            service = _FakeDriveService()
+            instance_a = SimpleNamespace(instance_id="copro-fictive", drive_shared_state={"base": "FICTIF-v1"})
+            instance_b = SimpleNamespace(instance_id="copro-fictive", drive_shared_state={"base": "FICTIF-v1"})
+            state_a = root / "state-a"
+            state_b = root / "state-b"
+
+            _loop(instance_a, service, root / "sync-a", state_a, marker="a-v1", cycles=1)
+            state_b.mkdir()
+            (state_b / drive_instance_sync.SYNC_KEY_FILE).write_bytes((state_a / drive_instance_sync.SYNC_KEY_FILE).read_bytes())
+            _loop(instance_b, service, root / "sync-b", state_b, marker="b-v1", cycles=1)
+            _loop(instance_a, service, root / "sync-a", state_a, marker="a-v1", cycles=1)
+            instance_b.drive_shared_state = {"base": "FICTIF-v1", "remote_note": "FICTIF distant"}
+            _loop(instance_b, service, root / "sync-b", state_b, marker="b-v2", cycles=1)
+            instance_a.drive_shared_state = {"base": "FICTIF-v1", "local_note": "FICTIF local"}
+
+            result = _loop(instance_a, service, root / "sync-a", state_a, marker="a-v2", cycles=2)
+            serialized = json.dumps(result, ensure_ascii=True).lower()
+
+            self.assertEqual(result["status"], "completed")
+            self.assertEqual(result["counts"], {"synced": 1, "idle": 1, "blocked": 0})
+            self.assertEqual(result["cycles"][0]["merge"], {"status": "merged"})
+            self.assertTrue(result["cycles"][0]["uploaded"])
+            self.assertEqual(len(service.files_api.records), 4)
             self.assertNotIn("folder-secret", serialized)
             self.assertNotIn("file-", serialized)
             self.assertNotIn(str(root).lower(), serialized)

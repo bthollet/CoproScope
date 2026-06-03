@@ -3,8 +3,6 @@ param(
     [string]$InstanceRoot = "",
     [ValidateSet("http", "window")]
     [string]$Mode = "http",
-    [string]$ProbePath = "/",
-    [string[]]$ExpectText = @("CoproScope"),
     [string]$Token = "smoke-token",
     [int]$TimeoutSeconds = 35
 )
@@ -25,8 +23,10 @@ function Resolve-CoproScopeExe {
     $StandardExe = Join-Path $DistRoot "CoproScope\CoproScope.exe"
     $Candidates = @()
     if (Test-Path $DistRoot) {
-        $Candidates += Get-ChildItem -LiteralPath $DistRoot -Recurse -Filter "CoproScope.exe" -File -ErrorAction SilentlyContinue |
-            ForEach-Object { $_.FullName }
+        $Candidates += Get-ChildItem -LiteralPath $DistRoot -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like "CoproScope*" } |
+            ForEach-Object { Join-Path $_.FullName "CoproScope.exe" } |
+            Where-Object { Test-Path $_ }
     }
     if (Test-Path $StandardExe) {
         $Candidates += $StandardExe
@@ -76,17 +76,6 @@ function Stop-OwnedProcessTree {
     }
 }
 
-function Normalize-ExpectedText {
-    param([string[]]$Values)
-    $Normalized = @()
-    foreach ($Value in $Values) {
-        $Normalized += $Value -split "," |
-            ForEach-Object { $_.Trim() } |
-            Where-Object { $_ }
-    }
-    return $Normalized
-}
-
 $ResolvedExePath = Resolve-CoproScopeExe $ExePath
 if (-not (Test-Path $ResolvedExePath)) {
     throw "Executable introuvable: $ResolvedExePath"
@@ -103,11 +92,6 @@ if (-not (Test-Path (Join-Path $ResolvedInstanceRoot "instance.yml"))) {
 $Port = New-FreeLoopbackPort
 $LogPath = Join-Path $env:TEMP "coproscope-executable-smoke-$Port.log"
 Remove-Item -LiteralPath $LogPath -ErrorAction SilentlyContinue
-$ProbePath = "/" + $ProbePath.TrimStart("/")
-$ProbeUri = "http://127.0.0.1:$Port$ProbePath"
-$ProbeSeparator = if ($ProbeUri.Contains("?")) { "&" } else { "?" }
-$ProbeUri = "$ProbeUri$ProbeSeparator" + "token=$Token"
-$ExpectedTexts = Normalize-ExpectedText $ExpectText
 
 $Arguments = @("--instance-root", "`"$ResolvedInstanceRoot`"", "--port", $Port, "--token", $Token)
 if ($Mode -eq "http") {
@@ -126,19 +110,10 @@ try {
 
     $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     $HttpOk = $false
-    $MissingText = @()
     while ((Get-Date) -lt $Deadline) {
         try {
-            $Response = Invoke-WebRequest -UseBasicParsing -Uri $ProbeUri -TimeoutSec 2
-            $ExpectedTextFound = $true
-            $MissingText = @()
-            foreach ($Expected in $ExpectedTexts) {
-                if ($Response.Content -notmatch [regex]::Escape($Expected)) {
-                    $ExpectedTextFound = $false
-                    $MissingText += $Expected
-                }
-            }
-            if ($Response.StatusCode -eq 200 -and $ExpectedTextFound) {
+            $Response = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/?token=$Token" -TimeoutSec 2
+            if ($Response.StatusCode -eq 200 -and $Response.Content -match "CoproScope") {
                 $HttpOk = $true
                 break
             }
@@ -151,8 +126,7 @@ try {
         }
     }
     if (-not $HttpOk) {
-        $MissingDetails = if ($MissingText.Count) { " Textes absents: $($MissingText -join ', ')." } else { "" }
-        throw "Smoke executable KO: l'UI ne repond pas comme attendu sur $ProbePath port $Port.$MissingDetails"
+        throw "Smoke executable KO: l'UI ne repond pas sur le port $Port."
     }
 
     if ($Mode -eq "window") {
@@ -170,7 +144,6 @@ try {
     [pscustomobject]@{
         Status = "OK"
         Mode = $Mode
-        ProbePath = $ProbePath
         ExePath = $ResolvedExePath
         InstanceRoot = $ResolvedInstanceRoot
         Port = $Port

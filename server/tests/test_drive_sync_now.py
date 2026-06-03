@@ -25,8 +25,20 @@ class _FakeMediaRequest:
 
 
 class _FakeDriveFiles:
-    def __init__(self) -> None:
+    def __init__(self, *, shared: bool = False, can_write: bool = True) -> None:
         self.records: dict[str, dict[str, Any]] = {}
+        self.shared = shared
+        self.can_write = can_write
+
+    def get(self, **_: object) -> _FakeRequest:
+        return _FakeRequest(
+            {
+                "mimeType": "application/vnd.google-apps.folder",
+                "ownedByMe": True,
+                "shared": self.shared,
+                "capabilities": {"canAddChildren": self.can_write, "canEdit": self.can_write, "canShare": True},
+            }
+        )
 
     def list(self, **_: object) -> _FakeRequest:
         return _FakeRequest({"files": [record["metadata"] for record in self.records.values()]})
@@ -54,11 +66,25 @@ class _FakeDriveFiles:
 
 
 class _FakeDriveService:
-    def __init__(self) -> None:
-        self.files_api = _FakeDriveFiles()
+    def __init__(self, *, permissions: list[dict[str, object]] | None = None, shared: bool = False, can_write: bool = True) -> None:
+        self.files_api = _FakeDriveFiles(shared=shared, can_write=can_write)
+        self.permissions_api = _FakePermissions(
+            permissions or [{"type": "user", "role": "owner", "emailAddress": "owner@example.invalid"}]
+        )
 
     def files(self) -> _FakeDriveFiles:
         return self.files_api
+
+    def permissions(self) -> "_FakePermissions":
+        return self.permissions_api
+
+
+class _FakePermissions:
+    def __init__(self, permissions: list[dict[str, object]]) -> None:
+        self.permissions = permissions
+
+    def list(self, **_: object) -> _FakeRequest:
+        return _FakeRequest({"permissions": self.permissions})
 
 
 class DriveSyncNowTests(unittest.TestCase):
@@ -109,9 +135,32 @@ class DriveSyncNowTests(unittest.TestCase):
             serialized = json.dumps({"first": first, "second": second}, ensure_ascii=True).lower()
             self.assertEqual(first["status"], "synced")
             self.assertEqual(second["status"], "blocked")
-            self.assertEqual(second["phases"][0]["status"], "blocked")
+            self.assertEqual(_phase_status(second, "lecture_drive"), "blocked")
             self.assertFalse(second["outbound"]["uploaded"])
             self.assertEqual(len(service.files_api.records), 1)
+            self.assertNotIn("folder-secret", serialized)
+            self.assertNotIn("file-", serialized)
+            self.assertNotIn(str(root).lower(), serialized)
+
+    def test_sync_now_blocks_public_google_folder_before_upload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            service = _FakeDriveService(
+                shared=True,
+                permissions=[
+                    {"type": "user", "role": "owner", "emailAddress": "owner@example.invalid"},
+                    {"type": "anyone", "role": "reader", "allowFileDiscovery": False},
+                ],
+            )
+            instance = SimpleNamespace(instance_id="copro-fictive")
+
+            result = _sync(instance, service, root / "sync-a", root / "state-a")
+            serialized = json.dumps(result, ensure_ascii=True).lower()
+
+            self.assertEqual(result["status"], "blocked")
+            self.assertEqual(result["phases"][0], {"name": "droits_google", "status": "blocked"})
+            self.assertFalse(result["outbound"]["uploaded"])
+            self.assertEqual(len(service.files_api.records), 0)
             self.assertNotIn("folder-secret", serialized)
             self.assertNotIn("file-", serialized)
             self.assertNotIn(str(root).lower(), serialized)
@@ -153,6 +202,13 @@ def _sync(instance: object, service: _FakeDriveService, sync: Path, state: Path)
 
 def _text(root: Path) -> str:
     return "\n".join(path.read_bytes().decode("utf-8", errors="ignore") for path in sorted(root.rglob("*")) if path.is_file())
+
+
+def _phase_status(result: dict[str, object], name: str) -> str:
+    for phase in result.get("phases", []) if isinstance(result.get("phases"), list) else []:
+        if isinstance(phase, dict) and phase.get("name") == name:
+            return str(phase.get("status") or "")
+    return ""
 
 
 if __name__ == "__main__":

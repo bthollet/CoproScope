@@ -20,13 +20,7 @@ if (-not $PythonExe) {
 
 if ($InstallBuildDeps) {
     & $PythonExe -m pip install --upgrade pip wheel pyinstaller
-    if ($LASTEXITCODE -ne 0) {
-        throw "Installation des dependances de build echouee."
-    }
     & $PythonExe -m pip install -e "$($ServerRoot)[ui,drive,executable]"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Installation des extras CoproScope echouee."
-    }
 }
 
 & $PythonExe -c "import PyInstaller" 2>$null
@@ -39,10 +33,7 @@ try {
     $PyInstallerArgs = @("--noconfirm", "--clean")
     if ($DistPath) {
         $ResolvedDistPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($DistPath)
-        $WorkPathName = "build-" + (Split-Path -Leaf $ResolvedDistPath)
-        $ResolvedWorkPath = Join-Path (Split-Path -Parent $ResolvedDistPath) $WorkPathName
         $PyInstallerArgs += @("--distpath", $ResolvedDistPath)
-        $PyInstallerArgs += @("--workpath", $ResolvedWorkPath)
     }
     $PyInstallerArgs += (Join-Path $ScriptDir "CoproScope.spec")
     & $PythonExe -m PyInstaller @PyInstallerArgs

@@ -220,7 +220,7 @@ def _scoped_passation_preview(preview: dict[str, Any], document: dict[str, Any])
     context.update(
         {
             "title": "Apercu de passation - extrait evenement",
-            "subtitle": "Perimetre filtre: seuls cet evenement, ses preuves et ses points ouverts seront telecharges.",
+            "subtitle": "Perimetre filtre: seuls cet evenement, ses preuves et ses points ouverts seront prepares dans le dossier.",
             "scope_label": selected_id,
         }
     )
@@ -238,7 +238,7 @@ def _scoped_passation_preview(preview: dict[str, Any], document: dict[str, Any])
             "diffusion_limited_count": diffusion_limited_count,
             "omitted_items_count": len(omissions),
             "can_export": bool(chronologie or open_points or proof_refs),
-            "can_export_label": "Extrait pret a relire avant telechargement",
+            "can_export_label": "Extrait pret a relire avant preparation",
         }
     )
     scoped_preview["summary"] = summary
@@ -501,7 +501,7 @@ def _render_passation_preview_html(
             '  <main data-route="/exports/passation">',
             f"    <p>{_html_escape(watermark)}</p>",
             f"    <h1>{_html_escape(title)}</h1>",
-            f"    <p>{_html_escape(context.get('subtitle') or 'Apercu verifiable avant telechargement.')}</p>",
+            f"    <p>{_html_escape(context.get('subtitle') or 'Apercu verifiable avant preparation.')}</p>",
             "    <dl>",
             f"      <dt>source_of_truth</dt><dd>{source_of_truth}</dd>",
             f"      <dt>Perimetre</dt><dd>{_html_escape(query_label)}</dd>",
