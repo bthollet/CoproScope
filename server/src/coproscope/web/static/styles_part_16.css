@@ -7,7 +7,6 @@
 }
 
 .crcs-hero,
-.crcs-boundary article,
 .crcs-status,
 .crcs-steps article,
 .crcs-actions button {
@@ -36,7 +35,7 @@
 
 .crcs-status span,
 .crcs-status small,
-.crcs-boundary p,
+.crcs-guardrails span,
 .crcs-steps span,
 .crcs-steps small,
 .crcs-actions small,
@@ -48,16 +47,25 @@
   font-size: 1.25rem;
 }
 
-.crcs-boundary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.crcs-boundary article,
 .crcs-steps article {
   padding: 0.85rem;
+}
+
+.crcs-guardrails {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crcs-guardrails li {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.55fr) minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: baseline;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border);
 }
 
 .crcs-facts {
@@ -133,6 +141,10 @@
   .crcs-decision-row {
     grid-template-columns: 1fr;
     min-width: 0;
+  }
+
+  .crcs-guardrails li {
+    grid-template-columns: 1fr;
   }
 
   .crcs-decision-row.is-head {

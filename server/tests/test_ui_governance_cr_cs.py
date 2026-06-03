@@ -23,6 +23,7 @@ REQUIRED_LABELS = (
     "Validation interne",
     "Decisions, actions et preuves",
     "Preuve / source",
+    "Prochaines actions",
     "Qui pourra voir ce document",
     "Journal de versions",
     "Ne vaut pas proces-verbal d'assemblee generale",
