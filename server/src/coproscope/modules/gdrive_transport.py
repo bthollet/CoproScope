@@ -116,22 +116,25 @@ def upload_encrypted_instance_package(
     sha256 = str(gate["sha256"])
     generation = _generation(package_payload.get("generation"))
     media = _media_upload(candidate, media_factory)
-    response = drive_service.files().create(
-        body={
-            "name": _uploaded_name(sha256),
-            "parents": [str(folder_id)],
-            "mimeType": "application/octet-stream",
-            "appProperties": {
-                "coproscope_surface": PACKAGE_SURFACE,
-                "coproscope_sha256": sha256,
-                "coproscope_protocol": gdriveops.SYNC_PROTOCOL,
-                "coproscope_generation": str(generation),
-                "coproscope_conflict_policy": gdriveops.SYNC_CONFLICT_POLICY,
+    try:
+        response = drive_service.files().create(
+            body={
+                "name": _uploaded_name(sha256),
+                "parents": [str(folder_id)],
+                "mimeType": "application/octet-stream",
+                "appProperties": {
+                    "coproscope_surface": PACKAGE_SURFACE,
+                    "coproscope_sha256": sha256,
+                    "coproscope_protocol": gdriveops.SYNC_PROTOCOL,
+                    "coproscope_generation": str(generation),
+                    "coproscope_conflict_policy": gdriveops.SYNC_CONFLICT_POLICY,
+                },
             },
-        },
-        media_body=media,
-        fields=UPLOAD_FIELDS,
-    ).execute()
+            media_body=media,
+            fields=UPLOAD_FIELDS,
+        ).execute()
+    finally:
+        _close_media(media)
     uploaded = response if isinstance(response, Mapping) else {}
     return {
         "status": "uploaded",
@@ -269,6 +272,13 @@ def _media_upload(candidate: Path, media_factory: Callable[[Path], object] | Non
     except ImportError as exc:  # pragma: no cover - optional Drive dependency
         raise RuntimeError("Install Drive support with: python -m pip install -e .[drive]") from exc
     return MediaFileUpload(str(candidate), mimetype="application/octet-stream", resumable=False)
+
+
+def _close_media(media: object) -> None:
+    stream = getattr(media, "_fd", None)
+    close = getattr(stream, "close", None)
+    if callable(close):
+        close()
 
 
 def _read_package_payload(path: Path) -> object:

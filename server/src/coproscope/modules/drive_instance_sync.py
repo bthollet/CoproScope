@@ -18,9 +18,32 @@ DEVICE_DIR = "devices"
 PACKAGE_SUFFIX = ".cspkg"
 SYNC_KEY_FILE = "instance_sync_key.bin"
 DEVICE_ID_FILE = "device_id.txt"
+SHARED_STATE_FILE = "shared_state.json"
+_MASKED = "[masque]"
+_PRIVATE_KEY_PARTS = (
+    "absolute_path",
+    "client_secret",
+    "credential",
+    "drive_token",
+    "local_path",
+    "oauth",
+    "password",
+    "private_key",
+    "secret",
+    "sync_key",
+    "token",
+)
+_PRIVATE_KEY_NAMES = {"path", "root", "roots", "secret_path", "token_path"}
 
 
-def publish_instance_update(*, instance: Any, sync_root: str | Path, local_state_root: str | Path) -> dict[str, object]:
+def publish_instance_update(
+    *,
+    instance: Any,
+    sync_root: str | Path,
+    local_state_root: str | Path,
+    shared_state: Mapping[str, object] | None = None,
+    minimum_generation: int = 0,
+) -> dict[str, object]:
     sync = Path(sync_root).expanduser().resolve()
     state = Path(local_state_root).expanduser().resolve()
     blocked = _preflight(sync, state)
@@ -30,9 +53,11 @@ def publish_instance_update(*, instance: Any, sync_root: str | Path, local_state
     device_id = _device_public_id(state)
     _write_json(sync / DEVICE_DIR / f"{device_id}.json", {"device": "ce-poste", "public_id": device_id})
 
-    generation = _next_publish_generation(state)
+    generation = _next_publish_generation(state, minimum=minimum_generation)
     canary = f"COPROSCOPE-DRIVE-DEMO-CANARY-{secrets.token_hex(8)}"
-    payload = _payload(instance, generation, canary)
+    safe_shared_state = _safe_mapping(shared_state) if shared_state is not None else _shared_state_snapshot(instance)
+    shared_state_hash = _stable_hash(safe_shared_state)
+    payload = _payload(instance, generation, canary, shared_state=safe_shared_state)
     package = _encrypt_payload(payload, sync_key, generation, device_id)
     package_hash = _package_hash(package)
     package["package_hash"] = package_hash
@@ -54,7 +79,13 @@ def publish_instance_update(*, instance: Any, sync_root: str | Path, local_state
             _step("Recuperation : a lancer", "waiting", "Cliquez ensuite sur Recuperer en demonstration locale."),
         ],
         "sync_surface": _surface(sync, scan),
-        "local_state": {"storage": "local-only", "applied": False},
+        "local_state": {
+            "storage": "local-only",
+            "applied": False,
+            "generation": generation,
+            "package_hash": package_hash,
+            "shared_state_hash": shared_state_hash,
+        },
         "payload_disclosure": "not_returned",
         "path_disclosure": "none",
     }
@@ -84,6 +115,18 @@ def recover_instance_update(*, instance: Any, sync_root: str | Path, local_state
     cache = state / "cache_instance"
     cache.mkdir(parents=True, exist_ok=True)
     _write_json(cache / "last_recovered.json", {"instance_id": _instance_id(instance), "generation": parsed["generation"]})
+    shared_state = _safe_mapping(parsed.get("shared_state"))
+    shared_state_hash = _stable_hash(shared_state)
+    _write_json(
+        cache / SHARED_STATE_FILE,
+        {
+            "instance_id": _instance_id(instance),
+            "generation": parsed["generation"],
+            "package_hash": package_hash,
+            "shared_state_hash": shared_state_hash,
+            "shared_state": shared_state,
+        },
+    )
     _write_json(state / "recover_state.json", {"package_hash": package_hash, "generation": parsed["generation"]})
     return {
         "action": "recover",
@@ -97,10 +140,87 @@ def recover_instance_update(*, instance: Any, sync_root: str | Path, local_state
             _step("Version locale : mise a jour test", "ok", "La copie lisible reste sur ce poste."),
         ],
         "sync_surface": _surface(sync, _empty_scan()),
-        "local_state": {"storage": "local-only", "applied": True},
+        "local_state": {"storage": "local-only", "applied": True, "shared_state_hash": shared_state_hash},
         "payload_disclosure": "not_returned",
         "path_disclosure": "none",
     }
+
+
+def preview_instance_update(*, instance: Any, sync_root: str | Path, local_state_root: str | Path) -> dict[str, object]:
+    sync = Path(sync_root).expanduser().resolve()
+    state = Path(local_state_root).expanduser().resolve()
+    blocked = _preflight(sync, state)
+    if blocked:
+        return {"status": "blocked", "summary": "Controle Drive bloque", "payload_disclosure": "not_returned", "path_disclosure": "none"}
+    package = _latest_package(sync)
+    if package is None:
+        return {"status": "idle", "summary": "Aucune version Drive", "payload_disclosure": "not_returned", "path_disclosure": "none"}
+    try:
+        parsed = json.loads(_decrypt_payload(package, _sync_key(state)).decode("utf-8"))
+    except Exception:
+        return {"status": "blocked", "summary": "Version Drive refusee avant fusion", "payload_disclosure": "not_returned", "path_disclosure": "none"}
+    if str(parsed.get("instance_id") or "") != _instance_id(instance):
+        return {"status": "blocked", "summary": "Version Drive hors coffre courant", "payload_disclosure": "not_returned", "path_disclosure": "none"}
+    shared_state = _safe_mapping(parsed.get("shared_state"))
+    return {
+        "status": "ready",
+        "generation": int(parsed.get("generation") or 0),
+        "package_hash": str(package.get("package_hash") or ""),
+        "shared_state_hash": _stable_hash(shared_state),
+        "shared_state": shared_state,
+        "payload_disclosure": "internal_only",
+        "path_disclosure": "none",
+    }
+
+
+def shared_state_snapshot(instance: Any) -> dict[str, object]:
+    return _shared_state_snapshot(instance)
+
+
+def cached_shared_state(*, local_state_root: str | Path) -> dict[str, object]:
+    state = Path(local_state_root).expanduser().resolve()
+    cache_path = state / "cache_instance" / SHARED_STATE_FILE
+    if not cache_path.exists():
+        return {"status": "missing", "shared_state": {}, "payload_disclosure": "not_returned", "path_disclosure": "none"}
+    payload = _read_json(cache_path)
+    if not isinstance(payload, Mapping):
+        return {"status": "missing", "shared_state": {}, "payload_disclosure": "not_returned", "path_disclosure": "none"}
+    shared_state = _safe_mapping(payload.get("shared_state"))
+    return {
+        "status": "ready",
+        "generation": int(payload.get("generation") or 0),
+        "package_hash": str(payload.get("package_hash") or ""),
+        "shared_state_hash": _stable_hash(shared_state),
+        "shared_state": shared_state,
+        "payload_disclosure": "internal_only",
+        "path_disclosure": "none",
+    }
+
+
+def record_cached_shared_state(
+    *,
+    instance: Any,
+    local_state_root: str | Path,
+    generation: int,
+    package_hash: str,
+    shared_state: Mapping[str, object],
+) -> None:
+    state = Path(local_state_root).expanduser().resolve()
+    cache = state / "cache_instance"
+    cache.mkdir(parents=True, exist_ok=True)
+    safe_shared_state = _safe_mapping(shared_state)
+    _write_json(cache / "last_recovered.json", {"instance_id": _instance_id(instance), "generation": generation})
+    _write_json(
+        cache / SHARED_STATE_FILE,
+        {
+            "instance_id": _instance_id(instance),
+            "generation": generation,
+            "package_hash": package_hash,
+            "shared_state_hash": _stable_hash(safe_shared_state),
+            "shared_state": safe_shared_state,
+        },
+    )
+    _write_json(state / "recover_state.json", {"package_hash": package_hash, "generation": generation})
 
 
 def _preflight(sync: Path, state: Path) -> dict[str, object] | None:
@@ -116,13 +236,16 @@ def _preflight(sync: Path, state: Path) -> dict[str, object] | None:
     return None
 
 
-def _payload(instance: Any, generation: int, canary: str) -> bytes:
+def _payload(instance: Any, generation: int, canary: str, *, shared_state: Mapping[str, object] | None = None) -> bytes:
+    snapshot = _safe_mapping(shared_state) if shared_state is not None else _shared_state_snapshot(instance)
     return json.dumps(
         {
             "protocol": PROTOCOL,
             "instance_id": _instance_id(instance),
             "generation": generation,
             "canary": canary,
+            "shared_state": snapshot,
+            "shared_state_hash": _stable_hash(snapshot),
         },
         sort_keys=True,
         ensure_ascii=True,
@@ -178,13 +301,71 @@ def _package_context(device_id: str) -> bytes:
     return f"{PROTOCOL}:{device_id}".encode("ascii")
 
 
-def _next_publish_generation(state: Path) -> int:
+def _next_publish_generation(state: Path, *, minimum: int = 0) -> int:
     generations: list[int] = []
     for name in ("publish_state.json", "recover_state.json"):
         current = _read_json(state / name)
         if isinstance(current, Mapping):
             generations.append(int(current.get("generation") or 0))
-    return max(generations, default=0) + 1
+    return max([*generations, int(minimum or 0)], default=0) + 1
+
+
+def _shared_state_snapshot(instance: Any) -> dict[str, object]:
+    raw = _explicit_shared_state(instance)
+    return _safe_mapping(raw)
+
+
+def _explicit_shared_state(instance: Any) -> object:
+    provider = getattr(instance, "drive_shared_state", None)
+    if callable(provider):
+        try:
+            return provider()
+        except Exception:
+            return {}
+    if isinstance(provider, Mapping):
+        return provider
+    payload = getattr(instance, "payload", None)
+    if isinstance(payload, Mapping):
+        direct = payload.get("drive_shared_state") or payload.get("shared_state") or payload.get("sync_state")
+        if isinstance(direct, Mapping):
+            return direct
+        settings = payload.get("parametres") or payload.get("settings")
+        if isinstance(settings, Mapping):
+            configured = settings.get("drive_shared_state") or settings.get("shared_state")
+            if isinstance(configured, Mapping):
+                return configured
+    return {}
+
+
+def _safe_mapping(value: object) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        return {}
+    safe = _safe_value(value, key_name="", depth=0)
+    return safe if isinstance(safe, dict) else {}
+
+
+def _safe_value(value: object, *, key_name: str, depth: int) -> object:
+    if _private_key_name(key_name):
+        return _MASKED
+    if depth > 6:
+        return _MASKED
+    if value is None or isinstance(value, bool | int | float):
+        return value
+    if isinstance(value, str):
+        return " ".join(value.split())[:2000]
+    if isinstance(value, Mapping):
+        return {
+            str(key)[:120]: _safe_value(child, key_name=str(key), depth=depth + 1)
+            for key, child in sorted(value.items(), key=lambda item: str(item[0]))
+        }
+    if isinstance(value, list | tuple):
+        return [_safe_value(child, key_name=key_name, depth=depth + 1) for child in value[:100]]
+    return str(value)[:500]
+
+
+def _private_key_name(key_name: str) -> bool:
+    lowered = key_name.strip().lower()
+    return lowered in _PRIVATE_KEY_NAMES or any(part in lowered for part in _PRIVATE_KEY_PARTS)
 
 
 def _latest_package(sync: Path) -> dict[str, object] | None:
@@ -274,6 +455,11 @@ def _empty_scan() -> dict[str, object]:
 
 def _package_hash(package: Mapping[str, object]) -> str:
     body = json.dumps(package, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(body).hexdigest()
+
+
+def _stable_hash(payload: Mapping[str, object]) -> str:
+    body = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
     return hashlib.sha256(body).hexdigest()
 
 

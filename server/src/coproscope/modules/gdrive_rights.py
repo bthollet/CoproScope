@@ -9,6 +9,11 @@ FILE_FIELDS = "id,name,mimeType,ownedByMe,shared,capabilities(canAddChildren,can
 PERMISSION_FIELDS = "nextPageToken,permissions(type,role,allowFileDiscovery,deleted)"
 WRITER_ROLES = {"owner", "organizer", "fileOrganizer", "writer"}
 READER_ROLES = WRITER_ROLES | {"reader", "commenter"}
+BLOCKING_SHARE_STATUSES = {
+    "lien_public": ("public_link", "Dossier Google partage par lien public: synchronisation refusee."),
+    "partage_domaine": ("domain_share", "Dossier Google ouvert a un domaine: synchronisation refusee."),
+    "droits_non_lisibles": ("permissions_unreadable", "Droits Google non lisibles: synchronisation refusee par securite."),
+}
 
 
 def inspect_drive_folder_rights(*, drive_service: Any, folder_id: str, page_size: int = 100) -> dict[str, object]:
@@ -53,6 +58,33 @@ def inspect_drive_folder_rights(*, drive_service: Any, folder_id: str, page_size
             "gmail_address_required": False,
             "summary": "Chaque poste qui synchronise par l'API doit avoir un compte Google autorise; l'adresse n'a pas besoin d'etre Gmail.",
         },
+        "payload_disclosure": "counts_only",
+        "path_disclosure": "none",
+    }
+
+
+def validate_drive_sync_rights(rights: Mapping[str, object]) -> dict[str, object]:
+    folder = rights.get("folder") if isinstance(rights.get("folder"), Mapping) else {}
+    account = rights.get("current_google_account") if isinstance(rights.get("current_google_account"), Mapping) else {}
+    sharing = rights.get("sharing") if isinstance(rights.get("sharing"), Mapping) else {}
+    share_status = str(sharing.get("status") or "")
+
+    if rights.get("status") == "blocked":
+        return _sync_blocked(str(rights.get("blocker_code") or "folder_unavailable"), "Dossier Google inaccessible.")
+    if folder and folder.get("is_folder") is False:
+        return _sync_blocked("not_a_folder", "La cible Google choisie n'est pas un dossier.")
+    if account and not account.get("can_write_files"):
+        return _sync_blocked("missing_write_access", "Ce compte Google ne peut pas ecrire dans ce dossier.")
+    if share_status in BLOCKING_SHARE_STATUSES:
+        code, summary = BLOCKING_SHARE_STATUSES[share_status]
+        return _sync_blocked(code, summary, share_status=share_status)
+
+    status = "ok" if rights.get("status") == "inspected" else "limited"
+    return {
+        "status": status,
+        "summary": _allowed_summary(share_status, status),
+        "sharing": _public_sharing(sharing),
+        "current_google_account": {"can_write_files": bool(account.get("can_write_files"))},
         "payload_disclosure": "counts_only",
         "path_disclosure": "none",
     }
@@ -145,6 +177,40 @@ def _blocked(code: str, message: str, folder_id: str) -> dict[str, object]:
         "folder": {"folder_id_present": bool(folder_id), "id_disclosure": "redacted"},
         "payload_disclosure": "none",
         "path_disclosure": "none",
+    }
+
+
+def _sync_blocked(code: str, message: str, *, share_status: str = "") -> dict[str, object]:
+    return {
+        "status": "blocked",
+        "blocker_code": code,
+        "summary": message,
+        "sharing": {
+            "status": share_status,
+            "public_link_present": share_status == "lien_public",
+            "domain_share_present": share_status == "partage_domaine",
+            "permissions_readable": share_status != "droits_non_lisibles",
+        },
+        "payload_disclosure": "counts_only",
+        "path_disclosure": "none",
+    }
+
+
+def _allowed_summary(share_status: str, status: str) -> str:
+    if status == "limited":
+        return "Droits Google partiellement lus; aucune ouverture publique detectee."
+    if share_status == "partage_nominal":
+        return "Dossier Google partage nominativement: synchronisation autorisee."
+    return "Dossier Google prive: synchronisation autorisee."
+
+
+def _public_sharing(sharing: Mapping[str, object]) -> dict[str, object]:
+    return {
+        "status": str(sharing.get("status") or ""),
+        "permissions_readable": bool(sharing.get("permissions_readable")),
+        "permission_count": int(sharing.get("permission_count") or 0),
+        "public_link_present": bool(sharing.get("public_link_present")),
+        "domain_share_present": bool(sharing.get("domain_share_present")),
     }
 
 

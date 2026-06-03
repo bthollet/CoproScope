@@ -41,12 +41,20 @@ class DriveInstanceSyncTests(unittest.TestCase):
             sync = root / "Drive-Copro-FICTIF"
             post_a = root / "poste-a-local"
             post_b = root / "poste-b-local"
-            instance = SimpleNamespace(instance_id="copro-fictive")
+            instance_a = SimpleNamespace(
+                instance_id="copro-fictive",
+                drive_shared_state={
+                    "dernier_point": "FICTIF travaux votes",
+                    "compteur_documents": 3,
+                },
+            )
+            instance_b = SimpleNamespace(instance_id="copro-fictive")
 
-            published = drive_instance_sync.publish_instance_update(instance=instance, sync_root=sync, local_state_root=post_a)
+            published = drive_instance_sync.publish_instance_update(instance=instance_a, sync_root=sync, local_state_root=post_a)
             post_b.mkdir()
             (post_b / drive_instance_sync.SYNC_KEY_FILE).write_bytes((post_a / drive_instance_sync.SYNC_KEY_FILE).read_bytes())
-            recovered = drive_instance_sync.recover_instance_update(instance=instance, sync_root=sync, local_state_root=post_b)
+            recovered = drive_instance_sync.recover_instance_update(instance=instance_b, sync_root=sync, local_state_root=post_b)
+            shared_state = json.loads((post_b / "cache_instance" / drive_instance_sync.SHARED_STATE_FILE).read_text(encoding="utf-8"))
 
             sync_text = _text(sync).lower()
             serialized = json.dumps({"published": published, "recovered": recovered}, ensure_ascii=True).lower()
@@ -54,9 +62,44 @@ class DriveInstanceSyncTests(unittest.TestCase):
             self.assertEqual(published["status"], "published")
             self.assertEqual(recovered["status"], "recovered")
             self.assertTrue((post_b / "cache_instance" / "last_recovered.json").exists())
+            self.assertEqual(shared_state["shared_state"]["dernier_point"], "FICTIF travaux votes")
+            self.assertEqual(shared_state["shared_state"]["compteur_documents"], 3)
             self.assertNotIn("copro-fictive", sync_text)
+            self.assertNotIn("travaux votes", sync_text)
+            self.assertNotIn("dernier_point", sync_text)
             self.assertNotIn("instance_sync_key", sync_text)
             self.assertNotIn(str(root).lower(), serialized)
+
+    def test_shared_state_redacts_local_paths_and_secrets_before_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sync = root / "Drive-Copro-FICTIF"
+            post_a = root / "poste-a-local"
+            post_b = root / "poste-b-local"
+            instance = SimpleNamespace(
+                instance_id="copro-fictive",
+                payload={
+                    "drive_shared_state": {
+                        "note": "FICTIF decision partagee",
+                        "local_path": str(root / "source-privee"),
+                        "token": "secret-FICTIF-a-ne-pas-copier",
+                    }
+                },
+            )
+
+            drive_instance_sync.publish_instance_update(instance=instance, sync_root=sync, local_state_root=post_a)
+            post_b.mkdir()
+            (post_b / drive_instance_sync.SYNC_KEY_FILE).write_bytes((post_a / drive_instance_sync.SYNC_KEY_FILE).read_bytes())
+            drive_instance_sync.recover_instance_update(instance=instance, sync_root=sync, local_state_root=post_b)
+            shared_state = json.loads((post_b / "cache_instance" / drive_instance_sync.SHARED_STATE_FILE).read_text(encoding="utf-8"))
+            shared_text = json.dumps(shared_state, ensure_ascii=True).lower()
+
+            self.assertEqual(shared_state["shared_state"]["note"], "FICTIF decision partagee")
+            self.assertEqual(shared_state["shared_state"]["local_path"], "[masque]")
+            self.assertEqual(shared_state["shared_state"]["token"], "[masque]")
+            self.assertNotIn(str(root).lower(), shared_text)
+            self.assertNotIn("secret-fictif", shared_text)
+            self.assertNotIn("decision partagee", _text(sync).lower())
 
     def test_two_authorized_posts_round_trip_without_cleartext_in_drive(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

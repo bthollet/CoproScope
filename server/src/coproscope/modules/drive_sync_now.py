@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-from . import drive_instance_sync, gdrive_transport
+from . import drive_instance_sync, gdrive_rights, gdrive_transport
 
 
 OK_DOWNLOAD_STATUSES = {"downloaded", "idle"}
@@ -23,6 +23,9 @@ def sync_now(
 ) -> dict[str, object]:
     sync = Path(sync_root).expanduser().resolve()
     state = Path(local_state_root).expanduser().resolve()
+    rights = inspect_drive_sync_rights(drive_service=drive_service, folder_id=folder_id)
+    if not drive_rights_allow_sync(rights):
+        return _result("blocked", folder_id, rights=rights, blocker=_rights_blocker(rights))
 
     inbound = apply_remote_now(
         instance=instance,
@@ -30,12 +33,13 @@ def sync_now(
         folder_id=folder_id,
         sync_root=sync,
         local_state_root=state,
+        rights=rights,
         media_downloader_factory=media_downloader_factory,
     )
     downloaded = inbound["downloaded"]
     recovered = inbound["recovered"]
     if inbound["status"] != "ok":
-        return _result("blocked", folder_id, downloaded=downloaded, recovered=recovered, blocker=str(inbound["blocker"]))
+        return _result("blocked", folder_id, rights=rights, downloaded=downloaded, recovered=recovered, blocker=str(inbound["blocker"]))
 
     outbound = publish_local_now(
         instance=instance,
@@ -43,6 +47,7 @@ def sync_now(
         folder_id=folder_id,
         sync_root=sync,
         local_state_root=state,
+        rights=rights,
         media_factory=media_factory,
     )
     published = outbound["published"]
@@ -55,6 +60,7 @@ def sync_now(
             recovered=recovered,
             published=published,
             uploaded=uploaded,
+            rights=rights,
             blocker=str(outbound["blocker"]),
         )
 
@@ -65,6 +71,7 @@ def sync_now(
         recovered=recovered,
         published=published,
         uploaded=uploaded,
+        rights=rights,
     )
 
 
@@ -75,10 +82,15 @@ def apply_remote_now(
     folder_id: str,
     sync_root: str | Path,
     local_state_root: str | Path,
+    rights: Mapping[str, object] | None = None,
     media_downloader_factory: Callable[[Any], bytes] | None = None,
 ) -> dict[str, object]:
     sync = Path(sync_root).expanduser().resolve()
     state = Path(local_state_root).expanduser().resolve()
+    rights = rights or inspect_drive_sync_rights(drive_service=drive_service, folder_id=folder_id)
+    if not drive_rights_allow_sync(rights):
+        return {"status": "blocked", "blocker": _rights_blocker(rights), "rights": rights, "downloaded": None, "recovered": None}
+
     downloaded = gdrive_transport.download_latest_encrypted_instance_package(
         drive_service=drive_service,
         folder_id=folder_id,
@@ -101,11 +113,24 @@ def publish_local_now(
     folder_id: str,
     sync_root: str | Path,
     local_state_root: str | Path,
+    rights: Mapping[str, object] | None = None,
+    shared_state: Mapping[str, object] | None = None,
+    minimum_generation: int = 0,
     media_factory: Callable[[Path], object] | None = None,
 ) -> dict[str, object]:
     sync = Path(sync_root).expanduser().resolve()
     state = Path(local_state_root).expanduser().resolve()
-    published = drive_instance_sync.publish_instance_update(instance=instance, sync_root=sync, local_state_root=state)
+    rights = rights or inspect_drive_sync_rights(drive_service=drive_service, folder_id=folder_id)
+    if not drive_rights_allow_sync(rights):
+        return {"status": "blocked", "blocker": _rights_blocker(rights), "rights": rights, "published": None, "uploaded": None}
+
+    published = drive_instance_sync.publish_instance_update(
+        instance=instance,
+        sync_root=sync,
+        local_state_root=state,
+        shared_state=shared_state,
+        minimum_generation=minimum_generation,
+    )
     if published.get("status") != "published":
         return {"status": "blocked", "blocker": "Publication locale bloquee", "published": published, "uploaded": None}
 
@@ -123,6 +148,24 @@ def publish_local_now(
     if uploaded.get("status") != "uploaded":
         return {"status": "blocked", "blocker": "Envoi Drive bloque", "published": published, "uploaded": uploaded}
     return {"status": "ok", "blocker": "", "published": published, "uploaded": uploaded}
+
+
+def inspect_drive_sync_rights(*, drive_service: Any, folder_id: str) -> dict[str, object]:
+    rights = gdrive_rights.inspect_drive_folder_rights(drive_service=drive_service, folder_id=folder_id)
+    validation = gdrive_rights.validate_drive_sync_rights(rights)
+    return {
+        "status": str(validation.get("status") or "blocked"),
+        "summary": str(validation.get("summary") or "Droits Google a verifier."),
+        "blocker_code": str(validation.get("blocker_code") or ""),
+        "sharing": validation.get("sharing") if isinstance(validation.get("sharing"), Mapping) else {},
+        "current_google_account": validation.get("current_google_account") if isinstance(validation.get("current_google_account"), Mapping) else {},
+        "payload_disclosure": "counts_only",
+        "path_disclosure": "none",
+    }
+
+
+def drive_rights_allow_sync(rights: Mapping[str, object]) -> bool:
+    return str(rights.get("status") or "") == "ok"
 
 
 def _published_package_path(sync: Path, state: Path) -> Path | None:
@@ -145,9 +188,11 @@ def _result(
     recovered: Mapping[str, object] | None = None,
     published: Mapping[str, object] | None = None,
     uploaded: Mapping[str, object] | None = None,
+    rights: Mapping[str, object] | None = None,
     blocker: str = "",
 ) -> dict[str, object]:
     phases = [
+        _phase("droits_google", rights),
         _phase("lecture_drive", downloaded),
         _phase("application_locale", recovered),
         _phase("publication_chiffree", published),
@@ -177,6 +222,10 @@ def _phase(name: str, payload: Mapping[str, object] | None) -> dict[str, object]
     if payload is None:
         return None
     return {"name": name, "status": str(payload.get("status") or "unknown")}
+
+
+def _rights_blocker(rights: Mapping[str, object]) -> str:
+    return str(rights.get("summary") or "Droits Google bloquants.")
 
 
 def _read_json(path: Path) -> object:

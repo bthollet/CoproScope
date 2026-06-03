@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-from . import drive_sync_now, gdrive_transport
+from . import drive_instance_sync, drive_shared_state_merge, drive_sync_now, gdrive_transport
 
 
 WATCH_STATE_FILE = "drive_watch_state.json"
@@ -26,6 +26,9 @@ def watch_once(
     state = Path(local_state_root).expanduser().resolve()
     if state == sync or _is_relative_to(state, sync):
         return _blocked("local_state_inside_drive", "Etat local mal place", folder_id)
+    rights = drive_sync_now.inspect_drive_sync_rights(drive_service=drive_service, folder_id=folder_id)
+    if not drive_sync_now.drive_rights_allow_sync(rights):
+        return _blocked(str(rights.get("blocker_code") or "google_rights_blocked"), str(rights.get("summary") or "Droits Google bloquants"), folder_id, rights=rights)
 
     previous = _read_state(state)
     remote = gdrive_transport.list_encrypted_instance_packages(drive_service=drive_service, folder_id=folder_id)
@@ -39,6 +42,19 @@ def watch_once(
     inbound: Mapping[str, object] | None = None
     outbound: Mapping[str, object] | None = None
 
+    if previous_remote and previous_local and remote_changed and local_changed:
+        return _merge_concurrent_or_block(
+            instance=instance,
+            drive_service=drive_service,
+            folder_id=folder_id,
+            sync=sync,
+            state=state,
+            rights=rights,
+            local_fingerprint=local_fingerprint,
+            media_factory=media_factory,
+            media_downloader_factory=media_downloader_factory,
+        )
+
     if remote_changed and int(remote.get("remote_package_count") or 0) == 0 and previous_remote:
         return _blocked("remote_packages_missing", "Paquets Drive manquants", folder_id)
 
@@ -49,6 +65,7 @@ def watch_once(
             folder_id=folder_id,
             sync_root=sync,
             local_state_root=state,
+            rights=rights,
             media_downloader_factory=media_downloader_factory,
         )
         actions.append(_action("remote", inbound))
@@ -62,6 +79,7 @@ def watch_once(
             folder_id=folder_id,
             sync_root=sync,
             local_state_root=state,
+            rights=rights,
             media_factory=media_factory,
         )
         actions.append(_action("local", outbound))
@@ -112,16 +130,132 @@ def _result(
     }
 
 
-def _blocked(code: str, message: str, folder_id: str) -> dict[str, object]:
+def _blocked(code: str, message: str, folder_id: str, *, rights: Mapping[str, object] | None = None) -> dict[str, object]:
     return {
         "status": "blocked",
         "action": "watch-once",
         "blocker_code": code,
         "summary": message,
+        "rights": {"status": str(rights.get("status") or "")} if rights else {},
         "drive": {"folder_id_present": bool(folder_id), "id_disclosure": "redacted"},
         "payload_disclosure": "not_returned",
         "path_disclosure": "none",
     }
+
+
+def _merge_concurrent_or_block(
+    *,
+    instance: Any,
+    drive_service: Any,
+    folder_id: str,
+    sync: Path,
+    state: Path,
+    rights: Mapping[str, object],
+    local_fingerprint: str,
+    media_factory: Callable[[Path], object] | None,
+    media_downloader_factory: Callable[[Any], bytes] | None,
+) -> dict[str, object]:
+    downloaded = gdrive_transport.download_latest_encrypted_instance_package(
+        drive_service=drive_service,
+        folder_id=folder_id,
+        sync_root=sync,
+        media_downloader_factory=media_downloader_factory,
+    )
+    if downloaded.get("status") != "downloaded":
+        return _conflict_blocked(folder_id, reason="remote_unavailable")
+    remote = drive_instance_sync.preview_instance_update(instance=instance, sync_root=sync, local_state_root=state)
+    base = drive_instance_sync.cached_shared_state(local_state_root=state)
+    if remote.get("status") != "ready" or base.get("status") != "ready":
+        return _conflict_blocked(folder_id, reason="base_or_remote_unavailable")
+
+    plan = drive_shared_state_merge.merge_shared_state(
+        base=_mapping(base.get("shared_state")),
+        local=drive_instance_sync.shared_state_snapshot(instance),
+        remote=_mapping(remote.get("shared_state")),
+    )
+    if plan.get("status") != "merged":
+        return _conflict_blocked(folder_id, reason=str(plan.get("reason") or "overlap"), plan=plan)
+
+    outbound = drive_sync_now.publish_local_now(
+        instance=instance,
+        drive_service=drive_service,
+        folder_id=folder_id,
+        sync_root=sync,
+        local_state_root=state,
+        rights=rights,
+        shared_state=_mapping(plan.get("merged_state")),
+        minimum_generation=int(remote.get("generation") or 0),
+        media_factory=media_factory,
+    )
+    if outbound.get("status") != "ok":
+        return _result("blocked", folder_id, True, True, [_action("merge", outbound)], outbound=outbound)
+
+    published = outbound.get("published") if isinstance(outbound.get("published"), Mapping) else {}
+    local_state = published.get("local_state") if isinstance(published.get("local_state"), Mapping) else {}
+    drive_instance_sync.record_cached_shared_state(
+        instance=instance,
+        local_state_root=state,
+        generation=int(local_state.get("generation") or 0),
+        package_hash=str(local_state.get("package_hash") or ""),
+        shared_state=_mapping(plan.get("merged_state")),
+    )
+    remote_after = gdrive_transport.list_encrypted_instance_packages(drive_service=drive_service, folder_id=folder_id)
+    _write_state(
+        state,
+        {
+            "remote_fingerprint": _remote_fingerprint(remote_after),
+            "remote_package_count": int(remote_after.get("remote_package_count") or 0),
+            "local_fingerprint": local_fingerprint,
+        },
+    )
+    return _merged_result(folder_id, outbound, plan)
+
+
+def _conflict_blocked(folder_id: str, *, reason: str, plan: Mapping[str, object] | None = None) -> dict[str, object]:
+    return {
+        "status": "blocked",
+        "action": "watch-once",
+        "blocker_code": "concurrent_changes",
+        "summary": "Modifications simultanees detectees; aucune version n'a ete remplacee.",
+        "changes": {"remote": True, "local": True},
+        "conflict": {
+            "type": "remote_and_local_changed",
+            "policy": "no_silent_overwrite",
+            "resolution": "human-review-required",
+            "reason": reason,
+            "merge_status": str(plan.get("status") or "") if plan else "",
+        },
+        "inbound": {"checked": False, "applied": False},
+        "outbound": {"checked": False, "uploaded": False},
+        "drive": {"folder_id_present": bool(folder_id), "id_disclosure": "redacted"},
+        "payload_disclosure": "not_returned",
+        "path_disclosure": "none",
+    }
+
+
+def _merged_result(folder_id: str, outbound: Mapping[str, object], plan: Mapping[str, object]) -> dict[str, object]:
+    return {
+        "status": "synced",
+        "action": "watch-once",
+        "summary": "Modifications simultanees fusionnees sans ecrasement.",
+        "changes": {"remote": True, "local": True},
+        "actions": [{"source": "merge", "status": "merged"}, _action("local", outbound)],
+        "merge": {
+            "status": "merged",
+            "policy": str(plan.get("policy") or "disjoint_shared_state_paths"),
+            "local_changed_path_count": int(plan.get("local_changed_path_count") or 0),
+            "remote_changed_path_count": int(plan.get("remote_changed_path_count") or 0),
+        },
+        "inbound": {"checked": True, "applied": True},
+        "outbound": {"checked": True, "uploaded": bool(_nested_status(outbound, "uploaded") == "uploaded")},
+        "drive": {"folder_id_present": bool(folder_id), "id_disclosure": "redacted"},
+        "payload_disclosure": "not_returned",
+        "path_disclosure": "none",
+    }
+
+
+def _mapping(value: object) -> dict[str, object]:
+    return dict(value) if isinstance(value, Mapping) else {}
 
 
 def _action(source: str, payload: Mapping[str, object]) -> dict[str, object]:

@@ -15,6 +15,7 @@
 .drive-config,
 .drive-test,
 .drive-boundary-panel,
+.drive-key-panel,
 .drive-next {
   display: grid;
   gap: 1rem;
@@ -217,6 +218,54 @@
   padding-top: .75rem;
 }
 
+.drive-key-actions {
+  display: grid;
+  grid-template-columns: minmax(180px, .4fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  border-top: 1px solid var(--border);
+  padding-top: .85rem;
+}
+
+.drive-key-actions form,
+.drive-key-secret {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.drive-key-actions label,
+.drive-key-secret label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.drive-key-actions textarea,
+.drive-key-secret textarea {
+  width: 100%;
+  min-height: 44px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .65rem .75rem;
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.drive-key-secret {
+  border-top: 1px solid var(--border);
+  padding-top: .85rem;
+}
+
+.drive-key-secret small {
+  color: var(--muted);
+}
+
 .drive-next-list {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -332,6 +381,10 @@
   }
 
   .drive-boundary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .drive-key-actions {
     grid-template-columns: 1fr;
   }
 
