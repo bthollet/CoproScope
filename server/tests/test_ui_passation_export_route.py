@@ -109,13 +109,14 @@ class UiPassationExportRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("text/html", response.headers["content-type"])
-        self.assertIn("Apercu de passation", text)
-        self.assertIn(PASSATION_EXPORT_WATERMARK, text)
-        self.assertIn("source_of_truth", text)
-        self.assertIn("false", text)
-        self.assertIn("Sections incluses", text)
-        self.assertIn("Elements exclus ou bloques", text)
-        self.assertIn("Formats disponibles", text)
+        self.assertIn("Dossier a transmettre", text)
+        self.assertIn("Dossier derive, non preuve officielle", text)
+        self.assertNotIn("source_of_truth", text)
+        self.assertIn("Ne remplace pas les pieces originales", text)
+        self.assertIn("Parties du dossier", text)
+        self.assertIn("Ce qui ne sort pas", text)
+        self.assertIn("Versions a preparer", text)
+        self.assertIn("anomalies", text.lower())
         self.assertNotIn(str(self.instance_root), text)
 
         expected_txt = "/exports/passation.txt?scope=event&selected=MEM-DOC-7D412766&token=local-secret"
@@ -126,7 +127,8 @@ class UiPassationExportRouteTests(unittest.TestCase):
         self.assertIn(expected_blocker, hrefs)
         self.assertNotIn("/exports/passation.txt?token=local-secret", hrefs)
         self.assertNotIn("/exports/passation.json?token=local-secret", hrefs)
-        self.assertIn("Apercu de passation - extrait evenement", text)
+        self.assertIn("Dossier a transmettre", text)
+        self.assertIn("Perimetre filtre", text)
         self.assertIn("Perimetre filtre", text)
         self.assertIn("<strong>1</strong><span>evenements inclus</span>", text)
         self.assertNotIn("<strong>12</strong><span>evenements inclus</span>", text)
@@ -193,7 +195,7 @@ class UiPassationExportRouteTests(unittest.TestCase):
             .text
         )
 
-        self.assertIn("Telecharger export derive", text)
+        self.assertIn("Preparer dossier derive", text)
         self.assertIn('aria-disabled="true"', text)
         self.assertIn("TXT verrouille", text)
         self.assertIn("Relance ascenseur non tracee", text)
@@ -338,7 +340,7 @@ class UiPassationExportRouteTests(unittest.TestCase):
         self.assertIn("Date et canal d'envoi externe manquent", text)
         self.assertIn("Brouillon de relance non envoye", text)
         self.assertIn("Preuves attendues", text)
-        self.assertIn("Telecharger export derive - verrouille", text)
+        self.assertIn("Preparer dossier derive - verrouille", text)
         self.assertIn("source_of_truth false", text)
         self.assertIn("Donnees FICTIVES de test", text)
         self.assertIn(

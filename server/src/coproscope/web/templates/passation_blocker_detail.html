@@ -130,7 +130,7 @@
           <h3>Decision avant export</h3>
           <span>{{ blocker.status_label|default('A verifier') }}</span>
         </div>
-        <p>Le conseiller choisit entre corriger le blocage, exclure proprement l'element, ou revenir a l'apercu. Aucun telechargement final ne part avec une relance ambigue.</p>
+        <p>Le conseiller choisit entre corriger le blocage, exclure proprement l'element, ou revenir a l'apercu. Aucun dossier final ne part avec une relance ambigue.</p>
         <div class="cs-passation-blocked-box">
           <strong>Element bloque</strong>
           <span>{{ blocker.linked_action_id|default(blocker.id|default('Reference fictive')) }}</span>
@@ -155,7 +155,7 @@
 
       <section class="cs-passation-side-section">
         <button class="cs-passation-lock-button" type="button" disabled aria-disabled="true">
-          {{ download.label|default('Telecharger export derive - verrouille') }}
+          {{ download.label|default('Preparer dossier derive - verrouille') }}
         </button>
         <p>{{ download.disabled_reason|default('Blocage export actif.') }}</p>
         {% if record_external_send %}

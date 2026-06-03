@@ -50,7 +50,7 @@ def _build_passation_export_model(
             {
                 "id": "diffusion-a-verifier",
                 "label": "Diffusion a verifier",
-                "detail": f"{diffusion_limited_count} element(s) demandent une relecture avant export complet.",
+                "detail": f"{diffusion_limited_count} element(s) demandent une relecture avant dossier complet.",
                 "href": _route_href("/confidentialite", scope="export", export="passation"),
             }
         )
@@ -71,8 +71,8 @@ def _build_passation_export_model(
         "download_disabled_reason": "" if can_export else "Verifier la diffusion et les preuves manquantes.",
     }
     format_specs = [
-        ("txt", "TXT", "Synthese lisible et copiable.", "/exports/passation.txt"),
-        ("json", "JSON", "Export structure pour audit ou reprise.", "/exports/passation.json"),
+        ("txt", "Version texte", "Synthese lisible et copiable.", "/exports/passation.txt"),
+        ("json", "Version structuree", "Dossier derive pour audit ou reprise.", "/exports/passation.json"),
     ]
     formats = [
         {
@@ -81,7 +81,7 @@ def _build_passation_export_model(
             "description": description,
             "href": _route_href(path, audience="conseil_syndical"),
             "enabled": can_export,
-            "disabled_reason": "" if can_export else "Verifier la diffusion avant export.",
+            "disabled_reason": "" if can_export else "Verifier la diffusion avant dossier.",
         }
         for format_id, label, description, path in format_specs
     ]
@@ -111,10 +111,10 @@ def _build_passation_export_model(
         },
         {
             "id": "watermark",
-            "label": "Mention export derive presente",
+            "label": "Mention dossier derive presente",
             "status": "done",
             "status_label": "Pret",
-            "detail": "Export derive, non source collaborative.",
+            "detail": "Dossier derive, non preuve officielle.",
         },
     ]
     selected_action_id = ""
@@ -143,8 +143,8 @@ def _build_passation_export_model(
         "source_of_truth": False,
         "context": {
             "route": "/exports/passation",
-            "title": "Apercu de passation",
-            "subtitle": "Verifiez le contenu, les diffusions limitees et les omissions avant export.",
+            "title": "Dossier a transmettre",
+            "subtitle": "Verifiez les anomalies, les preuves manquantes et ce qui ne doit pas sortir.",
             "source_of_truth": False,
             "watermark": "Export derive, non source collaborative",
             "role_label": "Conseil syndical",
@@ -194,13 +194,13 @@ def _build_passation_export_model(
             "diffusion_limited_count": diffusion_limited_count,
             "omitted_items_count": len(omitted_items),
             "can_export": can_export,
-            "can_export_label": "Pret a exporter apres apercu" if can_export else "A verifier avant export",
+            "can_export_label": "Pret a preparer apres relecture" if can_export else "A verifier avant dossier",
             "last_updated_label": f"Situation {year}",
         },
         "checklist": checklist,
         "preview": {
-            "title": "Passation conseil syndical",
-            "intro": "Synthese derivee des actions, evenements memoire et documents utiles.",
+            "title": "Anomalies et preuves pour le conseil syndical",
+            "intro": "Dossier derive des actions, evenements memoire et documents utiles.",
             "sections": [
                 {
                     "id": "synthese",
@@ -260,7 +260,7 @@ def _build_passation_export_model(
             },
             "blocked": {
                 "is_visible": bool(blocker_rows),
-                "label": "Export bloque: relisez la diffusion ou choisissez une synthese diffusable.",
+                "label": "Dossier bloque: relisez la diffusion ou choisissez une synthese diffusable.",
                 "href": _route_href("/confidentialite", scope="export", export="passation"),
             },
         },
