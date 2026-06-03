@@ -29,7 +29,7 @@ def build_governance_cr_cs_view(year: int = 2025) -> dict[str, Any]:
         "notice": "Scenario FICTIF: document interne, aucun envoi officiel.",
         "status": {
             "label": "Validation interne a preparer",
-            "summary": "La version de travail peut etre relue, mais validation, export et partage restent bloques.",
+            "summary": "Relire le brouillon, confirmer les preuves, puis choisir qui pourra voir la version preparee.",
             "cta": "Verifier avant partage",
             "version": "Version 0.3 - brouillon local",
         },
@@ -69,7 +69,7 @@ def build_governance_cr_cs_view(year: int = 2025) -> dict[str, Any]:
             _action("Demander relecture", "Disponible", "Faire relire le brouillon par les membres listes."),
             _action("Valider version interne", "Bloquee", "Preuves et diffusion ne sont pas confirmees."),
             _action("Verifier avant partage", "Prioritaire", "Choisir qui pourra voir le fichier prepare."),
-            _action("Preparer revue diffusion", "Bloquee", "Audience, forme et reserves restent a renseigner."),
+            _action("Choisir les lecteurs", "Bloquee", "Personnes autorisees et reserves restent a renseigner."),
         ],
         "validation_steps": [
             _step("Presents relus", "A faire", "Confirmer qui etait present ou absent."),
