@@ -208,6 +208,26 @@
         self.assertNotIn("email automatique", text.lower())
         self.assertNoPrivateRegistreLeak(text)
 
+    def test_actions_comptes_scope_names_human_verification_without_account_validation(self) -> None:
+        self._seed_registre_actions()
+        self._cycle2_registre_or_skip()
+        client = self._client(access_token="local-secret")
+
+        response = client.get("/actions?token=local-secret&scope=comptes")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Action humaine sur les comptes", text)
+        self.assertIn("Actions comptes a traiter", text)
+        self.assertIn("CoproScope ne valide pas les comptes", text)
+        self.assertIn("Points comptes a traiter", text)
+        self.assertIn("Preuve a relire", text)
+        self.assertIn("Poser la question comptes", text)
+        self.assertIn("Archiver avec trace", text)
+        self.assertNotIn("Preuve validee, source citee", text)
+        self.assertNotIn("validation automatique des comptes", text.lower())
+        self.assertNoPrivateRegistreLeak(text)
+
 
 class UiRegistreActionsTemplateCompatibilityTests(unittest.TestCase):
     def test_actions_template_contains_decision_action_proof_register(self) -> None:
