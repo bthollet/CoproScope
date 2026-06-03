@@ -384,11 +384,14 @@ def _is_allowed_encrypted_smoke_candidate(relative_path: Path) -> bool:
         )
     if len(parts) == 2 and parts[0] == "snapshots":
         return Path(parts[1]).suffix == ".snapshot"
+    if len(parts) == 2 and parts[0] == "packages":
+        file_name = Path(parts[1])
+        return bool(_SHA256_HEX_RE.fullmatch(file_name.stem) and file_name.suffix == ".cspkg")
     return False
 
 
 def _first_encrypted_smoke_candidate(sync_root: Path) -> Path | None:
-    for pattern in ("blobs/*/*.blob", "snapshots/*.snapshot"):
+    for pattern in ("packages/*.cspkg", "blobs/*/*.blob", "snapshots/*.snapshot"):
         for path in sorted(sync_root.glob(pattern)):
             if path.is_file():
                 return path
@@ -444,7 +447,7 @@ def _sync_contract(
     relative_path = str(gate["relative_path"])
     suffix = Path(relative_path).suffix
     packet_hash = str(gate["sha256"])
-    packet_kind = "encrypted_snapshot" if relative_path.startswith("snapshots/") else "encrypted_blob"
+    packet_kind = _packet_kind(relative_path)
     return {
         "protocol": SYNC_PROTOCOL,
         "packet_kind": packet_kind,
@@ -508,9 +511,10 @@ def _upload_encrypted_candidate(
     parent_sha256: str,
 ) -> dict[str, object]:
     media = _media_upload(candidate, media_factory)
-    uploaded_name = _uploaded_smoke_name(str(gate["sha256"]), Path(str(gate["relative_path"])).suffix)
+    relative_path = str(gate["relative_path"])
+    uploaded_name = _uploaded_smoke_name(str(gate["sha256"]), Path(relative_path).suffix)
     app_properties = {
-        "coproscope_surface": "encrypted-vault-smoke",
+        "coproscope_surface": "encrypted-instance-package" if relative_path.startswith("packages/") else "encrypted-vault-smoke",
         "coproscope_sha256": str(gate["sha256"]),
         "coproscope_protocol": SYNC_PROTOCOL,
         "coproscope_generation": str(generation),
@@ -553,6 +557,14 @@ def _safe_drive_folder_name(folder_name: str) -> str:
 
 def _uploaded_smoke_name(sha256_hex: str, suffix: str) -> str:
     return f"coproscope-encrypted-smoke-{sha256_hex[:12]}{suffix or '.blob'}"
+
+
+def _packet_kind(relative_path: str) -> str:
+    if relative_path.startswith("snapshots/"):
+        return "encrypted_snapshot"
+    if relative_path.startswith("packages/"):
+        return "encrypted_instance_package"
+    return "encrypted_blob"
 
 
 def _sha256_file(path: Path) -> str:

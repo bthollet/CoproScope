@@ -67,6 +67,43 @@ Les commandes suivantes se lancent depuis la racine du depot avec l'interpreteur
 
 `ui open-test` lance le serveur au premier plan, affiche l'URL locale tokenisee et s'arrete avec `Ctrl+C`.
 
+## Executable Windows
+
+Le lanceur desktop courant est `coproscope.executable_app`. Il demarre l'UI
+locale et ouvre par defaut une fenetre CoproScope via pywebview.
+
+Depuis `server/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[ui,drive,executable]"
+.\packaging\windows\build-executable.ps1 -PythonExe .\.venv\Scripts\python.exe
+```
+
+Modes utiles:
+
+| Usage | Commande |
+|---|---|
+| Fenetre CoproScope | `.\dist\CoproScope\CoproScope.exe` |
+| Navigateur de secours | `.\dist\CoproScope\CoproScope.exe --browser` |
+| Smoke sans interface | `.\dist\CoproScope\CoproScope.exe --no-browser --token smoke-token` |
+| Recette HTTP executable | `.\packaging\windows\smoke-executable.ps1 -Mode http` |
+| Recette fenetre executable | `.\packaging\windows\smoke-executable.ps1 -Mode window` |
+
+Si un ancien dossier `dist\CoproScope` est verrouille, construire dans un dossier
+frais sous `dist`, par exemple:
+
+```powershell
+.\packaging\windows\build-executable.ps1 -PythonExe .\.venv\Scripts\python.exe -DistPath .\dist\pywebview-20260531
+```
+
+Ne pas mettre de logique metier dans la couche pywebview: elle doit seulement
+ouvrir/fermer la fenetre et encadrer le serveur local.
+
+Pour les lots desktop ou packaging, les preuves de recette doivent venir en
+priorite de `smoke-executable.ps1`. Le lancement serveur PowerShell visible
+reste utile pour developper une route web, mais ne suffit plus a valider une
+livraison executable.
+
 ## Organisation
 
 - `src/coproscope/cli.py`: point d'entree CLI.

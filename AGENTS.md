@@ -18,6 +18,11 @@ Ce depot peut etre travaille par plusieurs agents en parallele, a condition de n
   lignes, ou signaler explicitement le reliquat et son `RM-*`.
 - Les instances privees restent hors depot et ne sont jamais commitees.
 - Les sorties publiables utilisent l'instance synthetique ou une copro demo fictive hors Drive.
+- Le packaging desktop courant est un executable Windows PyInstaller avec
+  pywebview: `CoproScope.exe` ouvre une fenetre CoproScope dediee, tout en
+  gardant `--browser` comme secours et `--no-browser` pour les smokes. Ne pas
+  migrer vers Electron/Tauri ni restructurer le repo sans arbitrage explicite.
+  La reference dev est `docs/runbook_packaging_noob_windows.md`.
 - En local, l'environnement de test par defaut pour recette live et agents est
   `C:\Users\brice\CoproScope\instances\beauvallon_test`; l'instance
   Platanes `examples/synthetic_copro` reste reservee aux tests publics/CI et
@@ -338,10 +343,17 @@ dans le `BOT-END`.
 
 Regles obligatoires:
 
+- Pour les lots desktop, packaging, installable ou recette utilisateur generale,
+  tester en priorite l'executable avec
+  `server\packaging\windows\smoke-executable.ps1`. Le serveur PowerShell visible
+  reste l'outil de developpement web fin, pas la recette cible par defaut.
+- Le smoke executable peut choisir un port loopback libre fourni par Windows,
+  lancer son propre processus `CoproScope.exe`, puis fermer uniquement ce
+  processus. Il ne doit jamais tuer un PID qu'il n'a pas cree.
 - reserver un port avant de demarrer un serveur, avec `CONV-*`, role, instance,
   token de test et commande prevue;
-- garder le serveur dans un terminal PowerShell visible; arret par `Ctrl+C`
-  uniquement;
+- quand un serveur de developpement est lance manuellement, le garder dans un
+  terminal PowerShell visible; arret par `Ctrl+C` uniquement;
 - ne pas scanner les ports ou processus, ne pas tuer de PID, ne pas utiliser
   `taskkill`, `Start-Process` cache ou ouverture navigateur automatique;
 - si le port prevu est occupe ou douteux, ne pas enqueter par scan: publier le

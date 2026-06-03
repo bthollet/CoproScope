@@ -65,6 +65,10 @@ security = [
   "bandit>=1.8",
   "pip-audit>=2.7",
 ]
+executable = [
+  "pyinstaller>=6.0",
+  "pywebview>=6.2",
+]
 docai = [
   "PyMuPDF>=1.24",
   "docling>=2.0",
@@ -90,6 +94,7 @@ layout = [
 
 [project.scripts]
 coprocs = "coproscope.cli:main"
+coproscope-app = "coproscope.executable_app:main"
 
 [project.urls]
 Homepage = "https://github.com/bthollet/CoproScope"

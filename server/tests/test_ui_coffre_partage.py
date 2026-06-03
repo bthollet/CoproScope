@@ -23,6 +23,7 @@ REQUIRED_LABELS = (
     "Ordinateurs reconnus",
     "Referent de secours",
     "Relire droits",
+    "Tester Drive chiffre",
     "Lire",
     "Ajouter",
     "Valider",
@@ -98,6 +99,7 @@ class UiCoffrePartageTests(unittest.TestCase):
         self.assertIn(TOKEN_COOKIE_NAME, response.cookies)
         self.assertIn('aria-current="page"', response.text)
         self.assertIn('href="/coffre/partage?token=local-secret"', response.text)
+        self.assertIn('href="/coffre/drive?token=local-secret"', response.text)
         for label in REQUIRED_LABELS:
             self.assertIn(label, text)
         self.assertIn("Aucune invitation ou export n'est actif", text)

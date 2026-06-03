@@ -4,8 +4,8 @@ Roadmap: `RM-2026-0014` / chantier `CH-2026-0014`.
 
 Objectif: livrer CoproScope comme application Windows installable par une
 personne non technique. Le premier lancement doit ouvrir l'interface locale dans
-le navigateur sans terminal visible, puis ne partager via Google Drive que la
-surface deja chiffree du coffre.
+une fenetre CoproScope dediee sans terminal visible, puis ne partager via Google
+Drive que la surface deja chiffree du coffre.
 
 Ce document cadre le packaging. Il ne demande pas de modification systeme
 destructive: pas d'installation admin obligatoire, pas d'ecriture dans
@@ -25,8 +25,9 @@ modification globale du `PATH`.
   l'utilisateur courant:
   `%APPDATA%\Microsoft\Windows\Start Menu\Programs\CoproScope\CoproScope.lnk`.
 - Lancement: `CoproScope.exe` est un lanceur fenetre cachee. Il prepare le profil
-  utilisateur, demarre l'UI locale sur `127.0.0.1`, ouvre le navigateur par
-  defaut sur une URL tokenisee et garde les logs dans le profil utilisateur.
+  utilisateur, demarre l'UI locale sur `127.0.0.1`, ouvre une fenetre CoproScope
+  via pywebview et garde les logs dans le profil utilisateur. Le mode navigateur
+  reste disponible en secours avec `--browser`.
 - Drive: l'app utilise l'API Google Drive avec bouton OAuth. Drive Desktop reste
   un transport tolere plus tard, pas le chemin noob V1.
 - Upload Drive: un upload Drive ne peut lire que le dossier de sync chiffre
@@ -88,7 +89,7 @@ py -3.11 -m venv .venv-packaging
 ```
 
 Commande PyInstaller cible, apres ajout du lanceur
-`packaging\windows\coproscope_launcher.py`:
+`server\packaging\windows\coproscope_launcher.py`:
 
 ```powershell
 .\.venv-packaging\Scripts\pyinstaller.exe `
@@ -98,7 +99,7 @@ Commande PyInstaller cible, apres ajout du lanceur
   --windowed `
   --name CoproScope `
   --collect-all coproscope `
-  ..\packaging\windows\coproscope_launcher.py
+  .\packaging\windows\coproscope_launcher.py
 ```
 
 Sortie attendue:
@@ -116,6 +117,78 @@ La livraison novice ne doit pas embarquer:
 - caches OCR ou blobs dechiffres;
 - logs de developpement;
 - chemins absolus prives.
+
+## POC executable du 2026-05-30
+
+Le POC versionne ajoute:
+
+- `coproscope.executable_app`: un lanceur noob qui ouvre l'UI locale sur
+  `127.0.0.1` avec un jeton de session;
+- pywebview: mode par defaut en fenetre CoproScope dediee;
+- `server/packaging/windows/coproscope_launcher.py`: point d'entree PyInstaller;
+- `server/packaging/windows/CoproScope.spec`: build `--onedir` qui embarque le
+  paquet CoproScope et l'instance synthetique partageable;
+- `server/packaging/windows/build-executable.ps1`: commande de build locale.
+
+Commande POC recommandee depuis `server/`:
+
+```powershell
+.\packaging\windows\build-executable.ps1 -InstallBuildDeps
+```
+
+Si l'ancien dossier `server\dist\CoproScope` est verrouille par Windows, utiliser
+un dossier de sortie frais:
+
+```powershell
+.\packaging\windows\build-executable.ps1 -DistPath .\dist\pywebview-20260531
+```
+
+Sortie attendue:
+
+```text
+server\dist\CoproScope\CoproScope.exe
+```
+
+Sortie validee pour la livraison pywebview du 2026-05-31:
+
+```text
+server\dist\CoproScope-pywebview-20260531\CoproScope.exe
+```
+
+Build valide le 2026-05-30: `server\dist\CoproScope\CoproScope.exe` a ete
+construit puis teste par smoke HTTP local avec jeton. Le mode livre est
+`console=False`: aucun terminal ne doit rester ouvert au lancement normal.
+
+Build pywebview valide le 2026-05-31: `server\dist\CoproScope-pywebview-20260531\CoproScope.exe`
+a ete construit et teste en smoke HTTP puis en mode fenetre. Le mode par defaut
+ouvre une fenetre CoproScope; `--browser` force le navigateur; `--no-browser`
+sert aux tests sans interface.
+
+Commande de recette standard depuis `server/`:
+
+```powershell
+.\packaging\windows\smoke-executable.ps1 -ExePath .\dist\CoproScope-pywebview-20260531\CoproScope.exe -Mode http
+.\packaging\windows\smoke-executable.ps1 -ExePath .\dist\CoproScope-pywebview-20260531\CoproScope.exe -Mode window
+```
+
+Cette recette doit devenir le reflexe pour les lots desktop/installable: elle
+lance l'executable, verifie l'UI locale, puis ferme seulement le processus
+qu'elle a cree. Le serveur PowerShell visible reste utile pour developper une
+route web, mais ne suffit pas comme preuve finale d'un executable.
+
+Diagnostic POC facultatif:
+
+```powershell
+$env:COPROSCOPE_LAUNCHER_LOG = "$env:TEMP\coproscope-launcher.log"
+.\dist\CoproScope\CoproScope.exe --no-browser --token smoke-token
+```
+
+La variable de diagnostic ne doit pas etre activee dans un installateur final:
+elle sert seulement a comprendre une erreur de lancement locale.
+
+Limite volontaire du POC: il ouvre la demo synthetique ou l'instance indiquee
+par `--instance-root` / `COPROSCOPE_INSTANCE_ROOT`. Le vrai parcours de creation
+de coffre noob reste a livrer avant un installateur utilisateur final.
 
 ## Raccourci menu Demarrer
 
@@ -150,7 +223,7 @@ Avant tout test novice:
 2. verifier que Python n'est pas necessaire dans le `PATH`;
 3. lancer `CoproScope` depuis le menu Demarrer;
 4. confirmer qu'aucune fenetre terminal ne reste ouverte;
-5. confirmer que le navigateur ouvre l'UI locale;
+5. confirmer que la fenetre CoproScope ouvre l'UI locale;
 6. fermer puis relancer depuis le menu Demarrer;
 7. verifier que le second lancement reutilise l'instance ou redemarre proprement;
 8. inspecter `%LOCALAPPDATA%\CoproScope\logs` et confirmer absence de token,

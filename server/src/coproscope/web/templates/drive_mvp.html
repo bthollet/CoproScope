@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% set view = drive_mvp %}
+{% block topbar_title %}Drive chiffre{% endblock %}
+{% block content %}
+<section class="drive-page" aria-labelledby="drive-title">
+  <section class="panel drive-config" data-testid="drive-folder-status">
+    <div class="drive-config-head">
+      <div>
+        <p class="eyebrow">{{ view.notice }}</p>
+        <h2 id="drive-title">{{ view.title }}</h2>
+        <p class="lead">{{ view.status.summary }}</p>
+      </div>
+      <div class="drive-config-state" aria-label="Etat Drive de cet ordinateur">
+        <span class="drive-state-dot drive-state-dot--{{ view.status.dot_state }}" aria-hidden="true"></span>
+        <strong>{{ view.status.label }}</strong>
+      </div>
+    </div>
+
+    <dl class="drive-config-list">
+      <div>
+        <dt>{{ view.folder_setup.title }}</dt>
+        <dd>{{ view.folder_setup.state }}. {{ view.folder_setup.summary }}</dd>
+      </div>
+      <div>
+        <dt>Partage Google</dt>
+        <dd>{{ view.folder_setup.share_label }}. {{ view.folder_setup.share_detail }}</dd>
+      </div>
+      <div>
+        <dt>Connexion</dt>
+        <dd>{{ view.oauth.label }}. {{ view.oauth.scope_policy }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="panel drive-test" aria-labelledby="drive-test-title" data-testid="drive-instance-sync">
+    <div class="drive-test-head">
+      <div>
+        <p class="eyebrow">{{ view.instance_sync.state }}</p>
+        <h3 id="drive-test-title">{{ view.instance_sync.title }}</h3>
+      </div>
+      <span>{{ view.instance_sync.result_label }}</span>
+    </div>
+    <p>{{ view.instance_sync.summary }}</p>
+    <div class="drive-real-sync" aria-label="Synchronisation Drive reelle">
+      {% if view.local_setup.enabled %}
+      <form method="post" action="{{ token_href(view.local_setup.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.local_setup.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.local_setup.label }}</button>
+      {% endif %}
+      {% if view.oauth_connect.enabled %}
+      <form method="post" action="{{ token_href(view.oauth_connect.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.oauth_connect.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.oauth_connect.label }}</button>
+      {% endif %}
+      {% if view.google_folder.enabled %}
+      <form method="post" action="{{ token_href(view.google_folder.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.google_folder.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.google_folder.label }}</button>
+      {% endif %}
+      {% if view.real_sync.enabled %}
+      <form method="post" action="{{ token_href(view.real_sync.href) }}">
+        <button class="button-link" type="submit">{{ view.real_sync.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.real_sync.label }}</button>
+      {% endif %}
+      {% if view.watch_control.enabled %}
+      <form method="post" action="{{ token_href(view.watch_control.href) }}">
+        <button class="button-link secondary" type="submit">{{ view.watch_control.label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.watch_control.label }}</button>
+      {% endif %}
+      {% if view.watch_auto.running %}
+      <form method="post" action="{{ token_href(view.watch_auto.stop_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.watch_auto.stop_label }}</button>
+      </form>
+      {% elif view.watch_auto.enabled_start %}
+      <form method="post" action="{{ token_href(view.watch_auto.start_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.watch_auto.start_label }}</button>
+      </form>
+      {% else %}
+      <button class="button-link secondary" type="button" disabled aria-disabled="true">{{ view.watch_auto.start_label }}</button>
+      {% endif %}
+      {% if view.real_sync.help == view.watch_control.help %}
+      <small>{{ view.real_sync.help }}</small>
+      {% else %}
+      <small>{{ view.real_sync.help }}</small>
+      <small>{{ view.watch_control.help }}</small>
+      {% endif %}
+      <small>{{ view.local_setup.help }}</small>
+      <small>{{ view.oauth_connect.help }}</small>
+      <small>{{ view.google_folder.help }}</small>
+      <small>{{ view.watch_auto.status_label }}. {{ view.watch_auto.help }}</small>
+    </div>
+    <div class="drive-action-row" aria-label="Actions de test Drive">
+      <form method="post" action="{{ token_href(view.instance_sync.publish_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.instance_sync.publish_label }}</button>
+      </form>
+      <form method="post" action="{{ token_href(view.instance_sync.recover_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.instance_sync.recover_label }}</button>
+      </form>
+    </div>
+    <ol class="drive-steps" aria-label="Resultat du test local">
+      {% for step in view.instance_sync.steps %}
+      <li class="drive-step drive-step--{{ step.state|lower|replace(' ', '-') }}">
+        <span>{{ step.state }}</span>
+        <strong>{{ step.label }}</strong>
+        <small>{{ step.detail }}</small>
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="drive-result">{{ view.instance_sync.share_label }}</p>
+  </section>
+
+  <section class="panel drive-boundary-panel" aria-label="Frontiere entre cet ordinateur et Drive">
+    <div class="panel-head">
+      <h3>Frontiere de securite</h3>
+      <span>{{ view.visible_limit }}</span>
+    </div>
+    <div class="drive-boundary-grid">
+      {% for column in view.local_vs_drive %}
+      <div>
+        <strong>{{ column.label }}</strong>
+        <ul class="compact-list">
+          {% for item in column["items"] %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="drive-watch-note">{{ view.watch.label }}. {{ view.watch.remote_package_count }} paquet chiffre connu.</p>
+  </section>
+
+  <section class="panel drive-key-panel" aria-labelledby="drive-key-title" data-testid="drive-key-transfer">
+    <div class="panel-head">
+      <h3 id="drive-key-title">{{ view.key_transfer.title }}</h3>
+      <span>{{ view.key_transfer.status_label }}</span>
+    </div>
+    <p>{{ view.key_transfer.summary }}</p>
+    <div class="drive-key-actions">
+      <form method="post" action="{{ token_href(view.key_transfer.export_href) }}">
+        <button class="button-link secondary" type="submit">{{ view.key_transfer.export_label }}</button>
+      </form>
+      <form method="post" action="{{ token_href(view.key_transfer.import_href) }}">
+        <label for="drive-secret-code-input">Code recu hors Drive</label>
+        <textarea id="drive-secret-code-input" name="secret_code" rows="2" autocomplete="off" spellcheck="false"></textarea>
+        <button class="button-link secondary" type="submit">{{ view.key_transfer.import_label }}</button>
+      </form>
+    </div>
+    {% if view.key_transfer.secret_code %}
+    <div class="drive-key-secret" aria-label="Code d'acces a transmettre">
+      <label for="drive-secret-code-output">Code a transmettre hors Drive</label>
+      <textarea id="drive-secret-code-output" rows="3" readonly spellcheck="false">{{ view.key_transfer.secret_code }}</textarea>
+      <small>{{ view.key_transfer.secret_help }}</small>
+    </div>
+    {% else %}
+    <p class="drive-result">{{ view.key_transfer.secret_help }}</p>
+    {% endif %}
+  </section>
+
+  <section class="panel drive-next" aria-labelledby="drive-next-title">
+    <div class="panel-head">
+      <h3 id="drive-next-title">Prochaine action</h3>
+      <span>{{ view.next_steps_label }}</span>
+    </div>
+    <ol class="drive-next-list">
+      {% for item in view.next_steps %}
+      <li>
+        <span>{{ item.state }}</span>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <nav class="drive-links" aria-label="Liens Drive">
+    {% for link in view.links %}
+    <a class="button-link secondary" href="{{ token_href(link.href) }}">{{ link.label }}</a>
+    {% endfor %}
+  </nav>
+</section>
+
+<details class="drive-status-dock drive-status-dock--{{ view.sync_status_bar.state }}" data-testid="drive-sync-status">
+  <summary aria-label="{{ view.sync_status_bar.aria_label }}" title="{{ view.sync_status_bar.summary }}">
+    <span class="drive-status-icon drive-status-icon--{{ view.sync_status_bar.icon }}" aria-hidden="true">
+      {% if view.sync_status_bar.icon == "cloud" %}
+      <svg viewBox="0 0 24 24" focusable="false"><path d="M7.6 18.5h9.1a4.1 4.1 0 0 0 .6-8.1 5.7 5.7 0 0 0-10.8-1.6 4.9 4.9 0 0 0 1.1 9.7Z" /></svg>
+      {% elif view.sync_status_bar.icon == "gear" %}
+      <svg viewBox="0 0 24 24" focusable="false"><path d="M12 15.3a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6Z" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1-1.9 3.2-.2-.1a1.7 1.7 0 0 0-1.9-.1 7.6 7.6 0 0 1-1.2.7 1.6 1.6 0 0 0-1 1.5v.3H9.8v-.3a1.6 1.6 0 0 0-1-1.5 7.6 7.6 0 0 1-1.2-.7 1.7 1.7 0 0 0-1.9.1l-.2.1-1.9-3.2.1-.1A1.6 1.6 0 0 0 4 15a7 7 0 0 1 0-1.4 1.6 1.6 0 0 0-.3-1.8l-.1-.1 1.9-3.2.2.1a1.7 1.7 0 0 0 1.9.1c.4-.3.8-.5 1.2-.7a1.6 1.6 0 0 0 1-1.5v-.3h3.8v.3a1.6 1.6 0 0 0 1 1.5c.4.2.8.4 1.2.7a1.7 1.7 0 0 0 1.9-.1l.2-.1 1.9 3.2-.1.1a1.6 1.6 0 0 0-.3 1.8 7 7 0 0 1 0 1.4Z" /></svg>
+      {% elif view.sync_status_bar.icon == "error" %}
+      <svg viewBox="0 0 24 24" focusable="false"><path d="M12 8v5" /><path d="M12 17h.01" /><path d="M10.2 4.4 2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.8 4.4a2 2 0 0 0-3.6 0Z" /></svg>
+      {% else %}
+      <svg viewBox="0 0 24 24" focusable="false"><path d="M7 7.5a7 7 0 0 1 10.3.2l1.1 1.2" /><path d="M18.5 5.2v3.9h-3.9" /><path d="M17 16.5a7 7 0 0 1-10.3-.2l-1.1-1.2" /><path d="M5.5 18.8v-3.9h3.9" /></svg>
+      {% endif %}
+    </span>
+    <span class="sr-only">Drive - {{ view.sync_status_bar.label }}</span>
+  </summary>
+  <div class="drive-status-popover" aria-label="Details etat Drive">
+    <strong>Etat Drive detaille</strong>
+    <p>{{ view.sync_status_bar.summary }}</p>
+    <ul>
+      {% for detail in view.sync_status_bar.details %}
+      <li>{{ detail }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</details>
+<div class="drive-status-spacer" aria-hidden="true"></div>
+{% endblock %}
