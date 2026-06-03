@@ -40,13 +40,53 @@
   ],
   "document_type_rules": [
     {
-      "document_types": ["Reglement_Copropriete", "EDD", "Convocation_AG", "PV_AG", "Contrat_Syndic", "Contrat_Assurance", "Diagnostic_Technique", "Dossier_ITE_Travaux"],
+      "document_types": [
+        "Reglement_Copropriete",
+        "EDD",
+        "Carnet_Entretien",
+        "Diagnostic_Technique",
+        "Convocation_AG",
+        "PV_AG",
+        "Annexe_AG",
+        "Contrat_Syndic",
+        "Contrat_Assurance",
+        "Attestation_Assurance",
+        "Contrat_Maintenance",
+        "Contrat_Fournisseur",
+        "Annexe_Comptable",
+        "Budget_Previsionnel",
+        "Etat_Depenses",
+        "Fonds_Travaux",
+        "Facture",
+        "Avoir",
+        "Note_Honoraires",
+        "Devis",
+        "Dossier_Travaux",
+        "Dossier_ITE_Travaux",
+        "Marche_Travaux",
+        "Ordre_Service",
+        "Reception_Travaux",
+        "DOE_Travaux"
+      ],
       "raw_max_college": "C2_Coproprietaires",
       "confidence": "medium"
     },
     {
-      "document_types": ["Facture", "Devis", "Annexe_Comptable"],
-      "raw_max_college": "C2_Coproprietaires",
+      "document_types": [
+        "Feuille_Presence_AG",
+        "CR_CS",
+        "Grand_Livre",
+        "Appel_Fonds",
+        "Photo_Incident",
+        "Declaration_Assurance",
+        "Communication",
+        "Courrier",
+        "Preuve_Envoi"
+      ],
+      "raw_max_college": "C4_Conseil_Syndical",
+      "derivative_max_college": "C2_Coproprietaires",
+      "publication_form": "redaction_required",
+      "restriction_reasons": ["RGPD", "vie_privee"],
       "confidence": "medium"
     },
     {

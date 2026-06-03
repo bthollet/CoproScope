@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections import Counter
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
-from coproscope.core.common import RunContext, load_instance, read_csv, write_csv
+from coproscope.core.common import RunContext, load_instance, load_structured_file, read_csv, write_csv
 from coproscope.modules import docuscope
 
 
@@ -49,6 +50,35 @@ class DocOpsCompletenessTests(unittest.TestCase):
         self.assertEqual(email_rows[0]["lot"], "Communication")
         self.assertEqual(email_rows[0]["document_type"], "Communication")
         self.assertEqual(email_rows[0]["classification_status"], "AUTO_CLASSIFIED")
+
+    def test_default_docops_referentials_share_same_canonical_document_types(self) -> None:
+        config_dir = Path(__file__).resolve().parents[2] / "server" / "src" / "coproscope" / "configs"
+        taxonomy = load_structured_file(config_dir / "taxonomy.default.yml")
+        completeness = load_structured_file(config_dir / "document_completeness.default.yml")
+        privacy = load_structured_file(config_dir / "privacy_rules.default.yml")
+
+        taxonomy_types = [
+            str(rule.get("type_document", rule.get("document_type", "")))
+            for rule in taxonomy.get("regles", taxonomy.get("rules", []))
+            if rule.get("type_document", rule.get("document_type", ""))
+        ]
+        duplicate_types = sorted(doc_type for doc_type, count in Counter(taxonomy_types).items() if count > 1)
+        canonical_types = {doc_type for doc_type in taxonomy_types if doc_type != "A_CLASSER"}
+        proof_types = {
+            str(proof.get("type_document", proof.get("document_type", "")))
+            for proof in completeness.get("preuves", completeness.get("proofs", []))
+            if proof.get("type_document", proof.get("document_type", ""))
+        }
+        privacy_types = {
+            str(doc_type)
+            for rule in privacy.get("document_type_rules", [])
+            for doc_type in rule.get("document_types", [])
+        }
+
+        self.assertEqual(duplicate_types, [])
+        self.assertEqual(sorted(proof_types - canonical_types), [])
+        self.assertEqual(sorted(canonical_types - privacy_types), [])
+        self.assertNotIn("A_CLASSER", privacy_types)
 
     def test_actionable_matrix_distinguishes_present_missing_stale_and_classification_doubt(self) -> None:
         self._prepare_classified_documents()
