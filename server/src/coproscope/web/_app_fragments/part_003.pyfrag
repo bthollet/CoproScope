@@ -44,6 +44,7 @@ def create_app(
     recette_mode: bool = False,
 ):
     FastAPI, HTTPException, Request, HTMLResponse, RedirectResponse, Response, StaticFiles, Jinja2Templates = _require_web_stack()
+    RECETTE_MODE_COOKIE_NAME = "coproscope_recette_mode"
 
     app = FastAPI(title="CoproScope local", docs_url=None, redoc_url=None)
     app.state.instance = instance
@@ -112,6 +113,12 @@ def create_app(
         separator = "&" if "?" in path else "?"
         return f"{path}{separator}{suffix}"
 
+    def _is_recette_mode_enabled(request: FastAPIRequest) -> bool:
+        cookie_value = request.cookies.get(RECETTE_MODE_COOKIE_NAME, "").lower()
+        if cookie_value:
+            return cookie_value in {"1", "true", "on"}
+        return recette_mode
+
     @app.middleware("http")
     async def _local_token_gate(request: FastAPIRequest, call_next):  # type: ignore[no-untyped-def]
         if access_token and not _is_public_path(str(request.url.path)) and not _request_has_token(request):
@@ -140,6 +147,7 @@ def create_app(
             "instance_switcher_href": _url_with_token(request, instance_switcher_href) if instance_switcher_href else "",
             "pilotage_route_enabled": True,
             "recette_mode_enabled": recette_mode,
+            "recette_mode_cookie_name": RECETTE_MODE_COOKIE_NAME,
         }
         if page in CONTEXT_BANNER_PAGES:
             values["context_banner"] = build_context_banner(
@@ -181,10 +189,8 @@ def create_app(
             "Cache-Control": "no-store",
         }
 
-    if recette_mode:
-        from .recette_mode import register_recette_routes
-
-        register_recette_routes(app, templates, context, instance, _require_token, HTMLResponse, Response, _download_headers)
+    from .recette_mode import register_recette_routes
+    register_recette_routes(app, templates, context, instance, _require_token, _is_recette_mode_enabled, HTMLResponse, Response, _download_headers)
 
     @app.get("/", response_class=HTMLResponse)
     def overview(request: FastAPIRequest):

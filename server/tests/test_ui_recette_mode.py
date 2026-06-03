@@ -27,19 +27,22 @@ class UiRecetteModeTests(unittest.TestCase):
             self.skipTest("FastAPI test client unavailable")
         return TestClient(create_app(self.instance, 2025, access_token=access_token, recette_mode=recette_mode))
 
-    def test_recette_toolbar_is_absent_by_default(self) -> None:
+    def test_recette_toolbar_is_present_by_default(self) -> None:
         response = self._client(recette_mode=False).get("/?token=local-secret")
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn("cs-recette-config", response.text)
-        self.assertNotIn("Mode test actif", response.text)
+        self.assertIn("id=\"cs-recette-config\"", response.text)
+        self.assertIn("/static/recette_mode.js", response.text)
+        self.assertIn('"recetteModeEnabled":false', response.text.replace(" ", ""))
+        self.assertIn("id=\"cs-recette-mode-toggle\"", response.text)
 
     def test_recette_toolbar_is_present_when_enabled(self) -> None:
         response = self._client(recette_mode=True).get("/?token=local-secret")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("cs-recette-config", response.text)
+        self.assertIn('"recetteModeEnabled":true', response.text.replace(" ", ""))
         self.assertIn("/static/recette_mode.js", response.text)
+        self.assertIn("id=\"cs-recette-mode-toggle\"", response.text)
 
     def test_recette_routes_require_token(self) -> None:
         client = self._client(recette_mode=True)
@@ -87,6 +90,12 @@ class UiRecetteModeTests(unittest.TestCase):
         client = self._client(recette_mode=False)
 
         self.assertEqual(client.get("/recette?token=local-secret").status_code, 404)
+
+    def test_recette_routes_can_be_enabled_by_cookie(self) -> None:
+        client = self._client(recette_mode=False)
+        client.cookies.set("coproscope_recette_mode", "1", path="/")
+
+        self.assertEqual(client.get("/recette?token=local-secret").status_code, 200)
 
 
 if __name__ == "__main__":

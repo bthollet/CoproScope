@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   var configNode = document.getElementById("cs-recette-config");
@@ -13,9 +13,21 @@
     return;
   }
 
-  var state = { mode: "", target: null, start: null, box: null };
+  var defaultEnabled = config.recetteModeEnabled === true;
+  var cookieName = String(config.cookieName || "coproscope_recette_mode");
+  var state = {
+    mode: "",
+    target: null,
+    start: null,
+    box: null,
+  };
+
+  var toggleButton = document.getElementById("cs-recette-mode-toggle");
+  var status = document.getElementById("cs-recette-mode-status");
+
   var root = document.createElement("aside");
   root.className = "recette-panel";
+  root.hidden = true;
   root.setAttribute("aria-label", "Mode test de l'interface");
   root.innerHTML = [
     '<div class="recette-panel__bar">',
@@ -26,7 +38,7 @@
     "</div>",
     '<form class="recette-panel__form" hidden>',
     '<label>Que faut-il corriger ?',
-    '<textarea name="comment" rows="3" maxlength="500" placeholder="Ex. ce bouton n\\'est pas clair, ce bloc deborde, il manque une explication"></textarea>',
+    '<textarea name="comment" rows="3" maxlength="500" placeholder="Ex. ce bouton n\'est pas clair, ce bloc deborde, il manque une explication"></textarea>',
     "</label>",
     '<label>Gravite',
     '<select name="severity">',
@@ -46,7 +58,6 @@
   document.body.appendChild(root);
 
   var form = root.querySelector("form");
-  var status = root.querySelector(".recette-panel__status");
   var zoneBox = root.querySelector(".recette-zone-box");
 
   root.addEventListener("click", function (event) {
@@ -108,13 +119,81 @@
   document.addEventListener("keydown", function (event) {
     if (event.key === "Escape" && state.mode) {
       reset();
+      return;
     }
-  });
+    if (isTextInput(event.target)) {
+      return;
+    }
+    if (isModeShortcut(event)) {
+      event.preventDefault();
+      toggleMode();
+      return;
+    }
+  }, true);
+
+  if (toggleButton) {
+    toggleButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      toggleMode();
+    });
+  }
 
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     saveAnnotation();
   });
+
+  syncMode();
+
+  function toggleMode() {
+    var enabled = !readModeEnabled();
+    setModeEnabled(enabled);
+  }
+
+  function setModeEnabled(enabled) {
+    setCookie(cookieName, enabled ? "1" : "0", 30);
+    applyModeVisibility(enabled);
+  }
+
+  function syncMode() {
+    var enabled = readModeEnabled();
+    applyModeVisibility(enabled);
+  }
+
+  function readModeEnabled() {
+    var value = readCookie(cookieName);
+    if (value === "1" || value === "true" || value === "on") {
+      return true;
+    }
+    if (value === "0" || value === "false" || value === "off") {
+      return false;
+    }
+    return defaultEnabled;
+  }
+
+  function applyModeVisibility(enabled) {
+    root.hidden = !enabled;
+    if (!toggleButton) {
+      if (enabled) {
+        message("Mode test actif");
+      }
+      return;
+    }
+
+    if (enabled) {
+      toggleButton.textContent = "Mode test actif";
+      toggleButton.setAttribute("aria-pressed", "true");
+      toggleButton.setAttribute("title", "Desactiver le mode test (Alt + Shift + T)");
+      message("Mode test actif");
+      return;
+    }
+
+    reset(false);
+    toggleButton.textContent = "Mode test";
+    toggleButton.setAttribute("aria-pressed", "false");
+    toggleButton.setAttribute("title", "Activer le mode test (Alt + Shift + T)");
+    message("");
+  }
 
   function startMode(mode) {
     reset(false);
@@ -244,12 +323,52 @@
   }
 
   function message(text) {
-    status.textContent = text || "";
+    if (status) {
+      status.textContent = text || "";
+    }
   }
 
   function escapeAttr(value) {
-    return String(value || "").replace(/[&<>"]/g, function (char) {
+    return String(value || "").replace(/[&<>\"]/g, function (char) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char];
     });
+  }
+
+  function readCookie(name) {
+    if (!name) {
+      return "";
+    }
+    var rawCookies = document.cookie ? document.cookie.split(";") : [];
+    var search = name + "=";
+    for (var i = 0; i < rawCookies.length; i += 1) {
+      var cookie = rawCookies[i].trim();
+      if (cookie.indexOf(search) === 0) {
+        return decodeURIComponent(cookie.substring(search.length));
+      }
+    }
+    return "";
+  }
+
+  function setCookie(name, value, maxDays) {
+    var maxAge = Math.max(0, parseInt(maxDays, 10) || 0) * 24 * 60 * 60;
+    var expires = maxAge > 0 ? "; Max-Age=" + maxAge : "";
+    document.cookie = name + "=" + encodeURIComponent(value) + "; Path=/; SameSite=Lax" + expires;
+  }
+
+  function isModeShortcut(event) {
+    return ((event.altKey || event.ctrlKey) && event.shiftKey && (event.key === "T" || event.key === "t" || event.code === "KeyT"));
+  }
+
+  function isTextInput(target) {
+    if (!target || !target.tagName) {
+      return false;
+    }
+    var tag = target.tagName.toLowerCase();
+    return (
+      target.isContentEditable ||
+      tag === "input" ||
+      tag === "textarea" ||
+      tag === "select"
+    );
   }
 }());

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 
 from ..core.common import InstanceConfig
 from ..modules import recetteops
@@ -14,12 +14,18 @@ def register_recette_routes(
     context: Callable[..., dict[str, object]],
     instance: InstanceConfig,
     require_token: Callable[[Any], None],
+    is_enabled: Callable[[Request], bool],
     html_response_class: Any,
     response_class: type[Any],
     download_headers: Callable[[str], dict[str, str]],
 ) -> None:
+    def _require_recette_mode(request: Request) -> None:
+        if not is_enabled(request):
+            raise HTTPException(status_code=404, detail="Mode test non actif.")
+
     @app.get("/recette", response_class=html_response_class)
     def recette_page(request: Request):
+        _require_recette_mode(request)
         require_token(request)
         return templates.TemplateResponse(
             request=request,
@@ -35,6 +41,7 @@ def register_recette_routes(
 
     @app.post("/recette/annotations")
     async def save_recette_annotation(request: Request):
+        _require_recette_mode(request)
         require_token(request)
         payload = await request.json()
         if not isinstance(payload, dict):
@@ -44,6 +51,7 @@ def register_recette_routes(
 
     @app.get("/exports/recette-annotations.json")
     def export_recette_json(request: Request):
+        _require_recette_mode(request)
         require_token(request)
         return response_class(
             content=recetteops.render_json_export(instance),
@@ -53,6 +61,7 @@ def register_recette_routes(
 
     @app.get("/exports/recette-annotations.md")
     def export_recette_markdown(request: Request):
+        _require_recette_mode(request)
         require_token(request)
         return response_class(
             content=recetteops.render_markdown_export(instance),
