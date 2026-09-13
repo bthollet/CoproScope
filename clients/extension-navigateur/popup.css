@@ -1,0 +1,112 @@
+:root { color-scheme: light dark; }
+body {
+  font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  margin: 0; padding: 14px; width: 320px;
+}
+h1 { font-size: 15px; margin: 0 0 4px; }
+.garde { margin: 0 0 12px; color: #0a7a5a; font-weight: 600; }
+button {
+  width: 100%; padding: 8px; font: inherit; cursor: pointer;
+  border-radius: 6px; border: 1px solid currentColor; background: transparent;
+}
+#observer { font-weight: 600; padding: 10px; margin-bottom: 10px; }
+.ligne { display: block; margin: 10px 0; }
+.ligne small { display: block; color: #5c5c5c; margin-top: 2px; }
+.etat { margin: 10px 0; min-height: 1.4em; }
+.etat.ok { color: #0a7a5a; }
+.etat.ko { color: #b3261e; }
+details { margin-top: 12px; border-top: 1px solid #d7d7d7; padding-top: 8px; }
+summary { cursor: pointer; }
+label { display: block; margin: 8px 0; }
+input[type="text"], input[type="password"] { width: 100%; padding: 5px; font: inherit; }
+.note { color: #5c5c5c; margin: 6px 0; }
+
+@media (prefers-color-scheme: dark) {
+  .ligne small, .note { color: #a8a8a8; }
+  details { border-top-color: #3a3a3a; }
+  .garde, .etat.ok { color: #4cc38a; }
+  .etat.ko { color: #ff8a80; }
+}
+.noms {
+  white-space: pre-line; font-size: 12px; line-height: 1.45;
+  border-left: 3px solid #0a7a5a; padding: 6px 0 6px 8px; margin: 8px 0;
+}
+.noms.alerte { border-left-color: #b3261e; }
+
+.attendus { margin: 8px 0; }
+.attendu {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin: 4px 0;
+}
+.attendu input { width: 64px; text-align: right; padding: 3px 5px; font: inherit; }
+.bascule { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; }
+.bascule small { display: block; color: #5c5c5c; margin-top: 2px; }
+.alerte-bloc {
+  border-left: 3px solid #b3261e; padding: 8px 0 8px 10px; margin: 10px 0;
+}
+hr { border: 0; border-top: 1px solid #d7d7d7; margin: 14px 0; }
+@media (prefers-color-scheme: dark) {
+  .bascule small { color: #a8a8a8; }
+  hr { border-top-color: #3a3a3a; }
+}
+
+/* --- Panneau de conformite ------------------------------------------- */
+/* Blueprint: docs/blueprint_popup_conformite_2026-09-07.md */
+
+.synthese {
+  background: #fdf0ec; border: 1px solid #f0cdc2;
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;
+}
+.synthese.calme { background: #f2f5f8; border-color: #d9e0e7; }
+.synthese b { font-size: 14px; }
+.synthese p { margin: 4px 0 0; font-size: 11.5px; color: #5c6b7a; }
+.compteurs { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.puce {
+  font-size: 10.5px; padding: 2px 7px; border-radius: 20px;
+  background: #fff; border: 1px solid #d9e0e7; white-space: nowrap;
+}
+.conformite h2 {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em;
+  color: #5c6b7a; margin: 14px 0 5px; font-weight: 600;
+}
+details.obligation {
+  border: 1px solid #d9e0e7; border-radius: 7px; margin-bottom: 5px;
+}
+details.obligation[open] { border-color: #b9c5d1; }
+details.obligation > summary {
+  list-style: none; cursor: pointer; padding: 7px 9px;
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
+}
+details.obligation > summary::-webkit-details-marker { display: none; }
+.titre { font-size: 12px; line-height: 1.35; }
+.ident { color: #8895a3; font-size: 10px; font-family: ui-monospace, monospace; }
+.etat {
+  font-size: 10px; padding: 2px 6px; border-radius: 4px;
+  white-space: nowrap; font-weight: 600;
+}
+.e-manque  { background: #fdf0ec; color: #a4361c; }
+.e-servi   { background: #eef7f1; color: #1f5c3d; }
+.e-inconnu { background: #f2f5f8; color: #5c6b7a; }
+.e-attente { background: #fdf6e3; color: #7a5a12; }
+.detail { padding: 0 9px 9px; border-top: 1px solid #d9e0e7; }
+.detail p { margin: 8px 0 0; font-size: 11.5px; color: #5c6b7a; }
+.detail .fondement { font-family: ui-monospace, monospace; font-size: 10px; }
+.champ {
+  display: grid; grid-template-columns: 1fr 96px; gap: 8px;
+  margin-top: 8px; align-items: center;
+}
+.champ label { font-size: 11.5px; }
+.champ select, .champ input[type=number] { width: 100%; font-size: 11.5px; }
+.avert {
+  background: #fdf6e3; border-left: 3px solid #d9b45f;
+  padding: 6px 8px; margin-top: 8px; font-size: 11px; color: #7a5a12;
+}
+
+/* Le premier ecran: ni alarme, ni bonne nouvelle - une demande. */
+.synthese.action { background: #eef2f7; border-color: #b9c5d1; }
+.synthese.action p { color: #16202c; }
+.synthese button.primaire {
+  margin-top: 9px; background: #16202c; color: #fff;
+  border-color: #16202c; font-size: 12.5px; padding: 6px 11px;
+  border-radius: 6px; cursor: pointer;
+}

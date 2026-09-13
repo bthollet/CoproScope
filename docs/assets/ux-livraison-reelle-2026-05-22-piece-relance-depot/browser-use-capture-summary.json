@@ -1,0 +1,40 @@
+[
+  {
+    "page": "piece",
+    "url": "http://127.0.0.1:8784/pieces/UX-PIECE-COMP-C2B3F479?token=local-secret",
+    "counts": {
+      "Detail piece/preuve": 2,
+      "Pourquoi cette piece compte": 1,
+      "Relancer syndic": 3,
+      "Ajouter reponse recue": 3
+    },
+    "forbidden": []
+  },
+  {
+    "page": "relance",
+    "url": "http://127.0.0.1:8784/demandes/relance?piece_detail=UX-PIECE-COMP-C2B3F479&token=local-secret",
+    "counts": {
+      "Brouillon a copier, non envoye": 1,
+      "Piece concernee": 1,
+      "Preuve attendue": 1,
+      "A qui demander / qui doit l'avoir": 1,
+      "Diffusion : verifier avant de joindre une piece": 1,
+      "Rattacher la reponse du syndic": 2,
+      "Retour detail piece/preuve": 1,
+      "Noter l'envoi hors CoproScope indisponible": 1
+    },
+    "forbidden": []
+  },
+  {
+    "page": "depot",
+    "url": "http://127.0.0.1:8784/depot?intent=proof&status=reponse-recue&return=pieces&piece_detail=UX-PIECE-COMP-C2B3F479&token=local-secret",
+    "counts": {
+      "Depot guide & exports locaux": 1,
+      "Reponse recue pour cette piece": 1,
+      "Piece candidate a verifier": 1,
+      "Preuve attendue": 2,
+      "Retour detail piece/preuve": 1
+    },
+    "forbidden": []
+  }
+]

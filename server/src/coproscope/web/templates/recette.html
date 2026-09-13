@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section recette-page" aria-labelledby="recette-title">
+  <div class="section-heading">
+    <p class="eyebrow">Mode test</p>
+    <h1 id="recette-title">Remarques de recette</h1>
+    <p>Liste locale des problemes signales sur l'interface. Export nettoye: sans jeton ni chemin local.</p>
+  </div>
+
+  <div class="recette-export-links" aria-label="Exports de recette">
+    <a class="button-link" href="{{ token_href(recette_export_md) }}">Exporter pour relecture</a>
+    <a href="{{ token_href(recette_export_json) }}">Exporter JSON</a>
+  </div>
+
+  {% if annotations %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <caption>Remarques enregistrees</caption>
+      <thead>
+        <tr>
+          <th scope="col">Gravite</th>
+          <th scope="col">Ecran</th>
+          <th scope="col">Cible</th>
+          <th scope="col">Remarque</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in annotations %}
+        <tr>
+          <td>{{ item.severity }}</td>
+          <td>{{ item.route }}</td>
+          <td>{{ item.target_label or item.target_kind }}</td>
+          <td>{{ item.comment }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">Aucune remarque enregistree pour le moment.</p>
+  {% endif %}
+</section>
+{% endblock %}

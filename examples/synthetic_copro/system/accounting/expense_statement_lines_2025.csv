@@ -1,0 +1,2 @@
+statement_line_id,date,account,account_label,reference,supplier_hint,label,amount,source
+DEP-DEMO-001,2025-01-15,615000,ENTRETIEN,JANV-ESPACES-VERTS,JEX,JEX / entretien espaces verts janvier 2025,1200.00,synthetic

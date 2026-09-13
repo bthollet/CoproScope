@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cible — l'écran de contrôle cite sa source</title>
+<style>
+  :root{
+    --encre:#101828; --gris:#475467; --gris-clair:#667085; --bord:#e4e7ec;
+    --fond:#f6f8fa; --blanc:#fff;
+    --vert:#13976b; --vert-fond:#f5fffb;
+    --orange:#f28705; --orange-fond:#fffaf2;
+    --rouge:#df2f24; --rouge-fond:#fff8f7;
+    --neutre:#cfd8e5; --neutre-fond:#f8faf9;
+    --bleu:#175cd3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);
+       font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .page{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+  .avertissement{background:#fffbea;border:1px solid #f0d68a;border-left:5px solid #e5a800;
+       border-radius:8px;padding:12px 14px;margin-bottom:16px}
+  .avertissement b{display:block;margin-bottom:4px}
+  .avertissement p{margin:4px 0;color:#5a4a10}
+  .identite{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;
+       background:var(--blanc);border:1px solid var(--bord);border-radius:8px;
+       padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--gris)}
+  .identite strong{font-size:14px;color:var(--encre)}
+  header.tete{margin:18px 0 10px}
+  header.tete .eyebrow{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+       color:var(--gris-clair);font-weight:800}
+  header.tete h1{margin:2px 0 6px;font-size:22px}
+  header.tete .lead{margin:0;color:var(--gris);max-width:78ch}
+  .panneau{background:var(--blanc);border:1px solid var(--bord);border-radius:10px;
+       padding:14px;margin-bottom:16px}
+  .panneau-tete{display:flex;justify-content:space-between;align-items:baseline;
+       gap:12px;margin-bottom:10px;border-bottom:1px solid var(--bord);padding-bottom:8px}
+  .panneau-tete h2{margin:0;font-size:15px}
+  .panneau-tete span{font-size:11px;color:var(--gris-clair)}
+  .barre{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px}
+  .barre label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--gris)}
+  .barre select{font:inherit;font-size:12px;padding:5px 6px;border:1px solid var(--bord);
+       border-radius:6px;background:var(--blanc);min-width:190px}
+  .bascule{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:12px;
+       color:var(--encre);background:#eef4ff;border:1px solid #c7d7fe;border-radius:999px;
+       padding:6px 12px;cursor:pointer}
+  .compte{font-size:12px;color:var(--gris);margin:0 0 8px}
+  .defile{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:940px}
+  th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--bord)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--gris-clair);
+     background:#fbfcfd;position:sticky;top:0}
+  .col-decision{width:27%}
+  .col-montant{width:14%}
+  .titre-decision{display:block;font-weight:800;color:var(--bleu);text-decoration:none}
+  .titre-decision:hover{text-decoration:underline}
+  .objet{display:block;color:var(--gris);font-size:12px;margin-top:2px}
+  .meta{display:block;font-size:11px;color:var(--gris-clair);margin-top:4px}
+  .pip{display:inline-block;font-size:10px;font-weight:800;border-radius:999px;
+       padding:1px 7px;background:#eef2f6;color:var(--gris);margin-left:6px}
+  .montant b{display:block;font-size:15px}
+  .montant small{display:block;font-size:11px;color:var(--gris)}
+  .montant.orange b{color:var(--orange)}
+  .montant.vert b{color:var(--vert)}
+  .bulle{border-left:4px solid var(--neutre);background:var(--neutre-fond);
+         border-radius:5px;padding:6px 8px;margin-bottom:6px}
+  .bulle:last-child{margin-bottom:0}
+  .bulle.disponible{border-left-color:var(--vert);background:var(--vert-fond)}
+  .bulle.confirmer{border-left-color:var(--orange);background:var(--orange-fond)}
+  .bulle.manquante{border-left-color:var(--rouge);background:var(--rouge-fond)}
+  .bulle.sous{margin-top:5px;margin-left:9px;border-left-width:3px}
+  .bulle b{display:block;font-size:11.5px;line-height:1.25}
+  .bulle .statut{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;
+       letter-spacing:.03em;color:var(--gris);margin:2px 0}
+  .bulle small{display:block;font-size:10.5px;color:var(--gris);line-height:1.35;margin-top:2px}
+  .bulle .legifrance{color:var(--gris-clair);font-weight:700;font-size:10px}
+
+  /* LA CIBLE DU LOT. Le cartouche de source, sous la phrase de la cellule. */
+  .citation{display:block;font-size:10.5px;line-height:1.4;margin-top:5px;
+       padding:4px 6px;border-radius:4px;background:rgba(16,24,40,.045);
+       border-left:2px solid var(--gris-clair);color:var(--gris)}
+  .citation b{display:inline;font-size:10.5px;font-weight:800;color:var(--encre)}
+  .citation .flou{font-style:italic;color:var(--gris-clair)}
+  .citation .concurrence{display:block;margin-top:2px;color:#8a5a00}
+  body.sans-citation .citation{display:none}
+  body.sans-citation .rappel-avant{display:block}
+  .rappel-avant{display:none;font-size:11px;color:var(--rouge);margin-top:6px;font-weight:700}
+
+  .pied{font-size:12px;color:var(--gris)}
+  .pied h2{font-size:14px;margin:0 0 6px}
+  .pied table{min-width:0}
+  .pied th,.pied td{font-size:12px;padding:6px 8px}
+  .pied code{background:#eef1f4;border-radius:3px;padding:0 4px;font-size:11.5px}
+  ul.axes{margin:6px 0 0;padding-left:18px}
+  ul.axes li{margin-bottom:5px}
+  .cache{display:none !important}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="avertissement">
+    <b>Maquette cible — à comparer avec la page réelle, elle n'en est pas une capture.</b>
+    <p>Cette page montre l'écran de contrôle de gouvernance <b>tel qu'il devrait être</b> une fois
+    que chaque cellule cite sa source. Les six décisions ci-dessous sont fabriquées pour
+    l'illustration ; les <b>formes</b> de source, elles, sont copiées sur des mesures réelles du
+    2026-09-07, listées en bas de page.</p>
+    <p>Copropriété montrée : <b>Résidence Les Platanes</b>, copropriété de démonstration. Aucune
+    donnée réelle, aucun nom de personne, aucune raison sociale.</p>
+  </div>
+
+  <div class="identite">
+    <strong>Résidence Les Platanes</strong>
+    <span>copropriété de démonstration</span>
+    <span>exercice 2026 de l'application</span>
+    <span>actes de 2024, 2025, 2026</span>
+    <span>6 décisions dans cette maquette</span>
+  </div>
+
+  <header class="tete">
+    <p class="eyebrow">Volet décisions</p>
+    <h1>Décisions et actes, par voie de preuve</h1>
+    <p class="lead">Chaque case dit ce que les pièces établissent, <b>et d'où elle le tient</b> :
+    quelle pièce, quelle page, quel endroit dans la page. Une case qui ne peut pas citer sa
+    source le dit ; elle ne comble pas le trou.</p>
+  </header>
+
+  <section class="panneau">
+    <div class="panneau-tete">
+      <h2>Décisions et actes, par voie de preuve</h2>
+      <span>6 actes, 6 colonnes</span>
+    </div>
+
+    <div class="barre">
+      <label>Type de résolution
+        <select id="f-type">
+          <option value="toutes">Tous les types</option>
+          <option value="ENGAGEMENT_DEPENSE">Engagement de dépense</option>
+          <option value="DELEGATION_CS">Délégation au conseil syndical</option>
+          <option value="DESIGNATION_ORGANE">Désignation à une fonction</option>
+        </select>
+      </label>
+      <label>Ce qui la fonde
+        <select id="f-fonde">
+          <option value="toutes">Tous les états</option>
+          <option value="disponible">Source disponible</option>
+          <option value="confirmer">À confirmer</option>
+          <option value="manquante">Source manquante</option>
+        </select>
+      </label>
+      <label>Source de la citation
+        <select id="f-source">
+          <option value="toutes">Toutes les pièces</option>
+          <option value="nommee">Pièce nommée par le registre</option>
+          <option value="inconnue">Pièce que le registre ne nomme pas</option>
+          <option value="sans">Aucune source à citer</option>
+        </select>
+      </label>
+      <button class="bascule" id="bascule" type="button" aria-pressed="true">
+        <span id="bascule-txt">Masquer les citations (voir l'écran d'avant)</span>
+      </button>
+    </div>
+
+    <p class="compte"><b id="compte-n">6</b> décisions affichées sur 6. Le tableau ne tronque
+      rien. Le tri met devant ce qui est le plus grave, puis le plus cher.</p>
+
+    <div class="defile">
+    <table>
+      <caption class="cache">Une ligne par acte d'autorisation.</caption>
+      <thead><tr>
+        <th class="col-decision">Décision</th>
+        <th class="col-montant">Montant</th>
+        <th>Ce qui la fonde</th>
+        <th>Seuils franchis</th>
+        <th>Exécution</th>
+      </tr></thead>
+      <tbody id="corps">
+
+        <!-- 1. Le cas nominal: piece nommee, page et sous-point. -->
+        <tr data-type="ENGAGEMENT_DEPENSE" data-fonde="confirmer" data-source="nommee">
+          <td class="col-decision">
+            <a class="titre-decision" href="#ligne-1">Résolution 11.1<span class="pip">Adoptée</span></a>
+            <span class="objet">Ravalement de la façade sud, lot maçonnerie</span>
+            <span class="meta">Engagement de dépense — Assemblée du 2026-04-29</span>
+          </td>
+          <td class="col-montant">
+            <!-- Montant d exemple change le 2026-09-09: la valeur precedente venait d un etalon
+           refute le 2026-09-04, et ce brouillon a ete ecrit trois jours APRES cette
+           refutation. Un chiffre faux laisse en exemple se propage tout seul. -->
+            <div class="montant orange"><b>! 12 345,00 EUR</b>
+              <small>lu dans le corps de la résolution</small>
+              <small>Voté, rien de payé à ce jour</small></div>
+          </td>
+          <td>
+            <div class="bulle disponible"><b>Résolution 11.1, adoptée</b>
+              <span class="statut">Source disponible</span>
+              <small>Le procès-verbal énonce ce qui s'est passé.</small>
+              <div class="bulle disponible sous"><b>Annexe visée</b>
+                <span class="statut">Source disponible</span>
+                <small>L'annexe visée par la résolution est au dossier.</small>
+                <small class="citation"><b>Source&nbsp;:</b> convocation du 29/04/2026, page 16,
+                  sous-point 11-1.</small>
+              </div>
+            </div>
+            <div class="bulle confirmer"><b>Avis du conseil syndical</b>
+              <span class="statut">À confirmer</span>
+              <small>Avis déclaré, sans pièce à l'appui.</small>
+              <small class="citation"><b>Source&nbsp;:</b> convocation du 29/04/2026, page 16,
+                sous-point 11-1.</small>
+              <small class="rappel-avant">Avant ce lot : rien ici. La case affirmait sans dire d'où.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+            <div class="bulle confirmer"><b>Devis retenu</b>
+              <span class="statut">À confirmer</span>
+              <small>Devis cité, rattachement à confirmer.</small>
+              <small class="citation"><b>Source&nbsp;:</b> convocation du 29/04/2026, page 16,
+                sous-point 11-1.</small>
+              <small class="rappel-avant">Avant ce lot : rien ici.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Seuil applicable</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucun montant de seuil n'est rattaché à cet acte. Le franchissement lui-même
+                n'est pas calculé : la comparaison du montant au seuil n'existe pas encore dans le
+                modèle.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Rien de payé à ce jour</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucune dépense n'est rattachée à cet acte. Le lien entre un acte et un euro
+                n'existe pas encore dans l'outil : c'est un état de l'outil, pas un constat sur la
+                copropriété.</small>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 2. Deux assertions concurrentes: l'ecran en montre une sur deux. -->
+        <tr data-type="ENGAGEMENT_DEPENSE" data-fonde="confirmer" data-source="inconnue">
+          <td class="col-decision">
+            <a class="titre-decision" href="#ligne-2">Résolution 40<span class="pip">Adoptée</span></a>
+            <span class="objet">Remplacement des colonnes montantes d'eau froide</span>
+            <span class="meta">Engagement de dépense — Assemblée du 2024-07-03</span>
+          </td>
+          <td class="col-montant">
+            <div class="montant orange"><b>! 12 900,00 EUR</b>
+              <small>lu sur le devis rattaché</small>
+              <small>Voté, rien de payé à ce jour</small></div>
+          </td>
+          <td>
+            <div class="bulle disponible"><b>Résolution 40, adoptée</b>
+              <span class="statut">Source disponible</span>
+              <small>Le procès-verbal énonce ce qui s'est passé.</small>
+            </div>
+            <div class="bulle confirmer"><b>Devis retenu</b>
+              <span class="statut">À confirmer</span>
+              <small>Devis cité, rattachement à confirmer.</small>
+              <small class="citation"><b>Source&nbsp;:</b> convocation du 29/04/2026, page 30,
+                sous-point 27-2.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle confirmer"><b>Seuil applicable</b>
+              <span class="statut">À confirmer</span>
+              <small>2 montants de seuil sont rattachés à cet acte, et ils se contredisent. Lequel
+                s'applique n'est pas tranché : l'outil retient le premier par ordre d'identifiant,
+                ce qui n'est pas une règle. Le franchissement n'est donc calculé ni contre l'un ni
+                contre l'autre.</small>
+              <small class="citation"><b>Source&nbsp;:</b> pièce que le registre des convocations
+                ne nomme pas, <span class="flou">segment 40</span>.
+                <span class="concurrence">C'est 1 assertion sur 2 : l'écran montre la plus
+                probante, il ne tranche pas entre elles.</span></small>
+              <small class="rappel-avant">Avant ce lot : la case disait « 2 montants se
+                contredisent » sans dire lesquels, ni où les relire.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Rien de payé à ce jour</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucune dépense n'est rattachée à cet acte.</small>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 3. Piece nommee mais rien n'en a ete lu. -->
+        <tr data-type="ENGAGEMENT_DEPENSE" data-fonde="confirmer" data-source="nommee">
+          <td class="col-decision">
+            <a class="titre-decision" href="#ligne-3">Résolution 15.3<span class="pip">Adoptée</span></a>
+            <span class="objet">Reprise d'étanchéité de la terrasse du bâtiment B</span>
+            <span class="meta">Engagement de dépense — Assemblée du 2025-12-03</span>
+          </td>
+          <td class="col-montant">
+            <div class="montant orange"><b>! 7 480,00 EUR</b>
+              <small>lu sur l'ordre du jour</small>
+              <small>Voté, rien de payé à ce jour</small></div>
+          </td>
+          <td>
+            <div class="bulle disponible"><b>Résolution 15.3, adoptée</b>
+              <span class="statut">Source disponible</span>
+              <small>Le procès-verbal énonce ce qui s'est passé.</small>
+            </div>
+            <div class="bulle confirmer"><b>Devis retenu</b>
+              <span class="statut">À confirmer</span>
+              <small>Devis cité, rattachement à confirmer.</small>
+              <small class="citation"><b>Source&nbsp;:</b> convocation du 03/12/2025, page 14,
+                sous-point 15-3.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+            <div class="bulle manquante"><b>Avis du conseil syndical</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucun avis rattaché. La consultation préalable de l'article 21 alinéa 2 n'est
+                établie par aucune pièce.</small>
+              <small class="rappel-avant">Rien à citer, donc aucun cartouche : c'est voulu.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Seuil applicable</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucun montant de seuil n'est rattaché à cet acte.</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Rien de payé à ce jour</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucune dépense n'est rattachée à cet acte.</small>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 4. Le lien existe, la position n'a pas ete notee. -->
+        <tr data-type="DELEGATION_CS" data-fonde="confirmer" data-source="nommee">
+          <td class="col-decision">
+            <a class="titre-decision" href="#ligne-4">Résolution 21<span class="pip">Adoptée</span></a>
+            <span class="objet">Délégation au conseil syndical pour les travaux d'entretien courant</span>
+            <span class="meta">Délégation au conseil syndical — Assemblée du 2026-04-29</span>
+          </td>
+          <td class="col-montant">
+            <div class="montant orange"><b>! 5 000,00 EUR</b>
+              <small>plafond lu dans le corps de la résolution</small>
+              <small>Voté, rien de payé à ce jour</small></div>
+          </td>
+          <td>
+            <div class="bulle disponible"><b>Résolution 21, adoptée</b>
+              <span class="statut">Source disponible</span>
+              <small>Le procès-verbal énonce ce qui s'est passé.</small>
+            </div>
+            <div class="bulle confirmer"><b>Rapport annuel du conseil syndical</b>
+              <span class="statut">À confirmer</span>
+              <small>Rapport déclaré, sans pièce à l'appui.</small>
+              <small class="citation"><b>Source&nbsp;:</b> convocation du 29/04/2026.
+                <span class="flou">L'endroit exact dans la pièce n'a pas été noté.</span></small>
+              <small class="rappel-avant">Avant ce lot : indiscernable d'une case pleinement
+                située. La pièce est connue, la page ne l'est pas — et on le dit.</small>
+              <small class="legifrance">Décret 67-223, article 22 alinéa 2</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Seuil applicable</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucun montant de seuil n'est rattaché à cet acte.</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Rien de payé à ce jour</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucune dépense n'est rattachée à cet acte.</small>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 5. Controle retire par la portee: pas de citation, la question ne se pose pas. -->
+        <tr data-type="DESIGNATION_ORGANE" data-fonde="disponible" data-source="sans">
+          <td class="col-decision">
+            <a class="titre-decision" href="#ligne-5">Résolution 4<span class="pip">Adoptée</span></a>
+            <span class="objet">Élection des membres du conseil syndical</span>
+            <span class="meta">Désignation à une fonction — Assemblée du 2026-04-29</span>
+          </td>
+          <td class="col-montant">
+            <div class="montant"><b>? Aucun montant</b>
+              <small>Aucun montant lu sur la pièce</small></div>
+          </td>
+          <td>
+            <div class="bulle disponible"><b>Résolution 4, adoptée</b>
+              <span class="statut">Source disponible</span>
+              <small>Le procès-verbal énonce ce qui s'est passé.</small>
+            </div>
+            <div class="bulle"><b>Avis du conseil syndical : non exigé ici</b>
+              <span class="statut">Non exigé ici</span>
+              <small>Une désignation ne passe aucun marché : la consultation préalable de
+                l'article 21 alinéa 2 n'a pas d'objet ici.</small>
+              <small class="rappel-avant">Aucun cartouche de source : un contrôle retiré n'a rien
+                à citer, et une page affichée à côté de « non exigé » se lirait comme une
+                exigence.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+            <div class="bulle"><b>Devis retenu : non exigé ici</b>
+              <span class="statut">Non exigé ici</span>
+              <small>Une désignation ne passe aucun marché.</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle"><b>Seuil applicable : non exigé ici</b>
+              <span class="statut">Non exigé ici</span>
+              <small>Ce contrôle n'a pas d'objet sur ce type.</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle"><b>Exécution : non exigée ici</b>
+              <span class="statut">Non exigé ici</span>
+              <small>Ce contrôle n'a pas d'objet sur ce type.</small>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 6. Piece sans date: le registre ne fabrique pas "convocation du ...". -->
+        <tr data-type="ENGAGEMENT_DEPENSE" data-fonde="confirmer" data-source="inconnue">
+          <td class="col-decision">
+            <a class="titre-decision" href="#ligne-6">Résolution 2.1<span class="pip">Adoptée</span></a>
+            <span class="objet">Contrat d'entretien des parties communes, renouvellement</span>
+            <span class="meta">Engagement de dépense — Assemblée du 2024-02-21</span>
+          </td>
+          <td class="col-montant">
+            <div class="montant orange"><b>! 3 120,00 EUR</b>
+              <small>lu sur une annexe</small>
+              <small>Voté, rien de payé à ce jour</small></div>
+          </td>
+          <td>
+            <div class="bulle disponible"><b>Résolution 2.1, adoptée</b>
+              <span class="statut">Source disponible</span>
+              <small>Le procès-verbal énonce ce qui s'est passé.</small>
+            </div>
+            <div class="bulle confirmer"><b>Devis retenu</b>
+              <span class="statut">À confirmer</span>
+              <small>Devis cité, rattachement à confirmer.</small>
+              <small class="citation"><b>Source&nbsp;:</b>
+                <span class="flou">document non daté, dont rien n'a été lu</span>, page 2,
+                sous-point 2-1.</small>
+              <small class="rappel-avant">Avant ce lot : rien. Et surtout, l'écran ne doit pas
+                appeler « convocation du … » une pièce que personne n'a datée.</small>
+              <small class="legifrance">Loi 65-557, article 21 alinéa 2</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Seuil applicable</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucun montant de seuil n'est rattaché à cet acte.</small>
+            </div>
+          </td>
+          <td>
+            <div class="bulle manquante"><b>Rien de payé à ce jour</b>
+              <span class="statut">Source manquante</span>
+              <small>Aucune dépense n'est rattachée à cet acte.</small>
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="panneau pied">
+    <div class="panneau-tete">
+      <h2>Ce que l'écran s'interdit de dire</h2>
+      <span>les quatre formes de citation, et pourquoi</span>
+    </div>
+    <table>
+      <thead><tr><th>Ce que le coffre porte</th><th>Ce que l'écran écrit</th><th>Ce qu'il n'écrit pas</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Pièce datée au registre, page et endroit notés</td>
+          <td>« convocation du 29/04/2026, page 16, sous-point 11-1 »</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Pièce absente du registre des convocations</td>
+          <td>« pièce que le registre des convocations ne nomme pas, segment 40 »</td>
+          <td>ni son identifiant interne <code>DOC-…</code>, ni un nom deviné</td>
+        </tr>
+        <tr>
+          <td>Ligne au registre, sans date lisible</td>
+          <td>« document non daté » ou « document dont la date n'a pas pu être lue »</td>
+          <td>jamais « convocation du … » : 24 lignes sur 32 d'un coffre réel sont des règlements,
+              des contrats et des annexes, pas des convocations</td>
+        </tr>
+        <tr>
+          <td>Lien présent, ni page ni endroit</td>
+          <td>« L'endroit exact dans la pièce n'a pas été noté. »</td>
+          <td>jamais la page de l'acte à la place de celle du lien</td>
+        </tr>
+        <tr>
+          <td>Plusieurs assertions vivantes sur le même contrôle</td>
+          <td>« C'est 1 assertion sur 2 : l'écran montre la plus probante, il ne tranche pas. »</td>
+          <td>jamais le singulier, jamais un arbitrage que personne n'a rendu</td>
+        </tr>
+        <tr>
+          <td>Aucune assertion</td>
+          <td>rien du tout — la case dit déjà l'absence</td>
+          <td>jamais un cartouche « Source : » vide, qui se lirait comme une preuve</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panneau pied">
+    <div class="panneau-tete">
+      <h2>Les mesures du 2026-09-07 qui fondent cette cible</h2>
+      <span>deux coffres, lecture seule, copies de travail</span>
+    </div>
+    <ul class="axes">
+      <li><b>Coffre A</b> — 157 actes, 229 liens. <b>229 sur 229</b> portent une page ET un endroit
+        dans la page. Deux relations seulement y vivent : 157 devis retenus, 72 avis de conseil
+        syndical. Aucun acte n'y porte deux assertions sur le même contrôle : <b>le conflit n'y est
+        pas reproductible</b>, le test le construit donc à la main.</li>
+      <li><b>Coffre B</b> — 141 actes, 280 liens. 65 actes portent <b>deux</b> seuils applicables
+        chacun. <b>10 des 65</b> seuils retenus n'ont pas de page et ont un endroit
+        (<code>segment 38</code>) : page et endroit manquent indépendamment.</li>
+      <li><b>Registre des pièces</b> — 32 lignes, dont <b>24 sans date</b> et une portant
+        <code>2016-00</code>, qui n'est pas une date. Sur les 3 pièces réellement citées par les
+        liens du coffre A, <b>une n'a aucune ligne au registre</b> : elle ne peut pas être nommée,
+        et l'écran le dit.</li>
+      <li><b>Après le lot</b> — <b>221</b> cases citées sur le coffre A, <b>274</b> sur le coffre B.
+        Avant, le mot « ancre » n'apparaissait dans <b>aucun</b> gabarit du produit.</li>
+      <li><b>Pourquoi le coffre A cite moins</b> — ses 157 actes sont tous à l'état « projeté » :
+        ce sont des sous-points d'une convocation, et une convocation ne vote pas. La case du
+        texte de la résolution y est retirée, donc muette, et c'est correct : lui faire citer une
+        page reviendrait à reprocher à une assemblée qui ne s'est pas tenue de n'avoir pas
+        conclu.</li>
+    </ul>
+    <p style="margin-top:10px">Les trois axes que le code suit, et non les valeurs observées :
+      <b>(1)</b> la pièce est-elle connue du registre, <b>(2)</b> sa date est-elle lisible,
+      <b>(3)</b> quelque chose en a-t-il été lu. Une valeur inconnue sur l'un des trois fait
+      descendre l'écran vers la formulation moins précise ; elle ne le fait jamais affirmer.</p>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var corps = document.getElementById("corps");
+  var lignes = Array.prototype.slice.call(corps.querySelectorAll("tr"));
+  var compte = document.getElementById("compte-n");
+  var selects = ["f-type", "f-fonde", "f-source"].map(function (id) {
+    return document.getElementById(id);
+  });
+
+  function filtrer() {
+    var n = 0;
+    lignes.forEach(function (tr) {
+      var garde = selects.every(function (sel) {
+        var attendu = sel.value;
+        if (attendu === "toutes") { return true; }
+        return tr.getAttribute("data-" + sel.id.slice(2)) === attendu;
+      });
+      tr.style.display = garde ? "" : "none";
+      if (garde) { n += 1; }
+    });
+    compte.textContent = String(n);
+  }
+  selects.forEach(function (sel) { sel.addEventListener("change", filtrer); });
+
+  var bouton = document.getElementById("bascule");
+  var texte = document.getElementById("bascule-txt");
+  bouton.addEventListener("click", function () {
+    var masque = document.body.classList.toggle("sans-citation");
+    bouton.setAttribute("aria-pressed", masque ? "false" : "true");
+    texte.textContent = masque
+      ? "Remontrer les citations (écran cible)"
+      : "Masquer les citations (voir l'écran d'avant)";
+  });
+
+  filtrer();
+})();
+</script>
+</body>
+</html>

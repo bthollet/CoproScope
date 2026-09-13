@@ -1,0 +1,28 @@
+.docops-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.docops-rules {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  margin-bottom: 1rem;
+}
+
+.docops-rules span {
+  border: 1px solid var(--border, #d8dee8);
+  border-radius: 8px;
+  padding: 0.7rem;
+}
+
+.docops-feedback-list .artifact {
+  gap: 0.75rem;
+}
+
+.docops-feedback-list label {
+  display: grid;
+  gap: 0.35rem;
+}

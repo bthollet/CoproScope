@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" role="img" aria-labelledby="title desc">
+  <title id="title">Blueprint Coffre et partage</title>
+  <desc id="desc">Blueprint UX montrant coffre local, transport chiffre, personnes, droits sensibles, referent de secours, conflit de version et invitation bloquee avant verification.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f8fb; }
+      .panel { fill: #ffffff; stroke: #d8dee9; stroke-width: 2; }
+      .soft { fill: #eef6f4; stroke: #6ba99f; stroke-width: 2; }
+      .warn { fill: #fff4df; stroke: #c2872b; stroke-width: 2; }
+      .stop { fill: #fff0f0; stroke: #c95d5d; stroke-width: 2; }
+      .ink { fill: #1f2933; font-family: Arial, sans-serif; }
+      .muted { fill: #566473; font-family: Arial, sans-serif; }
+      .small { font-size: 18px; }
+      .body { font-size: 22px; }
+      .head { font-size: 30px; font-weight: 700; }
+      .label { font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      .pill { fill: #fff4df; stroke: #c2872b; stroke-width: 1.5; }
+      .pill-text { fill: #7a4b00; font-family: Arial, sans-serif; font-size: 16px; font-weight: 700; }
+      .line { stroke: #9aa7b5; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .ok { fill: #147d64; font-size: 20px; font-weight: 700; }
+      .no { fill: #b33a3a; font-size: 20px; font-weight: 700; }
+      .button { fill: #1f6f78; }
+      .button-text { fill: #ffffff; font-family: Arial, sans-serif; font-size: 22px; font-weight: 700; }
+      .disabled { fill: #d9dee5; }
+      .disabled-text { fill: #64707d; font-family: Arial, sans-serif; font-size: 21px; font-weight: 700; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9aa7b5" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1440" height="960" />
+
+  <rect class="panel" x="40" y="32" width="1360" height="112" rx="8" />
+  <text class="ink head" x="72" y="78">Coffre et partage</text>
+  <text class="muted body" x="72" y="114">Coffre local: Memoire CS demo - verification necessaire avant invitation</text>
+  <rect class="button" x="1054" y="62" width="286" height="52" rx="6" />
+  <text class="button-text" x="1090" y="96">Verifier avant partage</text>
+
+  <rect class="panel" x="40" y="176" width="356" height="660" rx="8" />
+  <text class="ink head" x="72" y="224">Modele mental</text>
+
+  <rect class="soft" x="72" y="264" width="292" height="88" rx="8" />
+  <text class="ink body" x="96" y="304">1. Coffre local</text>
+  <text class="muted small" x="96" y="332">Ce coffre fait foi ici</text>
+
+  <path class="line" d="M218 360 L218 398" />
+  <rect class="warn" x="72" y="406" width="292" height="92" rx="8" />
+  <text class="ink body" x="96" y="446">2. Transport chiffre</text>
+  <text class="muted small" x="96" y="476">Le cloud transfere seulement</text>
+
+  <path class="line" d="M218 506 L218 544" />
+  <rect class="panel" x="72" y="552" width="292" height="92" rx="8" />
+  <text class="ink body" x="96" y="592">3. Personnes</text>
+  <text class="muted small" x="96" y="622">Droits CoproScope concrets</text>
+
+  <path class="line" d="M218 652 L218 690" />
+  <rect class="panel" x="72" y="698" width="292" height="82" rx="8" />
+  <text class="ink body" x="96" y="736">4. Postes autorises</text>
+  <text class="muted small" x="96" y="762">Chaque poste est verifie</text>
+
+  <rect class="soft" x="72" y="804" width="292" height="86" rx="8" />
+  <text class="ink body" x="96" y="842">Referent de secours</text>
+  <text class="muted small" x="96" y="870">Aide sans pouvoir agir seul</text>
+
+  <rect class="panel" x="428" y="176" width="560" height="660" rx="8" />
+  <text class="ink head" x="460" y="224">Avant de partager</text>
+  <text class="muted body" x="460" y="258">Invitation bloquee tant que tout n'est pas clair.</text>
+
+  <text class="ok" x="468" y="326">OK</text>
+  <text class="ink body" x="520" y="326">Aucun document lisible ne part dans le cloud</text>
+  <text class="ok" x="468" y="382">OK</text>
+  <text class="ink body" x="520" y="382">Coffre chiffre controle avant partage</text>
+  <text class="ok" x="468" y="438">OK</text>
+  <text class="ink body" x="520" y="438">Droits choisis par consequences concretes</text>
+  <text class="no" x="468" y="494">!</text>
+  <text class="ink body" x="520" y="494">Poste invite pas encore reconnu</text>
+
+  <rect class="stop" x="460" y="530" width="496" height="84" rx="8" />
+  <text class="ink body" x="488" y="566">Deux versions du coffre existent.</text>
+  <text class="muted small" x="488" y="592">Partage bloque: choisissez la version de reference.</text>
+
+  <rect class="stop" x="460" y="632" width="496" height="88" rx="8" />
+  <text class="ink body" x="488" y="668">Retirer un acces bloque les prochaines versions.</text>
+  <text class="muted small" x="488" y="696">Cela ne supprime pas les copies deja obtenues.</text>
+
+  <rect class="disabled" x="460" y="752" width="226" height="52" rx="6" />
+  <text class="disabled-text" x="500" y="786">Inviter bloque</text>
+  <rect class="button" x="706" y="752" width="210" height="52" rx="6" />
+  <text class="button-text" x="742" y="786">Relire droits</text>
+
+  <rect class="panel" x="1020" y="176" width="380" height="286" rx="8" />
+  <text class="ink head" x="1052" y="224">Action sure</text>
+  <rect class="soft" x="1052" y="258" width="316" height="62" rx="8" />
+  <text class="ink body" x="1076" y="298">Verifier avant partage</text>
+  <text class="muted small" x="1052" y="356">Le cloud ne decide pas des droits.</text>
+  <text class="muted small" x="1052" y="386">Aucune invitation envoyee.</text>
+  <text class="muted small" x="1052" y="416">Aucune recuperation solitaire.</text>
+
+  <rect class="panel" x="1020" y="488" width="380" height="348" rx="8" />
+  <text class="ink head" x="1052" y="536">Personnes</text>
+  <text class="label" x="1052" y="580">Capacites visibles</text>
+
+  <text class="ink body" x="1052" y="628">President CS</text>
+  <text class="muted small" x="1052" y="660">Lire, ajouter, valider, exporter</text>
+  <rect class="pill" x="1052" y="680" width="166" height="32" rx="16" />
+  <text class="pill-text" x="1070" y="702">Droit sensible</text>
+  <text class="muted small" x="1234" y="702">Gere les acces</text>
+
+  <text class="ink body" x="1052" y="754">Expert demo</text>
+  <text class="muted small" x="1052" y="786">Lire un perimetre limite</text>
+  <text class="muted small" x="1052" y="816">Pas d'export, pas de gestion des acces</text>
+
+  <rect class="panel" x="40" y="900" width="1360" height="40" rx="8" />
+  <text class="muted small" x="72" y="925">Trace minimale: qui, quand, depuis quel poste, effet exact, limites. No-go: cloud source de verite, admin global, effacement retroactif.</text>
+</svg>

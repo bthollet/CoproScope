@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Blueprint comptes sync collaboration CoproScope</title>
+  <desc id="desc">Console UX initiale pour clarifier coffre local, synchronisation, membres, appareils et prochaine action prudente.</desc>
+  <rect width="1440" height="900" fill="#f6f7f9"/>
+  <rect x="0" y="0" width="1440" height="72" fill="#1f2933"/>
+  <text x="40" y="45" font-family="Arial, sans-serif" font-size="24" fill="#ffffff">CoproScope - Comptes et partage</text>
+  <text x="1120" y="44" font-family="Arial, sans-serif" font-size="15" fill="#d9e2ec">Coffre local verifie aujourd'hui</text>
+  <rect x="40" y="104" width="1360" height="86" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="64" y="136" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#102a43">Ce coffre reste sur cet ordinateur</text>
+  <text x="64" y="166" font-family="Arial, sans-serif" font-size="15" fill="#486581">La synchronisation transporte seulement un coffre chiffre. Les droits CoproScope restent a confirmer ici.</text>
+  <rect x="1120" y="124" width="240" height="44" rx="6" fill="#e6f4ea" stroke="#76b947"/>
+  <text x="1142" y="152" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#1f6f3d">Verifier avant partage</text>
+  <rect x="40" y="220" width="320" height="620" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="64" y="258" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">Etat du coffre</text>
+  <rect x="64" y="286" width="248" height="54" rx="6" fill="#eef8f2"/>
+  <text x="82" y="309" font-family="Arial, sans-serif" font-size="14" fill="#1f6f3d">Coffre signe</text>
+  <text x="82" y="329" font-family="Arial, sans-serif" font-size="13" fill="#334e68">Pret a verifier</text>
+  <rect x="64" y="356" width="248" height="54" rx="6" fill="#fff8e6"/>
+  <text x="82" y="379" font-family="Arial, sans-serif" font-size="14" fill="#8a5a00">Sync externe</text>
+  <text x="82" y="399" font-family="Arial, sans-serif" font-size="13" fill="#334e68">A controler avant invitation</text>
+  <rect x="64" y="426" width="248" height="54" rx="6" fill="#eef2f7"/>
+  <text x="82" y="449" font-family="Arial, sans-serif" font-size="14" fill="#243b53">Derniere archive</text>
+  <text x="82" y="469" font-family="Arial, sans-serif" font-size="13" fill="#334e68">Complete, non partagee</text>
+  <text x="64" y="530" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#102a43">Prochaine action</text>
+  <rect x="64" y="552" width="248" height="72" rx="6" fill="#dbeafe"/>
+  <text x="82" y="581" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">Controler la sync</text>
+  <text x="82" y="604" font-family="Arial, sans-serif" font-size="12" fill="#334e68">Puis seulement inviter un membre.</text>
+  <rect x="392" y="220" width="496" height="292" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="416" y="258" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">Membres et droits</text>
+  <text x="416" y="288" font-family="Arial, sans-serif" font-size="13" fill="#627d98">Exprimer les droits par consequences, pas par jargon technique.</text>
+  <line x1="416" y1="318" x2="864" y2="318" stroke="#d9e2ec"/>
+  <text x="416" y="348" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#243b53">President CS</text>
+  <text x="610" y="348" font-family="Arial, sans-serif" font-size="13" fill="#334e68">Lit, ajoute, valide, exporte</text>
+  <text x="416" y="394" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#243b53">Membre CS</text>
+  <text x="610" y="394" font-family="Arial, sans-serif" font-size="13" fill="#334e68">Lit, commente, ajoute preuve</text>
+  <text x="416" y="440" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#243b53">Expert externe</text>
+  <text x="610" y="440" font-family="Arial, sans-serif" font-size="13" fill="#334e68">Acces borne, expiration visible</text>
+  <rect x="416" y="464" width="192" height="34" rx="6" fill="#1f2933"/>
+  <text x="436" y="486" font-family="Arial, sans-serif" font-size="13" fill="#ffffff">Preparer invitation</text>
+  <rect x="920" y="220" width="480" height="292" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="944" y="258" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">Synchronisation</text>
+  <text x="944" y="288" font-family="Arial, sans-serif" font-size="13" fill="#627d98">Transport a verifier. Jamais source de verite metier.</text>
+  <rect x="944" y="320" width="400" height="50" rx="6" fill="#eef8f2"/>
+  <text x="962" y="350" font-family="Arial, sans-serif" font-size="14" fill="#1f6f3d">Aucun fichier brut dans le dossier synchronise</text>
+  <rect x="944" y="384" width="400" height="50" rx="6" fill="#fff8e6"/>
+  <text x="962" y="414" font-family="Arial, sans-serif" font-size="14" fill="#8a5a00">Verifier conflits, fichiers partiels et placeholders</text>
+  <rect x="944" y="448" width="400" height="50" rx="6" fill="#fcebea"/>
+  <text x="962" y="478" font-family="Arial, sans-serif" font-size="14" fill="#b42318">Blocage si le coffre chiffre n'est pas verifie</text>
+  <rect x="392" y="548" width="496" height="292" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="416" y="586" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">Appareils autorises</text>
+  <text x="416" y="616" font-family="Arial, sans-serif" font-size="13" fill="#627d98">Un appareil n'est pas un role. Il porte une cle ou une session.</text>
+  <circle cx="444" cy="670" r="18" fill="#dbeafe"/>
+  <text x="480" y="675" font-family="Arial, sans-serif" font-size="14" fill="#243b53">Poste principal - signature active</text>
+  <circle cx="444" cy="724" r="18" fill="#e5e7eb"/>
+  <text x="480" y="729" font-family="Arial, sans-serif" font-size="14" fill="#243b53">Portable remplacement - a confirmer</text>
+  <circle cx="444" cy="778" r="18" fill="#fee2e2"/>
+  <text x="480" y="783" font-family="Arial, sans-serif" font-size="14" fill="#243b53">Ancien poste - acces a retirer</text>
+  <rect x="920" y="548" width="480" height="292" rx="8" fill="#ffffff" stroke="#cbd2d9"/>
+  <text x="944" y="586" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#102a43">Risques a traiter</text>
+  <text x="944" y="626" font-family="Arial, sans-serif" font-size="14" fill="#243b53">1. Compte cloud confondu avec role CoproScope</text>
+  <text x="944" y="666" font-family="Arial, sans-serif" font-size="14" fill="#243b53">2. Dossier synchronise cru complet et sur</text>
+  <text x="944" y="706" font-family="Arial, sans-serif" font-size="14" fill="#243b53">3. Invitation envoyee avant revue des droits</text>
+  <text x="944" y="746" font-family="Arial, sans-serif" font-size="14" fill="#243b53">4. Recuperation impossible apres depart du CS</text>
+  <rect x="944" y="778" width="224" height="34" rx="6" fill="#ffffff" stroke="#b42318"/>
+  <text x="964" y="800" font-family="Arial, sans-serif" font-size="13" fill="#b42318">Bloquer partage dangereux</text>
+</svg>

@@ -1,0 +1,11 @@
+﻿{
+    "status":  "OK",
+    "executable":  "CoproScope-drive-sharedstate-20260531-0050",
+    "publish_status":  303,
+    "recover_status":  303,
+    "recovered_note_ok":  true,
+    "recovered_counter_ok":  true,
+    "private_path_masked":  true,
+    "drive_cleartext_found":  false,
+    "drive_instance_id_found":  false
+}

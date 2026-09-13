@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">PDF / reprise locale</p>
+    <h2>File locale de reprise PDF</h2>
+    <p class="hint">{{ pdf_trace_queue.privacy_notice }}</p>
+  </div>
+  <div class="kpi-grid">
+    <div><strong>{{ pdf_trace_queue.count }}</strong><span>traces a relire</span></div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Traces candidates</h3>
+    <span>{{ pdf_trace_queue.count }}</span>
+  </div>
+  <table aria-label="Traces PDF candidates a relire">
+    <thead>
+      <tr><th>Document</th><th>Zone</th><th>Statut</th><th>Prochaine action</th><th>Ouvrir</th></tr>
+    </thead>
+    <tbody>
+    {% for item in pdf_trace_queue.rows %}
+      <tr>
+        <td>{{ item.document_label }}<br><small>{{ item.document_type }}</small></td>
+        <td>{{ item.zone }}<br><small>{{ item.created_at }}</small></td>
+        <td>{{ item.status }}<br><small>{{ item.diffusion }}</small></td>
+        <td>{{ item.next_action }}</td>
+        <td><a class="button-link secondary" href="{{ token_href(item.resume_path) }}#pdf-reader">Ouvrir la trace</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">{{ pdf_trace_queue.empty }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Garde-fous</h3>
+    <span>local</span>
+  </div>
+  <table>
+    <tbody>
+      <tr><th>Export</th><td>Aucun export global PDF/Zotero n'est active.</td></tr>
+      <tr><th>Preuve</th><td>Chaque trace reste candidate tant qu'elle n'est pas relue et validee humainement.</td></tr>
+      <tr><th>Source</th><td>Le PDF original n'est pas modifie.</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}

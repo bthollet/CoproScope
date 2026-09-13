@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="band">
+  <div>
+    <p class="eyebrow">Fiche document - atelier de piece</p>
+    <h2 class="truncate" title="{{ document_detail.doc.file_name }}">{{ document_detail.doc.file_name }}</h2>
+    <div class="badge-row">
+      <span class="badge">{{ document_detail.doc.doc_id }}</span>
+      <span class="badge">{{ document_detail.doc.document_type }}</span>
+      <span class="badge">{{ document_detail.doc.lot }}</span>
+    </div>
+  </div>
+  <div class="status-block">
+    <span>{{ document_detail.diffusion.label }}</span>
+    <span>{{ document_detail.signature.label }}</span>
+    <small>{{ document_detail.storage.status }} - {{ document_detail.storage.note }}</small>
+  </div>
+</section>
+
+{% set requested_trace_id = request.query_params.get('trace_id', '') %}
+{% set selected_trace = namespace(value=None) %}
+{% for trace in document_detail.pdf_trace.saved_traces %}
+  {% if requested_trace_id and trace.trace_id == requested_trace_id and trace.resume_path %}
+    {% set selected_trace.value = trace %}
+  {% endif %}
+{% endfor %}
+{% set active_trace = selected_trace.value %}
+{% set trace_page = active_trace.page if active_trace else document_detail.pdf_trace.current_page %}
+{% set trace_page_label = 'Page ' ~ trace_page ~ ' sur ' ~ document_detail.pdf_trace.page_count if document_detail.pdf_trace.page_nav_available else 'Page ' ~ trace_page if document_detail.pdf_trace.has_pdf_viewer else document_detail.pdf_trace.page_label %}
+{% set trace_zone_ready = active_trace and active_trace.zone_x and active_trace.zone_y and active_trace.zone_width and active_trace.zone_height %}
+{% set trace_status_label = 'Point de reprise: ' ~ active_trace.zone if trace_zone_ready else document_detail.pdf_trace.selection_empty_label|replace('{page}', trace_page) %}
+
+<section class="grid two" aria-label="{{ document_detail.pdf_trace.workshop_label }}">
+  <div class="panel" id="pdf-reader" {% if document_detail.pdf_trace.available %}data-pdf-trace-workbench data-pdf-trace-empty-label="{{ document_detail.pdf_trace.selection_empty_label }}" data-pdf-trace-ready-label="{{ document_detail.pdf_trace.selection_ready_label }}" data-pdf-trace-current-page="{{ trace_page }}" data-pdf-trace-page-count="{{ document_detail.pdf_trace.page_count }}"{% if trace_zone_ready %} data-pdf-trace-resume-page="{{ active_trace.page }}" data-pdf-trace-resume-x="{{ active_trace.zone_x }}" data-pdf-trace-resume-y="{{ active_trace.zone_y }}" data-pdf-trace-resume-width="{{ active_trace.zone_width }}" data-pdf-trace-resume-height="{{ active_trace.zone_height }}" data-pdf-trace-resume-label="Point de reprise: {{ active_trace.zone }}"{% endif %}{% endif %}>
+    <p class="eyebrow">{{ document_detail.pdf_trace.workshop_label }}</p>
+    {#- L'ecart entre la page demandee et ce que la piece porte (`RM-2026-0157`).
+        Il se dit, il ne se rabat pas en silence: un lecteur ramene page 1 sans
+        avertissement croit lire la page citee. -#}
+    {% if document_detail.pdf_trace.page_ecart %}
+    <p class="hint" role="alert">{{ document_detail.pdf_trace.page_ecart }}</p>
+    {% endif %}
+    <div class="panel-head">
+      <h3>{{ document_detail.pdf_trace.reader_label }}</h3>
+      <span>{{ trace_page_label }}</span>
+    </div>
+    <div class="badge-row" aria-label="Commandes du lecteur">
+      <span class="badge">{{ document_detail.pdf_trace.thumbnail_label }}</span>
+      {% if document_detail.pdf_trace.has_pdf_viewer %}
+      <span class="badge">100 %</span>
+      {% endif %}
+      <span class="badge">{{ document_detail.preview.source_label or document_detail.preview.kind_label }}</span>
+    </div>
+    {% if document_detail.pdf_trace.page_nav_available %}
+    <div class="cs-pdf-trace-page-nav" aria-label="Navigation dans le PDF">
+      <button class="button-link secondary" type="button" data-pdf-trace-page-prev disabled>Page precedente</button>
+      <label class="cs-pdf-trace-page-picker">
+        <span>Page</span>
+        <input class="input" type="number" min="1" max="{{ document_detail.pdf_trace.page_count }}" value="{{ trace_page }}" data-pdf-trace-page-input aria-label="Page courante">
+      </label>
+      <span class="badge" data-pdf-trace-page-total>{{ document_detail.pdf_trace.page_count_label }}</span>
+      <button class="button-link secondary" type="button" data-pdf-trace-page-next>Page suivante</button>
+      <strong data-pdf-trace-page-status>{{ trace_page_label }}</strong>
+    </div>
+    {% endif %}
+    <p class="hint" style="margin-top:12px;">{{ document_detail.pdf_trace.selection_prompt if document_detail.pdf_trace.available else "Apercu autorise pour pointer une zone sans modifier la source." }}</p>
+    {% if document_detail.preview.message %}
+    <p class="hint">{{ document_detail.preview.message }}</p>
+    {% endif %}
+    <div class="cs-pdf-trace-preview-grid">
+      <div class="empty" style="min-height:112px;padding:10px;text-align:center;">
+        <strong>{{ trace_page_label }}</strong><br>
+        <small>{{ document_detail.pdf_trace.thumbnail_label }}</small>
+      </div>
+      <div>
+        <div class="cs-pdf-trace-page-shell" {% if document_detail.pdf_trace.available %}data-pdf-trace-page-shell{% endif %}>
+        <div class="cs-pdf-trace-page-content">
+        {% if document_detail.preview.kind == "text" %}
+        <pre class="report" style="max-height:420px;">{{ document_detail.preview.text }}</pre>
+        {% if document_detail.preview.truncated %}
+        <p class="hint">Apercu limite aux premiers caracteres extraits.</p>
+        {% endif %}
+        {% elif document_detail.preview.kind == "image" %}
+        <img src="{{ document_detail.preview.data_uri }}" alt="Apercu {{ document_detail.doc.file_name }}" style="display:block;width:100%;max-height:520px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fbfcfb;">
+        {% elif document_detail.preview.kind == "pdf" %}
+        <object data="{{ document_detail.preview.data_uri }}" type="{{ document_detail.preview.media_type }}" data-pdf-trace-pdf-object data-pdf-trace-pdf-src="{{ document_detail.preview.data_uri }}" style="display:block;width:100%;min-height:520px;border:1px solid var(--line);border-radius:8px;background:#fbfcfb;">
+          <div class="empty">Apercu PDF non disponible dans ce navigateur.</div>
+        </object>
+        {% else %}
+        <div class="empty">{{ document_detail.preview.message }}</div>
+        {% endif %}
+        </div>
+        {% if document_detail.pdf_trace.available %}
+        <div class="cs-pdf-trace-selection-layer" data-pdf-trace-selection role="button" tabindex="0" aria-label="{{ document_detail.pdf_trace.selection_prompt }}">
+          <div class="cs-pdf-trace-selection-box" data-pdf-trace-box hidden>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-nw" data-pdf-trace-handle="nw" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-n" data-pdf-trace-handle="n" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-ne" data-pdf-trace-handle="ne" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-e" data-pdf-trace-handle="e" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-se" data-pdf-trace-handle="se" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-s" data-pdf-trace-handle="s" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-sw" data-pdf-trace-handle="sw" aria-hidden="true"></span>
+            <span class="cs-pdf-trace-selection-handle cs-pdf-trace-selection-handle-w" data-pdf-trace-handle="w" aria-hidden="true"></span>
+          </div>
+        </div>
+        {% endif %}
+        </div>
+        <div class="empty" style="margin-top:10px;">
+          <strong data-pdf-trace-status>{{ trace_status_label if document_detail.pdf_trace.available else "Zone encadree" }}</strong><br>
+          <small data-pdf-trace-adjust-help hidden>{{ document_detail.pdf_trace.selection_adjust_help }}</small>
+          <small data-pdf-trace-fallback-help>{{ document_detail.pdf_trace.status }} - {{ document_detail.pdf_trace.scan_status }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="panel" id="trace-pdf">
+    <div class="panel-head">
+      <h3>{{ document_detail.pdf_trace.title }}</h3>
+      <span>{{ document_detail.pdf_trace.status }}</span>
+    </div>
+    <p class="hint">{{ document_detail.pdf_trace.intro }}</p>
+    <p class="hint"><strong>{{ document_detail.pdf_trace.limitation_notice }}</strong></p>
+    {% if document_detail.pdf_trace.available %}
+    <p class="hint"><strong data-pdf-trace-status>{{ trace_status_label }}</strong></p>
+    <p class="hint" data-pdf-trace-adjust-help hidden>{{ document_detail.pdf_trace.selection_adjust_help }}</p>
+    <form method="post" action="/documents/{{ document_detail.doc.doc_id }}/traces{{ ui_token_query }}" class="upload-form cs-upload-form" style="margin-top:10px;" data-pdf-trace-form>
+      <input type="hidden" name="page" value="{{ trace_page }}" data-pdf-trace-field="page">
+      <input type="hidden" name="zone_x" value="{{ document_detail.pdf_trace.candidate_form.zone_x }}" data-pdf-trace-field="x">
+      <input type="hidden" name="zone_y" value="{{ document_detail.pdf_trace.candidate_form.zone_y }}" data-pdf-trace-field="y">
+      <input type="hidden" name="zone_width" value="{{ document_detail.pdf_trace.candidate_form.zone_width }}" data-pdf-trace-field="width">
+      <input type="hidden" name="zone_height" value="{{ document_detail.pdf_trace.candidate_form.zone_height }}" data-pdf-trace-field="height">
+      <label class="cs-upload-label">
+        <span>Note courte</span>
+        <input class="input" name="comment" maxlength="180" value="{{ document_detail.pdf_trace.candidate_form.comment }}">
+      </label>
+      <button class="button-link" type="submit" data-pdf-trace-submit disabled>{{ document_detail.pdf_trace.primary_action }}</button>
+    </form>
+    {% else %}
+    <p class="hint"><strong>{{ document_detail.pdf_trace.primary_action }}</strong></p>
+    {% endif %}
+    <div class="empty" style="margin-top:10px;">
+      <strong>{{ document_detail.pdf_trace.source_notice }}</strong><br>
+      <small>
+        {% if document_detail.pdf_trace.saved_traces and document_detail.pdf_trace.saved_traces[0].excerpt %}
+        Texte repere automatiquement, a relire.
+        {% else %}
+        {{ document_detail.pdf_trace.scan_status }}
+        {% endif %}
+      </small>
+    </div>
+    <table aria-label="Annotations et historique resumes">
+      <tbody>
+        <tr>
+          <th><a href="#trace-pdf-tabs">Annotations</a></th>
+          <td>{{ document_detail.annotations.mode }}<br><small>Aucune annotation n'est injectee dans le PDF.</small></td>
+        </tr>
+        <tr>
+          <th><a href="#trace-pdf-tabs">Historique</a></th>
+          <td>{{ document_detail.history.status }}<br><small>Les evenements restent separes du fichier source.</small></td>
+        </tr>
+      </tbody>
+    </table>
+    <table id="trace-pdf-status">
+      <tbody>
+        <tr>
+          <th>Statut</th>
+          <td><strong>{{ document_detail.pdf_trace.status }}</strong><br><small>{{ document_detail.pdf_trace.validation_notice }}</small></td>
+        </tr>
+        <tr>
+          <th>Texte</th>
+          <td>{{ document_detail.pdf_trace.text_status }}<br><small>{{ document_detail.pdf_trace.scan_status }}</small></td>
+        </tr>
+        <tr>
+          <th>Source</th>
+          <td>{{ document_detail.pdf_trace.source_notice }}<br><small>{{ document_detail.pdf_trace.hash_status }}</small></td>
+        </tr>
+        <tr>
+          <th>Diffusion</th>
+          <td>{{ document_detail.pdf_trace.diffusion_status }}<br><small>{{ document_detail.pdf_trace.availability_note }}</small></td>
+        </tr>
+      </tbody>
+    </table>
+    {% if active_trace %}
+    <div class="empty" style="margin-top:10px;">
+      <strong>Point de reprise ouvert</strong><br>
+      <small>Vous reprenez ici: {{ active_trace.zone }}.</small><br>
+      <small>Prochaine action: {{ active_trace.next_action }}</small><br>
+      <small>{{ active_trace.status }}</small>
+      {% if active_trace.excerpt %}
+      <br><small>Extrait repere - {{ active_trace.excerpt }}</small>
+      {% endif %}
+      {% if active_trace.comment %}
+      <br><small>Note courte: {{ active_trace.comment }}</small>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if document_detail.pdf_trace.saved_traces %}
+    {% set first_trace = active_trace if active_trace else document_detail.pdf_trace.saved_traces[0] %}
+    <div class="empty" style="margin-top:10px;">
+      <strong>{{ first_trace.status }}</strong><br>
+      <small>{{ first_trace.text }}</small>
+      {% if first_trace.excerpt %}
+      <br><small>Extrait repere - {{ first_trace.excerpt }}</small>
+      {% endif %}
+      <br><small>Prochaine action: {{ first_trace.next_action }}</small>
+      <br><small>{{ first_trace.diffusion }} - {{ first_trace.zone }}</small>
+    </div>
+    {% endif %}
+    <div class="button-row">
+      <a class="button-link secondary" href="/documents{{ ui_token_query }}">Retour aux documents</a>
+      <a class="button-link secondary" href="/confidentialite{{ ui_token_query }}">Voir confidentialite</a>
+    </div>
+  </aside>
+</section>
+
+<section class="grid two" id="trace-pdf-tabs" aria-label="Annotations et historique de trace">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Annotations</h3>
+      <span>{{ document_detail.annotations.mode }}{% if document_detail.pdf_trace.saved_traces %} - {{ document_detail.pdf_trace.saved_count }} trace(s){% endif %}</span>
+    </div>
+    <p class="hint">{{ document_detail.annotations.notice }}</p>
+    {% if document_detail.pdf_trace.saved_traces %}
+    <table aria-label="Traces candidates enregistrees">
+      <thead><tr><th>Trace</th><th>Zone</th><th>Extrait repere</th><th>Statut</th><th>Reprise locale</th></tr></thead>
+      <tbody>
+      {% for trace in document_detail.pdf_trace.saved_traces %}
+        {% set is_selected_trace = active_trace and trace.trace_id == active_trace.trace_id %}
+        <tr id="trace-{{ trace.trace_id }}" data-pdf-trace-saved-row data-pdf-trace-id="{{ trace.trace_id }}"{% if is_selected_trace %} aria-current="true"{% endif %}>
+          <th>
+            {{ trace.status }}<br><small>{{ trace.created_at }}</small>
+            {% if is_selected_trace %}<br><small>Point de reprise ouvert</small>{% endif %}
+          </th>
+          <td>
+            {{ trace.zone }}<br><small>Repere court {{ trace.anchor }}</small><br>
+            {% if trace.resume_path %}
+            <a class="button-link secondary" href="{{ token_href(trace.resume_path) }}#pdf-reader" data-pdf-trace-replay data-pdf-trace-id="{{ trace.trace_id }}" data-pdf-trace-page="{{ trace.page }}" data-pdf-trace-x="{{ trace.zone_x }}" data-pdf-trace-y="{{ trace.zone_y }}" data-pdf-trace-width="{{ trace.zone_width }}" data-pdf-trace-height="{{ trace.zone_height }}" data-pdf-trace-label="Point de reprise: {{ trace.zone }}">Reprendre cette trace</a>
+            {% endif %}
+          </td>
+          <td>
+            {% if trace.excerpt %}
+            {{ trace.excerpt }}
+            {% else %}
+            Aucun extrait repere
+            {% endif %}
+            {% if trace.comment %}
+            <br><small>Note courte: {{ trace.comment }}</small>
+            {% endif %}
+          </td>
+          <td>{{ trace.diffusion }}<br><small>{{ trace.text }}</small></td>
+          <td>{{ trace.next_action }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    <table>
+      <thead><tr><th>Evenement</th><th>Action</th><th>Preuve gardee</th></tr></thead>
+      <tbody>
+      {% for event in document_detail.annotations.events %}
+        <tr>
+          <th>{{ event.label }}<br><small>{{ event.status }}</small></th>
+          <td>{{ event.action }}<br><small>{{ event.actor }} - {{ event.anchor }}</small></td>
+          <td><code>{{ event.proof }}</code><br><small>{{ event.note }}</small></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Historique</h3>
+      <span>{{ document_detail.history.status }}</span>
+    </div>
+    <p class="hint">{{ document_detail.history.notice }}</p>
+    <table>
+      <thead><tr><th>Moment</th><th>Etat</th><th>Confiance</th></tr></thead>
+      <tbody>
+      {% for event in document_detail.history.events %}
+        <tr>
+          <th>{{ event.label }}<br><small>{{ event.when }}</small></th>
+          <td><code>{{ event.status }}</code></td>
+          <td>{{ event.signature }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<details class="panel" id="document-workbench">
+  <summary><strong>Parcours novice et point d'action</strong></summary>
+  <p class="hint" style="margin-top:12px;">{{ document_detail.workbench.notice }}</p>
+  <table>
+    <thead><tr><th>Etape</th><th>Ce que je regarde</th><th>Etat</th><th>Pourquoi</th></tr></thead>
+    <tbody>
+    {% for step in document_detail.workbench.steps %}
+      <tr>
+        <th>{{ step.label }}</th>
+        <td><strong>{{ step.title }}</strong></td>
+        <td><code>{{ step.status }}</code></td>
+        <td>{{ step.text }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <table style="margin-top:18px;">
+    <tbody>
+      <tr>
+        <th>Point</th>
+        <td>{{ document_detail.evidence.chain[1].value }}<br><small>Point de rattachement novice pour retrouver le sujet.</small></td>
+      </tr>
+      <tr>
+        <th>Action</th>
+        <td><strong>{{ document_detail.diffusion.action }}</strong><br><small>{{ document_detail.diffusion.next_step }}</small></td>
+      </tr>
+      <tr>
+        <th>Preuve</th>
+        <td><code>{{ document_detail.evidence.chain[2].value }}</code><br><small>{{ document_detail.evidence.notice }}</small></td>
+      </tr>
+      <tr>
+        <th>Signature</th>
+        <td><code>{{ document_detail.signature.label }}</code><br><small>{{ document_detail.signature.detail }} {{ document_detail.signature.actor }} - {{ document_detail.signature.when }}</small></td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+<details class="panel" id="document-technical-info" style="margin-top:18px;">
+  <summary><strong>Informations techniques et traitement local</strong></summary>
+  <div class="grid two" style="margin-top:14px;margin-bottom:0;">
+    <div>
+      <h3>Diffusion et signature</h3>
+      <table>
+        <tbody>
+          <tr><th>Diffusion</th><td>{{ document_detail.diffusion.detail }}<br><small>{{ document_detail.diffusion.next_step }}</small></td></tr>
+          <tr><th>Signature</th><td>{{ document_detail.signature.detail }}<br><small>{{ document_detail.signature.action }}</small></td></tr>
+        {% for item in document_detail.policy %}
+          <tr>
+            <th>{{ item.label }}</th>
+            <td>{{ item.value }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3>Ancres sans PDF modifie</h3>
+      <p class="hint">{{ document_detail.anchors.notice }}</p>
+      <table>
+        <tbody>
+        {% for anchor in document_detail.anchors.entries %}
+          <tr>
+            <th>{{ anchor.label }}</th>
+            <td><code>{{ anchor.target }}</code><br><small>{{ anchor.status }}</small></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3>Metadonnees</h3>
+      <table>
+        <tbody>
+        {% for item in document_detail.metadata %}
+          <tr>
+            <th>{{ item.label }}</th>
+            <td><code>{{ item.value }}</code></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3>Traitement local</h3>
+      <table>
+        <tbody>
+        {% for item in document_detail.workflow %}
+          <tr>
+            <th>{{ item.label }}</th>
+            <td>{{ item.value }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</details>
+{% if document_detail.pdf_trace.available %}
+<script src="/static/pdf_trace_selection.js"></script>
+{% endif %}
+{% endblock %}

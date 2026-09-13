@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Tableau de tri DocOps par lot</title>
+  <desc id="desc">Blueprint UI pour traiter un lot de documents par colonnes de confidentialite. Variante instructive, non retenue comme premier parcours novice.</desc>
+  <rect width="1400" height="900" fill="#f6f7f9"/>
+  <rect x="40" y="34" width="1320" height="94" rx="8" fill="#22313f"/>
+  <text x="72" y="75" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#ffffff">Tri DocOps par lot</text>
+  <text x="72" y="106" font-family="Arial, sans-serif" font-size="17" fill="#dfe8ee">Variante efficace pour dix documents ou plus, trop dense pour un premier ajout novice.</text>
+  <rect x="960" y="57" width="170" height="44" rx="6" fill="#ffffff"/>
+  <text x="986" y="84" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#22313f">7 changements</text>
+  <rect x="1150" y="57" width="170" height="44" rx="6" fill="#ffffff"/>
+  <text x="1180" y="84" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#22313f">Enregistrer</text>
+
+  <g font-family="Arial, sans-serif">
+    <g transform="translate(40 165)">
+      <rect width="250" height="660" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+      <text x="20" y="40" font-size="18" font-weight="700" fill="#17324d">Ouvert autorise</text>
+      <text x="20" y="66" font-size="14" fill="#5d6b76">3 documents</text>
+      <rect x="20" y="100" width="210" height="102" rx="8" fill="#eef7ef" stroke="#9ac79b"/>
+      <text x="38" y="132" font-size="16" font-weight="700" fill="#17324d">DOC-8F42</text>
+      <text x="38" y="158" font-size="13" fill="#4d5c66">Facture - confiance 82%</text>
+      <text x="38" y="182" font-size="13" fill="#4d5c66">Motif: pas de signal bloque</text>
+      <rect x="20" y="222" width="210" height="102" rx="8" fill="#eef7ef" stroke="#9ac79b"/>
+      <text x="38" y="254" font-size="16" font-weight="700" fill="#17324d">DOC-A126</text>
+      <text x="38" y="280" font-size="13" fill="#4d5c66">AG - confiance 76%</text>
+      <text x="38" y="304" font-size="13" fill="#4d5c66">A verifier avant partage</text>
+    </g>
+    <g transform="translate(310 165)">
+      <rect width="250" height="660" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+      <text x="20" y="40" font-size="18" font-weight="700" fill="#17324d">A masquer</text>
+      <text x="20" y="66" font-size="14" fill="#5d6b76">2 documents</text>
+      <rect x="20" y="100" width="210" height="116" rx="8" fill="#fff8eb" stroke="#e1ba69"/>
+      <text x="38" y="132" font-size="16" font-weight="700" fill="#17324d">DOC-991B</text>
+      <text x="38" y="158" font-size="13" fill="#4d5c66">Contrat - confiance 64%</text>
+      <text x="38" y="184" font-size="13" fill="#4d5c66">Justification requise</text>
+      <rect x="38" y="194" width="165" height="1" fill="#d0b271"/>
+    </g>
+    <g transform="translate(580 165)">
+      <rect width="250" height="660" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+      <text x="20" y="40" font-size="18" font-weight="700" fill="#17324d">Reserve CS</text>
+      <text x="20" y="66" font-size="14" fill="#5d6b76">1 document</text>
+      <rect x="20" y="100" width="210" height="130" rx="8" fill="#eef2ff" stroke="#9daede"/>
+      <text x="38" y="132" font-size="16" font-weight="700" fill="#17324d">DOC-4C77</text>
+      <text x="38" y="158" font-size="13" fill="#4d5c66">Contentieux - confiance 58%</text>
+      <text x="38" y="184" font-size="13" fill="#4d5c66">Motif obligatoire</text>
+      <rect x="38" y="202" width="160" height="22" rx="4" fill="#ffffff" stroke="#b8c2cc"/>
+    </g>
+    <g transform="translate(850 165)">
+      <rect width="250" height="660" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+      <text x="20" y="40" font-size="18" font-weight="700" fill="#17324d">Non diffusable</text>
+      <text x="20" y="66" font-size="14" fill="#5d6b76">1 document</text>
+      <rect x="20" y="100" width="210" height="130" rx="8" fill="#fff0f0" stroke="#d99b9b"/>
+      <text x="38" y="132" font-size="16" font-weight="700" fill="#17324d">DOC-D330</text>
+      <text x="38" y="158" font-size="13" fill="#4d5c66">RIB - confiance 91%</text>
+      <text x="38" y="184" font-size="13" fill="#4d5c66">Motif obligatoire</text>
+      <rect x="38" y="202" width="160" height="22" rx="4" fill="#ffffff" stroke="#b8c2cc"/>
+    </g>
+    <g transform="translate(1120 165)">
+      <rect width="240" height="660" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+      <text x="20" y="40" font-size="18" font-weight="700" fill="#17324d">A decider</text>
+      <text x="20" y="66" font-size="14" fill="#5d6b76">5 documents</text>
+      <rect x="20" y="100" width="200" height="102" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+      <text x="38" y="132" font-size="16" font-weight="700" fill="#17324d">DOC-0F19</text>
+      <text x="38" y="158" font-size="13" fill="#4d5c66">Scan image - OCR absent</text>
+      <text x="38" y="182" font-size="13" fill="#4d5c66">Revue humaine</text>
+      <rect x="20" y="222" width="200" height="102" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+      <text x="38" y="254" font-size="16" font-weight="700" fill="#17324d">DOC-736A</text>
+      <text x="38" y="280" font-size="13" fill="#4d5c66">Type incertain</text>
+      <text x="38" y="304" font-size="13" fill="#4d5c66">A classer</text>
+    </g>
+  </g>
+</svg>

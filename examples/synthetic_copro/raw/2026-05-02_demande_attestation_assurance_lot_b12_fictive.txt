@@ -1,0 +1,17 @@
+FICTIF - DONNEES PRIVEES DE DEMONSTRATION - NE PAS UTILISER COMME DONNEE REELLE
+
+Canal: message transmis au conseil syndical
+Emetteur: coproprietaire fictif du lot B12
+Sujet: attestation assurance immeuble 2026 non recue
+
+Bonjour,
+Pour la preparation du prochain conseil syndical, je souhaite savoir si le syndic a bien transmis l'attestation multirisque immeuble 2026.
+Je ne la retrouve pas dans les pieces partagees. Merci de demander au syndic une attestation lisible ou une confirmation ecrite.
+
+Suite attendue:
+- verifier si l'attestation existe deja dans les documents locaux ;
+- si elle manque, preparer une relance syndic ;
+- conserver la reponse comme preuve de couverture.
+
+Note de confidentialite:
+Ce fichier est un exemple fictif. Le lot, l'emetteur et le contenu sont inventes pour tester le parcours UX.

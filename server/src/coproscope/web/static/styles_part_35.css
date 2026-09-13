@@ -1,0 +1,98 @@
+/* Coque: le groupe Controle du menu, ses deux onglets et le volet rabattable.
+   `RM-2026-0183` et `RM-2026-0184`, recette de Brice du 2026-09-13.
+
+   Le repli ne vaut qu'au-dessus du palier de 980 px: en dessous, le menu a deja
+   sa propre mise en page, et ses paliers sont gardes par des tests a chaines
+   exactes. */
+
+.cs-nav-groupe {
+  display: grid;
+  gap: 3px;
+}
+
+.cs-nav-sous {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 2px 22px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(238, 247, 255, .22);
+}
+
+.cs-sidebar .nav .cs-nav-sous a {
+  min-height: 34px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.cs-controle-onglets {
+  margin: 0 0 12px;
+}
+
+/* Le bouton n'existe qu'au-dessus du palier: il est donc cache par defaut et
+   montre dans le seul `min-width`, sans ouvrir un seuil `max-width` de plus. */
+.cs-sidebar-brand .cs-volet-bascule {
+  display: none;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  place-items: center;
+  border: 1px solid rgba(238, 247, 255, .35);
+  border-radius: 8px;
+  background: transparent;
+  color: #eef7ff;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cs-sidebar-brand .cs-volet-bascule:hover {
+  background: rgba(238, 247, 255, .14);
+}
+
+.cs-sidebar-brand .cs-volet-bascule:focus-visible {
+  outline: 2px solid #9fd3ff;
+  outline-offset: 2px;
+}
+
+@media (min-width: 981px) {
+  .cs-sidebar-brand .cs-volet-bascule {
+    display: inline-grid;
+  }
+
+  .cs-menu-replie .cs-sidebar {
+    width: 68px;
+    padding-inline: 8px;
+  }
+
+  .cs-menu-replie .cs-workspace {
+    margin-left: 68px;
+  }
+
+  .cs-menu-replie .cs-sidebar-brand {
+    flex-direction: column;
+    padding-inline: 0;
+  }
+
+  .cs-menu-replie .cs-sidebar .nav a {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding-inline: 0;
+  }
+
+  .cs-menu-replie .cs-sidebar-brand strong,
+  .cs-menu-replie .cs-nav-heading,
+  .cs-menu-replie .cs-nav-sous,
+  .cs-menu-replie .cs-share-card,
+  .cs-menu-replie .cs-nav-count,
+  .cs-menu-replie .cs-sidebar-nav a > span:not(.cs-nav-icon) {
+    display: none;
+  }
+
+  .cs-menu-replie .cs-sidebar-brand .cs-volet-bascule {
+    margin-left: 0;
+    transform: scaleX(-1);
+  }
+}

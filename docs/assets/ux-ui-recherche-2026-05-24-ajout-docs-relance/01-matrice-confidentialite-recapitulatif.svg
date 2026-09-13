@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Matrice de confidentialite guidee et recapitulatif final</title>
+  <desc id="desc">Blueprint UI pour decider qui pourra voir un document ajoute localement, avec motifs obligatoires et recapitulatif sans partage immediat.</desc>
+  <rect width="1400" height="900" fill="#f5f7f8"/>
+  <rect x="40" y="32" width="1320" height="92" rx="8" fill="#17324d"/>
+  <text x="72" y="72" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#ffffff">Qui pourra voir ce document ?</text>
+  <text x="72" y="104" font-family="Arial, sans-serif" font-size="17" fill="#d9e7ef">Choisissez la sortie la plus prudente. En cas de doute, gardez A decider plus tard.</text>
+  <rect x="1082" y="55" width="238" height="44" rx="6" fill="#ffffff"/>
+  <text x="1112" y="83" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">Rien n'est partage</text>
+
+  <rect x="40" y="154" width="250" height="666" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="64" y="194" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#17324d">File locale</text>
+  <text x="64" y="220" font-family="Arial, sans-serif" font-size="14" fill="#5d6b76">References neutres</text>
+  <rect x="64" y="252" width="202" height="92" rx="8" fill="#e8f2f7" stroke="#6aa1bd"/>
+  <text x="86" y="284" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Fichier 1</text>
+  <text x="86" y="310" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">Document travaux</text>
+  <text x="86" y="332" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">A masquer</text>
+  <rect x="64" y="362" width="202" height="78" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="86" y="394" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">Fichier 2</text>
+  <text x="86" y="418" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">A decider</text>
+  <rect x="64" y="458" width="202" height="78" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="86" y="490" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">Fichier 3</text>
+  <text x="86" y="514" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">Non diffusable</text>
+
+  <rect x="320" y="154" width="610" height="666" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="350" y="196" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">Decision de visibilite</text>
+  <text x="350" y="224" font-family="Arial, sans-serif" font-size="15" fill="#5d6b76">Une seule decision. Les details techniques restent replies.</text>
+
+  <g font-family="Arial, sans-serif">
+    <rect x="350" y="254" width="548" height="78" rx="8" fill="#eef7ef" stroke="#9ac79b"/>
+    <circle cx="378" cy="293" r="11" fill="#ffffff" stroke="#277a3d" stroke-width="3"/>
+    <text x="408" y="284" font-size="17" font-weight="700" fill="#17324d">Visible tel quel apres verification</text>
+    <text x="408" y="310" font-size="14" fill="#4d5c66">Aucun signal sensible connu. Justification si diffusion large.</text>
+
+    <rect x="350" y="348" width="548" height="94" rx="8" fill="#fff8eb" stroke="#e1ba69"/>
+    <circle cx="378" cy="388" r="11" fill="#1b6b54"/>
+    <circle cx="378" cy="388" r="5" fill="#ffffff"/>
+    <text x="408" y="376" font-size="17" font-weight="700" fill="#17324d">A masquer avant partage</text>
+    <text x="408" y="402" font-size="14" fill="#4d5c66">Une information doit etre cachee, extraite ou agregee.</text>
+    <text x="408" y="424" font-size="14" fill="#6d4b00">Motif obligatoire: pages mixtes, RIB, impayes...</text>
+
+    <rect x="350" y="458" width="548" height="86" rx="8" fill="#eef2ff" stroke="#9daede"/>
+    <circle cx="378" cy="500" r="11" fill="#ffffff" stroke="#4663b7" stroke-width="3"/>
+    <text x="408" y="492" font-size="17" font-weight="700" fill="#17324d">Reserve au conseil syndical</text>
+    <text x="408" y="518" font-size="14" fill="#4d5c66">Acces limite, avec motif metier obligatoire.</text>
+
+    <rect x="350" y="560" width="548" height="86" rx="8" fill="#fff0f0" stroke="#d99b9b"/>
+    <circle cx="378" cy="602" r="11" fill="#ffffff" stroke="#a43232" stroke-width="3"/>
+    <text x="408" y="594" font-size="17" font-weight="700" fill="#17324d">Non diffusable - motif obligatoire</text>
+    <text x="408" y="620" font-size="14" fill="#4d5c66">Ne doit pas sortir du coffre local dans cet etat.</text>
+
+    <rect x="350" y="662" width="548" height="78" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <circle cx="378" cy="701" r="11" fill="#ffffff" stroke="#77838d" stroke-width="3"/>
+    <text x="408" y="692" font-size="17" font-weight="700" fill="#17324d">A decider plus tard</text>
+    <text x="408" y="718" font-size="14" fill="#4d5c66">Garde localement, sans decision de partage.</text>
+  </g>
+
+  <rect x="960" y="154" width="400" height="666" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="990" y="196" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">Effet du choix</text>
+  <rect x="990" y="230" width="340" height="122" rx="8" fill="#fff8eb" stroke="#e1ba69"/>
+  <text x="1014" y="266" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Version masquee a preparer</text>
+  <text x="1014" y="294" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Le brut reste local. Une version derivee devra etre verifiee avant tout partage.</text>
+  <text x="1014" y="326" font-family="Arial, sans-serif" font-size="14" fill="#6d4b00">Prochaine action: verifier les pages a masquer.</text>
+
+  <text x="990" y="394" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">Motif</text>
+  <rect x="990" y="410" width="340" height="78" rx="6" fill="#ffffff" stroke="#b8c2cc"/>
+  <text x="1014" y="448" font-family="Arial, sans-serif" font-size="14" fill="#5d6b76">Pages mixtes: informations personnelles a cacher</text>
+
+  <rect x="990" y="526" width="340" height="150" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+  <text x="1014" y="562" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Recapitulatif</text>
+  <text x="1014" y="592" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Ajoute localement: oui</text>
+  <text x="1014" y="618" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Decision: a masquer avant partage</text>
+  <text x="1014" y="644" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Sujet/action: a completer</text>
+  <text x="1014" y="668" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Reste a faire: version masquee</text>
+
+  <rect x="990" y="714" width="340" height="46" rx="6" fill="#1b6b54"/>
+  <text x="1074" y="743" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Valider cette decision</text>
+  <text x="1034" y="790" font-family="Arial, sans-serif" font-size="14" fill="#5d6b76">Bouton secondaire: garder a decider plus tard</text>
+</svg>

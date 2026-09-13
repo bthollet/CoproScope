@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Brouillon - fenetre du plugin, panneau conformite</title>
+<style>
+  :root {
+    --encre: #16202c; --gris: #5c6b7a; --trait: #d9e0e7; --fond: #fff;
+    --alerte: #a4361c; --alerte-fond: #fdf0ec;
+    --attente: #7a5a12; --attente-fond: #fdf6e3;
+    --ok: #1f5c3d; --ok-fond: #eef7f1;
+    --neutre-fond: #f2f5f8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px; background: #eef1f4;
+    font: 14px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
+    color: var(--encre);
+  }
+  .cadre {
+    width: 380px; margin: 0 auto; background: var(--fond); border-radius: 10px;
+    box-shadow: 0 2px 18px rgba(0,0,0,.14); overflow: hidden;
+  }
+  .cadre + .cadre { margin-top: 28px; }
+  .entete { padding: 14px 16px 10px; border-bottom: 1px solid var(--trait); }
+  h1 { font-size: 15px; margin: 0 0 4px; }
+  .garde { font-size: 11.5px; color: var(--gris); margin: 0; }
+  .corps { padding: 12px 16px 16px; }
+  .legende {
+    text-align: center; font-size: 12px; color: var(--gris);
+    margin: 0 auto 8px; width: 380px;
+  }
+
+  /* --- bandeau de synthese, le "1 coup d'oeil" --- */
+  .synthese {
+    background: var(--alerte-fond); border: 1px solid #f0cdc2;
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
+  }
+  .synthese b { font-size: 15px; }
+  .synthese p { margin: 4px 0 0; font-size: 12px; color: var(--gris); }
+  .compteurs { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+  .puce {
+    font-size: 11px; padding: 2px 7px; border-radius: 20px;
+    background: var(--fond); border: 1px solid var(--trait); white-space: nowrap;
+  }
+
+  /* --- une obligation --- */
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--gris); margin: 16px 0 6px; font-weight: 600;
+  }
+  h2:first-of-type { margin-top: 4px; }
+  details.obligation {
+    border: 1px solid var(--trait); border-radius: 7px; margin-bottom: 6px;
+    background: var(--fond);
+  }
+  details.obligation[open] { border-color: #b9c5d1; }
+  summary {
+    list-style: none; cursor: pointer; padding: 8px 10px;
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
+  }
+  summary::-webkit-details-marker { display: none; }
+  .titre { font-size: 12.5px; line-height: 1.35; }
+  .ident { color: var(--gris); font-size: 10.5px; font-family: ui-monospace, monospace; }
+  .etat {
+    font-size: 10.5px; padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+    font-weight: 600;
+  }
+  .e-manque   { background: var(--alerte-fond); color: var(--alerte); }
+  .e-servi    { background: var(--ok-fond);     color: var(--ok); }
+  .e-inconnu  { background: var(--neutre-fond); color: var(--gris); }
+  .e-attente  { background: var(--attente-fond); color: var(--attente); }
+  .detail { padding: 0 10px 10px; border-top: 1px solid var(--trait); margin-top: 2px; }
+  .detail p { margin: 8px 0 0; font-size: 11.5px; color: var(--gris); }
+  .detail .fondement { font-family: ui-monospace, monospace; font-size: 10.5px; }
+  .champ { display: grid; grid-template-columns: 1fr 74px; gap: 8px; margin-top: 9px; align-items: center; }
+  .champ label { font-size: 11.5px; }
+  input[type=number], select {
+    font: inherit; font-size: 12px; padding: 3px 5px;
+    border: 1px solid var(--trait); border-radius: 4px; width: 100%;
+  }
+  .avert {
+    background: var(--attente-fond); border-left: 3px solid #d9b45f;
+    padding: 7px 9px; margin-top: 9px; font-size: 11.5px; color: var(--attente);
+  }
+  .note-bas {
+    margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--trait);
+    font-size: 11.5px; color: var(--gris);
+  }
+  button {
+    font: inherit; font-size: 12.5px; padding: 6px 11px; border-radius: 6px;
+    border: 1px solid var(--trait); background: var(--fond); cursor: pointer;
+  }
+  button.primaire { background: var(--encre); color: #fff; border-color: var(--encre); }
+  .barre { display: flex; gap: 7px; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<p class="legende"><strong>Brouillon cliquable</strong> - fenetre du plugin, panneau conformite.<br>
+Etat A: rattachements declares. Depliez une ligne pour voir le detail.</p>
+
+<div class="cadre">
+  <div class="entete">
+    <h1>Observateur d'extranet</h1>
+    <p class="garde">Lecture seule. Rien n'est envoye a votre syndic.</p>
+  </div>
+  <div class="corps">
+
+    <div class="synthese">
+      <b>3 obligations incompletes</b> sur 18
+      <p>Espace observe : documents de la copropriete &middot; releve du 7 septembre a 09h12</p>
+      <div class="compteurs">
+        <span class="puce">3 incompletes</span>
+        <span class="puce">6 servies en apparence</span>
+        <span class="puce">5 non rattachees</span>
+        <span class="puce">4 non parcourues</span>
+      </div>
+    </div>
+
+    <h2>Accessible a tous les coproprietaires</h2>
+
+    <details class="obligation" open>
+      <summary>
+        <span class="titre">Reglement de copropriete, etat descriptif de division et actes les modifiant
+          <span class="ident">EXT-A-01</span></span>
+        <span class="etat e-manque">6 manquent</span>
+      </summary>
+      <div class="detail">
+        <p><strong>18 pieces vues</strong> sur <strong>24 attendues</strong>, dans la rubrique
+          <em>Reglement de copropriete</em>.</p>
+        <div class="champ">
+          <label for="r1">Ou est-ce servi chez votre syndic ?</label>
+          <select id="r1"><option>Reglement</option></select>
+        </div>
+        <div class="champ">
+          <label for="a1">Combien devrait-il y en avoir ?</label>
+          <input id="a1" type="number" value="24">
+        </div>
+        <p class="fondement">decret 2019-502, article 1er (LEGIARTI000042412719,
+          version du 2020-12-31, lue le 2026-09-03)</p>
+        <div class="avert"><strong>Servi en apparence n'est pas conforme.</strong>
+          Reste a verifier a la main : uniquement s'ils ont ete publies.</div>
+      </div>
+    </details>
+
+    <details class="obligation">
+      <summary>
+        <span class="titre">Contrats d'assurance de l'immeuble
+          <span class="ident">EXT-A-05</span></span>
+        <span class="etat e-servi">servi en apparence</span>
+      </summary>
+      <div class="detail">
+        <p><strong>12 pieces vues</strong> dans la rubrique <em>Contrats</em>.</p>
+        <div class="avert"><strong>Le compte n'est pas attribuable.</strong>
+          Cette rubrique sert quatre obligations differentes : les assurances,
+          l'ensemble des contrats en cours, les contrats d'entretien et le
+          contrat de syndic. On ne peut pas dire combien de ces 12 pieces sont
+          des assurances.</div>
+        <p class="fondement">decret 2019-502, article 1er (LEGIARTI000042412719,
+          version du 2020-12-31, lue le 2026-09-03)</p>
+      </div>
+    </details>
+
+    <details class="obligation">
+      <summary>
+        <span class="titre">Proces-verbaux des trois dernieres assemblees annuelles des comptes
+          <span class="ident">EXT-A-08</span></span>
+        <span class="etat e-attente">non parcourue</span>
+      </summary>
+      <div class="detail">
+        <p>La rubrique <em>Assemblees generales</em> n'a pas ete ouverte lors de
+          ce passage. <strong>Aucune absence n'est affirmable</strong> tant
+          qu'on n'a pas regarde.</p>
+        <p>Trois proces-verbaux sont attendus, et ce nombre vient du texte : il
+          ne se saisit pas.</p>
+      </div>
+    </details>
+
+    <h2>Reserve au conseil syndical</h2>
+
+    <details class="obligation">
+      <summary>
+        <span class="titre">Releves periodiques des comptes bancaires separes
+          <span class="ident">EXT-C-02</span></span>
+        <span class="etat e-manque">3 manquent</span>
+      </summary>
+      <div class="detail">
+        <p><strong>9 releves vus</strong> sur <strong>12 attendus</strong>, dans
+          la rubrique <em>Documents divers</em>.</p>
+        <p>Chez ce syndic, les releves du compte separe sont ranges dans la
+          categorie fourre-tout. C'est pour cela qu'un compte par rubrique ne
+          pouvait pas les isoler.</p>
+      </div>
+    </details>
+
+    <details class="obligation">
+      <summary>
+        <span class="titre">Liste de tous les coproprietaires
+          <span class="ident">EXT-C-04</span></span>
+        <span class="etat e-servi">servi en apparence</span>
+      </summary>
+      <div class="detail">
+        <p>La piece est presente. <strong>Son contenu n'est jamais lu par le
+          plugin</strong> : cette liste porte l'etat civil, le domicile et
+          l'adresse electronique de chaque coproprietaire.</p>
+        <p>Verifier qu'elle est complete se fait ailleurs, dans CoproScope,
+          apres pseudonymisation, et sans jamais manipuler un nom.</p>
+      </div>
+    </details>
+
+    <div class="note-bas">
+      <strong>5 obligations ne sont rattachees a aucune rubrique.</strong>
+      Le plugin ne peut pas deviner ou votre syndic les range : aucune page
+      d'extranet ne cite le decret. Tant qu'elles ne sont pas rattachees, elles
+      ne comptent ni comme servies ni comme manquantes.
+      <div class="barre">
+        <button class="primaire">Rattacher les 5 restantes</button>
+        <button>Enregistrer</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<p class="legende" style="margin-top:28px">Etat B : premiere ouverture, aucun rattachement declare.<br>
+Le cas d'un syndic que le plugin ne connait pas.</p>
+
+<div class="cadre">
+  <div class="entete">
+    <h1>Observateur d'extranet</h1>
+    <p class="garde">Lecture seule. Rien n'est envoye a votre syndic.</p>
+  </div>
+  <div class="corps">
+    <div class="synthese" style="background:var(--neutre-fond);border-color:var(--trait)">
+      <b>18 obligations, aucune rattachee</b>
+      <p style="color:var(--encre)">Le plugin ne sait pas encore ou votre syndic
+        range chaque piece. Il n'affirme donc <strong>aucun manque</strong> :
+        ce serait inventer.</p>
+      <div class="compteurs"><span class="puce">0 manque affirme</span>
+        <span class="puce">18 a rattacher</span></div>
+    </div>
+    <p style="font-size:12.5px">Vous avez vu <strong>115 pieces</strong> dans
+      <strong>8 rubriques</strong>. Indiquez pour chaque obligation la ou les
+      rubriques qui la servent chez vous : c'est la seule chose que le plugin ne
+      peut pas trouver seul.</p>
+    <div class="barre"><button class="primaire">Commencer le rattachement</button></div>
+  </div>
+</div>
+
+</body>
+</html>

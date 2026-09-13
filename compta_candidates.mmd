@@ -1,0 +1,79 @@
+﻿flowchart TD
+    A["ReconciliationComptascope (reconstruct_accounting)\n- Entrée: exercice\n- Appelle factureops + match + review"] --> B["factureops.extract_invoices"]
+    B --> C1["_load_configured_invoice_evidence\nMode: CSV prechargé dans settings"]
+    B --> C2["_candidate_source_rows\nFallback: index documents + scan brut raw/"]
+    C2 --> D["Pour chaque source: _resolve_source_path + _document_evidence"]
+
+    D --> E{"_looks_like_invoice\n(y recherche token + année)"}
+    E -- non --> X1["Document ignoré"]
+    E -- oui --> F["_extract_invoice_from_evidence\n- Providers spécialisés (Engie, Orange, etc.)\n- fallback extract_generic"]
+    F --> G["_status() + anomalies\n(Anomalies OCR/champs manquants)"]
+    G --> H["Invoice row normalisée\n+ invoice_evidence.csv\n+ invoice_anomalies.csv"]
+
+    H --> I["_entry_for_invoice\nCréation ecriture candidate"]
+    I --> I1["entry_id = REC-{annee}-XXXX\ncompte_debit=compte_propose ou 615000\ncredit/debit = TTC\njustification=Validation humaine requise"]
+
+    B --> J["reconstruct_accounting\nchargement lignes depenses\n+ alias config"]
+    J --> K["_load_expense_statement_lines\nCSV et/ou répertoire accounting"]
+    J --> L["_load_supplier_aliases + config"]
+
+    K --> M1["suggest_supplier_aliases\ncherche libelles compatibles"]
+    L --> M1
+    M1 --> M2["supplier_aliases_from_suggestions (auto appliquables)\n+ _merge_supplier_aliases"]
+
+    H --> N["reconcile_invoice_expenses\nmoteur de rapprochement"]
+    K --> N
+    M2 --> N
+
+    N --> N1["Par facture: line_infos par ligne depenses\n(ref_match, supplier_match, family_match, amount_match, similarité)"]
+    N1 --> N2{"Cascade de décision"}
+    N2 --> N2a["MATCH_REFERENCE\n1 ligne unique + ref"]
+    N2 --> N2b["CANDIDAT_REFERENCE_AMBIGUE\nref détectée plusieurs fois"]
+    N2 --> N2c["MATCH_AMOUNT_SUPPLIER\nmontant+supplier unique"]
+    N2 --> N2d["MATCH_AMOUNT_ALIAS\nmontant+alias unique"]
+    N2 --> N2e["CANDIDAT_NOM_SIMILAIRE\nmontant+famille+similarité"]
+    N2 --> N2f["CANDIDAT_MONTANT_FAMILLE\nmontant+famille seule"]
+    N2 --> N2g["CANDIDAT_MONTANT_AMBIGU\nplusieurs correspondances possibles"]
+    N2 --> N2h["CANDIDAT_DIVISION_EGALE\nsplit régulier (x lignes même montant)"]
+    N2 --> N2i["CANDIDAT_SOMME_MULTI_LIGNES\ncombinaisons de sommes exactes"]
+    N2 --> N2j["CANDIDAT_VENTILATION_AMBIGUE\n>1 combinaison possible"]
+    N2 --> N2k["CANDIDAT_MONTANT_SANS_NOM\nCANDIDAT_FOURNISSEUR_SANS_MONTANT\nCANDIDAT_FAMILLE_SEULE\nNON_RAPPROCHE"]
+
+    N --> O1["_grouped_invoice_candidates\nregroupement de factures\nvers une même ligne de dépenses\n=> CANDIDAT_REGROUPEMENT_FACTURES"]
+    O1 --> P["invoice_expense_matches.csv\n(match_status, method, confidence, candidate_count)"]
+
+    H --> Q["_build_comptascope_review_rows\nfusion factures + matches + ecritures"]
+    I --> Q
+    G --> Q
+    P --> Q
+    Q --> R["Rows revue: REV-YYYY-NNNN\npriorité, statut, ligne candidate, ecriture_candidate"]
+    R --> S["_build_comptascope_review_group_rows\nagrégation par statut/anomalie/fournisseur"]
+
+    P --> T["_controls_for_expense_match\n1 contrôle si priority != OK"]
+    R --> T
+    R --> T2["_control_for_unmatched_review_row\nsi absence/état depenses insuffisant"]
+    T --> U["accounting_controls.csv"]
+    T2 --> U
+    R --> U2["controle_comptes_guide.csv + non_rapproches_prioritaires + questions syndic"]
+    S --> U3["regroupement_controle_comptes.csv"]
+
+    H --> V{KPI finaux}
+    I --> V
+    K --> V
+    P --> V
+    U --> V
+    V --> W["rapport_comptascope.md\n+ duckdb + summary"]
+
+    style I1 fill:#f2f9ff,stroke:#2563eb,stroke-width:1.2px
+    style N2a fill:#dcfce7,stroke:#166534
+    style N2b fill:#fef3c7,stroke:#92400e
+    style N2c fill:#dcfce7,stroke:#166534
+    style N2d fill:#dcfce7,stroke:#166534
+    style N2e fill:#fee2e2,stroke:#991b1b
+    style N2f fill:#fef3c7,stroke:#92400e
+    style N2g fill:#fef3c7,stroke:#92400e
+    style N2h fill:#fee2e2,stroke:#991b1b
+    style N2i fill:#fee2e2,stroke:#991b1b
+    style N2j fill:#fde68a,stroke:#92400e
+    style N2k fill:#fee2e2,stroke:#991b1b
+    style O1 fill:#e0f2fe,stroke:#0369a1

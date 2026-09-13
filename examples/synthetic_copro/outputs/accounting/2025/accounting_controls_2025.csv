@@ -1,0 +1,3 @@
+control_id,exercice,severity,control,status,doc_id,evidence,action
+CTRL-FICTIF-ASC-001,2025,P1,JUSTIFICATIF_INTERVENTION_ASCENSEUR,A_TRAITER,DOC-FICTIF-ASC-DEVIS,Bon intervention ascenseur fictif attendu,Demander au syndic le bon intervention et rattacher la reponse
+CTRL-FICTIF-EAU-002,2025,P2,RELEVE_EAU_COMMUNE,A_CONFIRMER,DOC-FICTIF-EAU-RELEVE,Releve compteur commun fictif attendu,Verifier le releve ou demander confirmation au syndic

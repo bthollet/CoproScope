@@ -1,0 +1,289 @@
+                "action_id": "ACT-INCREMENTAL",
+                "title": "Demander la piece incrementale",
+                "status": "open",
+                "priority": "P1",
+                "related_point_ids": ["POINT-INCREMENTAL"],
+                "expected_piece_id": "PCE-INCREMENTAL",
+                "expected_piece_label": "Piece incrementale",
+            },
+            sequence=2,
+            created_at="2026-05-20T10:01:00+00:00",
+        )
+
+        initial = reconstruction.rebuild_cache_from_events([point_event], db_path, vault_id="vault_test")
+        first_increment = reconstruction.apply_incremental_events(
+            [point_event, action_event],
+            db_path,
+            vault_id="vault_test",
+        )
+        second_increment = reconstruction.apply_incremental_events(
+            [point_event, action_event],
+            db_path,
+            vault_id="vault_test",
+        )
+
+        self.assertEqual(initial["projection_events"], 1)
+        self.assertEqual(first_increment["applied_events"], 1)
+        self.assertEqual(first_increment["skipped_events"], 1)
+        self.assertEqual(first_increment["events"], 2)
+        self.assertEqual(first_increment["actions"], 1)
+        self.assertEqual(first_increment["expected_pieces"], 1)
+        self.assertEqual(first_increment["projection_events"], 2)
+        self.assertEqual(second_increment["applied_events"], 0)
+        self.assertEqual(second_increment["skipped_events"], 2)
+        self.assertEqual(second_increment["events"], 2)
+        self.assertEqual(second_increment["actions"], 1)
+        self.assertEqual(second_increment["projection_events"], 2)
+
+        connection = sqlite3.connect(db_path)
+        try:
+            connection.row_factory = sqlite3.Row
+            applied = connection.execute(
+                "SELECT event_id FROM event_applied ORDER BY sequence, event_id"
+            ).fetchall()
+            self.assertEqual([row["event_id"] for row in applied], ["evt_point_incremental", "evt_action_incremental"])
+
+            meta = connection.execute("SELECT * FROM projection_meta").fetchone()
+            self.assertEqual(meta["applied_count"], 2)
+            heads = json.loads(meta["heads_json"])
+            self.assertEqual(heads[0]["event_id"], "evt_action_incremental")
+            self.assertEqual(heads[0]["sequence"], 2)
+
+            action = connection.execute("SELECT * FROM actions WHERE action_id = 'ACT-INCREMENTAL'").fetchone()
+            piece = connection.execute("SELECT * FROM expected_pieces WHERE piece_id = 'PCE-INCREMENTAL'").fetchone()
+            self.assertEqual(action["title"], "Demander la piece incrementale")
+            self.assertEqual(piece["linked_action_id"], "ACT-INCREMENTAL")
+        finally:
+            connection.close()
+
+    def test_audit360_import_funnels_rows_into_business_tables_idempotently(self) -> None:
+        db_path = self.local_root / "audit360.sqlite3"
+        reconstruction.rebuild_cache_from_events([], db_path, vault_id="vault_test")
+        rows = [
+            {
+                "source_kind": "audit360_matrix",
+                "source_file": "matrice_preuves_attendues.csv",
+                "source_row_id": "row-17",
+                "control_id": "CTRL-ASSURANCE",
+                "point_de_controle": "Attestation assurance immeuble",
+                "constat": "La piece n'est pas visible dans le corpus transmis.",
+                "risque_concret": "Le conseil syndical ne peut pas verifier la couverture.",
+                "preuve_attendue": "Attestation assurance multirisque 2026",
+                "action_a_faire": "Demander l'attestation au syndic.",
+                "acteur_ou_entreprise": "Syndic",
+                "priorite": "P1",
+                "statut_action": "open",
+            }
+        ]
+
+        first = reconstruction.import_audit360_rows(
+            db_path,
+            rows,
+            import_run_id="run-a",
+            imported_at="2026-05-21T12:00:00+00:00",
+        )
+        second = reconstruction.import_audit360_rows(
+            db_path,
+            rows,
+            import_run_id="run-a",
+            imported_at="2026-05-21T12:00:00+00:00",
+        )
+
+        self.assertEqual(first["created"]["points"], 1)
+        self.assertEqual(first["created"]["actions"], 1)
+        self.assertEqual(first["created"]["expected_pieces"], 1)
+        self.assertEqual(first["source_import_map"], 3)
+        self.assertEqual(second["created"]["points"], 0)
+        self.assertEqual(second["created"]["actions"], 0)
+        self.assertEqual(second["created"]["expected_pieces"], 0)
+        self.assertEqual(second["created"]["source_import_map"], 0)
+
+        connection = sqlite3.connect(db_path)
+        try:
+            connection.row_factory = sqlite3.Row
+            action = connection.execute("SELECT * FROM actions").fetchone()
+            piece = connection.execute("SELECT * FROM expected_pieces").fetchone()
+            mappings = connection.execute("SELECT object_kind, object_id FROM source_import_map ORDER BY object_kind").fetchall()
+            links = connection.execute(
+                "SELECT source_kind, relation, target_kind FROM object_links ORDER BY source_kind, relation, target_kind"
+            ).fetchall()
+
+            self.assertEqual(action["title"], "Demander l'attestation au syndic.")
+            self.assertEqual(action["source_module"], "audit360")
+            self.assertEqual(piece["label"], "Attestation assurance multirisque 2026")
+            self.assertEqual(piece["linked_action_id"], action["action_id"])
+            self.assertEqual([row["object_kind"] for row in mappings], ["action", "expected_piece", "point"])
+            self.assertIn(("action", "expects", "expected_piece"), [tuple(row) for row in links])
+            self.assertIn(("action", "relates_to", "point"), [tuple(row) for row in links])
+        finally:
+            connection.close()
+
+    def test_reconstruction_cache_path_must_stay_under_local_root(self) -> None:
+        outside = self.root / "outside.sqlite3"
+        with self.assertRaisesRegex(RuntimeError, "local root"):
+            reconstruction.resolve_reconstruction_db_path(self.local_root, outside)
+
+
+@unittest.skipUnless(importlib.util.find_spec("cryptography"), "cryptography is required for vault tests")
+class CoproScopeVaultTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.root = Path(self.tempdir.name)
+        self.local_root = self.root / "local"
+        self.sync_root = self.root / "sync"
+
+    def tearDown(self) -> None:
+        self.tempdir.cleanup()
+
+    def test_init_import_verify_without_plaintext_leak(self) -> None:
+        init_result = vault.vault_init(self.local_root, self.sync_root)
+        self.assertTrue(init_result["ok"])
+        self.assertTrue((self.sync_root / "vault.json").exists())
+        self.assertTrue((self.local_root / vault.LOCAL_STATE_FILE).exists())
+
+        source = self.root / "secret-document-alpha.txt"
+        source.write_text("TOP SECRET UNIQUE CONTENT 9b3f0d", encoding="utf-8")
+        import_result = vault.vault_import(self.local_root, self.sync_root, source)
+        self.assertTrue(import_result["ok"])
+        self.assertTrue(Path(import_result["blob_path"]).exists())
+
+        verify = vault.vault_verify(self.local_root, self.sync_root)
+        self.assertTrue(verify["valid"], verify)
+        self.assertEqual(verify["errors"], [])
+
+        forbidden_plaintext = [
+            b"secret-document-alpha",
+            b"TOP SECRET UNIQUE CONTENT",
+            str(source).encode("utf-8"),
+        ]
+        for path in self.sync_root.rglob("*"):
+            if path.is_file():
+                data = path.read_bytes()
+                for needle in forbidden_plaintext:
+                    self.assertNotIn(needle, data, f"{needle!r} leaked in {path}")
+
+    def test_tampered_event_invalidates_verify(self) -> None:
+        vault.vault_init(self.local_root, self.sync_root)
+        source = self.root / "piece.txt"
+        source.write_text("hello", encoding="utf-8")
+        result = vault.vault_import(self.local_root, self.sync_root, source)
+        event_path = Path(result["event"]["event_path"])
+
+        event = json.loads(event_path.read_text(encoding="utf-8"))
+        event["event_type"] = "document_added_tampered"
+        event_path.write_text(json.dumps(event, sort_keys=True, separators=(",", ":")), encoding="utf-8")
+
+        verify = vault.vault_verify(self.local_root, self.sync_root)
+        self.assertFalse(verify["valid"])
+        self.assertTrue(any("signature" in error or "hash" in error for error in verify["errors"]))
+
+    def test_init_is_idempotent_without_duplicate_initial_event(self) -> None:
+        first = vault.vault_init(self.local_root, self.sync_root)
+        second = vault.vault_init(self.local_root, self.sync_root)
+
+        self.assertTrue(first["created_vault"])
+        self.assertTrue(first["created_state"])
+        self.assertIsNotNone(first["event"])
+        self.assertFalse(second["created_vault"])
+        self.assertFalse(second["created_state"])
+        self.assertIsNone(second["event"])
+        self.assertEqual(second["vault_id"], first["vault_id"])
+
+        status = vault.vault_status(self.local_root, self.sync_root)
+        self.assertEqual(status["events"], 1)
+        self.assertEqual(status["blobs"], 0)
+
+        verify = vault.vault_verify(self.local_root, self.sync_root)
+        self.assertTrue(verify["valid"], verify)
+
+    def test_missing_blob_invalidates_verify(self) -> None:
+        vault.vault_init(self.local_root, self.sync_root)
+        source = self.root / "piece.txt"
+        source.write_text("blob must stay linked", encoding="utf-8")
+        result = vault.vault_import(self.local_root, self.sync_root, source)
+
+        Path(result["blob_path"]).unlink()
+
+        verify = vault.vault_verify(self.local_root, self.sync_root)
+        self.assertFalse(verify["valid"])
+        self.assertTrue(any("missing blob" in error for error in verify["errors"]))
+
+    def test_deleted_first_event_breaks_device_chain(self) -> None:
+        init_result = vault.vault_init(self.local_root, self.sync_root)
+        source = self.root / "piece.txt"
+        source.write_text("hello", encoding="utf-8")
+        vault.vault_import(self.local_root, self.sync_root, source)
+
+        Path(init_result["event"]["event_path"]).unlink()
+
+        verify = vault.vault_verify(self.local_root, self.sync_root)
+        self.assertFalse(verify["valid"])
+        self.assertTrue(
+            any("expected sequence 1" in error or "invalid previous event hash" in error for error in verify["errors"])
+        )
+
+    def test_forbidden_git_or_venv_entries_are_rejected(self) -> None:
+        dirty_sync = self.root / "dirty-sync"
+        (dirty_sync / ".venv").mkdir(parents=True)
+        with self.assertRaises(RuntimeError):
+            vault.vault_init(self.local_root, dirty_sync)
+
+        vault.vault_init(self.local_root, self.sync_root)
+        (self.sync_root / ".git").mkdir()
+        verify = vault.vault_verify(self.local_root, self.sync_root)
+        self.assertFalse(verify["valid"])
+        self.assertTrue(any("Forbidden development/runtime entry" in error for error in verify["errors"]))
+
+    def test_status_counts_events_blobs_and_forbidden_entries(self) -> None:
+        vault.vault_init(self.local_root, self.sync_root)
+        source = self.root / "doc.txt"
+        source.write_text("content", encoding="utf-8")
+        vault.vault_import(self.local_root, self.sync_root, source)
+        status = vault.vault_status(self.local_root, self.sync_root)
+        self.assertTrue(status["ok"])
+        self.assertGreaterEqual(status["events"], 2)
+        self.assertEqual(status["blobs"], 1)
+        self.assertEqual(status["forbidden_entries"], [])
+
+    def test_rebuild_local_cache_indexes_verified_import(self) -> None:
+        vault.vault_init(self.local_root, self.sync_root)
+        source = self.root / "cache-source.txt"
+        source.write_text("cache me", encoding="utf-8")
+        vault.vault_import(self.local_root, self.sync_root, source)
+
+        result = reconstruction.rebuild_local_cache(self.local_root, self.sync_root)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["documents"], 1)
+        self.assertGreaterEqual(result["identities"], 1)
+        self.assertEqual(Path(result["db_path"]).parent, self.local_root.resolve())
+        connection = sqlite3.connect(result["db_path"])
+        try:
+            document = connection.execute("SELECT original_name FROM documents").fetchone()
+            self.assertEqual(document[0], "cache-source.txt")
+        finally:
+            connection.close()
+
+    def test_snapshot_is_counted_and_does_not_expose_import_plaintext(self) -> None:
+        vault.vault_init(self.local_root, self.sync_root)
+        source = self.root / "snapshot-secret.txt"
+        source.write_text("SNAPSHOT SECRET CONTENT 4fa62a", encoding="utf-8")
+        vault.vault_import(self.local_root, self.sync_root, source)
+
+        result = vault.vault_snapshot(self.local_root, self.sync_root)
+        snapshot_path = Path(result["snapshot_path"])
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(snapshot_path.exists())
+        status = vault.vault_status(self.local_root, self.sync_root)
+        self.assertEqual(status["snapshots"], 1)
+        verify = vault.vault_verify(self.local_root, self.sync_root)
+        self.assertTrue(verify["valid"], verify)
+
+        snapshot_bytes = snapshot_path.read_bytes()
+        self.assertNotIn(b"snapshot-secret.txt", snapshot_bytes)
+        self.assertNotIn(b"SNAPSHOT SECRET CONTENT", snapshot_bytes)
+
+
+if __name__ == "__main__":
+    unittest.main()

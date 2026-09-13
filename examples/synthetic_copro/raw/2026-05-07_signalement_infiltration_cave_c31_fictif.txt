@@ -1,0 +1,14 @@
+FICTIF - SIGNALEMENT PRIVE DE DEMONSTRATION - NE PAS UTILISER COMME DONNEE REELLE
+
+Canal: signalement oral retranscrit
+Emetteur: occupant fictif du lot C31
+Sujet: trace d'humidite dans la cave C31
+
+Lors du passage en cave, une trace d'humidite a ete signalee sous la canalisation commune.
+Le conseil syndical souhaite garder une trace et demander au syndic:
+- la date du dernier passage de l'entreprise de plomberie ;
+- une photo apres intervention si une recherche de fuite est commandee ;
+- la confirmation que le sujet sera inscrit dans le suivi des incidents.
+
+Confidentialite:
+Les references de lot sont fictives. Le signalement sert uniquement a tester le rattachement demande -> incident -> preuve.

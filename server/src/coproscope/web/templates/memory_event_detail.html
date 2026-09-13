@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block topbar_title %}Detail evenement memoire{% endblock %}
+{% block content %}
+{% set detail = memory_event|default(memory_event_detail|default({})) %}
+{% set context = detail.context|default({}) %}
+{% set event = detail.event|default({}) %}
+{% set actions = detail.actions|default({}) %}
+{% set transmission = detail.transmission|default({}) %}
+{% set passation = detail.passation|default({}) %}
+{% set back_memory = actions.back_memory|default({'href': '/chantiers', 'label': 'Retour a la memoire'}) %}
+
+<section class="memory-event-detail-shell" aria-labelledby="memory-event-title" data-testid="memory-event-detail-shell">
+  <header class="memory-event-header" data-testid="memory-event-header">
+    <div>
+      <p class="eyebrow">{{ context.watermark|default('export derive, non source de verite') }}</p>
+      <h2 id="memory-event-title">{{ context.title|default('Detail evenement memoire') }}</h2>
+      <p>{{ event.summary|default("La fiche explique ce qui s'est passe, les preuves, la reprise CS et la diffusion.") }}</p>
+    </div>
+    <div class="memory-event-actions" aria-label="Actions evenement memoire" data-testid="memory-event-actions">
+      <span class="memory-event-badge">{{ context.badge|default('Donnees FICTIVES de test') }}</span>
+      <a href="{{ token_href(back_memory.href|default('/chantiers')) }}" aria-label="Retour a la memoire">{{ back_memory.label|default('Retour a la memoire') }}</a>
+      {% if actions.prepare_shareable %}
+      <a href="{{ token_href(actions.prepare_shareable.href) }}" aria-label="Preparer version diffusable">{{ actions.prepare_shareable.label }}</a>
+      {% endif %}
+      {% if actions.create_relance %}
+      <a class="is-primary" href="{{ token_href(actions.create_relance.href) }}" aria-label="Creer action de relance">{{ actions.create_relance.label }}</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if detail.state|default('found') == 'missing' %}
+  <section class="memory-event-empty" aria-labelledby="memory-event-missing-title">
+    <h3 id="memory-event-missing-title">{{ event.title|default('Evenement introuvable') }}</h3>
+    <p>{{ event.summary|default("La fiche memoire demandee n'est plus disponible avec ce lien.") }}</p>
+    <div class="memory-event-actions">
+      <a href="{{ token_href(back_memory.href|default('/chantiers')) }}">Retour a la memoire</a>
+      {% if actions.open_topics %}
+      <a href="{{ token_href(actions.open_topics.href) }}">Voir les sujets ouverts</a>
+      {% endif %}
+    </div>
+  </section>
+  {% else %}
+  <section class="memory-event-status-strip" aria-label="Statut de l'evenement" data-testid="memory-event-status-strip">
+    {% for item in detail.status_strip|default([]) %}
+    <div>
+      <span>{{ item.label|default('Statut') }}</span>
+      <strong>{{ item.value|default('A verifier') }}</strong>
+    </div>
+    {% endfor %}
+  </section>
+
+  <div class="memory-event-layout">
+    <main class="memory-event-main-card" data-testid="memory-event-main-card">
+      <div class="memory-event-title-row">
+        <div>
+          <p class="eyebrow">{{ event.date_label|default('Date a confirmer') }} - {{ event.category|default('Memoire') }}</p>
+          <h3>{{ event.title|default('Evenement memoire') }}</h3>
+        </div>
+        <span>{{ event.status_label|default('A verifier') }}</span>
+      </div>
+
+      <dl class="memory-event-facts">
+        <div><dt>Prochaine action</dt><dd>{{ event.next_action|default('Relire le point et rattacher la preuve attendue.') }}</dd></div>
+        <div><dt>Preuve</dt><dd>{{ event.proof_status|default('Preuve a verifier') }}</dd></div>
+        <div><dt>Diffusion</dt><dd>{{ event.diffusion_label|default('Diffusion a verifier') }}</dd></div>
+        <div><dt>Responsable</dt><dd>{{ event.owner_label|default('Conseil syndical') }}</dd></div>
+      </dl>
+
+      <section class="memory-event-handover-note" data-testid="memory-event-handover-note">
+        <h3>Ce que le nouveau CS doit reprendre</h3>
+        <p>{{ event.handover_note|default('Transmettre le resume et les limites de preuve.') }}</p>
+      </section>
+
+      <section class="memory-event-restriction-note" data-testid="memory-event-restriction-note">
+        <h3>Ce qui peut etre transmis, masque ou bloque</h3>
+        <p>{{ event.restriction_note|default('Verifier la diffusion avant partage.') }}</p>
+      </section>
+
+      <section class="memory-event-timeline" aria-labelledby="memory-event-timeline-title" data-testid="memory-event-timeline">
+        <h3 id="memory-event-timeline-title">Fil de l'evenement</h3>
+        <ol>
+          {% for item in detail.timeline|default([]) %}
+          <li class="memory-event-timeline-row" data-testid="memory-event-timeline-row">
+            <time>{{ item.date_label|default('Date a confirmer') }}</time>
+            <div>
+              <strong>{{ item.title|default('Trace memoire') }}</strong>
+              <p>{{ item.body|default('Trace projetee depuis les donnees locales.') }}</p>
+              {% if item.restriction %}<span>{{ item.restriction }}</span>{% endif %}
+              {% if item.href %}<a href="{{ token_href(item.href) }}">Voir document</a>{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <div class="memory-event-bottom-actions">
+        {% if actions.add_document %}<a href="{{ token_href(actions.add_document.href) }}">Ajouter document</a>{% endif %}
+        {% if actions.export_event %}<a href="{{ token_href(actions.export_event.href) }}">Exporter cet evenement</a>{% endif %}
+        {% if actions.ask_insurance %}<a href="{{ token_href(actions.ask_insurance.href) }}">Demander assurance B12</a>{% endif %}
+        {% if actions.verify_note %}<a href="{{ token_href(actions.verify_note.href) }}">Verifier note syndic</a>{% endif %}
+      </div>
+    </main>
+
+    <aside class="memory-event-side" aria-label="Passation, documents et transmission">
+      <section class="memory-event-passation-card" data-testid="memory-event-passation-card">
+        <div class="memory-event-title-row">
+          <h3>{{ passation.title|default('Passation CS') }}</h3>
+          <span>source_of_truth false</span>
+        </div>
+        <p>{{ passation.note|default('A reprendre en passation.') }}</p>
+        <ul>
+          {% for item in passation["items"]|default([]) %}
+          <li>{{ item }}</li>
+          {% else %}
+          <li>Aucune reprise a afficher.</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="memory-event-linked-documents" data-testid="memory-event-linked-documents">
+        <h3>Documents lies</h3>
+        {% for doc in detail.linked_documents|default([]) %}
+        <a href="{{ token_href(doc.href|default('/documents')) }}">
+          <span>{{ doc.type|default('DOC') }}</span>
+          <strong>{{ doc.label|default('Document') }}</strong>
+          <small>{{ doc.diffusion|default('a verifier') }} - {{ doc.reason|default('preuve utile') }}</small>
+        </a>
+        {% else %}
+        <p>Aucun document rattache a cet evenement</p>
+        {% endfor %}
+      </section>
+
+      <section class="memory-event-transmission-review" data-testid="memory-event-transmission-review">
+        <h3>{{ transmission.title|default('Version transmissible') }}</h3>
+        <dl>
+          <div><dt>Inclus</dt><dd>{{ transmission.included|default([])|join(', ') }}</dd></div>
+          <div><dt>Masques</dt><dd>{{ transmission.masked|default([])|join(', ') }}</dd></div>
+          <div><dt>Blocage</dt><dd>{{ transmission.blocked_reason|default('Diffusion a verifier.') }}</dd></div>
+        </dl>
+        <a href="{{ token_href(transmission.review_href|default('/confidentialite')) }}">Preparer version diffusable</a>
+      </section>
+    </aside>
+  </div>
+
+  <section class="memory-event-audit" aria-label="Trace de generation">
+    <span>{{ context.watermark|default('export derive, non source de verite') }}</span>
+    <span>source_of_truth false</span>
+    <span>{{ event.id|default('EVT-FICTIF') }}</span>
+  </section>
+  {% endif %}
+</section>
+{% endblock %}

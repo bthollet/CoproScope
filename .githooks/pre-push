@@ -1,0 +1,78 @@
+#!/bin/sh
+set -eu
+
+remote_name="${1:-origin}"
+
+verificateur="tools/verifier_avant_push.py"
+python_local="server/.venv/Scripts/python.exe"
+
+if [ -f "$verificateur" ]; then
+  if [ -x "$python_local" ]; then
+    interprete="$python_local"
+  elif command -v python >/dev/null 2>&1; then
+    interprete="python"
+  else
+    echo "pre-push: aucun interprete Python pour lancer le controle de confidentialite." >&2
+    echo "pre-push: le controle n'a pas pu etre fait, donc le push est refuse." >&2
+    echo "pre-push: pour passer outre en connaissance de cause: git push --no-verify" >&2
+    exit 1
+  fi
+  # CE QUE LE PUSH ENVOIE, lu des lignes que `git push` donne sur stdin.
+  # L'ancien appel controlait `git ls-files`, donc l'ARBRE COURANT: il laissait
+  # passer un `git push origin main` depuis une autre branche, et il ne voyait
+  # pas un nom efface dans un commit mais entierement lisible dans le
+  # precedent - un push publie les deux. Mesure du 2026-09-12: 0 constat sur
+  # l'arbre, 44 sur ce que le push aurait envoye.
+  if "$interprete" "$verificateur" --pousse "$remote_name"; then
+    :
+  else
+    code=$?
+    if [ "$code" = "2" ]; then
+      echo "pre-push: le controle de confidentialite n'a PAS PU etre fait (code 2)." >&2
+      echo "pre-push: ce n'est pas un feu vert. Voir le message ci-dessus." >&2
+    else
+      echo "pre-push: le controle de confidentialite a trouve quelque chose (code $code)." >&2
+      echo "pre-push: rien n'est pousse. Traiter les fichiers nommes ci-dessus." >&2
+    fi
+    echo "pre-push: pour passer outre en connaissance de cause: git push --no-verify" >&2
+    exit 1
+  fi
+  # L'ARBRE SUIVI, en plus et non a la place: il repond a l'autre question,
+  # *qu'est-ce que je suis en train de commiter*. Ce crochet est son seul
+  # appelant automatique; le retirer d'ici le laisserait sans aucun.
+  if "$interprete" "$verificateur" < /dev/null; then
+    :
+  else
+    code=$?
+    echo "pre-push: l'ARBRE SUIVI porte un constat de confidentialite (code $code)." >&2
+    echo "pre-push: rien n'est pousse, meme si le push lui-meme etait propre." >&2
+    echo "pre-push: pour passer outre en connaissance de cause: git push --no-verify" >&2
+    exit 1
+  fi
+fi
+
+branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+
+if [ -z "$branch" ]; then
+  exit 0
+fi
+
+upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+
+if [ -z "$upstream" ]; then
+  echo "pre-push: no upstream configured for '$branch'." >&2
+  echo "pre-push: allowing this push; use 'git push -u ${remote_name} ${branch}' for the first publication." >&2
+  exit 0
+fi
+
+git fetch --quiet --prune "$remote_name"
+
+behind="$(git rev-list --count "HEAD..$upstream" 2>/dev/null || echo 0)"
+
+if [ "$behind" -gt 0 ]; then
+  echo "pre-push: '$branch' is behind '$upstream' by $behind commit(s)." >&2
+  echo "pre-push: run '.\\tools\\git\\sync.cmd -Pull' after committing or stashing local changes." >&2
+  exit 1
+fi
+
+exit 0

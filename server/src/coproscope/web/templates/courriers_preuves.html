@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% set view = courriers_preuves %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block content %}
+<section class="cpr-hero" aria-labelledby="cpr-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="cpr-title">{{ view.title }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <div class="cpr-hero__actions">
+      <a class="button-link" href="#brouillons">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#preuves">Voir les preuves</a>
+    </div>
+  </div>
+  <aside class="cpr-status" aria-label="Statut courriers et preuves fictifs">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucune transmission depuis CoproScope</small>
+  </aside>
+</section>
+
+<section class="cpr-summary" aria-label="Resume courriers et preuves fictifs">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="cpr-boundaries" aria-label="Limites de la preparation courrier">
+  {% for item in view.boundaries %}
+  <article>
+    <strong>{{ item.label }}</strong>
+    <p>{{ item.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="cpr-definitions-title">
+  <div class="panel-head">
+    <h3 id="cpr-definitions-title">Mots utiles pour les courriers</h3>
+    <span>Definitions courtes</span>
+  </div>
+  <div class="cpr-definitions">
+    {% for definition in view.definitions %}
+    <article>
+      <strong>{{ definition.label }}</strong>
+      <p>{{ definition.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="brouillons" aria-labelledby="cpr-drafts-title">
+  <div class="panel-head">
+    <h3 id="cpr-drafts-title">Brouillons a valider</h3>
+    <span>{{ view.drafts|length }} lignes fictives</span>
+  </div>
+  <div class="cpr-table" role="table" aria-label="Brouillons et preuves fictifs">
+    <div class="cpr-row is-head" role="row">
+      <span role="columnheader">Brouillon</span>
+      <span role="columnheader">Sujet</span>
+      <span role="columnheader">Source</span>
+      <span role="columnheader">Destinataire</span>
+      <span role="columnheader">Statut</span>
+      <span role="columnheader">Mandat</span>
+    </div>
+    {% for draft in view.drafts %}
+    <div class="cpr-row" role="row">
+      <strong role="cell">{{ draft.id }}</strong>
+      <span role="cell">{{ draft.subject }}</span>
+      <span role="cell">{{ draft.source }}</span>
+      <span role="cell">{{ draft.recipient }}</span>
+      <span role="cell">{{ draft.status }}</span>
+      <span role="cell">{{ draft.mandate }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Validation humaine</h3>
+      <span>Avant copie manuelle</span>
+    </div>
+    <div class="cpr-checks">
+      {% for step in view.approval_steps %}
+      <article>
+        <strong>{{ step.label }}</strong>
+        <small>{{ step.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel" id="preuves">
+    <div class="panel-head">
+      <h3>Preuves a rattacher</h3>
+      <span>References opaques</span>
+    </div>
+    <div class="cpr-proofs">
+      {% for proof in view.proofs %}
+      <article>
+        <span>{{ proof.id }}</span>
+        <strong>{{ proof.type }}</strong>
+        <small>{{ proof.status }} - {{ proof.link }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Sources et secrets exclus</h3>
+      <span>Controle local</span>
+    </div>
+    <div class="cpr-checks">
+      {% for item in view.blocked_sources %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel" id="actions">
+    <div class="panel-head">
+      <h3>Actions disponibles et bloquees</h3>
+      <span>Aucune transmission</span>
+    </div>
+    <div class="cpr-actions">
+      {% for action in view.actions %}
+      <button type="button" {% if action.enabled != "true" %}disabled aria-disabled="true"{% endif %}>
+        <strong>{{ action.label }}</strong>
+        <small>{{ action.reason }}</small>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="cpr-versions-title">
+  <div class="panel-head">
+    <h3 id="cpr-versions-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

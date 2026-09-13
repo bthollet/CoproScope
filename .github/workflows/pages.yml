@@ -1,0 +1,95 @@
+name: Demo Pages
+
+# La demo en ligne est un export statique de l'interface, lue sur une copropriete
+# ENTIEREMENT INVENTEE (`tools/pool_fictif/`). Aucune instance privee n'entre
+# ici: la CI n'a pas le droit d'en lire une. Ce workflow ne rejoue pas la suite,
+# c'est le role de `ci.yml`.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Construire la demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: server/pyproject.toml
+
+      - name: Installer
+        run: python -m pip install -e "server[ui,accounting]"
+
+      - name: Fabriquer la copropriete fictive
+        run: python tools/pool_fictif/generer.py "$RUNNER_TEMP/demo-glycines"
+
+      # `pipeline run` sort sur 1 des que le passage n'est pas `ok`, y compris
+      # quand ses pertes sont DECLAREES - et la copropriete fictive porte des
+      # defauts voulus. La demo se publie sur `ok` ou `pertes_declarees`, jamais
+      # sur `incomplet` ni sur un rapport illisible (exception, sortie vide).
+      - name: La faire lire par la chaine du produit
+        run: |
+          set +e
+          coprocs pipeline run --instance-root "$RUNNER_TEMP/demo-glycines" > "$RUNNER_TEMP/pipeline.json"
+          code=$?
+          set -e
+          statut=$(python - "$RUNNER_TEMP/pipeline.json" <<'PY'
+          import json, re, sys
+          texte = open(sys.argv[1], encoding="utf-8").read()
+          debut = re.search(r"^[{]", texte, re.M)
+          rapport = json.loads(texte[debut.start():]) if debut else {}
+          print(rapport.get("status", "illisible"))
+          for perte in rapport.get("verdict", {}).get("pertes_declarees", []):
+              print("perte declaree: " + perte, file=sys.stderr)
+          PY
+          )
+          echo "code de sortie: $code, statut: $statut"
+          case "$statut" in
+            ok|pertes_declarees) ;;
+            *) echo "passage refuse pour la demo: statut $statut" >&2; exit 1 ;;
+          esac
+
+      # L'export echoue si un lien ne tient pas sans serveur, ou si le plafond
+      # de pages est atteint: une demo tronquee ne se publie pas en silence.
+      - name: Exporter les pages
+        run: python tools/demo_statique/exporter.py --instance-root "$RUNNER_TEMP/demo-glycines" --sortie "$RUNNER_TEMP/site"
+
+      - name: Publier l'artefact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    name: Deployer
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

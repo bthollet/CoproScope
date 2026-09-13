@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoproScope Finding",
+  "type": "object",
+  "required": ["finding_id", "category", "severity", "fact", "diligence", "status"],
+  "properties": {
+    "finding_id": { "type": "string" },
+    "category": { "type": "string" },
+    "severity": { "type": "string" },
+    "source_ref": { "type": "string" },
+    "fact": { "type": "string" },
+    "diligence": { "type": "string" },
+    "status": { "type": "string" }
+  }
+}

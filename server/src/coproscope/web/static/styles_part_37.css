@@ -1,0 +1,281 @@
+/* Accueil du controle de gouvernance: pastilles, legende, liste. `RM-2026-0183`.
+
+   DEUX AXES, UN CANAL CHACUN, ET PAR CONSTRUCTION. Les regles de composant
+   (`.cs-pastille`, `.cs-signal`, `.cs-echantillon`, `.cs-trait`) ne posent ni
+   couleur ni style de bordure. La couleur n'est posee que sous `[data-alerte]`,
+   le style de bordure que sous `[data-etabli]`: aucune regle de composant ne
+   peut donc les ecraser, quel que soit l'ordre de la feuille.
+   `test_l_accueil_de_gouvernance_filtre_sur_place` le verifie. */
+
+.cs-accueil-ensemble {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 18px;
+  margin: 0 0 12px;
+}
+
+.cs-pastille-tout {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 650;
+}
+
+.cs-pastille-tout.is-active {
+  box-shadow: 0 0 0 2px #1d2939;
+}
+
+.cs-accueil-grille {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  gap: 16px;
+  align-items: start;
+}
+
+.cs-accueil-runs {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cs-accueil-run h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.cs-pastilles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 8px;
+}
+
+.cs-pastille {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 2px 6px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-width: 2px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.cs-pastille b {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-pastille-titre {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.cs-pastille-geste {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
+.cs-pastille.is-active {
+  box-shadow: 0 0 0 2px #1d2939;
+}
+
+.cs-pastille:focus-visible,
+.cs-pastille-tout:focus-visible {
+  outline: 3px solid #2e90fa;
+  outline-offset: 2px;
+}
+
+.cs-signe {
+  min-width: 10px;
+  font-weight: 800;
+}
+
+.cs-trait {
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+  width: 26px;
+  height: 0;
+  border-width: 2px 0 0;
+}
+
+.cs-legende {
+  margin: 12px 0 0;
+  overflow-x: auto;
+}
+
+.cs-legende figcaption {
+  margin-bottom: 4px;
+  font-weight: 650;
+}
+
+.cs-legende-codes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.cs-echantillon {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  margin-right: 4px;
+  border-width: 2px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.cs-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin: 0 4px 4px 0;
+  padding: 1px 8px;
+  border-width: 2px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.cs-accueil-signaux {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.cs-accueil-entete,
+.cs-accueil-lignes summary {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr) 120px 110px 140px;
+  gap: 10px;
+  align-items: start;
+}
+
+.cs-accueil-entete {
+  padding: 0 10px 6px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.cs-accueil-lignes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cs-accueil-lignes > li {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+}
+
+.cs-accueil-lignes summary {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.cs-accueil-lignes summary:focus-visible {
+  outline: 3px solid #2e90fa;
+  outline-offset: 2px;
+}
+
+.cs-accueil-decision,
+.cs-accueil-objet {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cs-accueil-objet {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+details[open] .cs-accueil-objet {
+  display: block;
+}
+
+.cs-accueil-marge {
+  padding-left: 10px;
+  border-left: 1px solid #d0d5dd;
+}
+
+.cs-verdict {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f4f0fb;
+  color: #553c9a;
+  font-weight: 650;
+}
+
+.cs-accueil-ouverte {
+  display: grid;
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.cs-accueil-motif {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .cs-accueil-grille {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-accueil-entete {
+    display: none;
+  }
+
+  .cs-accueil-lignes summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-accueil-marge {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+/* Axe 1, qui l'etablit: une FORME, et rien d'autre. */
+[data-etabli="pieces"] {
+  border-style: solid;
+}
+
+[data-etabli="outil"] {
+  border-style: dashed;
+}
+
+/* Axe 2, faut-il agir: une COULEUR, et rien d'autre. */
+[data-alerte="forte"] {
+  border-color: #d92d20;
+  background: #fff5f4;
+  color: #912018;
+}
+
+[data-alerte="oui"] {
+  border-color: #dc6803;
+  background: #fffaf0;
+  color: #7a4108;
+}
+
+[data-alerte="non"] {
+  border-color: #98a2b3;
+  background: #ffffff;
+  color: #475467;
+}

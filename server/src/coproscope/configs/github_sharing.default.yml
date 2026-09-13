@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "url_depot_public": "https://github.com/bthollet/CoproScope",
+  "chemins_autorises_partage": [
+    "README.md",
+    "CLAUDE.md",
+    "LICENSE",
+    ".gitignore",
+    "server/",
+    "docs/",
+    "examples/synthetic_copro/",
+    ".github/"
+  ],
+  "prefixes_ignores": [
+    ".git/"
+  ],
+  "prefixes_jamais_partager": [
+    "coproscope-instances/",
+    "outputs/",
+    "staging/",
+    "logs/",
+    "docs/assets/synthese-gouvernance-2026-09-04/",
+    "docs/assets/edition-2026-09-04/",
+    "docs/assets/audit-pages-controle-2026-09-03/",
+    "docs/assets/comptes-2026-09-04/",
+    "docs/assets/maquettes-controle-2026-09-03/"
+  ],
+  "motifs_jamais_partager": [
+    ".env.local",
+    ".secrets",
+    ".venv/",
+    ".egg-info",
+    "__pycache__",
+    ".pytest_cache/",
+    ".mypy_cache/",
+    ".ruff_cache/",
+    "logs/",
+    "outputs/",
+    "registers/",
+    "staging/",
+    "privacy_dir/",
+    "redacted_dir/",
+    "biffage/",
+    "biffageops/",
+    "table_correspondance",
+    "registre_screening_confidentialite",
+    "registre_biffages",
+    "file_biffage",
+    "C8_table_correspondance_biffage",
+    "models/",
+    "huggingface/",
+    ".cache/huggingface/",
+    "desktop.ini",
+    "thumbs.db",
+    "OPENAI_API_KEY",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "PISTE_CLIENT_SECRET"
+  ],
+  "liste_controle_partage": [
+    "remove private paths",
+    "remove real copropriete data",
+    "replace with synthetic example",
+    "update tests",
+    "document validation"
+  ],
+  "residu_non_couvert": "Les cinq prefixes de captures ci-dessus sont des CHEMINS, donc des modalites observees le 2026-09-08, pas l'invariant. L'invariant est la PROVENANCE: une capture produite depuis des donnees reelles ne se partage pas. Le depot ne sait pas encore porter la provenance d'un fichier binaire, donc toute nouvelle campagne de captures echappera a cette liste tant qu'on ne l'y ajoute pas a la main. C'est le residu, il est nomme, il n'est pas couvert."
+}

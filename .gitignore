@@ -1,0 +1,70 @@
+desktop.ini
+Thumbs.db
+.DS_Store
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+.codex-edge-profile-*/
+.codex-tmp/
+.venv/
+**/.venv/
+server/.venv/
+server/build/
+server/dist/
+server/dist-*/
+server/.tmp-test/
+server/.tmp-ui-*.log
+*.log
+*.pid
+*.egg-info/
+examples/synthetic_copro/.env.local
+examples/synthetic_copro/logs/
+examples/synthetic_copro/outputs/
+examples/synthetic_copro/registers/*
+!examples/synthetic_copro/registers/
+!examples/synthetic_copro/registers/*.csv
+examples/synthetic_copro/staging/*
+!examples/synthetic_copro/staging/
+!examples/synthetic_copro/staging/text/
+!examples/synthetic_copro/staging/text/*.native.txt
+!examples/synthetic_copro/staging/privacy_dir/
+!examples/synthetic_copro/staging/privacy_dir/*.csv
+examples/synthetic_copro/models/
+**/models/
+**/.cache/huggingface/
+**/huggingface/
+
+# Local OAuth / cloud credentials. Never commit user tokens or app secrets.
+credentials.json
+client_secret*.json
+token.json
+**/oauth/*.json
+**/.oauth/
+**/.secrets/
+
+# Local reprise dossiers may contain private-instance probes or raw working
+# traces. Keep them local unless a specific file is sanitized and moved out.
+docs/dossiers_p0_reprise_2026-05-28/
+
+# Corpus caviarde. Le sel derive les pseudonymes: il ne quitte jamais le poste.
+# L'annuaire, la table de correspondance et la liste des suspects permettent la
+# reidentification; les derives Markdown restent de la donnee d'instance.
+**/sel_alias.key
+**/corpus_caviarde/
+**/annuaire_personnes.csv
+**/corpus_caviarde_suspects.csv
+**/corpus_caviarde_couverture.csv
+**/corpus_md/
+
+# Coffre de gouvernance d'une instance d'exemple.
+# Il est ECRIT par la chaine d'absorption: le versionner ferait de la
+# reference le resultat du dernier passage, defaut mesure en RM-2026-0107.
+examples/**/vault_local/
+*.sqlite3
+
+# Journaux de suite laisses par un lot dans l'arbre de travail. Un log n'est
+# pas un livrable: il date d'un etat qui n'existe deja plus quand on le relit,
+# et le commiter fait croire a une preuve datee de maintenant.
+server/_suite_*.txt
+server/*.log

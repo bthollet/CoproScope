@@ -1,0 +1,147 @@
+# Empreinte du bareme, et la mesure avant/apres qui l'accompagne.
+#
+# Ce fichier n'est pas une somme de controle: c'est la trace d'une MESURE.
+# `test_bareme_deplace_le_classement.py` echoue si le bareme livre s'ecarte de
+# l'empreinte ci-dessous, et son message dit quelle regle a bouge.
+#
+# ---------------------------------------------------------------------------
+# MESURE DU 2026-09-09
+# ---------------------------------------------------------------------------
+# Base de code       : ffac60c
+# Bareme mesure      : etat de configs/taxonomy.default.yml a ffac60c
+#                      (dernier commit qui le touche: a56b9fe, 2026-09-05)
+# Bareme de reference: etat a a56b9fe^ (= 7493c43)
+# Methode            : code fixe a ffac60c, seule la taxonomie varie. Isole le
+#                      deplacement du BAREME de celui du CODE, que a56b9fe
+#                      change aussi (02_classification.py, 03_title_signature.py).
+#
+# CE QUE a56b9fe DEPLACE DANS LE BAREME - 5 regles sur 38, 9 retraits, 1 ajout:
+# (corrige le 2026-09-09: la premiere redaction ecrivait "8 retraits" et
+#  "39 regles" alors que sa propre enumeration ci-dessous en liste NEUF, et
+#  que le fichier livre porte 38 regles - 39 est le nombre de LIGNES de
+#  l'empreinte, tete comprise. Un chiffre lu sur l'instrument et etiquete
+#  comme s'il venait de l'objet mesure.)
+#   Convocation_AG      mots_cles           - "assemblee generale"
+#   PV_AG               mots_cles           - "assemblee generale"
+#   Feuille_Presence_AG motifs_nom_fichier  - "pouvoirs"
+#   Feuille_Presence_AG mots_cles           - "pouvoirs"
+#   Annexe_Comptable    motifs_nom_fichier  - "annexe" (motif nu)
+#   Releve_Bancaire     motifs_nom_fichier  - "banque", - "rib"
+#   Releve_Bancaire     mots_cles           - "iban", - "compte bancaire",
+#                                             + "releve de compte"
+#
+# AMPLEUR MESUREE:
+#   examples/synthetic_copro (9 pieces, partageable, joue en CI):
+#       0 type change sur 9. 2 pieces changent de SCORE sans changer de type.
+#       Ce corpus est trop petit pour mesurer une ampleur: aucune de ses pieces
+#       ne porte un des 9 motifs touches en position discriminante.
+#   instances/erables_pseudo_test (22 pieces, second cabinet, HORS CI, lecture
+#   seule locale, 2026-09-09):
+#       3 types changes sur 22 (13,6 %), tous QUITTANT Convocation_AG:
+#           Convocation_AG -> Annexe_Comptable        1
+#           Convocation_AG -> Impayes                 1
+#           Convocation_AG -> Contentieux_Nominatif   1
+#       Les 3 marquaient 105 avant, soit priorite 100 + UN seul mot-cle:
+#       "assemblee generale". Aucun motif de nom de fichier, ni "convocation",
+#       ni "ordre du jour". Leur unique preuve etait le nom de l'ORGANE.
+#       Accord avec le registre de l'instance: 15/22 avant, 17/22 apres.
+#       RESERVE: ce registre est la SORTIE d'une version anterieure du code, pas
+#       un etalon. Il donne un SENS, jamais un taux de justesse.
+#   temoins fabriques de ce dossier: 6 types changes sur 11.
+#
+# CE QUE LA MESURE ETABLIT SUR RM-2026-0076 LUI-MEME:
+#   Le deplacement sur le duel Convocation_AG / PV_AG est NUL. Le retrait de
+#   "assemblee generale" ote 5 points aux DEUX regles, et l'arbitrage ne se pose
+#   que sur les documents qui nomment l'organe - ou les deux perdent ensemble.
+#       PV etalon sans "resolution adoptee": 115/113 avant -> 110/108 apres.
+#       Marge Convocation_AG - PV_AG: +2 avant, +2 apres. INCHANGEE.
+#   Le defaut que l'item decrit survit donc intact a a56b9fe.
+#
+# CE QUI N'A PAS ETE MESURE, ET IL FAUT LE DIRE:
+#   Le chiffre de 3 447 documents cite par l'item vient du corpus de travail
+#   `Tilleuls (pseudo)`. Il n'a PAS ete rejoue: aucune instance reabsorbee
+#   n'etait disponible sur cette base. Le taux de 13,6 % du second cabinet ne
+#   s'y transpose pas - un corpus dont 69,3 % des lignes sont des fragments de
+#   pages n'a pas la meme exposition aux mots-cles.
+#
+# POUR REGENERER: rejouer la mesure avant/apres, puis reecrire ce fichier avec
+# sa nouvelle date, sa nouvelle base et ses nouveaux chiffres. Ne jamais copier
+# l'empreinte seule: elle ne vaut que par la mesure qui la precede.
+#
+# LA CIBLE CHIFFREE DE L'ITEM N'A PAS PU ETRE MESUREE, ET C'EST A DIRE.
+#   La colonne description de RM-2026-0076 ecrit: "toucher au bareme
+#   deplacerait le classement de 3 447 documents". Ce corpus est celui de
+#   l'instance de reconstruction du 2026-09-04. Verifie le 2026-09-09: cette
+#   instance N'EXISTE PLUS sur le poste - `instances/` n'en porte aucune de
+#   cette taille. La mesure d'ampleur ci-dessus porte donc sur 22 pieces d'un
+#   second cabinet et 9 pieces synthetiques, soit 31, et non sur 3 447.
+#   Le rapport 22/3447 n'autorise AUCUNE extrapolation: les 3 types deplaces
+#   sur 22 ne disent pas 13,6 % de 3 447. Ce qui manque pour tenir la cible de
+#   l'item est un corpus de cet ordre, reconstruit depuis les pieces sources
+#   selon la regle de l'instance vide. Tant qu'il n'existe pas, l'item ne peut
+#   pas etre ferme sur sa propre exigence.
+#
+# ---------------------------------------------------------------------------
+# REVISION DU 2026-09-09 - LE RENDU A CHANGE, LE BAREME N'A PAS BOUGE
+# ---------------------------------------------------------------------------
+# Base de code       : ffac60c (+ la correction de `empreinte_bareme`)
+# Ce qui a change    : la FORME de l'empreinte, pas la taxonomie. Le fichier
+#                      configs/taxonomy.default.yml est identique a celui que
+#                      la mesure du dessus a lu, et la mesure reste donc
+#                      valable telle quelle.
+# Pourquoi           : la premiere empreinte triait ses lignes de regle, donc
+#                      elle ne portait PAS l'ordre des regles - alors que cet
+#                      ordre tranche les egalites de score dans `_classify`
+#                      (`score > best[2]`, comparaison stricte). Deplacer
+#                      PV_AG avant Carnet_Entretien faisait passer un
+#                      proces-verbal de Carnet_Entretien a PV_AG en rendant
+#                      une empreinte OCTET POUR OCTET identique, et les six
+#                      tests du fichier restaient verts. Second trou du meme
+#                      genre: le separateur de liste n'etait pas echappe, donc
+#                      mots_cles ["a,b"] et ["a","b"] se rendaient pareil.
+# Ce que le rendu porte maintenant:
+#   - une ligne `ordre/types=[...]` en tete des regles, pour la lecture;
+#   - un RANG `regle[NNN]/` sur chaque regle, qui porte la garantie;
+#   - des valeurs rendues par json.dumps, donc delimitees et non ambigues.
+#
+---8<---
+tete/signature_titre={"fenetre_tete": 300, "motifs": {"PV_AG": "proces verbal de l assemblee"}, "plancher_texte_utile": 200}
+ordre/types=["Reglement_Copropriete", "EDD", "Carnet_Entretien", "Diagnostic_Technique", "Convocation_AG", "PV_AG", "Annexe_AG", "Feuille_Presence_AG", "CR_CS", "Contrat_Syndic", "Contrat_Assurance", "Attestation_Assurance", "Contrat_Maintenance", "Contrat_Fournisseur", "Annexe_Comptable", "Budget_Previsionnel", "Etat_Depenses", "Grand_Livre", "Appel_Fonds", "Fonds_Travaux", "Impayes", "Releve_Bancaire", "Facture", "Avoir", "Note_Honoraires", "Devis", "Dossier_Travaux", "Dossier_ITE_Travaux", "Marche_Travaux", "Ordre_Service", "Reception_Travaux", "DOE_Travaux", "Photo_Incident", "Declaration_Assurance", "Contentieux_Nominatif", "Communication", "Courrier", "Preuve_Envoi"]
+regle[000]/document_type="Reglement_Copropriete";filename_patterns=["reglement.*copro", "rc_copro"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["reglement de copropriete", "destination de l'immeuble", "parties communes"];lot="Referentiel_Copropriete";path_patterns="(absent)";path_weight="(absent)";priority=115
+regle[001]/document_type="EDD";filename_patterns=["etat.*descriptif.*division", "\\bedd\\b"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["etat descriptif de division", "tantiemes", "lots privatifs"];lot="Referentiel_Copropriete";path_patterns="(absent)";path_weight="(absent)";priority=112
+regle[002]/document_type="Carnet_Entretien";filename_patterns=["carnet.*entretien"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["carnet d'entretien", "entretien de l'immeuble"];lot="Referentiel_Copropriete";path_patterns="(absent)";path_weight="(absent)";priority=108
+regle[003]/document_type="Diagnostic_Technique";filename_patterns=["diagnostic", "\\bdtg\\b", "\\bdpe\\b"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["diagnostic technique", "diagnostic de performance energetique", "amiante"];lot="Referentiel_Copropriete";path_patterns="(absent)";path_weight="(absent)";priority=104
+regle[004]/document_type="Convocation_AG";filename_patterns=["convocation", "ordre.*jour"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["convocation", "ordre du jour"];lot="AG";path_patterns="(absent)";path_weight="(absent)";priority=100
+regle[005]/document_type="PV_AG";filename_patterns=["pv.*ag", "proces.*verbal", "proces_verbal"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["proces-verbal", "proces verbal", "resolution adoptee"];lot="AG";path_patterns="(absent)";path_weight="(absent)";priority=98
+regle[006]/document_type="Annexe_AG";filename_patterns=["annexe.*ag", "annexe.*assemblee"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["annexe a la convocation", "annexe ag", "document joint a l'assemblee"];lot="AG";path_patterns="(absent)";path_weight="(absent)";priority=94
+regle[007]/document_type="Feuille_Presence_AG";filename_patterns=["feuille.*presence"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["feuille de presence", "mandats de vote"];lot="AG";path_patterns="(absent)";path_weight="(absent)";priority=92
+regle[008]/document_type="CR_CS";filename_patterns=["cr.*cs", "conseil.*syndical"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["compte rendu du conseil syndical", "conseil syndical"];lot="Conseil_Syndical";path_patterns="(absent)";path_weight="(absent)";priority=90
+regle[009]/document_type="Contrat_Syndic";filename_patterns=["contrat.*syndic", "mandat.*syndic"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["contrat de syndic", "mandat de syndic", "honoraires du syndic"];lot="Syndic";path_patterns="(absent)";path_weight="(absent)";priority=88
+regle[010]/document_type="Contrat_Assurance";filename_patterns=["contrat.*assurance", "police.*assurance"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["contrat d'assurance", "police d'assurance", "assurance multirisque immeuble"];lot="Assurance";path_patterns="(absent)";path_weight="(absent)";priority=86
+regle[011]/document_type="Attestation_Assurance";filename_patterns=["(?<!demande_)attestation.*assurance"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["attestation d'assurance", "attestation multirisque"];lot="Assurance";path_patterns="(absent)";path_weight="(absent)";priority=84
+regle[012]/document_type="Contrat_Maintenance";filename_patterns=["maintenance", "entretien.*contrat"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["contrat de maintenance", "contrat d'entretien", "prestataire"];lot="Contrats";path_patterns="(absent)";path_weight="(absent)";priority=82
+regle[013]/document_type="Contrat_Fournisseur";filename_patterns=["contrat.*fournisseur", "prestation"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["contrat de prestation", "conditions particulieres", "fournisseur"];lot="Contrats";path_patterns="(absent)";path_weight="(absent)";priority=80
+regle[014]/document_type="Annexe_Comptable";filename_patterns=["annexe.*comptable", "etat_financier"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["annexe comptable", "etat financier", "charges et produits"];lot="Comptes";path_patterns="(absent)";path_weight="(absent)";priority=78
+regle[015]/document_type="Budget_Previsionnel";filename_patterns=["budget", "budget.*previsionnel"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["budget previsionnel", "budget vote", "budget propose"];lot="Comptes";path_patterns="(absent)";path_weight="(absent)";priority=76
+regle[016]/document_type="Etat_Depenses";filename_patterns=["etat.*depenses", "depenses"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["etat des depenses", "liste des depenses", "charges de l'exercice"];lot="Comptes";path_patterns="(absent)";path_weight="(absent)";priority=74
+regle[017]/document_type="Grand_Livre";filename_patterns=["grand.*livre"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["grand livre", "journal comptable", "compte comptable"];lot="Comptes";path_patterns="(absent)";path_weight="(absent)";priority=72
+regle[018]/document_type="Appel_Fonds";filename_patterns=["appel.*fonds", "appel.*charges"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["appel de fonds", "appel de charges", "quote-part"];lot="Comptes";path_patterns="(absent)";path_weight="(absent)";priority=70
+regle[019]/document_type="Fonds_Travaux";filename_patterns=["fonds.*travaux"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["fonds travaux", "fonds alur"];lot="Comptes";path_patterns="(absent)";path_weight="(absent)";priority=68
+regle[020]/document_type="Impayes";filename_patterns=["impaye", "impayes", "recouvrement"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["impayes", "recouvrement", "coproprietaire debiteur"];lot="Comptes_Restreints";path_patterns="(absent)";path_weight="(absent)";priority=66
+regle[021]/document_type="Releve_Bancaire";filename_patterns=["releve.*bancaire"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["releve bancaire", "releve de compte"];lot="Comptes_Restreints";path_patterns="(absent)";path_weight="(absent)";priority=64
+regle[022]/document_type="Facture";filename_patterns=["facture"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["facture", "net a payer", "total ttc"];lot="Factures_Fournisseurs";path_patterns="(absent)";path_weight="(absent)";priority=62
+regle[023]/document_type="Avoir";filename_patterns=["avoir"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["avoir", "credit facture"];lot="Factures_Fournisseurs";path_patterns="(absent)";path_weight="(absent)";priority=60
+regle[024]/document_type="Note_Honoraires";filename_patterns=["honoraires", "note.*honoraires"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["note d'honoraires", "honoraires"];lot="Factures_Fournisseurs";path_patterns="(absent)";path_weight="(absent)";priority=58
+regle[025]/document_type="Devis";filename_patterns=["devis"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["devis", "bon pour accord"];lot="Factures_Fournisseurs";path_patterns="(absent)";path_weight="(absent)";priority=56
+regle[026]/document_type="Dossier_Travaux";filename_patterns=["travaux", "chantier"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["dossier travaux", "chantier", "maitrise d'oeuvre"];lot="Travaux";path_patterns="(absent)";path_weight="(absent)";priority=54
+regle[027]/document_type="Dossier_ITE_Travaux";filename_patterns=["ite", "ravalement", "toiture", "ventilation"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["ite", "isolation thermique", "ravalement", "maitrise d'oeuvre"];lot="ITE_Travaux";path_patterns="(absent)";path_weight="(absent)";priority=53
+regle[028]/document_type="Marche_Travaux";filename_patterns=["marche.*travaux", "contrat.*travaux"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["marche de travaux", "ordre de service", "cahier des clauses"];lot="Travaux";path_patterns="(absent)";path_weight="(absent)";priority=52
+regle[029]/document_type="Ordre_Service";filename_patterns=["ordre.*service", "\\bos\\b"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["ordre de service", "demarrage des travaux"];lot="Travaux";path_patterns="(absent)";path_weight="(absent)";priority=50
+regle[030]/document_type="Reception_Travaux";filename_patterns=["reception.*travaux", "proces.*verbal.*reception"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["reception des travaux", "proces-verbal de reception", "levee des reserves"];lot="Travaux";path_patterns="(absent)";path_weight="(absent)";priority=48
+regle[031]/document_type="DOE_Travaux";filename_patterns=["\\bdoe\\b", "dossier.*ouvrages.*executes"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["dossier des ouvrages executes", "garantie de parfait achevement"];lot="Travaux";path_patterns="(absent)";path_weight="(absent)";priority=46
+regle[032]/document_type="Photo_Incident";filename_patterns=["photo.*incident", "infiltration", "degat"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["photo d'incident", "infiltration", "degat des eaux"];lot="Incidents";path_patterns="(absent)";path_weight="(absent)";priority=44
+regle[033]/document_type="Declaration_Assurance";filename_patterns=["declaration.*sinistre", "sinistre"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["declaration de sinistre", "sinistre assurance"];lot="Incidents";path_patterns="(absent)";path_weight="(absent)";priority=42
+regle[034]/document_type="Contentieux_Nominatif";filename_patterns=["contentieux", "avocat", "procedure"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["contentieux", "avocat", "mise en demeure", "assignation"];lot="Contentieux";path_patterns="(absent)";path_weight="(absent)";priority=40
+regle[035]/document_type="Communication";filename_patterns=["mail", "email", "e-mail", "courriel", "echange", "relance", "reponse"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["email recu", "mail", "e-mail", "courriel", "message du syndic", "trace locale", "relance", "reponse du syndic"];lot="Communication";path_patterns="(absent)";path_weight="(absent)";priority=96
+regle[036]/document_type="Courrier";filename_patterns=["courrier", "lettre"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["courrier", "lettre", "destinataire"];lot="Communication";path_patterns="(absent)";path_weight="(absent)";priority=38
+regle[037]/document_type="Preuve_Envoi";filename_patterns=["preuve.*envoi", "accuse.*reception", "lrar"];filename_weight="(absent)";keyword_weight="(absent)";keywords=["preuve d'envoi", "accuse de reception", "lettre recommandee"];lot="Communication";path_patterns="(absent)";path_weight="(absent)";priority=36

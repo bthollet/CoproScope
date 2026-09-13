@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block topbar_title %}Factures a revoir{% endblock %}
+{% block content %}
+{% set view = factures_review %}
+{% set count_label = view.count_label if view.count_label is defined else view.count ~ (' facture affichee' if view.count == 1 else ' factures affichees') %}
+{% set total_review_label = view.total_review_label if view.total_review_label is defined else view.total_review ~ (' facture' if view.total_review == 1 else ' factures') %}
+{% set count_rows_label = view.count_rows_label if view.count_rows_label is defined else view.count ~ (' ligne' if view.count == 1 else ' lignes') %}
+{% macro token_href(href) -%}
+  {%- set raw_href = href|default('#') -%}
+  {%- if ui_token_param and raw_href != '#' -%}
+    {{- raw_href -}}{{- '&' if '?' in raw_href else '?' -}}{{- ui_token_param -}}
+  {%- else -%}
+    {{- raw_href -}}
+  {%- endif -%}
+{%- endmacro %}
+
+<section class="cs-comptes-page" aria-labelledby="factures-review-title">
+  <header class="cs-page-header cs-comptes-header">
+    <div>
+      <p class="eyebrow">{{ view.eyebrow }}</p>
+      <h2 id="factures-review-title">{{ view.title }}</h2>
+      <p class="lead">Liste de travail pour verifier les factures reperees automatiquement, exercice {{ view.year }}.</p>
+    </div>
+    <div class="cs-header-tools" aria-label="Actions factures">
+      <span class="cs-status-badge">Mode prive local</span>
+      <a class="button-link secondary" href="{{ token_href('/comptes') }}">Retour aux comptes</a>
+      <a class="cs-primary-action" href="#factures-file">Voir les factures a verifier</a>
+    </div>
+  </header>
+
+  <dl class="cs-comptes-summary-strip" aria-label="Indicateurs factures a revoir">
+    {% for item in view.summary %}
+    <div class="cs-summary-chip cs-tone-{{ 'danger' if loop.index in [1, 4] else 'warn' }}" title="{{ item.detail }}" aria-label="{{ item.label }}: {{ item.value }}. {{ item.detail }}">
+      <dt>{{ item.label }}</dt>
+      <dd>{{ item.value }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+
+  <section class="cs-comptes-next" aria-label="Confidentialite de la file factures">
+    <div>
+      <p class="eyebrow">{{ view.source_label }}</p>
+      <strong>{{ count_label }} sur {{ total_review_label }} a revoir</strong>
+    </div>
+    <div class="cs-comptes-next-actions">
+      {% for filter in view.filters %}
+      <a class="{{ 'active' if filter.active == 'true' else '' }}" href="{{ token_href(filter.href) }}"{% if filter.active == 'true' %} aria-current="page"{% endif %}>{{ filter.label }}</a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="cs-comptes-guide" aria-label="Mode de lecture factures">
+    <div>
+      <strong>Priorite haute</strong>
+      <span>Doublon, incoherence ou exercice a verifier avant de relier aux comptes.</span>
+    </div>
+    <div>
+      <strong>A completer</strong>
+      <span>Montant, fournisseur, date ou reference manque dans l'analyse automatique.</span>
+    </div>
+    <div>
+      <strong>A verifier</strong>
+      <span>Lecture plausible, mais encore trop fragile pour conclure seule.</span>
+    </div>
+  </section>
+
+  <section id="factures-file" class="cs-comptes-panel" aria-labelledby="factures-file-title">
+    <div class="cs-panel-head">
+      <div>
+        <p class="eyebrow">{{ view.privacy_notice }}</p>
+        <h3 id="factures-file-title">Liste factures, anomalies et action suivante</h3>
+      </div>
+      <span>{{ count_rows_label }}</span>
+    </div>
+    <div class="cs-comptes-table-scroll">
+      <table class="cs-comptes-table">
+        <thead>
+          <tr>
+            <th>Priorite</th>
+            <th>Facture detectee</th>
+            <th>Montant et date</th>
+            <th>Compte</th>
+            <th>Anomalies</th>
+            <th>Action suivante</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in view.rows %}
+          <tr>
+            <td>
+              <span class="pill severity-{{ row.tone }}">{{ row.priority_label }}</span>
+              <br><small>{{ row.status_label }}</small>
+            </td>
+            <td>
+              <strong>{{ row.supplier }}</strong>
+              <br><small>{{ row.invoice_number }}</small>
+            </td>
+            <td>
+              <strong>{{ row.amount }}</strong>
+              <br><small>{{ row.date }}</small>
+              {% if row.blocking_alert %}
+              <br><span class="pill severity-p1">{{ row.blocking_alert }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong>{{ row.account }}</strong>
+              <br><small>{{ row.family }}</small>
+            </td>
+            <td>
+              {% for anomaly in row.anomalies %}
+              <span class="pill severity-{{ row.tone }}">{{ anomaly }}</span>
+              {% endfor %}
+            </td>
+            <td>
+              {{ row.next_action }}
+              <br>
+              {% if row.href %}
+              <a class="button-link secondary" href="{{ token_href(row.href) }}">Ouvrir le document protege</a>
+              {% else %}
+              <span class="pill severity-p2">Lien document masque</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6">
+              <div class="cs-empty-state">
+                <strong>{{ view.empty }}</strong>
+                <p>Relancez l'extraction locale des factures ou changez de filtre.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{% endblock %}

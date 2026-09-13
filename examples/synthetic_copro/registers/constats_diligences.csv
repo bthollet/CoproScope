@@ -1,0 +1,4 @@
+finding_id,category,severity,source_ref,fact,diligence,status
+FDG-PRV-001,completeness,P1,PRV-001,Piece manquante: PV signes et annexes,"Verifier le Drive, l'extranet, puis demander la piece au syndic si besoin.",OPEN
+FDG-PRV-005,completeness,P1,PRV-005,Piece manquante: Devis ou factures travaux,"Verifier le Drive, l'extranet, puis demander la piece au syndic si besoin.",OPEN
+FDG-AG-06E0AD,ag,P1,DOC-4E884D06E0AD,Convocation AG detectee sans signal d'annexes jointes.,"Verifier les annexes, devis, budgets et resolutions jointes avant preparation AG.",OPEN

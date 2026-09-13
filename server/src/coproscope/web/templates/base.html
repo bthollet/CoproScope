@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoproScope - {{ model.instance.name|default('CoproScope') if model.instance is defined else 'CoproScope' }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20260904-correctifs-systeme-design">
+</head>
+<body class="cs-shell">
+  {% set ux = model.ux if model.ux is defined else {} %}
+  {% set shell = ux.shell if ux.shell is defined else {} %}
+  {% set instance = model.instance if model.instance is defined else {} %}
+  {% set kpis = model.kpis if model.kpis is defined else {} %}
+  {% set action_summary = model.action_summary if model.action_summary is defined else {} %}
+  {% set scope_counts = action_summary.scope_counts|default({}) %}
+  {% macro token_href(href) -%}
+    {%- set raw_href = href|default('#') -%}
+    {%- if ui_token_param and raw_href != '#' -%}
+      {{- raw_href -}}{{- '&' if '?' in raw_href else '?' -}}{{- ui_token_param -}}
+    {%- else -%}
+      {{- raw_href -}}
+    {%- endif -%}
+  {%- endmacro %}
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+  <div class="cs-app-shell">
+    <aside class="cs-sidebar" aria-label="Navigation CoproScope">
+      <div class="cs-sidebar-brand">
+        <span class="cs-brand-mark" aria-hidden="true">CS</span>
+        <strong>Cockpit Conseil Syndical</strong>
+        <button type="button" class="cs-volet-bascule" aria-expanded="true" aria-controls="cs-menu-principal" aria-label="Replier le menu" title="Replier le menu"><span aria-hidden="true">&laquo;</span></button>
+      </div>
+
+      <p id="navigation-aide" class="sr-only">
+        Navigation principale: tableau de bord, pieces manquantes, travaux suivis, demandes au syndic, controle - comptes et gouvernance -, documents, incidents, contrats et chantiers.
+      </p>
+      <nav id="cs-menu-principal" class="nav cs-sidebar-nav" aria-label="Navigation principale" aria-describedby="navigation-aide">
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Activites</span>
+          <a class="{{ 'active' if page == 'overview' else '' }}" href="{{ token_href('/') }}" aria-label="Tableau de bord, accueil des priorites"{% if page == 'overview' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">01</span>
+            <span>Tableau de bord</span>
+          </a>
+          <a class="{{ 'active' if page == 'pieces' else '' }}" href="{{ token_href('/pieces?proof=missing') }}" aria-label="Atelier pieces, relier piece, point, action et preuve"{% if page == 'pieces' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">03</span>
+            <span>Pieces manquantes</span>
+            <span class="cs-nav-count">{{ kpis.doc_requests|default('') }}</span>
+          </a>
+          <a class="{{ 'active' if page == 'travaux' else '' }}" href="{{ token_href('/travaux') }}" aria-label="Travaux suivis, preuves manquantes et partage a verifier"{% if page == 'travaux' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">04</span>
+            <span>Travaux suivis</span>
+          </a>
+          <a class="{{ 'active' if page == 'requests' else '' }}" href="{{ token_href('/demandes') }}" aria-label="Demandes syndic et coproprietaires"{% if page == 'requests' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">05</span>
+            <span>Demandes syndic</span>
+            <span class="cs-nav-count">{{ scope_counts.syndic|default('') }}</span>
+          </a>
+          {# L'ecran de controle de gouvernance REMPLACE `/ag-contentieux` ici.
+             La route `/ag-contentieux` continue de repondre, elle n'est
+             simplement plus une destination de la navigation. Quinze entrees
+             sont sorties du menu le 2026-09-13 (`RM-2026-0183`): douze ecrans
+             retires, trois debranches - voir `web/debranchement.py`. #}
+          {# 06 devient *Controle*, avec deux sous-entrees (`RM-2026-0183`). L'entree
+             du groupe mene au premier onglet; chaque ecran du groupe porte les
+             deux onglets (`_controle_onglets.html`), ce qui garde les
+             sous-entrees atteignables quand le volet est replie. #}
+          <div class="cs-nav-groupe">
+            <a class="{{ 'active' if page in ('accounting', 'controle_gouvernance') else '' }}" href="{{ token_href('/comptes') }}" aria-label="Contrôle : comptes et gouvernance"{% if page in ('accounting', 'controle_gouvernance') %} aria-current="true"{% endif %}>
+              <span class="cs-nav-icon" aria-hidden="true">06</span>
+              <span>Contrôle</span>
+            </a>
+            <div class="cs-nav-sous">
+              <a class="{{ 'active' if page == 'accounting' else '' }}" href="{{ token_href('/comptes') }}" aria-label="Comptes et controles"{% if page == 'accounting' %} aria-current="page"{% endif %}>
+                <span>Comptes</span>
+                <span class="cs-nav-count">{{ action_summary.accounting|default('') }}</span>
+              </a>
+              <a class="{{ 'active' if page == 'controle_gouvernance' else '' }}" href="{{ token_href('/controle-gouvernance') }}" aria-label="Controle de gouvernance, du mandat vers l'execution"{% if page == 'controle_gouvernance' %} aria-current="page"{% endif %}>
+                <span>Gouvernance</span>
+                <span class="cs-nav-count">{{ kpis.decisions|default('') }}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="cs-nav-section">
+          <span class="cs-nav-heading">Documents</span>
+          <a class="{{ 'active' if page == 'documents' else '' }}" href="{{ token_href('/documents') }}" aria-label="Documents, pieces et preuves"{% if page == 'documents' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">08</span>
+            <span>Documents</span>
+          </a>
+          <a class="{{ 'active' if page == 'incidentops' else '' }}" href="{{ token_href('/incidents') }}" aria-label="Incidents et sinistres, preuves de cloture"{% if page == 'incidentops' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">21</span>
+            <span>Incidents</span>
+          </a>
+          <a class="{{ 'active' if page == 'contractops' else '' }}" href="{{ token_href('/contrats') }}" aria-label="Contrats, obligations et attestations a verifier"{% if page == 'contractops' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">22</span>
+            <span>Contrats</span>
+          </a>
+          <a class="{{ 'active' if page == 'workstreams' else '' }}" href="{{ token_href('/chantiers') }}" aria-label="Memoire de copropriete et passation"{% if page == 'workstreams' %} aria-current="page"{% endif %}>
+            <span class="cs-nav-icon" aria-hidden="true">11</span>
+            <span>{{ 'Memoire copropriete' if page == 'workstreams' else 'Chantiers' }}</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="cs-share-card" aria-label="Contexte local">
+        <span>Mode de partage</span>
+        <strong>{{ shell.sharing_mode_label|default('Prive local') }}</strong>
+        <small>{{ shell.sharing_mode_status|default('Aucune synchronisation externe lancee') }}</small>
+      </div>
+    </aside>
+
+    <div class="cs-workspace">
+      <header class="topbar cs-topbar">
+        <div class="cs-topbar-title">
+          <p class="eyebrow">CoproScope local</p>
+          <h1>{% block topbar_title %}{{ shell.page_title|default(instance.name|default('CoproScope')) }}{% endblock %}</h1>
+          {#- L'identite de ce qu'on regarde est le DERNIER element qu'on retire,
+              jamais le premier. Elle vit donc dans le bloc de titre, qu'aucun
+              palier de largeur ne masque, et en dehors de tout bloc Jinja
+              surchargeable pour qu'aucune page ne puisse la remplacer.
+              Voir `RM-2026-0111` et
+              `server/tests/test_ui_identite_barre_haute.py`. -#}
+          <div class="cs-topbar-identity" role="group" aria-label="Contexte du coffre local">
+            <span data-cs-identite="copropriete">Coffre {{ instance.id|default('local') }}</span>
+            <span data-cs-identite="exercice">Exercice {{ instance.year|default('2025') }}</span>
+          </div>
+        </div>
+        {% block topbar_search %}
+        <form class="cs-search" action="{{ token_href('/documents') }}" method="get" role="search">
+          {% if ui_token_param %}
+          <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+          {% endif %}
+          <label class="sr-only" for="cs-global-search">Rechercher</label>
+          <input id="cs-global-search" name="q" type="search" placeholder="{{ shell.search_placeholder|default('Rechercher documents, actions...') }}">
+        </form>
+        {% endblock %}
+        {#- Ce conteneur ne porte plus que des ACTIONS. L'identite en est sortie:
+            elle ne doit pas partager le sort d'un bloc qu'un palier de largeur
+            peut replier ou reduire. -#}
+        <div class="instance-meta" aria-label="Actions sur le coffre local">
+          <button id="cs-instance-switcher-button" class="instance-switch-button" type="button" aria-describedby="cs-instance-switcher-status">
+            Choisir ma copro
+          </button>
+          <button id="cs-recette-mode-toggle" class="instance-switch-link" type="button" aria-pressed="false" aria-describedby="cs-recette-mode-status">
+            Mode test
+          </button>
+          <span id="cs-recette-mode-status" class="instance-switch-status" aria-live="polite"></span>
+          <span id="cs-instance-switcher-status" class="instance-switch-status" aria-live="polite"></span>
+          {% if instance_switcher_href is defined and instance_switcher_href %}
+          <a class="instance-switch-link" href="{{ instance_switcher_href }}">Choisir ma copro</a>
+          {% endif %}
+        </div>
+        {% block topbar_action %}
+        <a class="button-link cs-top-action" href="{{ token_href('/demandes') }}"><span aria-hidden="true">+</span> Nouvelle demande</a>
+        {% endblock %}
+      </header>
+
+      {% if context_banner is defined and context_banner %}
+      {% include "_context_banner.html" %}
+      {% endif %}
+
+      <section class="quick-help" aria-label="Aide rapide">
+        <details>
+          <summary>Aide rapide</summary>
+          <ul>
+            <li>Au clavier: utilisez Tab pour parcourir les liens et Entree pour ouvrir l'element selectionne.</li>
+            <li>Mode test: Ctrl+Shift+T ou Alt+Shift+T.</li>
+            <li>Sur ecran tactile: touchez une carte ou un bouton, puis revenez au menu pour changer d'ecran.</li>
+            <li>Les tableaux doivent etre lus avec leur titre ou leur texte d'introduction; les statuts ne reposent pas seulement sur la couleur.</li>
+          </ul>
+        </details>
+      </section>
+
+      <main id="contenu" tabindex="-1" class="cs-main" aria-describedby="navigation-aide">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="cs-footer">
+        Interface locale en lecture prioritaire. Les bruts, secrets, cartes de correspondance et dossiers restreints ne sont pas servis par l'application.
+      </footer>
+    </div>
+  </div>
+  <script id="cs-recette-config" type="application/json">{{ {"recetteModeEnabled": recette_mode_enabled|default(false), "saveUrl": token_href('/recette/annotations'), "pageUrl": token_href('/recette'), "token": ui_token_param|replace('token=', ''), "cookieName": recette_mode_cookie_name|default('coproscope_recette_mode')}|tojson }}</script>
+  <script src="/static/volet_rabattable.js?v=20260913-volet"></script>
+  <script src="/static/recette_mode.js?v=20260907-marque-document-2"></script>
+  <script src="{{ url_for('static', path='instance_switcher.js') }}?v=20260603-instance-switcher"></script>
+</body>
+</html>

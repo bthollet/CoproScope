@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoproScope AG Register Row",
+  "type": "object",
+  "required": ["ag_id", "doc_id", "document_type"],
+  "properties": {
+    "ag_id": { "type": "string" },
+    "doc_id": { "type": "string" },
+    "file_name": { "type": "string" },
+    "document_type": { "type": "string" },
+    "detected_date": { "type": "string" },
+    "resolution_count": { "type": "string" },
+    "annex_hits": { "type": "string" },
+    "majority_terms": { "type": "string" },
+    "missing_annex_signals": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}

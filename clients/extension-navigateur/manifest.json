@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "CoproScope - observateur d'extranet",
+  "version": "0.4.0",
+  "description": "Releve ce qui est publie sur l'extranet de votre syndic et en produit un journal date, exportable pour recoupement entre voisins. Lecture seule: n'envoie jamais rien au syndic.",
+  "permissions": [
+    "storage",
+    "downloads",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://coprodirecte.fr/*",
+    "https://www.coprodirecte.fr/*"
+  ],
+  "background": {
+    "service_worker": "fond.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://coprodirecte.fr/*",
+        "https://www.coprodirecte.fr/*"
+      ],
+      "js": [
+        "cle.js",
+        "referentiel.js",
+        "veille.js",
+        "lecteur.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Observer cette page",
+    "default_popup": "popup.html"
+  }
+}

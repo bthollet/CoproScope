@@ -1,0 +1,182 @@
+{#
+  L'accueil du controle de gouvernance (`RM-2026-0183`, recette du 2026-09-13).
+
+  Ce gabarit ne compte rien. Chaque nombre est la taille exacte du filtre que la
+  pastille pose, et la liste est `c.lignes`, la meme selection que le tableau
+  detaille rend avec les memes filtres. Une pastille est un lien vers CETTE vue:
+  sans JavaScript, le serveur rend la page filtree et ramene a la liste; avec
+  JavaScript, `controle_gouvernance_filtres.js` recharge la meme adresse et ne
+  remplace que les pastilles et la liste - il ne recalcule aucun filtre.
+
+  Deux axes, un canal chacun: `data-etabli` (qui l'etablit) ne recoit que des
+  formes, `data-alerte` (faut-il agir) ne recoit que des couleurs. Le verdict
+  humain vit dans la marge, jamais dans ces deux canaux.
+#}
+{% macro pastille(m) %}
+<a class="cs-pastille{{ ' is-active' if m.actif else '' }}" href="{{ m.lien }}" data-cs-filtre="{{ m.cle }}"
+   data-etabli="{{ m.etabli }}" data-alerte="{{ m.alerte }}"{% if m.actif %} aria-current="true"{% endif %}>
+  <span class="cs-signe" aria-hidden="true">{{ m.signe }}</span>
+  <b>{{ m.n }}</b>
+  <span class="cs-pastille-titre">{{ m.titre }}</span>
+  <small class="cs-pastille-geste">{{ m.geste }}{% if m.conclus %} · dont {{ m.conclus }} déjà conclus par vous{% endif %}</small>
+  <span class="sr-only">, {{ 'établi par les pièces' if m.etabli == 'pieces' else "l'outil ne sait pas encore" }}.
+    {% if m.actif %}Filtre posé.{% else %}Filtrer la liste.{% endif %}</span>
+</a>
+{% endmacro %}
+
+<div id="cs-constats">
+<section class="panel cs-accueil-constats" aria-labelledby="cs-constats-titre">
+  <div class="panel-head">
+    <h3 id="cs-constats-titre">Ce que la lecture a trouvé</h3>
+    <span>chaque pastille filtre la liste ci-dessous</span>
+  </div>
+
+  <p class="cs-accueil-ensemble">
+    <a class="cs-pastille-tout{{ ' is-active' if not c.provenance.actif else '' }}" href="{{ c.accueil.tout_href }}"
+       data-cs-filtre="tout"{% if not c.provenance.actif %} aria-current="true"{% endif %}>Toutes les décisions
+      <b>{{ c.total }}</b></a>
+    <span><b>{{ c.calme }}</b> sans point établi par les pièces</span>
+    <span>Une décision peut porter plusieurs constats : les nombres des pastilles ne s'additionnent pas.</span>
+  </p>
+
+  <div class="cs-accueil-grille">
+  <div class="cs-accueil-runs">
+    <div class="cs-accueil-run" role="group" aria-labelledby="cs-run-pieces">
+      <h4 id="cs-run-pieces"><span class="cs-trait" data-etabli="pieces" aria-hidden="true"></span>Les pièces l'établissent : <b>{{ c.a_demander }}</b> décisions à instruire</h4>
+      <div class="cs-pastilles">
+        {% for m in c.constats %}{{ pastille(m) }}{% else %}
+        <p class="lead">Aucun constat établi par les pièces sur les {{ c.total }} actes lus. Ce n'est pas
+          une conclusion de conformité : c'est l'absence d'écart parmi ce que le modèle sait contrôler.</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% if c.constats_outil %}
+    <div class="cs-accueil-run" role="group" aria-labelledby="cs-run-outil">
+      <h4 id="cs-run-outil"><span class="cs-trait" data-etabli="outil" aria-hidden="true"></span>L'outil ne sait pas encore : <b>{{ c.a_outiller }}</b> décisions</h4>
+      <p class="cs-note-bas">Ces lignes ne sont pas des manquements de la copropriété : ce sont des cases que
+        CoproScope ne sait pas encore remplir. Elles ne se réclament à personne.</p>
+      <div class="cs-pastilles">
+        {% for m in c.constats_outil %}{{ pastille(m) }}{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <figure class="cs-legende">
+    <figcaption>Comment lire les pastilles</figcaption>
+    {# Tour 2 du novice: une ligne par code, au lieu d'un tableau de six cases dont
+       une ne servait jamais. La coche qu'il proposait pour les pieces n'est pas
+       reprise: la machine ne dit jamais « conforme » (regle de Brice du
+       2026-09-12), et une coche le dirait. #}
+    <ul class="cs-legende-codes">
+      <li><span class="cs-echantillon" data-etabli="pieces" data-alerte="oui">!</span> trait plein : établi par les pièces</li>
+      <li><span class="cs-echantillon" data-etabli="outil" data-alerte="oui">?</span> tirets : l'outil ne sait pas encore</li>
+      <li><span class="cs-echantillon" data-etabli="pieces" data-alerte="forte"></span> rouge : à instruire d'abord, orange : à examiner</li>
+      <li><span class="cs-echantillon" data-etabli="pieces" data-alerte="non"></span> gris : rien à signaler par l'outil</li>
+      <li><span class="cs-verdict">violet</span> votre conclusion, dans la marge ; une marge vide n'est pas une alerte</li>
+    </ul>
+  </figure>
+  </div>
+</section>
+</div>
+
+<div id="cs-liste" tabindex="-1">
+<section class="panel cs-accueil-liste" aria-labelledby="cs-liste-titre">
+  <div class="panel-head">
+    <h3 id="cs-liste-titre">Les décisions</h3>
+    <span>{{ c.provenance.trouve }} sur {{ c.total }}</span>
+  </div>
+
+  {% if c.provenance.panne %}
+  <div class="cs-instrument-casse" role="alert">
+    <p><strong>{{ c.provenance.panne.titre }}</strong></p>
+    <p>{{ c.provenance.panne.explication }}</p>
+    <p><strong>Ce qu'il faut faire.</strong> {{ c.provenance.panne.consigne }}</p>
+    <p class="cs-instrument-casse-reserve">{{ c.provenance.panne.reserve }}</p>
+  </div>
+  {% endif %}
+  {% if c.provenance.actif %}
+  <div class="cs-provenance">
+    {% if not c.provenance.panne and c.provenance.titre %}
+    <p><strong>Filtre : {{ c.provenance.titre }}</strong> — {{ c.provenance.trouve }} sur {{ c.provenance.total }} décisions.</p>
+    {% if c.provenance.aide %}<p>{{ c.provenance.aide }}</p>{% endif %}
+    <p><b>À faire :</b> {{ c.provenance.intention }}</p>
+    {% elif not c.provenance.panne %}
+    <p><strong>{{ c.provenance.trouve }} décisions sur {{ c.provenance.total }}.</strong> Filtre posé à la main.</p>
+    {% endif %}
+    <div class="cs-puces">
+      {% for p in c.provenance.puces %}
+      <a class="cs-puce" href="{{ p.href }}">{{ p.label }} : {{ p.valeur }}
+        <b aria-hidden="true">x</b><span class="sr-only">retirer ce filtre</span></a>
+      {% endfor %}
+      <a class="cs-puce is-tout" href="{{ c.provenance.tout_href }}">Retirer le filtre</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% for d in c.delegations %}
+  <div class="cs-jauge{{ ' is-depasse' if d.depasse else '' }}{{ ' is-absente' if not d.plafond else '' }}">
+    <strong>{{ d.objet }}{% if d.plafond %} — plafond {{ d.plafond }}{% endif %}</strong>
+    {% if d.plafond %}<div class="cs-jauge-piste"><span style="width:{{ d.part }}%"></span></div>{% endif %}
+    <p>Cumul engagé : <b>{{ d.cumul }}</b>. {{ d.phrase }}</p>
+  </div>
+  {% endfor %}
+
+  {% if c.lignes %}
+  <div class="cs-accueil-entete" aria-hidden="true">
+    <span>Signal de la lecture</span><span>Décision</span><span>Issue du vote</span><span>Montant</span><span>Ma conclusion</span>
+  </div>
+  <ol class="cs-accueil-lignes" aria-labelledby="cs-liste-titre">
+    {% for l in c.lignes %}
+    <li data-cs-ligne="{{ l.id }}">
+      <details{% if c.selection and c.selection.id == l.id %} open{% endif %}>
+        <summary>
+          <span class="cs-accueil-signaux">
+            {# Un signal gris ne demande rien: il reste dans le detail et dans sa pastille. #}
+            {% for s in l.signaux if s.alerte != 'non' %}<span class="cs-signal" data-etabli="{{ s.etabli }}" data-alerte="{{ s.alerte }}"><b aria-hidden="true">{{ s.signe }}</b>{{ s.titre }}</span>{% endfor %}
+          </span>
+          <span class="cs-accueil-decision"><strong>{{ l.titre }}</strong> <small>{{ l.source }}</small>
+            <span class="cs-accueil-objet">{{ l.objet }}</span></span>
+          <span class="cs-accueil-issue">{{ c.resultats.get(l.resultat, l.resultat) if l.resultat else 'issue non lue' }}</span>
+          <span class="cs-accueil-montant">{{ l.montant.valeur if l.montant.etat != 'absent' else 'aucun montant lu' }}{% if l.montant.picto == 'i' %} <small>{{ l.montant.verdict|lower }}</small>{% endif %}</span>
+          <span class="cs-accueil-marge">
+            {% if l.conclusion != 'a_instruire' %}<span class="cs-verdict">{{ c.conclusions.get(l.conclusion, l.conclusion) }}</span>{% if l.conclusions_nombre > 1 %} <small>({{ l.conclusions_nombre }} conclusions)</small>{% endif %}
+            {% else %}<span class="sr-only">Personne n'a encore conclu sur cette décision.</span>{% endif %}
+          </span>
+        </summary>
+        <div class="cs-accueil-ouverte">
+          {% for s in l.signaux %}
+          {% set constat = c.constats_par_cle[s.cle] %}
+          <p class="cs-accueil-motif"><span class="cs-signal" data-etabli="{{ s.etabli }}" data-alerte="{{ s.alerte }}"><b aria-hidden="true">{{ s.signe }}</b>{{ s.titre }}</span>
+            <b>{{ constat.titre|capitalize }}.</b> {{ constat.aide }} <b>À faire :</b> {{ constat.intention }}</p>
+          {% else %}
+          <p class="cs-accueil-motif">Aucun constat sur cette ligne. Sur les pièces lues, rien ne la contredit — ce qui
+            n'est pas une conclusion de conformité.</p>
+          {% endfor %}
+          {% if l.copies %}
+          <p class="cs-accueil-motif">Cette ligne n'est pas seule sur ce rang : {{ l.copies.total }} décisions
+            s'appellent « {{ l.copies.rang }} ». Rien ne permet de dire si c'est le même procès-verbal relu ou des
+            assemblées différentes, et CoproScope ne choisit pas.</p>
+          {% endif %}
+          <p><a class="button-link secondary" href="{{ l.href }}">Voir les pièces et écrire ma conclusion</a></p>
+        </div>
+      </details>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <div class="cs-rappro-empty">
+    <strong>Aucune décision ne correspond à ce filtre.</strong>
+    {{ c.total }} décisions existent hors de ce filtre.
+    <a href="{{ c.provenance.tout_href }}">Retirer le filtre</a>
+  </div>
+  {% endif %}
+
+  {% if c.hors_ecran %}
+  <p class="cs-note-bas">Hors de cet écran, et ce n'est pas un oubli :
+    {% for h in c.hors_ecran %}<b>{{ h.n }}</b> {{ h.libelle }}{{ ", " if not loop.last else "" }}{% endfor %}.
+    Ces constats partent de l'euro vers le mandat : ils appartiennent au contrôle des comptes.</p>
+  {% endif %}
+  <p class="sr-only" aria-live="polite" data-cs-annonce></p>
+</section>
+</div>

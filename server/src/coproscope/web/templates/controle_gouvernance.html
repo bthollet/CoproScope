@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{#
+  L'ecran de controle de gouvernance: deux vues, une source.
+
+  Ce gabarit ne calcule rien. Tout nombre qu'il affiche vient de
+  `controle_gouvernance_view`, ou il est la taille exacte d'un filtre. Un
+  compteur qui ne sait pas d'ou il vient est un compteur qui divergera - et
+  c'est le defaut numero un du produit, quatre comptages concurrents pour la
+  meme notion.
+
+  Ni `role="tablist"`, ni `role="tab"`, ni `aria-selected`. Le depot n'en
+  contient aucune occurrence, et un motif ARIA a moitie implemente promet au
+  lecteur d'ecran un comportement qui n'existe pas. `aria-current="page"` marque
+  l'actif, comme partout ailleurs.
+#}
+{% block content %}
+{% set c = controle %}
+
+{#
+  D'ou vient ce que la cellule affirme.
+
+  La cellule montre la force probatoire du lien LE PLUS PROBANT; la citation
+  montre la page de CE lien-la, prise dans le meme sous-select. Elle ne dit
+  jamais plus que ce que la piece porte:
+
+  - le registre des convocations ne nomme pas la piece -> on le dit, on
+    n'ecrit pas `convocation du ...` sur un document sans date;
+  - la page n'a pas ete notee -> on le dit, on ne reconstitue pas une position;
+  - plusieurs assertions vivantes se disputent le meme controle -> on dit
+    laquelle est montree et combien il y en a, jamais `la` source.
+#}
+{% macro citation(cit, diag) %}
+{% if cit %}
+{% set piece = diag.pieces.get(cit.doc_id, "") if cit.doc_id else "" %}
+{% set acces = diag.acces.get(cit.doc_id) if cit.doc_id else none %}
+{#- Le nom de la piece, et ce qui reste vrai quand elle n'en a pas.
+
+    **`cette pièce` et non `pièce que le registre ne nomme pas`.** L'ancienne
+    formule etait exacte et se lisait de travers: un lecteur y comprenait *on
+    ne sait pas de quelle piece il s'agit*, alors que le produit sait
+    exactement quel document c'est - mesure du 2026-09-09, les 400 citations
+    d'acte dans ce cas designent toutes un document present au registre
+    documentaire. Le fait reste ecrit, hors du lien, ou il ne peut plus se lire
+    comme une ignorance. -#}
+{% set nom_de_piece %}
+  {%- if piece %}{{ piece }}
+  {%- elif cit.doc_id %}cette pièce
+  {%- else %}pièce non identifiée{% endif -%}
+{% endset %}
+<small class="cs-citation"><b>Source&nbsp;:</b>
+  {#- `RM-2026-0157`. Ce que la cellule nomme EST un chemin: le nom de la piece
+      ouvre la piece, quand le registre documentaire la porte. Il n'ouvre rien
+      quand il n'y a rien a ouvrir - un lien mort coute plus cher qu'un lien
+      absent, et c'est le defaut que ce lot corrige en premier. -#}
+  {% if acces and cit.href %} <a class="cs-citation-lien" href="{{ token_href(cit.href) }}">{{ nom_de_piece|trim }}</a>
+  {%- else %} {{ nom_de_piece|trim }}{% endif %}
+  {%- if not piece and cit.doc_id %} (le registre des convocations ne la nomme pas){% endif %}
+  {%- if cit.situe %}, {{ cit.situe }}.
+  {%- else %}. L'endroit exact dans la pièce n'a pas été noté.{% endif %}
+  {%- if cit.concurrentes > 1 %} C'est 1 assertion sur {{ cit.concurrentes }} :
+  l'écran montre la plus probante, il ne tranche pas entre elles.{% endif %}
+  {#- Ce que la destination pourra montrer, dit AVANT d'y aller - mais en DEUX
+      mots, pas en une phrase. La phrase entiere est dite une fois pour l'ecran,
+      avec son nombre de pieces: repetee ici, elle aurait ete rendue 621 fois a
+      l'identique sur le corpus du lot. -#}
+  {%- if acces and acces.verdict == 'reserve' %} <span class="cs-citation-reserve">contenu couvert</span>
+  {%- elif cit.doc_id and not acces %} <span class="cs-citation-reserve">pièce absente du registre documentaire</span>{% endif %}
+</small>
+{% endif %}
+{% endmacro %}
+
+{#
+  Une bulle, et ses sous-bulles. La profondeur est de UN et le restera:
+  l'annexe est une sous-bulle de la resolution qui y renvoie, parce qu'une
+  annexe n'existe pas en soi. Ecrit sans recursion a dessein - une macro
+  recursive definie dans un bloc ne resout pas son propre nom.
+#}
+{#
+  `RM-2026-0143`: au niveau du MUR, une mesure conforme et une absence de
+  mesure se ressemblaient. La classe `is-{{ statut }}` decrit la force de la
+  PIECE, pas le resultat de la comparaison: deux bulles de seuil, l'une
+  `FRANCHI` et l'autre `NON_COMPARABLE`, portaient donc la meme marque.
+  La phrase, elle, arrivait deja dans `detail` - c'est le marqueur qui
+  manquait. `data-franchissement` le porte sans dupliquer ce texte.
+#}
+{% macro bulle(b, diag) %}
+<div class="cs-bulle is-{{ b.statut }}"{% if b.franchissement %} data-franchissement="{{ b.franchissement|lower }}"{% endif %}>
+  <b>{{ b.texte }}</b>
+  <span class="cs-bulle-statut">{{ b.statut_libelle }}</span>
+  {% if b.detail %}<small>{{ b.detail }}</small>{% endif %}
+  {{ citation(b.citation, diag) }}
+  {% if b.legifrance %}<small class="cs-legifrance">{{ b.legifrance }}</small>{% endif %}
+  {% for s in b.sous %}
+  <div class="cs-bulle is-{{ s.statut }} is-sous">
+    <b>{{ s.texte }}</b>
+    <span class="cs-bulle-statut">{{ s.statut_libelle }}</span>
+    {% if s.detail %}<small>{{ s.detail }}</small>{% endif %}
+    {{ citation(s.citation, diag) }}
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+<div class="cs-controle-page cs-page-grid">
+  {% include "_controle_onglets.html" %}
+
+  {# La copropriete est nommee dans le corps de page, jamais seulement dans le
+     titre du navigateur: une capture ou une impression doit la nommer. #}
+  <div class="cs-identite-strip">
+    <strong>{{ c.identite.nom }}</strong>
+    <span>Exercice {{ c.identite.exercice_courant }} de l'application</span>
+    {% for ex in c.identite.exercices %}<span>actes de {{ ex }}</span>{% endfor %}
+    <span>{{ c.identite.resolutions }} résolutions au registre</span>
+    <span>{{ c.identite.total }} actes dans le modèle</span>
+  </div>
+
+  <nav class="cs-comptes-tabs" aria-label="Affichage du contrôle de gouvernance">
+    {% for onglet in c.onglets %}
+    <a href="{{ onglet.href }}"{% if onglet.actif %} class="active" aria-current="page"{% endif %}>
+      {{ onglet.label }}
+    </a>
+    {% endfor %}
+  </nav>
+
+  <header class="cs-page-header">
+    <div>
+      <p class="eyebrow">Volet décisions</p>
+      <h2>{{ c.titre }}</h2>
+      <p class="lead">{{ c.lead }}</p>
+    </div>
+  </header>
+
+  {% if not c.disponible %}
+  {# Jamais d'ecran vide silencieux. Zero rupture et zero preuve produisent le
+     meme ecran vide: les distinguer est la difference entre un outil de
+     controle et un outil qui rassure a tort. #}
+  <section class="panel cs-card-tone-warn">
+    <div class="panel-head"><h3>{{ c.diagnostic.titre }}</h3><span>état du coffre local</span></div>
+    <p class="lead">{{ c.diagnostic.corps }}</p>
+    <p class="lead" style="margin-top:6px"><b>Ce qui fait avancer :</b> {{ c.diagnostic.geste }}</p>
+  </section>
+
+  {% elif c.vue == 'synthese' %}
+
+  {# `RM-2026-0183`, recette de Brice du 2026-09-13: la liste des decisions est sur
+     l'accueil, les constats sont des pastilles qui la filtrent sur place, et
+     « etabli par les pieces » et « l'outil ne sait pas encore » tiennent dans un
+     seul bloc - deux boucles, jamais une somme. #}
+  {% include "_controle_gouvernance_accueil.html" %}
+
+  {% else %}
+
+  {# UNE SEULE CONFIGURATION DE PAGE, quel que soit le constat d'ou l'on vient.
+     C'etait le defaut releve trois fois: la page d'arrivee changeait de forme
+     selon le lien clique. Seuls les filtres changent desormais. #}
+  {# Une contradiction de l'instrument ne sort PAS par le canal des constats.
+     C'etait la demande de Brice le 2026-09-07 a 12:08: un ecran qui se contredit
+     n'apprend rien sur la copropriete, il dit que l'instance est a refaire. Le
+     bloc est donc separe, porte `role="alert"`, et remplace la phrase ordinaire
+     au lieu de la cotoyer - deux registres dans un meme bandeau, c'est ce qui
+     empechait de savoir ce qu'on regardait. #}
+  {% if c.provenance.panne %}
+  <div class="cs-instrument-casse" role="alert">
+    <p><strong>{{ c.provenance.panne.titre }}</strong></p>
+    <p>{{ c.provenance.panne.explication }}</p>
+    <p><strong>Ce qu'il faut faire.</strong> {{ c.provenance.panne.consigne }}</p>
+    <p class="cs-instrument-casse-reserve">{{ c.provenance.panne.reserve }}</p>
+  </div>
+  {% endif %}
+  {% if c.provenance.actif %}
+  <div class="cs-provenance">
+    {% if c.provenance.panne %}
+    {# La phrase ordinaire est tue: elle affirmerait un compte que l'alerte
+       ci-dessus vient de declarer non fiable. #}
+    {% elif c.provenance.titre %}
+    <p><strong>{{ c.provenance.trouve }} {{ c.provenance.titre }}.</strong> {{ c.provenance.intention }}</p>
+    {% else %}
+    <p><strong>{{ c.provenance.trouve }} décisions sur {{ c.provenance.total }}.</strong>
+      Filtre posé à la main.</p>
+    {% endif %}
+    <div class="cs-puces">
+      {% for p in c.provenance.puces %}
+      <a class="cs-puce" href="{{ p.href }}">{{ p.label }} : {{ p.valeur }}
+        <b aria-hidden="true">x</b><span class="sr-only">retirer ce filtre</span></a>
+      {% endfor %}
+      <a class="cs-puce is-tout" href="{{ c.provenance.tout_href }}">Tout afficher,
+        {{ c.provenance.total }} décisions</a>
+      <a class="cs-puce is-retour" href="{{ c.provenance.retour_href }}">Revenir à la synthèse</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {# Les seuils arment tous les autres controles: ils sont rappeles avant eux,
+     chacun portant sa source. Un montant seul ne suffit pas. #}
+  {% if c.seuils %}
+  <div class="cs-seuils-rappel">
+    <span class="cs-seuils-titre">Seuils lus</span>
+    {% for s in c.seuils %}
+    <details class="cs-seuil-bulle{{ ' is-incertain' if s.incertain else '' }}">
+      <summary><b>{{ s.nom }}</b> <span>{{ s.valeur }}</span>{% if s.adoption %}<i>{{ s.adoption }}</i>{% endif %}{% if s.incertain %}<i>à valider</i>{% endif %}</summary>
+      <div class="cs-seuil-detail">
+        <p><b>Résolution qui le propose :</b> {{ s.resolution }}{% if s.adoption %}, {{ s.adoption }}{% endif %}</p>
+        <p><b>Date butoir :</b> {{ s.butoir }}</p>
+        <p class="cs-legifrance">{{ s.legifrance }}</p>
+        {% if s.a_valider %}<p class="cs-a-valider"><b>À valider par vous :</b> {{ s.a_valider }}</p>{% endif %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <section class="panel cs-rappro-queue-panel" id="panneau-table">
+    <div class="panel-head">
+      <h3>Décisions et actes, par voie de preuve</h3>
+      <span>{{ c.total }} actes, 6 colonnes</span>
+    </div>
+
+    <div class="cs-rappro-filterbar">
+      <form class="cs-rappro-filter-grid" method="get" action="{{ c.route }}">
+        <input type="hidden" name="vue" value="tableau">
+        {% if c.token %}<input type="hidden" name="token" value="{{ c.token }}">{% endif %}
+        {% for f in c.champs %}
+        <label class="cs-rappro-filter{{ ' is-active' if f.actif else '' }}">
+          <span>{{ f.label }}</span>
+          <select name="f_{{ f.cle }}" aria-label="Filtrer la colonne {{ f.label }}">
+            {% for valeur, libelle in f.options %}
+            <option value="{{ valeur }}"{{ ' selected' if f.valeur == valeur else '' }}>{{ libelle }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        {% endfor %}
+        <button class="button-link secondary cs-filtre-appliquer" type="submit">Appliquer</button>
+      </form>
+      <p class="cs-rappro-count"><b>{{ c.lignes|length }}</b> décisions affichées sur
+        {{ c.total }}, dont <b>{{ c.ruptures_visibles }}</b> avec une chaîne rompue. Tri par
+        gravité du constat, puis par montant. Le tableau ne tronque rien.</p>
+      <p class="cs-rappro-scroll-hint">Chaque colonne se filtre indépendamment. Le tableau défile
+        à l'intérieur de ce panneau ; la page ne défile jamais latéralement.</p>
+      {#- Ce que les pièces citées montreront, dit une fois pour tout l'écran
+          (`RM-2026-0157`). La phrase est vide quand il n'y a rien à signaler:
+          un avertissement qui se déclenche toujours cesse d'être lu. -#}
+      {% if c.acces_pieces.phrase %}
+      <p class="cs-rappro-scroll-hint" data-cs-acces-pieces>{{ c.acces_pieces.phrase }}
+        Le nom de la pièce, sous chaque cellule, ouvre sa fiche.</p>
+      {% endif %}
+    </div>
+
+    <div class="cs-rappro-table-scroll">
+      <table class="cs-rappro-table is-decision">
+        <caption class="sr-only">Une ligne par acte d'autorisation : résolution d'assemblée,
+          décision déléguée ou dépense engagée en urgence.</caption>
+        <thead><tr>
+          {% for titre, classe in c.colonnes %}<th class="{{ classe }}">{{ titre }}</th>{% endfor %}
+        </tr></thead>
+        <tbody>
+          {% for l in c.lignes %}
+          <tr data-cs-ligne="{{ l.id }}"{% if c.selection and c.selection.id == l.id %} class="is-selected"{% endif %}>
+            <td class="cs-col-decision">
+              {# Un seul arret de tabulation par ligne: le tableau montre, le
+                 panneau agit. #}
+              <a class="cs-decision-lien" href="{{ l.href }}">
+                <span class="cs-decision-tete"><strong>{{ l.titre }}</strong>
+                  <span class="cs-nature">{{ c.natures.get(l.nature, l.nature) }}</span>
+                  {% if l.resultat %}<span class="cs-pip is-issue-{{ l.resultat|lower }}">{{ c.resultats.get(l.resultat, l.resultat) }}</span>{% endif %}
+                </span>
+                <span class="cs-decision-objet">{{ l.objet }}</span>
+              </a>
+              <span class="cs-decision-type">{{ c.portees.get(l.portee, l.portee) }}</span>
+              <span class="cs-decision-source">{{ l.source }}</span>
+              {# C054. Le meme rang de resolution est occupe par plusieurs
+                 assemblees, dont l'une au moins n'a pas de date lue. L'ecran ne
+                 dit PAS que c'est le meme document - il n'en sait rien. Il dit
+                 ce qu'il sait: rien ici ne permet de les distinguer. #}
+              {% if l.copies %}
+              <span class="cs-decision-copies">Cette ligne n'est pas seule sur ce
+                rang : {{ l.copies.total }} décisions s'appellent «&nbsp;{{ l.copies.rang }}&nbsp;»,
+                {% if l.copies.sans_date == 1 %}dont une venue d'une assemblée dont la date n'a pas été lue{% else %}dont {{ l.copies.sans_date }} venues d'assemblées dont la date n'a pas été lue{% endif %}.
+                Rien ne permet de dire si c'est le même procès-verbal relu ou des assemblées différentes,
+                et CoproScope ne choisit pas.</span>
+              {% endif %}
+            </td>
+            <td class="cs-col-montant">
+              <div class="cs-montant is-{{ l.montant.ton }}">
+                <b><span class="cs-picto" aria-hidden="true">{{ l.montant.picto }}</span>{{ l.montant.valeur }}</b>
+                {% if l.montant.lu_sur %}<small>{{ l.montant.lu_sur }}</small>{% endif %}
+                <small class="cs-montant-verdict">{{ l.montant.verdict }}</small>
+              </div>
+            </td>
+            <td class="cs-col-fonde">{% for b in l.fonde %}{{ bulle(b, c.diagnostic) }}{% endfor %}</td>
+            <td class="cs-col-declencheur">{% for b in l.seuil %}{{ bulle(b, c.diagnostic) }}{% endfor %}</td>
+            <td class="cs-col-execution">{% for b in l.execution %}{{ bulle(b, c.diagnostic) }}{% endfor %}</td>
+            <td class="cs-col-conclusion">
+              <div class="cs-conclusion is-{{ l.conclusion }}">
+                <span class="cs-status-badge">{{ c.conclusions.get(l.conclusion, l.conclusion) }}</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if not c.lignes %}
+      <div class="cs-rappro-empty">
+        <strong>Aucune décision ne correspond à ces filtres.</strong>
+        {{ c.total }} décisions existent hors de ces filtres. Retirez-en un ci-dessus, une puce à
+        la fois : la globalité revient par degrés.
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {# Le panneau ne remonte que si une ligne est choisie. Il porte ce qui ne
+     tient pas dans une cellule: ce que le modele a constate, en toutes lettres. #}
+  {% if c.selection %}
+  <div class="cs-panneau-bas-corps">
+    <div class="cs-panneau-bas-tete">
+      <div>
+        <p class="eyebrow">Ligne choisie</p>
+        <h3>{{ c.selection.titre }} — {{ c.selection.objet }}</h3>
+      </div>
+      <a class="cs-puce is-retour" href="{{ c.fermer_url }}">Fermer</a>
+    </div>
+    {% for motif in c.selection.motifs %}
+    <p class="cs-panneau-action">{{ motif }}</p>
+    {% else %}
+    <p class="cs-panneau-action">Aucun constat sur cette ligne. Sur les pièces lues, rien ne la
+      contredit — ce qui n'est pas une conclusion de conformité.</p>
+    {% endfor %}
+    {# Le geste est cable depuis le 2026-09-09. La phrase qui disait le contraire
+       vivait ici, et la colonne « Ma conclusion » affichait « A instruire » sur
+       toutes les lignes quel que soit le travail fait devant l'ecran. #}
+    <form class="cs-question" method="post" action="{{ token_href('/controle-gouvernance/conclusion') }}">
+      <b>Écrire ce que j'ai vérifié sur cette décision</b>
+      {% if c.conclusion_refus %}
+      <small class="cs-refus" role="alert">Conclusion non enregistrée — {{ c.conclusion_refus }}</small>
+      {% elif c.conclusion_ecrite %}
+      <small role="status">Conclusion enregistrée sur {{ c.conclusion_ecrite }}.</small>
+      {% endif %}
+      <input type="hidden" name="sujet_kind" value="acte">
+      <input type="hidden" name="sujet_id" value="{{ c.selection.id }}">
+      <input type="hidden" name="retour" value="{{ c.retour }}">
+      <label for="cs-verdict">Ce que je conclus</label>
+      <select id="cs-verdict" name="verdict" required>
+        <option value="CONTROLE_TRACE">Contrôle tracé — j'ai vérifié, rien à redire</option>
+        <option value="RESERVE">Réserve posée — quelque chose ne va pas</option>
+        <option value="QUESTION_POSEE">Question posée — j'attends une réponse</option>
+      </select>
+      <label for="cs-texte">Ce que j'ai vérifié, et sur quelle pièce</label>
+      <textarea id="cs-texte" name="texte" rows="3" maxlength="2000"
+                placeholder="Vérifié contre l'annexe 2 : le montant correspond."></textarea>
+      <small>Cette conclusion est la vôtre. Elle ne sera pas effacée par un nouveau passage de la
+        chaîne, et elle n'est pas un jugement de conformité : elle dit ce que vous avez regardé.</small>
+      <button class="button-link" type="submit">Enregistrer ma conclusion</button>
+      <small class="cs-legifrance">À ne pas confondre avec l'avis du conseil syndical, qui est une
+        pièce rendue au syndic avant une décision : celle-là se demande et se rattache.</small>
+    </form>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+  {% if c.disponible %}
+  {# Replie: une explication de methode, pas une information du quotidien. #}
+  <details class="panel cs-accueil-replie">
+    <summary><h3>Ce que la lecture automatique n'a pas pu établir</h3></summary>
+    <p class="cs-note-bas">{{ c.identite.couverture }}</p>
+    {# Chaque limite arrive en fragments, jamais en HTML pre-assemble: le
+       gabarit reste en echappement automatique, et aucun filtre de contournement
+       n'est employe - un test de securite du depot les interdit dans tout
+       gabarit produit. #}
+    <ul class="cs-limites">
+      {% for ligne in c.limites %}
+      <li>{% for bout in ligne %}{% if bout.gras %}<b>{{ bout.texte }}</b>{% else %}{{ bout.texte }}{% endif %}{% endfor %}</li>
+      {% endfor %}
+    </ul>
+    {# Chacune de ces lignes est un compte fait sur le coffre local, refait a chaque
+       ouverture: aucune n'est tenue a la main. #}
+    <p class="cs-note-bas">Rapport de lecture modifiable : à venir.</p>
+  </details>
+  {% endif %}
+
+  {# Ce que l'ecran attend du back pour cesser de dire ce qu'il ne sait pas.
+     Une limite qui ne se voit pas est une limite que personne ne leve. #}
+  <details class="panel cs-accueil-replie">
+    <summary><h3>Pour l'équipe CoproScope : ce qui manque au modèle, et que cet écran ne simule pas</h3></summary>
+    <ul class="cs-limites">
+      {% for titre, corps in c.exigences_back %}
+      <li><b>{{ titre }}.</b> {{ corps }}</li>
+      {% endfor %}
+    </ul>
+  </details>
+
+</div>
+<script src="/static/controle_gouvernance_filtres.js?v=20260913-accueil" defer></script>
+{% endblock %}

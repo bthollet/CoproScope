@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% set view = messages_entrants %}
+{% block topbar_title %}{{ view.title }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+{% block topbar_action %}{% endblock %}
+{% block content %}
+<section class="mei-hero" aria-labelledby="mei-title">
+  <div>
+    <p class="eyebrow">{{ view.notice }}</p>
+    <h2 id="mei-title">{{ view.headline }}</h2>
+    <p class="lead">{{ view.status.summary }}</p>
+    <p class="mei-guardrail">{{ view.status.guardrail }}</p>
+    <div class="mei-hero__actions">
+      <a class="button-link" href="#messages">{{ view.status.cta }}</a>
+      <a class="button-link secondary" href="#decisions">Voir les decisions</a>
+    </div>
+  </div>
+  <aside class="mei-status" aria-label="Statut messages entrants fictifs">
+    <span>Statut</span>
+    <strong>{{ view.status.label }}</strong>
+    <small>Aucune publication depuis CoproScope</small>
+  </aside>
+</section>
+
+<section class="mei-summary" aria-label="Resume des messages fictifs">
+  {% for metric in view.summary %}
+  <article>
+    <span>{{ metric.label }}</span>
+    <strong>{{ metric.value }}</strong>
+    <p>{{ metric.detail }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="panel" aria-labelledby="mei-definitions-title">
+  <div class="panel-head">
+    <h3 id="mei-definitions-title">Mots utiles pour trier</h3>
+    <span>Tri humain</span>
+  </div>
+  <div class="mei-definitions">
+    {% for definition in view.definitions %}
+    <article>
+      <strong>{{ definition.label }}</strong>
+      <p>{{ definition.detail }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="messages" aria-labelledby="mei-messages-title">
+  <div class="panel-head">
+    <h3 id="mei-messages-title">Messages a lire en premier</h3>
+    <span>{{ view.messages|length }} messages fictifs</span>
+  </div>
+  <div class="mei-workbench" aria-label="Messages recus fictifs et detail du message prioritaire">
+    <div class="mei-message-list" aria-label="Liste des messages fictifs">
+      {% for message in view.messages %}
+      <article class="mei-message-card{% if loop.first %} is-selected{% endif %}">
+        <div class="mei-message-card__top">
+          <strong>{{ message.subject }}</strong>
+          <span>{{ message.urgency }}</span>
+        </div>
+        <p>{{ message.attention }}</p>
+        <dl>
+          <div>
+            <dt>Qui parle</dt>
+            <dd>{{ message.source }}</dd>
+          </div>
+          <div>
+            <dt>Preuve</dt>
+            <dd>{{ message.proof }}</dd>
+          </div>
+          <div>
+            <dt>Qui peut lire</dt>
+            <dd>{{ message.diffusion }}</dd>
+          </div>
+        </dl>
+      </article>
+      {% endfor %}
+    </div>
+
+    <aside class="mei-detail" aria-label="Detail du message prioritaire fictif">
+      <span class="mei-detail__kicker">Message prioritaire fictif</span>
+      <h3>{{ view.selected_message.subject }}</h3>
+      <p>{{ view.selected_message.attention }}</p>
+      <dl>
+        <div>
+          <dt>Qui parle, sans nom</dt>
+          <dd>{{ view.selected_message.source }}</dd>
+        </div>
+        <div>
+          <dt>Resume prudent</dt>
+          <dd>{{ view.selected_message.moderation }}</dd>
+        </div>
+        <div>
+          <dt>Preuve attendue</dt>
+          <dd>{{ view.selected_message.proof }}</dd>
+        </div>
+        <div>
+          <dt>Qui peut lire</dt>
+          <dd>{{ view.selected_message.diffusion }}</dd>
+        </div>
+        <div>
+          <dt>Suite humaine</dt>
+          <dd>{{ view.selected_message.next_action }}</dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel" id="decisions">
+    <div class="panel-head">
+      <h3>Decisions avant action</h3>
+      <span>Parcours humain avant diffusion</span>
+    </div>
+    <div class="mei-checks">
+      {% for gate in view.decision_gates %}
+      <article>
+        <strong>{{ gate.label }}</strong>
+        <small>{{ gate.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Originaux et journal</h3>
+      <span>Garde-fous</span>
+    </div>
+    <div class="mei-checks">
+      {% for item in view.blocked_sources %}
+      <article>
+        <strong>{{ item.label }}</strong>
+        <small>{{ item.detail }}</small>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="actions">
+  <div class="panel-head">
+    <h3>Suites preparees et bloquees</h3>
+    <span>Aucun clic n'envoie quoi que ce soit</span>
+  </div>
+  <div class="mei-actions">
+    {% for action in view.actions %}
+    <article class="{% if action.blocked == 'true' %}is-blocked{% endif %}">
+      <strong>{{ action.label }}</strong>
+      <span>{{ action.state }}</span>
+      <small>{{ action.reason }}</small>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="mei-versions-title">
+  <div class="panel-head">
+    <h3 id="mei-versions-title">Journal de versions</h3>
+    <span>Trace locale</span>
+  </div>
+  <ul class="compact-list">
+    {% for event in view.version_log %}
+    <li>{{ event }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

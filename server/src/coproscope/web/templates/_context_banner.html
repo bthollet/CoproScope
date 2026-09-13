@@ -1,0 +1,16 @@
+{% if context_banner %}
+{% set context_href = context_banner.next_action_href|default("") %}
+<section class="context-banner context-banner--{{ context_banner.tone }}" aria-label="Contexte actif">
+  <div class="context-banner__line">
+    <span class="context-banner__compact-label">Contexte actif</span>
+    <strong>{{ context_banner.coffre_label }}</strong>
+    {% if context_href %}
+    <a
+      class="context-banner__link"
+      href="{% if token_href is defined %}{{ token_href(context_href) }}{% else %}{{ context_href }}{% endif %}"
+      title="Ouvrir la page de contexte detaille: coffre, role et synchronisation."
+    ><span class="context-banner__link-full">Voir le contexte</span><span class="context-banner__link-short">Contexte</span></a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}

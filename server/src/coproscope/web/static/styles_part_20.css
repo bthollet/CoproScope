@@ -1,0 +1,118 @@
+.cs-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.cs-source-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: inherit;
+  display: grid;
+  gap: 0.35rem;
+  min-height: 12rem;
+  padding: 0.9rem;
+  text-decoration: none;
+}
+
+.cs-source-card:hover,
+.cs-source-card:focus-visible,
+.cs-source-card.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(23, 96, 143, 0.14);
+}
+
+.cs-source-card small,
+.cs-source-card em,
+.cs-source-card span {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.cs-source-card strong {
+  font-size: 1.02rem;
+}
+
+.cs-source-count {
+  align-items: center;
+  background: var(--surface-strong);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 2rem;
+  width: 2rem;
+}
+
+.cs-source-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.cs-source-filters a {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: inherit;
+  display: inline-flex;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.75rem;
+  text-decoration: none;
+}
+
+.cs-source-filters a.is-selected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+
+.cs-source-filters span {
+  font-weight: 700;
+}
+
+.cs-global-drop-form > input[type="file"] {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.cs-global-drop-overlay[hidden] {
+  display: none;
+}
+
+.cs-global-drop-overlay {
+  align-items: center;
+  background: rgba(8, 24, 35, 0.78);
+  color: #fff;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 1000;
+}
+
+.cs-global-drop-overlay > div {
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  color: var(--ink);
+  display: grid;
+  gap: 0.45rem;
+  max-width: 34rem;
+  padding: 1.5rem;
+  text-align: center;
+  width: min(100%, 34rem);
+}
+
+@media (max-width: 720px) {
+  .cs-source-card {
+    min-height: auto;
+  }
+}

@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block topbar_title %}Cockpit Conseil Syndical{% endblock %}
+{% block content %}
+{% set ux = model.ux if model.ux is defined else {} %}
+{% set cockpit = ux.cockpit if ux.cockpit is defined else {} %}
+{% set cards = cockpit.summary_cards|default([]) %}
+{% set missing = cockpit.missing_documents|default({}) %}
+{% set syndic = cockpit.syndic_requests|default({}) %}
+{% set ag = cockpit.ag|default({}) %}
+{% set accounting = cockpit.accounting|default({}) %}
+{% set trust = cockpit.trust|default({}) %}
+{% set risk_alerts = cockpit.risk_alerts|default([]) %}
+{% set now_items = cockpit.now|default([]) %}
+{% macro token_href(href) -%}
+  {%- set raw_href = href|default('#') -%}
+  {%- if ui_token_param and raw_href != '#' -%}
+    {{- raw_href -}}{{- '&' if '?' in raw_href else '?' -}}{{- ui_token_param -}}
+  {%- else -%}
+    {{- raw_href -}}
+  {%- endif -%}
+{%- endmacro %}
+
+<section class="cs-page-intro" aria-labelledby="cockpit-title">
+  <div>
+    <p class="eyebrow">Cockpit conseil syndical</p>
+    <h2 id="cockpit-title">Ce qui demande attention maintenant</h2>
+    <p class="lead">Bonjour, voici les priorites de votre copropriete pour l'exercice {{ model.instance.year }}.</p>
+  </div>
+  <div class="cs-intro-meta" aria-label="Resume local">
+    <span>{{ cockpit.as_of_label|default('Situation a jour') }}</span>
+    <span title="{{ trust.sync_detail|default('Cette page reste locale: aucune synchronisation externe n est lancee depuis le cockpit.') }}">Partage externe: non lance</span>
+    <a href="{{ token_href('/actions') }}">A faire maintenant</a>
+  </div>
+</section>
+
+<section class="cs-card-band cs-action-inbox" aria-labelledby="todo-title">
+  <div class="cs-section-head">
+    <div>
+      <p class="eyebrow">A traiter maintenant</p>
+      <h3 id="todo-title">A traiter</h3>
+      <p class="hint">Chaque carte garde le fil audit: pourquoi, preuve ou source, prochaine action et prudence de diffusion.</p>
+    </div>
+    <a class="cs-mini-link" href="{{ token_href('/actions') }}">Voir toutes les actions</a>
+  </div>
+
+  <p class="cs-files-label">Raccourcis de travail</p>
+  <div class="cs-compact-metrics" aria-label="Raccourcis de travail du cockpit">
+    {% for card in cards[:5] %}
+    {% set metric_href = card.href|default('/actions') %}
+    {% set metric_is_filter = '?' in metric_href and (metric_href.startswith('/actions') or metric_href.startswith('/pieces')) %}
+    {% set metric_kind = 'Filtrer' if metric_is_filter else 'Ouvrir' %}
+    {% set metric_hint = card.subtitle|default('Voir les elements lies') %}
+    <a class="cs-metric-chip cs-tone-{{ card.tone|default('info') }}" href="{{ token_href(metric_href) }}" title="{{ metric_kind }} - {{ metric_hint }}" aria-label="{{ card.label }}: {{ card.count }}. {{ metric_kind }}. {{ metric_hint }}">
+      <span class="cs-metric-title">{{ card.label|replace('_', ' ') }}</span>
+      <strong>{{ card.count }}</strong>
+      <small>{{ metric_kind }}</small>
+      <span class="cs-metric-help">{{ metric_hint|replace('_', ' ') }}</span>
+      <span class="cs-metric-arrow" aria-hidden="true">&gt;</span>
+    </a>
+    {% else %}
+    <a class="cs-metric-chip cs-tone-danger" href="{{ token_href('/actions?priority=P1') }}" title="Filtrer - Prioritaires ou bloquees" aria-label="Actions en retard: {{ model.action_summary.accounting|default(0) }}. Filtrer. Prioritaires ou bloquees">
+      <span class="cs-metric-title">Actions en retard</span>
+      <strong>{{ model.action_summary.accounting|default(0) }}</strong>
+      <small>Filtrer</small>
+      <span class="cs-metric-help">Prioritaires ou bloquees</span>
+      <span class="cs-metric-arrow" aria-hidden="true">&gt;</span>
+    </a>
+    <a class="cs-metric-chip cs-tone-warn" href="{{ token_href('/pieces?proof=missing') }}" title="Filtrer - A demander ou rattacher" aria-label="Pieces manquantes: {{ model.kpis.doc_requests|default(0) }}. Filtrer. A demander ou rattacher">
+      <span class="cs-metric-title">Pieces manquantes</span>
+      <strong>{{ model.kpis.doc_requests|default(0) }}</strong>
+      <small>Filtrer</small>
+      <span class="cs-metric-help">A demander ou rattacher</span>
+      <span class="cs-metric-arrow" aria-hidden="true">&gt;</span>
+    </a>
+    <a class="cs-metric-chip cs-tone-info" href="{{ token_href('/actions?scope=syndic') }}" title="Filtrer - En attente de reponse" aria-label="Demandes syndic: {{ model.action_summary.scope_counts.syndic|default(0) }}. Filtrer. En attente de reponse">
+      <span class="cs-metric-title">Demandes syndic</span>
+      <strong>{{ model.action_summary.scope_counts.syndic|default(0) }}</strong>
+      <small>Filtrer</small>
+      <span class="cs-metric-help">En attente de reponse</span>
+      <span class="cs-metric-arrow" aria-hidden="true">&gt;</span>
+    </a>
+    <a class="cs-metric-chip cs-tone-ok" href="{{ token_href('/ag-contentieux') }}" title="Ouvrir - Decisions et preuves avant AG" aria-label="Echeances AG: {{ model.kpis.decisions|default(0) }}. Ouvrir. Decisions et preuves avant AG">
+      <span class="cs-metric-title">Echeances AG</span>
+      <strong>{{ model.kpis.decisions|default(0) }}</strong>
+      <small>Ouvrir</small>
+      <span class="cs-metric-help">Decisions et preuves avant AG</span>
+      <span class="cs-metric-arrow" aria-hidden="true">&gt;</span>
+    </a>
+    <a class="cs-metric-chip cs-tone-danger" href="{{ token_href('/actions?status=a_revoir') }}" title="Filtrer - Alertes a surveiller" aria-label="Alertes et risques: {{ model.cockpit_alerts|length }}. Filtrer. Alertes a surveiller">
+      <span class="cs-metric-title">Alertes et risques</span>
+      <strong>{{ model.cockpit_alerts|length }}</strong>
+      <small>Filtrer</small>
+      <span class="cs-metric-help">Alertes a surveiller</span>
+      <span class="cs-metric-arrow" aria-hidden="true">&gt;</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if now_items %}
+  <p class="cs-files-label cs-now-label">Actions concretes</p>
+  <div class="cs-now-grid" aria-label="Actions prioritaires du cockpit">
+    {% for item in now_items[:5] %}
+    <a class="cs-now-card cs-tone-{{ item.tone|default('info') }}" href="{{ token_href(item.href|default('/actions')) }}">
+      <span class="cs-now-topline">
+        <span class="cs-priority-chip" title="Priorite donnee par les registres">{{ item.priority }}</span>
+        <span>{{ item.status_label|default(item.status)|replace('_', ' ') }}</span>
+      </span>
+      <strong>{{ item.title|replace('_', ' ') }}</strong>
+      <dl class="cs-now-facts">
+        <div>
+          <dt>Pourquoi</dt>
+          <dd>{{ item.why|replace('_', ' ') }}</dd>
+        </div>
+        <div title="{{ item.source.module|default('Source') }}{% if item.source.object_id %} - {{ item.source.object_id }}{% endif %}">
+          <dt>Preuve ou source</dt>
+          <dd>{{ item.proof.label|replace('_', ' ') }}{% if item.source.module %} - {{ item.source.module }}{% endif %}</dd>
+        </div>
+        <div>
+          <dt>Prochaine action</dt>
+          <dd>{{ item.action.label|replace('_', ' ') }}</dd>
+        </div>
+        <div title="{{ item.diffusion.reason|default('Limiter le partage aux informations utiles et deja verifiees.') }}">
+          <dt>Partage autorise</dt>
+          <dd>{{ item.diffusion.label }}</dd>
+        </div>
+      </dl>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="notice-band cs-cockpit-empty">
+    <strong>{{ cockpit.empty_state.title|default('Coffre pret a alimenter') }}</strong>
+    <span>{{ cockpit.empty_state.detail|default('Ajoutez des pieces ou importez des registres pour faire apparaitre les premieres actions.') }}</span>
+    <a class="button-link secondary" href="{{ token_href(cockpit.empty_state.primary_action.href|default('/depot')) }}">{{ cockpit.empty_state.primary_action.label|default('Ajouter une piece') }}</a>
+  </div>
+  {% endif %}
+</section>
+
+<details class="cs-first-success">
+  <summary>
+    <span>Premier succes conseille</span>
+    <small>Creer une trace locale. Rien n'est envoye automatiquement: CoproScope prepare une trace locale.</small>
+  </summary>
+  <div class="cs-first-success-row" aria-label="Intentions de premier succes">
+    <a href="{{ token_href('/demandes') }}#nouvelle-demande">Demander une piece ou relancer le syndic</a>
+    <a href="{{ token_href('/actions?priority=P1') }}">Traiter une priorite</a>
+    <a href="{{ token_href('/documents/ajouter') }}">Ajouter ou rattacher un document</a>
+    <a href="{{ token_href('/exports/passation') }}">Preparer la passation</a>
+  </div>
+</details>
+
+<details class="cs-secondary-group">
+  <summary>
+    <span>Contexte utile a deplie si besoin</span>
+    <small>Pieces manquantes, demandes syndic, echeances AG et controle comptes.</small>
+  </summary>
+  <section class="cs-dashboard-grid" aria-label="Cockpit Conseil Syndical">
+    <article class="cs-panel cs-panel-pieces">
+      <div class="cs-panel-head">
+        <h3>Pieces manquantes</h3>
+        <a class="cs-mini-link" href="{{ token_href(missing.detail_href|default('/pieces?proof=missing')) }}">Voir tout</a>
+      </div>
+      <p class="hint">Completude documentaire: les rubriques ci-dessous sont celles a verifier en premier.</p>
+      <div class="cs-donut-row">
+        <div class="cs-donut" style="--value: {{ missing.completion_pct|default(0) }};" aria-label="{{ missing.completion_pct|default(0) }} pour cent complet">
+          <strong>{{ missing.completion_pct|default(0) }}%</strong>
+          <span>Complet</span>
+        </div>
+        <dl class="cs-legend">
+          <div><dt>Complet</dt><dd>{{ missing.completion_pct|default(0) }}%</dd></div>
+          <div><dt>A completer</dt><dd>{{ 100 - (missing.completion_pct|default(0)) }}%</dd></div>
+          <div><dt>Manquant</dt><dd>{{ model.kpis.doc_requests|default(0) }}</dd></div>
+        </dl>
+      </div>
+      <div class="cs-compact-list">
+        {% for item in missing.top_missing|default([]) %}
+        <a href="{{ token_href(item.href|default('/pieces')) }}">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.count|default(1) }}</strong>
+          <small>{{ item.reason }}</small>
+        </a>
+        {% else %}
+        <div class="empty">Aucune piece manquante prioritaire n'est remontee pour l'instant.</div>
+        {% endfor %}
+      </div>
+      <a class="cs-panel-link" href="{{ token_href(missing.detail_href|default('/pieces?proof=missing')) }}">Voir le detail par rubrique</a>
+    </article>
+
+    <article class="cs-panel">
+      <div class="cs-panel-head">
+        <h3>Demandes syndic</h3>
+        <a class="cs-mini-link" href="{{ token_href(syndic.all_href|default('/actions?scope=syndic')) }}">Voir tout</a>
+      </div>
+      <div class="cs-tabs" role="list" aria-label="Statut des demandes au syndic">
+        {% for tab in syndic.tabs|default([]) %}
+        <span class="{{ 'active' if tab.is_active else '' }}" role="listitem">{{ tab.label }} ({{ tab.count }})</span>
+        {% else %}
+        <span class="active" role="listitem">En attente ({{ model.action_summary.scope_counts.syndic|default(0) }})</span>
+        <span role="listitem">En cours ({{ model.action_summary.total|default(0) }})</span>
+        <span role="listitem">Resolues (0)</span>
+        {% endfor %}
+      </div>
+      <div class="cs-request-list">
+        {% for item in syndic.items|default([]) %}
+        <a href="{{ token_href(item.href|default('/actions?scope=syndic')) }}">
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.why }}</span>
+          </div>
+          <small>{{ item.status_label }} - {{ item.action.label }}</small>
+        </a>
+        {% else %}
+        {% for action in model.actions[:4] %}
+        <a href="{{ token_href(action.href|default('/actions')) }}">
+          <div>
+            <strong>{{ action.title }}</strong>
+            <span>{{ action.detail }}</span>
+          </div>
+          <small>{{ action.status }} - {{ action.next_step }}</small>
+        </a>
+        {% else %}
+        <div class="empty">Aucune demande au syndic n'est en attente dans les donnees chargees.</div>
+        {% endfor %}
+        {% endfor %}
+      </div>
+      <a class="cs-panel-link" href="{{ token_href(syndic.all_href|default('/actions?scope=syndic')) }}">Voir toutes les demandes</a>
+    </article>
+
+    <article class="cs-panel">
+      <div class="cs-panel-head">
+        <h3>Echeances AG</h3>
+        <a class="cs-mini-link" href="{{ token_href(ag.calendar_href|default('/ag-contentieux')) }}">Voir tout</a>
+      </div>
+      <p class="hint">Prochaines echeances utiles pour preparer l'assemblee generale.</p>
+      <div class="cs-deadline-list">
+        {% for item in ag.deadlines|default([]) %}
+        <a href="{{ token_href(item.href|default('/ag-contentieux')) }}">
+          <time>
+            <strong>{{ item.day }}</strong>
+            <span>{{ item.month }}</span>
+          </time>
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.subtitle }}</span>
+            <small>{{ item.relative_label }}</small>
+          </div>
+        </a>
+        {% else %}
+        <a href="{{ token_href('/ag-contentieux') }}">
+          <time><strong>AG</strong><span>{{ model.instance.year }}</span></time>
+          <div>
+            <strong>Preparation AG</strong>
+            <span>Verifier les decisions ouvertes et les pieces attendues.</span>
+            <small>A planifier</small>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      <a class="cs-panel-link" href="{{ token_href(ag.calendar_href|default('/ag-contentieux')) }}">Voir le calendrier AG</a>
+    </article>
+
+    <article class="cs-panel">
+      <div class="cs-panel-head">
+        <h3>Controle comptes</h3>
+        <a class="cs-mini-link" href="{{ token_href(accounting.detail_href|default('/comptes')) }}">Voir tout</a>
+      </div>
+      <p class="hint">Synthese des controles: ce qui est conforme, a surveiller ou a corriger.</p>
+      <div class="cs-accounting-summary">
+        <div class="cs-donut cs-donut-score" style="--value: {{ accounting.score|default(0) }};" aria-label="{{ accounting.score|default(0) }} points de controle">
+          <strong>{{ accounting.score|default(0) }}</strong>
+          <span>Points</span>
+        </div>
+        <dl class="cs-legend">
+          <div><dt>Conformes</dt><dd>{{ accounting.conformes_count|default(0) }}</dd></div>
+          <div><dt>A surveiller</dt><dd>{{ accounting.watch_count|default(0) }}</dd></div>
+          <div><dt>Anomalies</dt><dd>{{ accounting.anomaly_count|default(model.action_summary.accounting|default(0)) }}</dd></div>
+        </dl>
+      </div>
+      <div class="cs-compact-list">
+        {% for item in accounting.watch_items|default([]) %}
+        <a href="{{ token_href(item.href|default('/comptes')) }}">
+          <span>{{ item.title }}</span>
+          <strong>{{ item.priority }}</strong>
+          <small>{{ item.action.label }}</small>
+        </a>
+        {% else %}
+        <div class="empty">Aucun point comptable prioritaire n'est remonte pour l'instant.</div>
+        {% endfor %}
+      </div>
+      <a class="cs-panel-link" href="{{ token_href(accounting.detail_href|default('/comptes')) }}">Voir le detail des controles</a>
+    </article>
+  </section>
+</details>
+
+<details class="cs-risk-group">
+  <summary>
+    <span>Alertes et risques</span>
+    <small>Tableau detaille a ouvrir seulement si vous devez comparer les signaux.</small>
+  </summary>
+<section class="cs-table-panel" aria-labelledby="risk-title">
+  <div class="cs-panel-head">
+    <div>
+      <h3 id="risk-title">Alertes et risques</h3>
+      <p class="hint">Alertes en mots simples: niveau, sujet, detail, impact et statut de traitement.</p>
+    </div>
+    <a class="cs-mini-link" href="{{ token_href('/actions') }}">Gerer les risques</a>
+  </div>
+  <div class="cs-table-scroll">
+    <table class="cs-risk-table">
+      <caption>Alertes et risques</caption>
+      <thead>
+        <tr>
+          <th>Niveau</th>
+          <th>Sujet</th>
+          <th>Detail</th>
+          <th>Impact</th>
+          <th>Echeance / detection</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for alert in risk_alerts %}
+        <tr>
+          <td><a class="pill severity-{{ alert.tone|default('p2') }}" href="{{ token_href(alert.href|default('/actions')) }}">{{ alert.level|default(alert.label) }}</a></td>
+          <td><strong>{{ alert.subject }}</strong></td>
+          <td>{{ alert.detail }}</td>
+          <td>{{ alert.impact }}</td>
+          <td>{{ alert.due_or_detected }}</td>
+          <td><span class="cs-status-dot cs-tone-{{ alert.status_tone|default('warn') }}">{{ alert.status_label }}</span></td>
+        </tr>
+      {% else %}
+      {% for alert in model.cockpit_alerts %}
+        <tr>
+          <td><a class="pill severity-{{ alert.severity|lower }}" href="{{ token_href(alert.href|default('/actions')) }}">{{ alert.severity }}</a></td>
+          <td><strong>{{ alert.title }}</strong></td>
+          <td>{{ alert.detail }}</td>
+          <td>Action conseil syndical</td>
+          <td>A traiter maintenant</td>
+          <td><span class="cs-status-dot cs-tone-warn">Ouvert</span></td>
+        </tr>
+      {% else %}
+        <tr>
+          <td><span class="pill severity-ok">OK</span></td>
+          <td><strong>Surveillance courante</strong></td>
+          <td>Aucun blocage prioritaire detecte dans les registres charges.</td>
+          <td>Continuer le suivi</td>
+          <td>Aujourd'hui</td>
+          <td><span class="cs-status-dot cs-tone-ok">OK</span></td>
+        </tr>
+      {% endfor %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+</details>
+
+<section class="cs-trust-strip" aria-label="Confiance, signature, coffre">
+  <div>
+    <strong>{{ trust.label|default('Coffre local') }}</strong>
+    <span>{{ trust.sync_label|default('Statut sync a verifier') }}: {{ trust.sync_detail|default('Cette page reste locale: aucune synchronisation externe n est lancee depuis le cockpit.') }}</span>
+  </div>
+  <a href="{{ token_href('/chantiers') }}">Decisions, actions, preuves</a>
+</section>
+
+{% endblock %}

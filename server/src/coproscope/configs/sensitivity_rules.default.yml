@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "sensibilite_par_defaut": "internal",
+  "regles": [
+    {
+      "mots_cles_chemin": ["_RESTREINT", "impayes", "contentieux", "banque", "avocats", "procedures"],
+      "sensibilite": "restricted",
+      "perimetre": "restricted"
+    },
+    {
+      "mots_cles_chemin": ["communication", "diffusable"],
+      "sensibilite": "diffusable",
+      "perimetre": "coproprietaires"
+    }
+  ]
+}

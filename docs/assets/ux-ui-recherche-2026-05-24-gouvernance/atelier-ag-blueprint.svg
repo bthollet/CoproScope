@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-label="Blueprint Atelier AG">
+  <rect width="1440" height="900" fill="#f6f7f9"/>
+  <rect x="0" y="0" width="1440" height="64" fill="#22313f"/>
+  <text x="32" y="40" font-family="Arial, sans-serif" font-size="22" fill="#ffffff">Atelier AG - Projet CS non officiel</text>
+  <rect x="1180" y="16" width="220" height="32" rx="4" fill="#f5c542"/>
+  <text x="1198" y="38" font-family="Arial, sans-serif" font-size="14" fill="#1c252e">Statut: brouillon interne</text>
+  <rect x="28" y="92" width="288" height="760" rx="8" fill="#ffffff" stroke="#d6dbe1"/>
+  <text x="52" y="130" font-family="Arial, sans-serif" font-size="18" fill="#1c252e">Questions et resolutions</text>
+  <rect x="52" y="156" width="240" height="76" rx="6" fill="#eef5ff" stroke="#3b75af"/>
+  <text x="68" y="184" font-family="Arial, sans-serif" font-size="15" fill="#1c252e">Resolution travaux toiture</text>
+  <text x="68" y="207" font-family="Arial, sans-serif" font-size="13" fill="#46606f">En relecture - 2 preuves</text>
+  <rect x="52" y="248" width="240" height="72" rx="6" fill="#ffffff" stroke="#d6dbe1"/>
+  <text x="68" y="276" font-family="Arial, sans-serif" font-size="15" fill="#1c252e">Question syndic budget</text>
+  <text x="68" y="298" font-family="Arial, sans-serif" font-size="13" fill="#8a5a00">Preuve manquante</text>
+  <rect x="52" y="790" width="240" height="40" rx="6" fill="#2f6f5e"/>
+  <text x="86" y="815" font-family="Arial, sans-serif" font-size="15" fill="#ffffff">Cadrer une question AG</text>
+  <rect x="344" y="92" width="628" height="760" rx="8" fill="#ffffff" stroke="#d6dbe1"/>
+  <text x="376" y="132" font-family="Arial, sans-serif" font-size="26" fill="#1c252e">Resolution travaux toiture</text>
+  <text x="376" y="162" font-family="Arial, sans-serif" font-size="14" fill="#5f6f7a">Version 0.4 - projet de texte du conseil syndical, non officiel</text>
+  <rect x="376" y="196" width="564" height="118" rx="6" fill="#fbfcfd" stroke="#d6dbe1"/>
+  <text x="400" y="230" font-family="Arial, sans-serif" font-size="16" fill="#1c252e">Texte propose</text>
+  <text x="400" y="264" font-family="Arial, sans-serif" font-size="14" fill="#334">L'assemblee generale autorise le conseil syndical a demander...</text>
+  <rect x="400" y="280" width="144" height="24" rx="4" fill="#e8f2ea"/>
+  <text x="412" y="297" font-family="Arial, sans-serif" font-size="12" fill="#2f6f5e">preuve rattachee</text>
+  <rect x="376" y="340" width="564" height="118" rx="6" fill="#fff8e8" stroke="#e5b84a"/>
+  <text x="400" y="374" font-family="Arial, sans-serif" font-size="16" fill="#1c252e">Point a verifier avant validation</text>
+  <text x="400" y="408" font-family="Arial, sans-serif" font-size="14" fill="#334">Le montant plafond doit etre confirme par devis ou decision source.</text>
+  <rect x="376" y="486" width="176" height="40" rx="6" fill="#2f6f5e"/>
+  <text x="406" y="511" font-family="Arial, sans-serif" font-size="14" fill="#ffffff">Demander relecture</text>
+  <rect x="568" y="486" width="168" height="40" rx="6" fill="#ffffff" stroke="#2f6f5e"/>
+  <text x="594" y="511" font-family="Arial, sans-serif" font-size="14" fill="#2f6f5e">Ajouter une preuve</text>
+  <rect x="1000" y="92" width="412" height="760" rx="8" fill="#ffffff" stroke="#d6dbe1"/>
+  <text x="1030" y="132" font-family="Arial, sans-serif" font-size="20" fill="#1c252e">Preuves, roles, diffusion</text>
+  <rect x="1030" y="162" width="352" height="86" rx="6" fill="#eef5ff" stroke="#d6dbe1"/>
+  <text x="1050" y="194" font-family="Arial, sans-serif" font-size="15" fill="#1c252e">Pieces sources</text>
+  <text x="1050" y="220" font-family="Arial, sans-serif" font-size="13" fill="#46606f">2 rattachees - 1 a verifier</text>
+  <rect x="1030" y="270" width="352" height="96" rx="6" fill="#fbfcfd" stroke="#d6dbe1"/>
+  <text x="1050" y="302" font-family="Arial, sans-serif" font-size="15" fill="#1c252e">Relecteurs</text>
+  <text x="1050" y="328" font-family="Arial, sans-serif" font-size="13" fill="#46606f">President CS, membre finances, expert borne</text>
+  <rect x="1030" y="388" width="352" height="108" rx="6" fill="#fff0f0" stroke="#dd7777"/>
+  <text x="1050" y="420" font-family="Arial, sans-serif" font-size="15" fill="#1c252e">Revue de diffusion</text>
+  <text x="1050" y="446" font-family="Arial, sans-serif" font-size="13" fill="#7a2c2c">Bloquee: verifier donnees personnelles</text>
+  <rect x="1030" y="760" width="352" height="46" rx="6" fill="#22313f"/>
+  <text x="1102" y="789" font-family="Arial, sans-serif" font-size="15" fill="#ffffff">Preparer export de travail</text>
+</svg>

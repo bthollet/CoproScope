@@ -1,0 +1,84 @@
+%% Blueprint de service en couloirs - chaine depot vers controle
+%% Voie UX, 2026-09-03.
+%% Quatre couloirs: ce que voit l'utilisateur / ce que fait l'interface /
+%% ce que fait le back / ce qui est stocke.
+%% Les quatre temps T1a, T2, T1b, T3 de la strategie sont places en colonne.
+%% Un noeud en pointille n'existe pas au 2026-09-03.
+
+flowchart LR
+
+  subgraph VU["Couloir 1 - ce que voit l'utilisateur"]
+    direction TB
+    V1["T1a - je depose ce que j'ai:<br/>le PV, la convocation, l'annexe comptable"]
+    V2["T2 - je vois la machine travailler,<br/>piece par piece, et je vois ce qu'elle<br/>n'a pas su lire"]
+    V3["T1b - je lis UNE liste:<br/>voila ce qu'il faut demander au syndic"]
+    V4["T3 - j'ouvre un dossier de depense.<br/>Je remonte la chaine. Je tranche."]
+    V1 --> V2 --> V3 --> V4
+  end
+
+  subgraph IF["Couloir 2 - ce que fait l'interface"]
+    direction TB
+    I1["/documents/ajouter<br/>depot, 4 etapes annoncees"]
+    I2["Ecran de traitement:<br/>une ligne par etape, statut, duree,<br/>et le refus de lecture quand il a lieu"]
+    I3["Volet 'ce qui manque' present<br/>sur les DEUX ecrans de controle,<br/>et qui produit un seul courrier"]
+    I4a["Ecran CONTROLE DE GOUVERNANCE<br/>file de ruptures cote mandat"]
+    I4b["Ecran CONTROLE DES COMPTES<br/>file de ruptures cote euro"]
+    I5["DOSSIER DE DEPENSE<br/>surface commune aux deux ecrans,<br/>la chaine de legitimite en 7 stations"]
+    I1 --> I2 --> I3
+    I3 --> I4a
+    I3 --> I4b
+    I4a --> I5
+    I4b --> I5
+  end
+
+  subgraph BK["Couloir 3 - ce que fait le back"]
+    direction TB
+    B1["inventory, extract_text, classify,<br/>privacy, biffage"]
+    B2["resolutions.build_register<br/>calibrage, extraction, coherence"]
+    B2b["convocation.build_register<br/>NON APPELE par le depot"]
+    B3["factureops.extract_invoices<br/>accounting.reconstruct + controls"]
+    B4["constitution du dossier de depense<br/>et lien acte vers euro"]
+    B5["aiguillage articles 44 et 45,<br/>comparaison au seuil en vigueur,<br/>ecart devis vote / montant paye"]
+    B6["evaluation de la chaine:<br/>0..n ruptures nommees et chiffrees"]
+    B1 --> B2
+    B1 -.-> B2b
+    B1 --> B3
+    B2 -.-> B4
+    B3 -.-> B4 -.-> B5 -.-> B6
+  end
+
+  subgraph ST["Couloir 4 - ce qui est stocke"]
+    direction TB
+    S1["raw/ - jamais modifie<br/>registers/documents.csv"]
+    S2["coffre gouvernance SQLite<br/>table resolutions, colonnes etat + origine"]
+    S3["invoice_evidence_AAAA.csv<br/>controle_comptes_guide_AAAA.csv"]
+    S4["compta_human_validations_AAAA.csv<br/>append-only, dernier gagnant"]
+    S5["table dossiers_depense<br/>et table liens acte vers euro"]
+    S6["table avis_cs<br/>3 etats, auteur, date, texte libre"]
+    S7["traces pdftrace par document"]
+  end
+
+  V1 -.-> I1
+  V2 -.-> I2
+  V3 -.-> I3
+  V4 -.-> I4a
+  V4 -.-> I4b
+
+  I1 --> B1
+  I2 --> B2
+  I4a --> B6
+  I4b --> B6
+  I5 --> B5
+
+  B1 --> S1
+  B2 --> S2
+  B2b -.-> S2
+  B3 --> S3
+  B4 -.-> S5
+  B6 -.-> S5
+  I5 -.-> S6
+  I5 --> S4
+  I5 --> S7
+
+  classDef manquant stroke-dasharray: 5 5;
+  class B2b,B4,B5,B6,S5,S6,I3,I5 manquant;

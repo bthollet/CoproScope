@@ -1,0 +1,596 @@
+.cs-rappro-workbench {
+  display: grid;
+  grid-template-columns: minmax(300px, 430px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.cs-rappro-queue-panel {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  top: 78px;
+  /* Le nombre de blocs du panneau est un degre de liberte: chaque bloc garde sa
+     hauteur propre, et seul le bloc qui defile absorbe la place restante - il se
+     nomme au lieu d'etre repere par son rang. Le gabarit precedent enumerait les
+     DEUX blocs presents a son ecriture; l'ecran de gouvernance en a ajoute un
+     troisieme, qui heritait de la rangee `1fr` que `max-height` ecrase a zero et
+     dont le contenu se superposait alors au tableau. */
+  display: flex;
+  flex-direction: column;
+  max-height: min(760px, calc(100vh - 96px));
+  overflow: hidden;
+}
+
+.cs-rappro-queue-panel > .cs-rappro-queue-list,
+.cs-rappro-queue-panel > .cs-rappro-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cs-rappro-queue-list {
+  max-height: min(680px, calc(100vh - 174px));
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cs-rappro-queue-list .cs-followup-card.is-selected {
+  border-color: var(--accent-blue);
+  background: #eef4ff;
+  box-shadow: 0 8px 22px rgba(16, 24, 40, .07);
+}
+
+.cs-rappro-detail {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 78px;
+  max-height: min(900px, calc(100vh - 96px));
+  overflow-y: auto;
+}
+
+.cs-rappro-detail-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.cs-rappro-summary-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cs-rappro-summary-main h3 {
+  margin-bottom: 0;
+}
+
+.cs-rappro-summary-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  min-width: min(100%, 220px);
+}
+
+.cs-rappro-summary-action {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.cs-rappro-selected-line {
+  display: -webkit-box;
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.cs-rappro-toggle-text {
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 3px 8px;
+  background: #ffffff;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.cs-rappro-toggle-closed {
+  display: none;
+}
+
+.cs-rappro-detail:not([open]) .cs-rappro-toggle-open {
+  display: none;
+}
+
+.cs-rappro-detail:not([open]) .cs-rappro-toggle-closed {
+  display: inline;
+}
+
+.cs-rappro-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #c7d7ee;
+  border-left: 4px solid var(--accent-blue);
+  border-radius: 8px;
+  padding: 12px;
+  background: #f6f9ff;
+}
+
+/* `RM-2026-0067`: la colonne `auto` ci-dessus ne cede jamais, et la classe
+   n'apparaissait dans aucun `@media` - matrice mesuree a 2 201 px. Seuil 760px,
+   le plus employe du depot. Mesure et axe: `test_une_grille_a_colonne_fixe_a_
+   un_repli.py`. */
+@media (max-width: 760px) {
+  .cs-rappro-action {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-rappro-action > * {
+    justify-self: start;
+  }
+}
+
+.cs-rappro-action h4,
+.cs-rappro-action p,
+.cs-rappro-action small {
+  margin: 0;
+}
+
+.cs-rappro-action h4 {
+  color: #101828;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.cs-rappro-action-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+}
+
+.cs-rappro-action-kicker small {
+  display: inline;
+  margin-top: 0;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.cs-rappro-action p {
+  margin-top: 6px;
+  color: #344054;
+  line-height: 1.35;
+}
+
+.cs-rappro-action small {
+  display: block;
+  margin-top: 6px;
+  color: #667085;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cs-rappro-matrix {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cs-rappro-matrix-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cs-rappro-matrix-head h4 {
+  margin: 0;
+  color: #101828;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.cs-rappro-matrix-head span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-rappro-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cs-rappro-source-cell {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 6px;
+  border: 1px solid #dce3ec;
+  border-top: 4px solid var(--accent-blue);
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.cs-rappro-source-cell.is-strong_match {
+  border-top-color: #13976b;
+  background: #f5fffb;
+}
+
+.cs-rappro-source-cell.is-candidate {
+  border-top-color: #f28705;
+  background: #fffaf2;
+}
+
+.cs-rappro-source-cell.is-missing_source,
+.cs-rappro-source-cell.is-conflict {
+  border-top-color: #df2f24;
+  background: #fff8f7;
+}
+
+.cs-rappro-source-cell-head {
+  display: grid;
+  gap: 5px;
+}
+
+.cs-rappro-source-cell-head strong,
+.cs-rappro-source-cell p,
+.cs-rappro-source-cell small,
+.cs-rappro-source-signal {
+  overflow-wrap: anywhere;
+}
+
+.cs-rappro-source-cell-head span {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: rgba(16, 24, 40, .07);
+  color: #475467;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 760;
+}
+
+.cs-rappro-source-cell p,
+.cs-rappro-source-cell small {
+  margin: 0;
+}
+
+.cs-rappro-source-cell p {
+  color: #101828;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.cs-rappro-source-cell small {
+  color: #475467;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.cs-rappro-source-signal {
+  display: block;
+  color: #101828;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.18;
+}
+
+.cs-rappro-source-cell a {
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 760;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cs-rappro-source-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  border: 1px solid #b7cdf5;
+  border-radius: 7px;
+  padding: 5px 7px;
+  background: #eef4ff;
+}
+
+.cs-topbar:not(:has(.cs-search)) {
+  grid-template-columns: minmax(0, 1fr) auto max-content;
+}
+
+@media (max-width: 640px) {
+  .cs-rappro-matrix-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .cs-comptes-header {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
+  .cs-comptes-header .cs-header-tools {
+    flex: 0 1 auto;
+    justify-content: flex-end;
+    width: auto;
+  }
+
+  .cs-comptes-header h2,
+  .cs-comptes-header .lead {
+    margin-bottom: 0;
+  }
+
+  .cs-comptes-header .lead {
+    margin-top: 4px;
+  }
+
+  .cs-rappro-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-rappro-detail,
+  .cs-rappro-queue-panel {
+    grid-column: 1;
+    position: static;
+    max-height: none;
+  }
+
+  .cs-rappro-detail {
+    grid-row: 1;
+    overflow: visible;
+  }
+
+  .cs-rappro-queue-panel {
+    grid-row: 2;
+  }
+
+  .cs-rappro-queue-list {
+    max-height: min(520px, 62vh);
+  }
+}
+
+@media (max-width: 760px) {
+  .cs-comptes-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 10px;
+  }
+
+  .cs-comptes-header > div:first-child {
+    min-width: 0;
+  }
+
+  .cs-comptes-header .eyebrow {
+    margin-bottom: 2px;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .cs-comptes-header h2 {
+    font-size: 22px;
+    line-height: 1.05;
+  }
+
+  .cs-comptes-header .lead {
+    display: -webkit-box;
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.2;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cs-comptes-header .cs-header-tools {
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 5px;
+    align-items: stretch;
+    width: auto;
+    min-width: 142px;
+  }
+
+  .cs-comptes-header .cs-header-tools > .cs-status-badge,
+  .cs-comptes-header .cs-primary-action {
+    width: auto;
+    min-height: 28px;
+    justify-content: center;
+    padding: 5px 8px;
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .cs-rappro-workbench {
+    gap: 8px;
+  }
+
+  .cs-rappro-detail-summary {
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .cs-rappro-summary-main {
+    gap: 2px;
+  }
+
+  .cs-rappro-summary-main h3 {
+    font-size: 18px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-summary-action {
+    display: -webkit-box;
+    font-size: 11px;
+    line-height: 1.2;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .cs-rappro-selected-line {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .cs-rappro-action {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .cs-rappro-action h4 {
+    font-size: 14px;
+    line-height: 1.18;
+  }
+
+  .cs-rappro-action-kicker {
+    gap: 3px 8px;
+  }
+
+  .cs-rappro-action-kicker small {
+    margin-top: 0;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-action p {
+    display: -webkit-box;
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.25;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cs-rappro-action small {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .cs-rappro-action .button-link {
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .cs-rappro-matrix {
+    gap: 6px;
+  }
+
+  .cs-rappro-matrix-head {
+    gap: 6px;
+  }
+
+  .cs-rappro-matrix-head h4 {
+    font-size: 15px;
+  }
+
+  .cs-rappro-matrix-head span {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .cs-rappro-source-cell {
+    gap: 4px;
+    border-radius: 6px;
+    padding: 6px;
+  }
+
+  .cs-rappro-source-cell-head {
+    gap: 3px;
+  }
+
+  .cs-rappro-source-cell-head strong {
+    font-size: 13px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-source-cell-head span {
+    padding: 2px 5px;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-source-cell p,
+  .cs-rappro-source-cell small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cs-rappro-source-cell p {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .cs-rappro-source-cell small,
+  .cs-rappro-source-signal,
+  .cs-rappro-source-cell a {
+    font-size: 11px;
+    line-height: 1.18;
+  }
+}
+
+@media (max-width: 560px) {
+  .cs-comptes-header {
+    flex-direction: column;
+  }
+
+  .cs-comptes-header .cs-header-tools {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .cs-rappro-action {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-rappro-action .button-link {
+    width: 100%;
+  }
+
+  .cs-rappro-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-rappro-summary-side {
+    justify-content: flex-start;
+  }
+
+  .cs-rappro-matrix-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cs-rappro-matrix-grid {
+    grid-template-columns: 1fr;
+  }
+}

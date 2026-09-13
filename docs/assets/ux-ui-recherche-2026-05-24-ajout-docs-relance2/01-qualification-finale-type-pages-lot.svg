@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Qualification finale type court pages sensibles et bascule lot</title>
+  <desc id="desc">Blueprint UI ajout document pour choisir un type court, signaler des pages sensibles et proposer le tri de lot sans bascule automatique.</desc>
+  <rect width="1400" height="900" fill="#f5f7f8"/>
+  <rect x="40" y="32" width="1320" height="92" rx="8" fill="#17324d"/>
+  <text x="72" y="72" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#ffffff">Qualifier le document</text>
+  <text x="72" y="104" font-family="Arial, sans-serif" font-size="17" fill="#d9e7ef">Choisissez une famille simple. Le fichier reste local et rien n'est partage.</text>
+  <rect x="1086" y="55" width="234" height="44" rx="6" fill="#ffffff"/>
+  <text x="1116" y="83" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">Etape 2 sur 4</text>
+
+  <rect x="40" y="154" width="250" height="666" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="64" y="194" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#17324d">File locale</text>
+  <text x="64" y="220" font-family="Arial, sans-serif" font-size="14" fill="#5d6b76">3 documents ajoutes</text>
+  <rect x="64" y="252" width="202" height="92" rx="8" fill="#e8f2f7" stroke="#6aa1bd"/>
+  <text x="86" y="284" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Fichier 1</text>
+  <text x="86" y="310" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">A qualifier</text>
+  <text x="86" y="332" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">Reference neutre</text>
+  <rect x="64" y="362" width="202" height="78" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="86" y="394" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">Fichier 2</text>
+  <text x="86" y="418" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">A decider</text>
+  <rect x="64" y="458" width="202" height="78" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="86" y="490" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">Fichier 3</text>
+  <text x="86" y="514" font-family="Arial, sans-serif" font-size="13" fill="#4d5c66">A qualifier</text>
+
+  <rect x="320" y="154" width="620" height="666" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="350" y="196" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">Quel type de document est-ce ?</text>
+  <text x="350" y="224" font-family="Arial, sans-serif" font-size="15" fill="#5d6b76">Choisissez une famille. Vous pourrez preciser plus tard.</text>
+
+  <g font-family="Arial, sans-serif" font-size="15" fill="#17324d">
+    <rect x="350" y="256" width="260" height="64" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="374" y="294" font-weight="700">Assemblee generale / decision</text>
+    <rect x="630" y="256" width="260" height="64" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="654" y="294" font-weight="700">Comptes / budget / appels</text>
+    <rect x="350" y="336" width="260" height="64" rx="8" fill="#e8f2f7" stroke="#6aa1bd"/>
+    <text x="374" y="374" font-weight="700">Facture / devis / contrat</text>
+    <rect x="630" y="336" width="260" height="64" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="654" y="374" font-weight="700">Travaux / maintenance</text>
+    <rect x="350" y="416" width="260" height="64" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="374" y="454" font-weight="700">Incident / sinistre</text>
+    <rect x="630" y="416" width="260" height="64" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="654" y="454" font-weight="700">Contentieux / impayes</text>
+    <rect x="350" y="496" width="260" height="64" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="374" y="534" font-weight="700">Courrier / demande autre</text>
+    <rect x="630" y="496" width="260" height="64" rx="8" fill="#ffffff" stroke="#9aa7b2" stroke-dasharray="5 4"/>
+    <text x="654" y="534" font-weight="700">Je ne sais pas encore</text>
+  </g>
+
+  <rect x="350" y="596" width="540" height="150" rx="8" fill="#fff8eb" stroke="#e1ba69"/>
+  <text x="374" y="632" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#17324d">Pages sensibles reperees ?</text>
+  <text x="374" y="660" font-family="Arial, sans-serif" font-size="14" fill="#5d6b76">Si une seule page contient une information sensible, le brut n'est pas diffusable tel quel.</text>
+  <rect x="374" y="684" width="150" height="36" rx="6" fill="#ffffff" stroke="#b8c2cc"/>
+  <text x="394" y="707" font-family="Arial, sans-serif" font-size="13" fill="#17324d">Aucune connue</text>
+  <rect x="536" y="684" width="190" height="36" rx="6" fill="#1b6b54"/>
+  <text x="555" y="707" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Pages a masquer</text>
+  <rect x="738" y="684" width="130" height="36" rx="6" fill="#ffffff" stroke="#b8c2cc"/>
+  <text x="758" y="707" font-family="Arial, sans-serif" font-size="13" fill="#17324d">Je ne sais pas</text>
+
+  <rect x="970" y="154" width="390" height="666" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="1000" y="196" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">Effet</text>
+  <rect x="1000" y="232" width="330" height="116" rx="8" fill="#fff8eb" stroke="#e1ba69"/>
+  <text x="1024" y="268" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Statut conseille</text>
+  <text x="1024" y="296" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">A masquer avant partage</text>
+  <text x="1024" y="322" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Prochaine action: preparer une version masquee</text>
+
+  <rect x="1000" y="382" width="330" height="116" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+  <text x="1024" y="418" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Pages a verifier</text>
+  <text x="1024" y="446" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Page 2 - motif: RIB</text>
+  <text x="1024" y="472" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Page 5 - motif: donnees personnelles</text>
+
+  <rect x="1000" y="532" width="330" height="126" rx="8" fill="#eef7ef" stroke="#9ac79b"/>
+  <text x="1024" y="568" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Plusieurs documents</text>
+  <text x="1024" y="596" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">A partir de 5: proposer le tri rapide.</text>
+  <text x="1024" y="622" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">A partir de 10: le recommander.</text>
+  <text x="1024" y="646" font-family="Arial, sans-serif" font-size="14" fill="#4d5c66">Jamais de bascule automatique.</text>
+
+  <rect x="1000" y="700" width="150" height="44" rx="6" fill="#1b6b54"/>
+  <text x="1025" y="728" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Continuer</text>
+  <rect x="1172" y="700" width="158" height="44" rx="6" fill="#ffffff" stroke="#8ea0ac"/>
+  <text x="1193" y="728" font-family="Arial, sans-serif" font-size="15" fill="#17324d">Tri rapide</text>
+</svg>

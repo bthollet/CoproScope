@@ -1,0 +1,2 @@
+ag_id,doc_id,file_name,document_type,detected_date,resolution_count,annex_hits,majority_terms,missing_annex_signals,notes
+AG-2026-04-29,DOC-4E884D06E0AD,2026-04-29_convocation_ag.txt,Convocation_AG,2026-04-29,0,0,,YES,Convocation detectee sans lignes explicites de resolution.

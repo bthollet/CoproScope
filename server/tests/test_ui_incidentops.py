@@ -1,0 +1,221 @@
+from __future__ import annotations
+
+import re
+import shutil
+import tempfile
+import unittest
+from html import unescape
+from pathlib import Path
+from unittest.mock import patch
+
+from coproscope.core.common import load_instance, write_csv
+from coproscope.modules import incidentops
+from coproscope.web._parcours_liens import lien_interne
+from coproscope.web.app import TOKEN_COOKIE_NAME, create_app
+from coproscope.web.debranchement import chemins_non_servis, sous
+from coproscope.web.incidentops_view import build_incidentops_view
+
+
+REQUIRED_LABELS = (
+    "Incidents et sinistres",
+    "Suites a preparer",
+    "Completer un signalement",
+    "A faire maintenant",
+    "Infos a completer",
+    "Preuves attendues",
+    "Preuve recue",
+    "Signalement",
+    "Fait remonte localement",
+    "Sinistre",
+    "Preuve de cloture",
+    "Photo ou document masque",
+    "Synthese neutre",
+    "Liste des signalements",
+    "Assurance",
+    "Preuve attendue",
+    "Decisions avant cloture",
+    "Validation humaine",
+    "Voir les actions a faire",
+    "Joindre photo ou document masque",
+    "Declaration assurance externe",
+    "Partager largement",
+    "Limites de cette page",
+    "Aucune declaration assurance ou syndic envoyee",
+)
+
+FORBIDDEN_VISIBLE_MARKERS = (
+    "@",
+    "C:\\",
+    "file://",
+    "raw",
+    "restricted",
+    "private",
+    "OAuth",
+    "IMAP",
+    "SMTP",
+    "Drive",
+    "photo originale",
+    "preuve controlee",
+    "preuve derivee",
+    "trace derivee",
+    "suite humaine",
+    "References opaques",
+    "Deja securise",
+    "assurance reelle",
+    "declaration automatique",
+    "Envoyer",
+    "Qualifier un signalement",
+    "Preparer la qualification",
+    "Mots utiles pour qualifier",
+    "Ajouter preuve locale",
+    "Voir actions incidents",
+    "Journal de versions",
+    "secretValue",
+)
+
+
+class UiIncidentOpsTests(unittest.TestCase):
+    def setUp(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        source_example = repo_root / "examples" / "synthetic_copro"
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.instance_root = Path(self.tempdir.name) / "instance"
+        shutil.copytree(source_example, self.instance_root)
+        self.instance = load_instance(str(self.instance_root / "instance.yml"), None)
+
+    def tearDown(self) -> None:
+        self.tempdir.cleanup()
+
+    def _client(self, access_token: str | None = None):
+        try:
+            from fastapi.testclient import TestClient  # type: ignore
+        except ImportError:
+            self.skipTest("FastAPI test client unavailable")
+        return TestClient(create_app(self.instance, 2025, access_token=access_token))
+
+    def test_incidentops_view_model_falls_back_to_fictive_examples(self) -> None:
+        view = build_incidentops_view(year=2026)
+
+        self.assertEqual(view["title"], "Incidents et sinistres")
+        self.assertIn("FICTIF", view["notice"])
+        self.assertEqual(view["status"]["label"], "Suites a preparer")
+        self.assertIn("Il n'envoie pas de declaration", view["status"]["summary"])
+        self.assertEqual(len(view["summary"]), 4)
+        self.assertEqual(len(view["incidents"]), 3)
+        self.assertEqual(view["summary"][0]["label"], "A faire maintenant")
+        self.assertEqual(view["summary"][2]["detail"], "Photo ou document masque a verifier avant cloture.")
+        self.assertTrue(any(action["enabled"] == "false" for action in view["actions"]))
+        self.assertTrue(all(row["id"].startswith("INC-FICTIF-") for row in view["incidents"]))
+        self.assertEqual(view["incidents"][2]["assurance"], "Verification faite")
+        self.assertEqual(view["incidents"][2]["expected_proof"], "Preuve recue ou verification faite")
+        self.assertEqual(view["shell_model"]["instance"]["id"], "FICTIF")
+
+    def test_incidentops_view_model_reads_local_register_without_leaking_paths(self) -> None:
+        write_csv(
+            incidentops.incident_register_path(self.instance),
+            incidentops.INCIDENT_FIELDS,
+            [
+                {
+                    "incident_id": "INC-LOCAL-001",
+                    "date_signalement": "2026-05-03",
+                    "lieu": "Parking",
+                    "description": "Fuite persistante",
+                    "piece_ref": "DOC-INC-1",
+                    "photo_or_piece": r"C:\\Users\\demo\\raw\\photo.jpg",
+                    "status": "A_QUALIFIER",
+                    "source_refs": "raw/photo.jpg",
+                }
+            ],
+        )
+
+        view = build_incidentops_view(instance=self.instance, year=2026)
+        visible = str(view)
+
+        self.assertEqual(view["incidents"][0]["source_label"], "Registre local")
+        self.assertEqual(view["incidents"][0]["status_label"], "a completer")
+        self.assertEqual(view["incidents"][0]["proof_state"], "Piece candidate a verifier")
+        self.assertIn("Assurance a verifier", view["incidents"][0]["assurance"])
+        self.assertNotIn("raw/photo.jpg", visible)
+        self.assertNotIn("C:\\", visible)
+
+    def test_incidentops_route_is_token_guarded_and_novice_readable(self) -> None:
+        client = self._client(access_token="local-secret")
+
+        forbidden = client.get("/incidents")
+        self.assertEqual(forbidden.status_code, 403)
+        self.assertNotIn("Incidents et sinistres", forbidden.text)
+
+        response = client.get("/incidents?token=local-secret")
+        text = unescape(response.text)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(TOKEN_COOKIE_NAME, response.cookies)
+        self.assertIn('aria-current="page"', response.text)
+        self.assertIn('href="/incidents?token=local-secret"', response.text)
+        # RM-2026-0183: `Voir les actions a faire` ouvrait `/actions?scope=incidents`,
+        # ecran retire. Aucun lien ne doit plus mener a un ecran non servi, et le
+        # jeton reste garde sur chaque lien interne qui reste.
+        self.assertEqual(
+            ["/actions?scope=incidents"],
+            _liens_vers_non_servis('<a href="/actions?scope=incidents&amp;token=local-secret">x</a>'),
+        )
+        self.assertEqual([], _liens_vers_non_servis(response.text))
+        internes = [unescape(h) for h in _HREF_RE.findall(response.text) if lien_interne(h) is not None]
+        self.assertTrue(internes)
+        for href in internes:
+            with self.subTest(href=href):
+                self.assertEqual(1, href.count("token=local-secret"), href)
+        self.assertIn('href="#inc-actions"', response.text)
+        for label in REQUIRED_LABELS:
+            self.assertIn(label, text)
+
+        visible = _visible_text(text)
+        for marker in FORBIDDEN_VISIBLE_MARKERS:
+            self.assertNotIn(marker, visible)
+
+    def test_incidentops_route_accepts_header_token_and_skips_dashboard_model(self) -> None:
+        from coproscope.web import app as web_app
+
+        with patch.object(web_app, "build_dashboard_model", side_effect=AssertionError("incidents uses dedicated view")):
+            response = self._client(access_token="local-secret").get(
+                "/incidents",
+                headers={"x-coproscope-token": "local-secret"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Incidents et sinistres", response.text)
+        self.assertIn("Aucune declaration assurance ou syndic envoyee", response.text)
+        self.assertNotIn("Qualifier un signalement", response.text)
+
+    def test_incidentops_css_stacks_table_on_mobile(self) -> None:
+        css_path = Path(__file__).resolve().parents[1] / "src" / "coproscope" / "web" / "static" / "styles_part_22.css"
+        css = css_path.read_text(encoding="utf-8")
+
+        self.assertIn(".inc-table", css)
+        self.assertIn("@media (max-width: 760px)", css)
+        self.assertIn("grid-template-columns: 1fr", css)
+        self.assertIn(".inc-top-action", css)
+        self.assertIn('content: attr(data-label)', css)
+        mobile_block = re.search(r"@media.*", css, flags=re.DOTALL).group(0)
+        self.assertNotIn("overflow-x: auto", mobile_block)
+
+
+_HREF_RE = re.compile(r"""href=["']([^"']+)["']""")
+#: Chemins que l'application par defaut ne sert plus (`RM-2026-0183`), lus dans
+#: la table du produit et non recopies ici.
+NON_SERVIS = chemins_non_servis(frozenset())
+
+
+def _liens_vers_non_servis(html: str) -> list[str]:
+    liens = (lien_interne(href) for href in _HREF_RE.findall(html))
+    return [lien for lien in liens if lien is not None and sous(lien.split("?", 1)[0], NON_SERVIS)]
+
+
+def _visible_text(html: str) -> str:
+    without_scripts = re.sub(r"<(script|style)\b.*?</\1>", " ", html, flags=re.IGNORECASE | re.DOTALL)
+    without_tags = re.sub(r"<[^>]+>", " ", without_scripts)
+    return " ".join(without_tags.split())
+
+
+if __name__ == "__main__":
+    unittest.main()

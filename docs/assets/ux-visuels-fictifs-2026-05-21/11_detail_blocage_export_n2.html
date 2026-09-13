@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoproScope - Detail blocage export</title>
+  <style>
+    :root {
+      --nav: #082941;
+      --nav-soft: #123a58;
+      --blue: #1769e8;
+      --blue-soft: #eef5ff;
+      --line: #d8e2ef;
+      --ink: #0b1f3a;
+      --muted: #587096;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ok: #079566;
+      --warn: #f28a16;
+      --danger: #ef4444;
+      --danger-soft: #fff1f1;
+      --warn-soft: #fff8e8;
+      --green-soft: #eafaf3;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      width: 1672px;
+      height: 941px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .screen {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      width: 1672px;
+      height: 941px;
+    }
+
+    aside {
+      background: linear-gradient(180deg, #082e49 0%, #061e32 100%);
+      color: #fff;
+      padding: 26px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .brand {
+      padding: 0 12px 8px;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .brand span {
+      color: #b9d7ed;
+      font-size: 14px;
+    }
+
+    .nav-group {
+      display: grid;
+      gap: 7px;
+    }
+
+    .nav-title {
+      color: #a7bdd1;
+      font-size: 12px;
+      text-transform: uppercase;
+      padding: 13px 10px 7px;
+      letter-spacing: .06em;
+    }
+
+    .nav-item {
+      display: grid;
+      grid-template-columns: 24px 1fr auto;
+      align-items: center;
+      min-height: 46px;
+      padding: 0 12px;
+      border-radius: 7px;
+      color: #eef7ff;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .nav-item.active {
+      background: var(--blue);
+    }
+
+    .nav-icon {
+      width: 19px;
+      height: 19px;
+      border-radius: 5px;
+      background: #eaf2ff;
+      color: #082941;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .count {
+      min-width: 29px;
+      height: 29px;
+      border-radius: 16px;
+      background: #2678ff;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      padding: 0 8px;
+    }
+
+    .share {
+      margin-top: auto;
+      border: 1px solid rgba(174, 215, 245, .35);
+      background: rgba(255,255,255,.06);
+      border-radius: 8px;
+      padding: 10px 16px;
+    }
+
+    .share strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .share span {
+      color: #87f0c8;
+      font-size: 14px;
+    }
+
+    main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 68px 1fr;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 1fr 330px 192px;
+      align-items: center;
+      gap: 18px;
+      padding: 0 32px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.05;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    .search {
+      height: 37px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge-fake {
+      height: 31px;
+      border-radius: 17px;
+      background: #e8f8ef;
+      border: 1px solid #a9dec5;
+      color: #009461;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .canvas {
+      padding: 22px 28px 24px;
+      display: grid;
+      grid-template-rows: 94px 1fr;
+      gap: 12px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 17px;
+    }
+
+    .metric {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 18px;
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .metric .mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .metric.danger .mark { background: var(--danger-soft); color: var(--danger); }
+    .metric.warn .mark { background: var(--warn-soft); color: var(--warn); }
+    .metric.ok .mark { background: var(--green-soft); color: var(--ok); }
+
+    .metric strong {
+      display: block;
+      font-size: 29px;
+      line-height: 1;
+      color: var(--blue);
+    }
+
+    .metric.danger strong { color: var(--danger); }
+    .metric.warn strong { color: var(--warn); }
+    .metric.ok strong { color: var(--ok); }
+
+    .metric b {
+      display: block;
+      margin-top: 5px;
+      font-size: 15px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.36fr .9fr .78fr;
+      gap: 20px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 17px 24px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    h3 {
+      margin: 14px 0 8px;
+      font-size: 16px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .crumb {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: #3e5c85;
+      font-size: 13px;
+      margin-bottom: 13px;
+      font-weight: 700;
+    }
+
+    .crumb span {
+      color: #8799b4;
+      font-weight: 600;
+    }
+
+    .blocker-hero {
+      border: 1px solid #ffd0a6;
+      background: #fff9ef;
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 48px 1fr auto;
+      align-items: start;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .lock {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #ffe8ca;
+      color: var(--warn);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .blocker-hero h2 {
+      margin-bottom: 6px;
+    }
+
+    .pill {
+      display: inline-grid;
+      place-items: center;
+      min-height: 28px;
+      padding: 0 13px;
+      border-radius: 16px;
+      border: 1px solid;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .pill.warn { background: #fff3df; color: #c46600; border-color: #ffc36c; }
+    .pill.danger { background: #fff1f1; color: #df3030; border-color: #ffc3c3; }
+    .pill.ok { background: #eafaf3; color: #008b5d; border-color: #9bd7bd; }
+    .pill.info { background: #eef5ff; color: #1769e8; border-color: #bdd4ff; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 13px;
+    }
+
+    .status-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 13px;
+      background: #fbfdff;
+    }
+
+    .status-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .status-card strong {
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .rows {
+      display: grid;
+      gap: 8px;
+    }
+
+    .row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+    }
+
+    .row strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .row p {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .step {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 14px;
+      background: #fff;
+    }
+
+    .step strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 31px 1fr;
+      gap: 11px;
+      align-items: start;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .check:last-child { border-bottom: 0; }
+
+    .check .mini {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 900;
+      border: 1px solid;
+    }
+
+    .mini.ok { color: var(--ok); background: #eafaf3; border-color: #80d1b3; }
+    .mini.warn { color: var(--warn); background: #fff8e8; border-color: #ffc36c; }
+    .mini.danger { color: var(--danger); background: #fff1f1; border-color: #ffb9b9; }
+
+    .check strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .check p {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .callout {
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 12px;
+      background: #f5f9ff;
+      border: 1px solid #c9dcfb;
+    }
+
+    .callout.warn {
+      background: #fff8e8;
+      border-color: #ffc36c;
+    }
+
+    .decision {
+      display: grid;
+      gap: 10px;
+    }
+
+    .content > aside.panel {
+      color: var(--ink);
+      background: var(--card);
+      display: grid;
+      padding: 17px 24px;
+      gap: 10px;
+    }
+
+    .decision-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 14px;
+      background: #fbfdff;
+    }
+
+    .decision-box strong {
+      display: block;
+      font-size: 13px;
+      color: #4c6387;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .btn {
+      height: 37px;
+      border-radius: 7px;
+      border: 1px solid var(--blue);
+      background: var(--blue);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 900;
+      text-align: center;
+      padding: 0 12px;
+    }
+
+    .btn.secondary {
+      color: var(--blue);
+      background: #fff;
+    }
+
+    .btn.disabled {
+      border-color: #cfd9e6;
+      background: #e7edf5;
+      color: #617394;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .formats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .format {
+      border: 1px solid #bdd4ff;
+      background: #f4f8ff;
+      border-radius: 7px;
+      min-height: 36px;
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .note {
+      color: #526b92;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <aside>
+      <div class="brand">
+        <strong>CoproScope</strong>
+        <span>Conseil syndical fictif</span>
+      </div>
+
+      <nav class="nav-group" aria-label="Navigation principale">
+        <div class="nav-item"><span class="nav-icon">T</span><span>Tableau de bord</span><span class="count">12</span></div>
+        <div class="nav-item"><span class="nav-icon">A</span><span>A traiter</span><span class="count">3</span></div>
+        <div class="nav-item"><span class="nav-icon">P</span><span>Pieces manquantes</span><span class="count">6</span></div>
+        <div class="nav-item"><span class="nav-icon">D</span><span>Demandes syndic</span><span class="count">4</span></div>
+        <div class="nav-title">Documents et suivi</div>
+        <div class="nav-item"><span class="nav-icon">AG</span><span>AG</span><span class="count">2</span></div>
+        <div class="nav-item"><span class="nav-icon">C</span><span>Controle comptes</span><span class="count">5</span></div>
+        <div class="nav-item"><span class="nav-icon">M</span><span>Memoire copro</span><span class="count">3</span></div>
+        <div class="nav-item active"><span class="nav-icon">E</span><span>Exports</span><span class="count">3</span></div>
+      </nav>
+
+      <div class="share">
+        <strong>Mode de partage</strong>
+        <span>Prive local - donnees fictives</span>
+      </div>
+    </aside>
+
+    <main>
+      <header>
+        <div>
+          <h1>Detail blocage export</h1>
+          <div class="subtitle">Je comprends pourquoi un element ne sort pas du coffre avant passation.</div>
+        </div>
+        <div class="search">Rechercher action, piece, evenement...</div>
+        <div class="badge-fake">DONNEES FICTIVES</div>
+      </header>
+
+      <section class="canvas">
+        <div class="metrics">
+          <div class="metric ok"><span class="mark">IN</span><div><strong>9</strong><b>Inclus</b><span>syntheses verifiees</span></div></div>
+          <div class="metric warn"><span class="mark">AV</span><div><strong>4</strong><b>A verifier</b><span>avant telechargement</span></div></div>
+          <div class="metric danger"><span class="mark">EX</span><div><strong>6</strong><b>Bloques</b><span>bruts et chemins locaux</span></div></div>
+          <div class="metric"><span class="mark">FO</span><div><strong>3</strong><b>Formats</b><span>TXT, JSON audit, MD</span></div></div>
+          <div class="metric ok"><span class="mark">WM</span><div><strong>100%</strong><b>Watermark</b><span>derive visible</span></div></div>
+        </div>
+
+        <div class="content">
+          <article class="panel">
+            <div class="crumb">Apercu de passation <span>/</span> Restrictions et blocages <span>/</span> Relance ascenseur</div>
+            <div class="blocker-hero">
+              <div class="lock">!</div>
+              <div>
+                <h2>Relance ascenseur non tracee</h2>
+                <p>Date et canal d'envoi externe manquent. L'export final reste verrouille tant que la relance n'est pas prouvee comme action faite hors CoproScope.</p>
+              </div>
+              <span class="pill warn">Bloque export</span>
+            </div>
+
+            <div class="status-grid">
+              <div class="status-card"><span>Public vise</span><strong>Conseil syndical restreint</strong></div>
+              <div class="status-card"><span>Risque</span><strong>Confusion: brouillon pris pour envoi</strong></div>
+              <div class="status-card"><span>Action utile</span><strong>Tracer date, canal, destinataire</strong></div>
+            </div>
+
+            <h3>Ce qui serait exclu du pack</h3>
+            <div class="rows">
+              <div class="row">
+                <div><strong>Brouillon de relance non envoye</strong><p>Le texte copiable reste local tant qu'aucun envoi externe n'est note.</p></div>
+                <span class="pill danger">Exclu</span>
+              </div>
+              <div class="row">
+                <div><strong>Chemin et piece brute ascenseur</strong><p>Les references privees sont remplacees par un libelle fictif sans chemin local.</p></div>
+                <span class="pill danger">Masque</span>
+              </div>
+              <div class="row">
+                <div><strong>Synthese action ascenseur</strong><p>Peut sortir si elle garde le watermark et mentionne la preuve manquante.</p></div>
+                <span class="pill warn">A verifier</span>
+              </div>
+            </div>
+
+            <h3>Fil de decision attendu</h3>
+            <div class="timeline">
+              <div class="step"><strong>1. Lire pourquoi ca bloque</strong><p>Aucun envoi automatique.</p></div>
+              <div class="step blocked"><strong>2. Noter l'envoi hors outil</strong><p>Date, canal, destinataire.</p></div>
+              <div class="step"><strong>3. Revenir a l'apercu export</strong><p>Retour token-safe.</p></div>
+            </div>
+          </article>
+
+          <section class="panel">
+            <h2>Controle confidentialite</h2>
+            <div class="check">
+              <span class="mini ok">OK</span>
+              <div><strong>Aucun chemin local affiche</strong><p>La page montre ACTION-FICTIF-ASC-2025, jamais un chemin raw ou restricted.</p></div>
+            </div>
+            <div class="check">
+              <span class="mini ok">OK</span>
+              <div><strong>Export derive seulement</strong><p>Le watermark reste visible et source_of_truth reste false dans les formats.</p></div>
+            </div>
+            <div class="check">
+              <span class="mini warn">!</span>
+              <div><strong>Preuve d'envoi absente</strong><p>Sans date et canal, la relance ne doit pas etre annoncee comme faite.</p></div>
+            </div>
+            <div class="check">
+              <span class="mini danger">EX</span>
+              <div><strong>Brut ascenseur bloque</strong><p>PDF original, notes internes et pieces non biffees restent dans le coffre local.</p></div>
+            </div>
+
+            <h3>Preuves attendues</h3>
+            <div class="rows">
+              <div class="row"><div><strong>Date d'envoi</strong><p>Jour ou la relance a ete faite hors CoproScope.</p></div><span class="pill warn">Manque</span></div>
+              <div class="row"><div><strong>Canal et destinataire</strong><p>Email, courrier ou appel, avec destinataire de role, pas d'email reel.</p></div><span class="pill warn">Manque</span></div>
+              <div class="row"><div><strong>Note de suivi</strong><p>Phrase courte: quoi verifier a la prochaine revue CS.</p></div><span class="pill info">A saisir</span></div>
+            </div>
+
+          </section>
+
+          <aside class="panel decision">
+            <h2>Decision avant export</h2>
+            <p>Le conseiller choisit entre corriger le blocage, exclure proprement l'element, ou revenir a l'apercu. Aucun telechargement final ne part avec une relance ambigue.</p>
+
+            <div class="decision-box">
+              <strong>Element bloque</strong>
+              <p class="note">ACTION-FICTIF-ASC-2025<br>Relance syndic ascenseur<br>Statut: preuve d'envoi manquante</p>
+            </div>
+
+            <div class="decision-box">
+              <strong>Formats impactes</strong>
+              <div class="formats">
+                <div class="format">TXT verrouille</div>
+                <div class="format">JSON audit</div>
+                <div class="format">Markdown</div>
+                <div class="format">Presse-papier</div>
+              </div>
+            </div>
+
+            <div class="btn disabled">Telecharger export derive - verrouille</div>
+            <div class="btn">Noter l'envoi hors CoproScope</div>
+            <div class="btn secondary">Exclure cette relance du pack</div>
+            <div class="btn-row">
+              <div class="btn secondary">Retour apercu</div>
+              <div class="btn secondary">Voir action</div>
+            </div>
+
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

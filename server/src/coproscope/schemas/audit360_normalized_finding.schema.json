@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoproScope Audit360 Normalized Finding",
+  "type": "object",
+  "required": ["source_kind", "source_file", "title", "constat", "risk", "action"],
+  "properties": {
+    "source_kind": { "type": "string" },
+    "source_file": { "type": "string" },
+    "source_row_id": { "type": "string" },
+    "title": { "type": "string" },
+    "lot": { "type": "string" },
+    "bloc": { "type": "string" },
+    "piece": { "type": "string" },
+    "actor": { "type": "string" },
+    "amount_ttc": { "type": ["number", "string"] },
+    "date_piece": { "type": "string" },
+    "priority_hint": { "type": "string" },
+    "priority_source": { "type": "string" },
+    "status": { "type": "string" },
+    "constat": { "type": "string" },
+    "appreciation": { "type": "string" },
+    "risk": { "type": "string" },
+    "action": { "type": "string" }
+  }
+}

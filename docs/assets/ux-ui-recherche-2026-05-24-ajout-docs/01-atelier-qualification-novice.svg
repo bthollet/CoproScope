@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Atelier de qualification novice</title>
+  <desc id="desc">Blueprint UI pour ajouter un document localement, qualifier le type, decider qui peut voir, rattacher a un sujet, une action et une preuve attendue.</desc>
+  <rect width="1400" height="900" fill="#f5f7f8"/>
+  <rect x="40" y="34" width="1320" height="96" rx="8" fill="#17324d"/>
+  <text x="72" y="78" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff">Ajouter depuis mon ordinateur</text>
+  <text x="72" y="108" font-family="Arial, sans-serif" font-size="18" fill="#d9e7ef">Le fichier reste local. La confidentialite est decidee avant toute sortie.</text>
+  <rect x="980" y="58" width="160" height="42" rx="6" fill="#ffffff"/>
+  <text x="1008" y="85" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">3 a completer</text>
+  <rect x="1160" y="58" width="160" height="42" rx="6" fill="#ffffff"/>
+  <text x="1191" y="85" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#17324d">1 bloque</text>
+
+  <rect x="40" y="160" width="280" height="690" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="66" y="205" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#17324d">File locale</text>
+  <text x="66" y="230" font-family="Arial, sans-serif" font-size="14" fill="#5d6b76">References neutres seulement</text>
+  <rect x="66" y="260" width="228" height="96" rx="8" fill="#e8f2f7" stroke="#6aa1bd"/>
+  <text x="88" y="292" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#17324d">Fichier 1</text>
+  <text x="88" y="318" font-family="Arial, sans-serif" font-size="14" fill="#2e4b5f">A decider maintenant</text>
+  <text x="88" y="340" font-family="Arial, sans-serif" font-size="13" fill="#56636f">doc: DOC-8F42</text>
+  <rect x="66" y="374" width="228" height="82" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="88" y="406" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Fichier 2</text>
+  <text x="88" y="430" font-family="Arial, sans-serif" font-size="14" fill="#687580">Je ne sais pas encore</text>
+  <rect x="66" y="474" width="228" height="82" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="88" y="506" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Fichier 3</text>
+  <text x="88" y="530" font-family="Arial, sans-serif" font-size="14" fill="#a45d21">Non diffusable</text>
+
+  <rect x="350" y="160" width="565" height="690" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="382" y="205" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">Fichier 1</text>
+  <text x="382" y="234" font-family="Arial, sans-serif" font-size="15" fill="#5d6b76">doc_id DOC-8F42 - hash a91d2e - PDF - 3 pages</text>
+  <rect x="382" y="268" width="500" height="78" rx="8" fill="#eef7ef" stroke="#9ac79b"/>
+  <text x="406" y="300" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#234b2b">Confirmation</text>
+  <text x="406" y="326" font-family="Arial, sans-serif" font-size="15" fill="#2f5936">Le fichier est ajoute localement. Rien n'est partage.</text>
+  <rect x="382" y="378" width="500" height="92" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+  <text x="406" y="412" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Analyse locale</text>
+  <text x="406" y="438" font-family="Arial, sans-serif" font-size="15" fill="#4d5c66">Type propose: Facture ou devis travaux</text>
+  <text x="406" y="460" font-family="Arial, sans-serif" font-size="15" fill="#4d5c66">Raison courte: montant, date et fournisseur detectes</text>
+  <rect x="382" y="502" width="500" height="104" rx="8" fill="#fff8eb" stroke="#e1ba69"/>
+  <text x="406" y="536" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#6d4b00">Prochaine etape</text>
+  <text x="406" y="562" font-family="Arial, sans-serif" font-size="15" fill="#5a4b2b">Decider qui pourra voir ce document.</text>
+  <text x="406" y="584" font-family="Arial, sans-serif" font-size="15" fill="#5a4b2b">Si vous hesitez, gardez Je ne sais pas encore.</text>
+  <rect x="382" y="640" width="500" height="130" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+  <text x="406" y="674" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#17324d">Resume avant sortie</text>
+  <text x="406" y="702" font-family="Arial, sans-serif" font-size="15" fill="#4d5c66">Ajoute localement: oui</text>
+  <text x="406" y="728" font-family="Arial, sans-serif" font-size="15" fill="#4d5c66">Confidentialite: a decider</text>
+  <text x="406" y="754" font-family="Arial, sans-serif" font-size="15" fill="#4d5c66">Reste a faire: rattacher au sujet et a l'action</text>
+
+  <rect x="945" y="160" width="415" height="690" rx="8" fill="#ffffff" stroke="#d7dee4"/>
+  <text x="975" y="205" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">Decisions</text>
+  <g font-family="Arial, sans-serif" font-size="15" fill="#17324d">
+    <rect x="975" y="238" width="355" height="86" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="997" y="270" font-weight="700">1. Quel type de document ?</text>
+    <text x="997" y="298" fill="#4d5c66">Facture, devis, AG, demande, autre</text>
+    <rect x="975" y="342" width="355" height="100" rx="8" fill="#fff8eb" stroke="#e1ba69"/>
+    <text x="997" y="374" font-weight="700">2. Qui pourra le voir ?</text>
+    <text x="997" y="402" fill="#4d5c66">Diffusable apres verification</text>
+    <text x="997" y="424" fill="#4d5c66">A masquer, reserve CS, non diffusable</text>
+    <rect x="975" y="460" width="355" height="86" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="997" y="492" font-weight="700">3. A quel sujet ?</text>
+    <text x="997" y="520" fill="#4d5c66">AG 2025, travaux toiture, facture eau...</text>
+    <rect x="975" y="564" width="355" height="86" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="997" y="596" font-weight="700">4. Quelle action ?</text>
+    <text x="997" y="624" fill="#4d5c66">Verifier, demander, relancer, classer</text>
+    <rect x="975" y="668" width="355" height="76" rx="8" fill="#f8fafb" stroke="#d7dee4"/>
+    <text x="997" y="700" font-weight="700">5. Que doit-il prouver ?</text>
+    <text x="997" y="728" fill="#4d5c66">Presence, decision, paiement, reception</text>
+  </g>
+  <rect x="975" y="778" width="355" height="48" rx="6" fill="#1b6b54"/>
+  <text x="1032" y="809" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#ffffff">Valider et continuer</text>
+</svg>

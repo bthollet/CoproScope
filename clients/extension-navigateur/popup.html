@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Observateur d'extranet</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>Observateur d'extranet</h1>
+  <p class="garde">Lecture seule. Rien n'est envoye a votre syndic.</p>
+
+  <label class="bascule">
+    <input id="veille" type="checkbox">
+    <span><strong>Surveillance continue</strong>
+    <small>Releve tout seul quand vous passez sur l'extranet, au plus une fois
+    par intervalle.</small></span>
+  </label>
+
+  <label class="ligne">
+    Intervalle entre deux relevés
+    <select id="intervalle">
+      <option value="1">1 heure</option>
+      <option value="6">6 heures</option>
+      <option value="24">1 jour</option>
+      <option value="168">1 semaine</option>
+    </select>
+  </label>
+
+  <div id="etatVeille" class="noms"></div>
+  <div id="etatSonde" class="noms" hidden></div>
+  <button id="sonderMaintenant" type="button" class="discret">Verifier la
+  connexion maintenant</button>
+
+  <div id="alerte" class="alerte-bloc" hidden></div>
+
+  <hr>
+
+  <button id="observer" type="button">Relever maintenant</button>
+
+  <label class="ligne">
+    <input id="avecNoms" type="checkbox" checked>
+    Relever aussi le nom de chaque fichier
+    <small>Une requete par piece, sans telechargement. C'est ce qui permet de
+    reconnaitre une piece renommee au lieu de croire qu'elle a disparu.</small>
+  </label>
+
+  <div id="etat" class="etat" role="status" aria-live="polite"></div>
+  <div id="noms" class="noms" hidden></div>
+
+  <details id="panneauConformite">
+    <summary>Ce que le decret exige, et ce qui manque</summary>
+    <p class="note">Le plugin ne peut pas deviner ou votre syndic range chaque
+    piece: aucune page d'extranet ne cite le decret. Indiquez-le une fois, et il
+    comptera pour vous a chaque passage.</p>
+    <div id="conformite" class="conformite"></div>
+    <p class="note">Vos reponses sont gardees au fur et a mesure: vous pouvez
+    fermer cette fenetre sans rien perdre.</p>
+    <button id="enregistrerConformite" type="button">Recalculer</button>
+  </details>
+
+  <details>
+    <summary>Effacer ce que le plugin a garde</summary>
+    <p class="note">Le plugin conserve sur votre machine les douze derniers
+    releves de chaque espace. Si vous avez relevé une page avant de lui dire
+    quelles rubriques ne doivent jamais etre lues, ces releves en portent
+    encore le contenu.</p>
+    <p class="note">Effacer supprime les releves, l'historique et l'etat de la
+    surveillance. <strong>Vos rattachements et vos attendus sont
+    conserves</strong>: vous n'aurez pas a tout redeclarer.</p>
+    <button id="effacer" type="button">Effacer tous les releves</button>
+  </details>
+
+  <details>
+    <summary>Exporter</summary>
+    <p class="note">Le <strong>journal</strong> reste chez vous: il porte les
+    libelles. L'<strong>export</strong> se transmet: il ne porte que des
+    empreintes, des dates et ce qui a ete parcouru.</p>
+    <label>Secret de la copropriete
+      <input id="sel" type="password" placeholder="le meme pour tous les voisins">
+    </label>
+    <label>Votre pseudonyme
+      <input id="observateur" type="text" placeholder="voisin A">
+    </label>
+    <p class="note">Sans ce secret, un tiers qui obtiendrait l'export pourrait
+    deviner ce qu'il contient en testant des intitules.</p>
+    <p class="note"><strong>Ce secret se choisit une fois, entre voisins.</strong>
+    Ce n'est pas une cle produite par CoproScope: celles-la sont propres a votre
+    coffre, et servent au contraire a ce que deux voisins ne produisent jamais
+    la meme valeur. En changer rend tout l'historique anterieur incomparable.</p>
+    <button id="exporter" type="button">Produire l'export a transmettre</button>
+  </details>
+
+  <script src="sonde.js"></script>
+  <script src="cle.js"></script>
+  <script src="referentiel.js"></script>
+  <script src="veille.js"></script>
+  <script src="panneau.js"></script>
+  <script src="journal.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

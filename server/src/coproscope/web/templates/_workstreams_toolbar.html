@@ -1,0 +1,94 @@
+  <section class="cs-memoire-toolbar" aria-label="Recherche et filtres">
+    <form action="{{ token_href('/chantiers') }}" method="get" role="search">
+      {% if ui_token_param %}
+      <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+      {% endif %}
+      <input type="hidden" name="periode" value="{{ active_period }}">
+      {% if active_category %}<input type="hidden" name="categorie" value="{{ active_category }}">{% endif %}
+      {% if active_status %}<input type="hidden" name="statut" value="{{ active_status }}">{% endif %}
+      {% if active_diffusion %}<input type="hidden" name="diffusion" value="{{ active_diffusion }}">{% endif %}
+      <label class="sr-only" for="memoire-search">Rechercher dans la memoire</label>
+      <input id="memoire-search" name="q" type="search" value="{{ query_text }}" placeholder="{{ toolbar.search_placeholder|default('Rechercher un evenement, un contrat, un document...') }}">
+      <button class="cs-memoire-search-button" type="submit">Rechercher</button>
+    </form>
+    <details class="cs-memoire-filter-menu">
+      <summary>Filtres <span>{{ filter_total }}</span></summary>
+      <div class="cs-memoire-filter-panel">
+        <div>
+          <strong>Categorie</strong>
+          <div class="cs-memoire-chip-row">
+            {% for option in filters.categories|default([]) %}
+            <a class="{{ 'is-active' if active_category == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?categorie=' ~ option.id)) }}">{{ option.label }} <span>{{ option.count|default(0) }}</span></a>
+            {% else %}
+            <span>AG</span><span>Travaux</span><span>Sinistres</span><span>Contrats</span><span>Documents</span><span>Syndic</span><span>Comptes</span><span>Demandes</span><span>Contentieux</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <strong>Statut</strong>
+          <div class="cs-memoire-chip-row">
+            {% for option in filters.statuses|default([]) %}
+            <a class="{{ 'is-active' if active_status == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?statut=' ~ option.id)) }}">{{ option.label }} <span>{{ option.count|default(0) }}</span></a>
+            {% else %}
+            <span>Ouvert</span><span>Clos</span><span>A confirmer</span><span>Restreint</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <strong>Diffusion</strong>
+          <div class="cs-memoire-chip-row">
+            {% for option in filters.diffusion|default([]) %}
+            <a class="{{ 'is-active' if active_diffusion == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?diffusion=' ~ option.id)) }}">{{ option.label }} <span>{{ option.count|default(0) }}</span></a>
+            {% else %}
+            <span>Transmissible</span><span>Apres biffage</span><span>Conseil syndical</span><span>Confidentiel</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <strong>Preuve</strong>
+          <div class="cs-memoire-chip-row">
+            <a href="{{ token_href('/chantiers?preuve=avec') }}">Avec preuve</a>
+            <a href="{{ token_href('/chantiers?preuve=manquante') }}">Preuve manquante</a>
+            <a href="{{ token_href('/chantiers?preuve=restreinte') }}">Preuve restreinte</a>
+          </div>
+        </div>
+        <a class="cs-memoire-reset" href="{{ token_href(filters.reset_href|default('/chantiers')) }}">Reinitialiser</a>
+      </div>
+    </details>
+    <nav class="cs-memoire-periods" aria-label="Periode affichee">
+      {% for option in toolbar.period_options|default([]) %}
+      <a class="{{ 'is-active' if active_period == option.id|default('') else '' }}" href="{{ token_href(option.href|default('/chantiers?periode=' ~ option.id)) }}">{{ option.label }}</a>
+      {% else %}
+      <a class="{{ 'is-active' if active_period == '5ans' else '' }}" href="{{ token_href('/chantiers?periode=5ans') }}">5 ans</a>
+      <a class="{{ 'is-active' if active_period == '10ans' else '' }}" href="{{ token_href('/chantiers?periode=10ans') }}">10 ans</a>
+      <a class="{{ 'is-active' if active_period == 'tout' else '' }}" href="{{ token_href('/chantiers?periode=tout') }}">Tout</a>
+      {% endfor %}
+    </nav>
+  </section>
+
+  {% if add_mode %}
+  <section class="cs-memoire-drawer" aria-labelledby="memoire-add-title">
+    <div>
+      <p class="eyebrow">Nouvelle trace</p>
+      <h3 id="memoire-add-title">Ajouter un evenement</h3>
+      <p>Cette saisie prepare seulement une fiche a relire. Rien n'est ajoute sans validation.</p>
+    </div>
+    <form class="cs-memoire-add-form" action="{{ token_href('/chantiers') }}" method="get">
+      {% if ui_token_param %}
+      <input type="hidden" name="token" value="{{ ui_token_param|replace('token=', '') }}">
+      {% endif %}
+      <label>Type <select name="type"><option>Evenement</option><option>Document rattache</option><option>Sujet ouvert</option><option>Changement de syndic</option></select></label>
+      <label>Date <input name="date" type="date"></label>
+      <label>Titre <input name="titre" type="text" placeholder="Exemple: contrat ascenseur signe"></label>
+      <label>Resume <textarea name="resume" rows="3" placeholder="Ce qu'il faut retenir pour la passation"></textarea></label>
+      <label>Categorie <select name="categorie"><option>AG</option><option>Travaux</option><option>Sinistres</option><option>Contrats</option><option>Documents</option><option>Syndic</option><option>Comptes</option><option>Demandes</option><option>Contentieux</option></select></label>
+      <label>Documents rattaches <input name="documents" type="text" placeholder="Nom ou reference de document"></label>
+      <label>Statut passation <select name="statut"><option>A relire</option><option>Ouvert</option><option>Clos</option></select></label>
+      <label>Niveau de diffusion <select name="diffusion"><option>Conseil syndical</option><option>Transmissible</option><option>Apres biffage</option><option>Confidentiel</option></select></label>
+      <div class="cs-memoire-form-actions">
+        <button class="cs-memoire-primary-action" type="submit">Preparer la fiche</button>
+        <a class="cs-memoire-secondary-action" href="{{ token_href('/chantiers') }}">Annuler</a>
+      </div>
+    </form>
+  </section>
+  {% endif %}

@@ -1,0 +1,125 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coproscope"
+version = "0.1.0"
+description = "Cockpit documentaire local-first pour les workflows de copropriete."
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-only" }
+authors = [{ name = "Codex" }]
+keywords = [
+  "copropriete",
+  "documents",
+  "local-first",
+  "privacy",
+  "audit",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Framework :: FastAPI",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Legal Industry",
+  "Intended Audience :: Other Audience",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business",
+  "Topic :: Office/Business :: Financial :: Accounting",
+  "Topic :: Security",
+  "Typing :: Typed",
+]
+dependencies = [
+  "defusedxml>=0.7",
+  "PyYAML>=6.0",
+  "python-docx>=1.1",
+  "cryptography>=42.0",
+]
+
+[project.optional-dependencies]
+accounting = [
+  "duckdb>=1.5",
+  "pandas>=3.0",
+  "openpyxl>=3.1",
+  "pypdf>=5.3",
+  "PyMuPDF>=1.24",
+  "pdfplumber>=0.11",
+  "factur-x>=4.2",
+]
+dashboards = [
+  "grist-api>=0.1.1",
+]
+ui = [
+  "fastapi>=0.115",
+  "uvicorn>=0.34",
+  "jinja2>=3.1",
+  "httpx>=0.28",
+  "python-multipart>=0.0.9",
+]
+security = [
+  "bandit>=1.8",
+  "pip-audit>=2.7",
+]
+executable = [
+  "pyinstaller>=6.0",
+  "pywebview>=6.2",
+]
+docai = [
+  "PyMuPDF>=1.24",
+  "docling>=2.0",
+  "rapidocr>=3.0",
+]
+drive = [
+  "google-api-python-client>=2.170",
+  "google-auth-httplib2>=0.2",
+  "google-auth-oauthlib>=1.2",
+]
+vl = [
+  "torch>=2.0",
+  "torchvision>=0.15",
+  "transformers>=4.45",
+  "accelerate>=0.30",
+  "huggingface-hub>=0.24",
+  "qwen-vl-utils>=0.0.8",
+]
+layout = [
+  "transformers>=4.45",
+  "datasets>=2.0",
+]
+
+[project.scripts]
+coprocs = "coproscope.cli:main"
+coproscope-app = "coproscope.executable_app:main"
+
+[project.urls]
+Homepage = "https://github.com/bthollet/CoproScope"
+Repository = "https://github.com/bthollet/CoproScope"
+Issues = "https://github.com/bthollet/CoproScope/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+coproscope = [
+  "configs/*.yml",
+  "schemas/*.json",
+  "templates/*.csv",
+  "prompts/*.md",
+  "extractors/invoices/*.json",
+  "*_parts/*.py",
+  "core/_*_fragments/*.pyfrag",
+  "modules/_*_parts/*.py",
+  "vault/_*_parts/*.py",
+  "web/_*_fragments/*.pyfrag",
+  "web/viewmodels/_*_fragments/*.pyfrag",
+  "web/templates/*.html",
+  "web/static/*.css",
+  "web/static/*.js"
+]

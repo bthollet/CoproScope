@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: server/pyproject.toml
+
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[ui,accounting,security]"
+
+      # **Une seule facon de jouer la suite** (RM-2026-0173). Cette etape
+      # lancait `python -m unittest discover -s tests -v`: cette invocation
+      # place `server/tests` en tete de `sys.path`, change le nom d'import des
+      # modules, joue environ 330 tests de MOINS que la decouverte en
+      # processus, et sort sur 1 pendant qu'`unittest` imprime `OK`. Ce n'est
+      # pas le produit qui variait, c'est l'invocation.
+      #
+      # Le lanceur canonique se place lui-meme dans `server`, nomme les tests
+      # collectes et jamais DEMARRES - un saut pose au niveau d'une classe
+      # n'apparait dans aucun compteur standard - et rend un code lu du verdict
+      # d'`unittest`, jamais d'un code compose.
+      - name: Run unittest suite
+        run: python ../tools/lancer_la_suite.py -v
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: server/pyproject.toml
+
+      - name: Install security dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[security]"
+
+      - name: Run Bandit
+        run: python -m bandit -r src -q --severity-level high
+
+      - name: Run pip-audit
+        run: python -m pip_audit . --skip-editable --progress-spinner off

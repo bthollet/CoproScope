@@ -1,0 +1,579 @@
+
+.cs-shell .quick-help:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  padding: 6px 28px 0;
+  white-space: normal;
+}
+
+.cs-shell .quick-help details {
+  max-width: none;
+  background: #ffffff;
+  border-color: #dce3ec;
+}
+
+.cs-main {
+  padding: 12px 28px 28px;
+}
+
+.cs-footer {
+  padding-top: 18px;
+  padding-bottom: 28px;
+  background: #f4f7fb;
+  border-top-color: #dce3ec;
+}
+
+.cs-page-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+
+.cs-page-intro h2 {
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 760;
+}
+
+.cs-page-intro .lead {
+  max-width: 760px;
+  margin-top: 4px;
+  color: #475467;
+}
+
+.cs-intro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cs-intro-meta span,
+.cs-intro-meta a,
+.cs-mini-link {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #ffffff;
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.cs-intro-meta span {
+  color: #667085;
+}
+
+.cs-card-band,
+.cs-panel,
+.cs-table-panel,
+.cs-trust-strip {
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+.cs-card-band {
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.cs-section-head,
+.cs-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cs-section-head h3,
+.cs-panel-head h3 {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.cs-panel-head .hint {
+  margin: 3px 0 0;
+}
+
+.cs-mini-link {
+  min-height: 30px;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.cs-todo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cs-todo-card {
+  display: grid;
+  min-height: 94px;
+  grid-template-columns: 46px minmax(0, 1fr);
+  column-gap: 12px;
+  align-content: center;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcff;
+}
+
+.cs-todo-card:hover {
+  border-color: #8fb4ff;
+  box-shadow: 0 8px 22px rgba(16, 24, 40, .07);
+}
+
+.cs-card-icon {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  grid-row: 1 / span 3;
+  place-items: center;
+  border: 2px solid currentColor;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cs-card-number {
+  color: currentColor;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cs-todo-card strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cs-todo-card small {
+  color: #475467;
+  font-size: 12px;
+}
+
+.cs-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cs-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 330px;
+  flex-direction: column;
+  padding: 14px;
+}
+
+.cs-panel .hint {
+  margin: 0 0 12px;
+}
+
+.cs-donut-row,
+.cs-accounting-summary {
+  display: grid;
+  grid-template-columns: 134px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cs-donut {
+  --value: 0;
+  display: grid;
+  width: 122px;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #ffffff 0 56%, transparent 57%),
+    conic-gradient(#31aa75 calc(var(--value) * 1%), #f79c22 0 82%, #ec4d44 0);
+  text-align: center;
+}
+
+.cs-donut strong,
+.cs-donut span {
+  grid-area: 1 / 1;
+}
+
+.cs-donut strong {
+  align-self: center;
+  color: #101828;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.cs-donut span {
+  align-self: end;
+  margin-bottom: 32px;
+  color: #475467;
+  font-size: 12px;
+  font-weight: 690;
+}
+
+.cs-donut-score {
+  background:
+    radial-gradient(circle, #ffffff 0 56%, transparent 57%),
+    conic-gradient(#31aa75 calc(var(--value) * 1%), #f79c22 0 78%, #ec4d44 0);
+}
+
+.cs-legend {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.cs-legend div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.cs-legend dt,
+.cs-legend dd {
+  margin: 0;
+}
+
+.cs-legend dt {
+  color: #475467;
+}
+
+.cs-legend dd {
+  font-weight: 760;
+}
+
+.cs-compact-list,
+.cs-request-list,
+.cs-deadline-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cs-compact-list {
+  margin-top: auto;
+}
+
+.cs-compact-list a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: baseline;
+  border-bottom: 1px solid #edf1f6;
+  padding: 6px 0;
+}
+
+.cs-compact-list small {
+  grid-column: 1 / -1;
+  color: #667085;
+}
+
+.cs-panel-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  color: var(--accent-blue);
+  font-weight: 760;
+}
+
+.cs-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #e4eaf2;
+}
+
+.cs-tabs span {
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 8px;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 690;
+}
+
+.cs-tabs span.active {
+  border-bottom-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.cs-request-list a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  border-bottom: 1px solid #edf1f6;
+  padding: 8px 0;
+}
+
+.cs-request-list strong,
+.cs-request-list span,
+.cs-request-list small {
+  overflow-wrap: anywhere;
+}
+
+.cs-request-list span,
+.cs-request-list small,
+.cs-deadline-list span,
+.cs-deadline-list small {
+  color: #667085;
+  font-size: 12px;
+}
+
+.cs-deadline-list a {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid #edf1f6;
+  padding: 9px 0;
+}
+
+.cs-deadline-list time {
+  display: grid;
+  min-height: 58px;
+  place-items: center;
+  border-radius: 8px;
+  background: #eaf7f1;
+  /* #138866 mesurait 4,02:1 sur ce fond, sous le seuil de 4,5. #047857 est le vert
+     de texte deja employe ailleurs dans le depot, de meme teinte, et mesure 4,98:1. */
+  color: #047857;
+  text-align: center;
+}
+
+.cs-deadline-list time strong {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.cs-deadline-list time span {
+  color: #047857;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cs-table-panel {
+  padding: 14px;
+}
+
+.cs-table-scroll {
+  overflow-x: auto;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+}
+
+.cs-risk-table {
+  min-width: 920px;
+  table-layout: auto;
+  background: #ffffff;
+}
+
+.cs-risk-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.cs-risk-table th {
+  background: #f8fafc;
+  color: #475467;
+}
+
+.cs-risk-table th,
+.cs-risk-table td {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.cs-status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+}
+
+.cs-status-dot::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.cs-trust-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 12px 14px;
+}
+
+.cs-trust-strip div {
+  display: grid;
+  gap: 3px;
+}
+
+.cs-trust-strip span {
+  color: #667085;
+  font-size: 13px;
+}
+
+.cs-trust-strip a {
+  flex: 0 0 auto;
+  color: var(--accent-blue);
+  font-weight: 760;
+}
+
+/* La largeur disponible est un degre de liberte. Ce qui reste vrai le long de
+ * cet axe: la barre haute REPLIE son contenu, elle ne le supprime pas. Cette
+ * regle portait `.cs-topbar .instance-meta { display: none }`, qui emportait a
+ * la fois l'identite du coffre, l'exercice et le bouton du mode test des que la
+ * fenetre passait sous 1281 px - une largeur qu'atteint toute fenetre munie
+ * d'une barre laterale d'assistant. Voir `RM-2026-0111`.
+ *
+ * Les positions se disent en indices NEGATIFS (`-2 / -1` = derniere colonne),
+ * pour ne pas recompter les colonnes: `styles_part_30.css` en donne trois aux
+ * pages sans champ de recherche et deux aux autres. */
+@media (max-width: 1280px) {
+  .cs-topbar {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+
+  .cs-topbar-title {
+    grid-row: 1;
+    grid-column: 1 / -2;
+  }
+
+  .cs-top-action {
+    grid-row: 1;
+    grid-column: -2 / -1;
+  }
+
+  .cs-search {
+    grid-row: 2;
+    grid-column: 1 / -2;
+    width: 100%;
+    max-width: none;
+  }
+
+  .cs-topbar .instance-meta {
+    grid-row: 2;
+    grid-column: -2 / -1;
+    justify-content: flex-end;
+  }
+
+  .cs-todo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cs-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .cs-sidebar {
+    position: relative;
+    width: 100%;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, .14);
+  }
+
+  .cs-workspace {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .cs-sidebar .nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .cs-nav-section {
+    display: contents;
+    min-width: 0;
+  }
+
+  .cs-nav-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .cs-sidebar .nav a {
+    min-width: 0;
+    min-height: 38px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .cs-sidebar .nav a span:not(.cs-nav-icon):not(.cs-nav-count) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .cs-nav-count {
+    display: none;
+  }
+
+  .cs-share-card {
+    display: none;
+  }
+
+  .cs-topbar {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    min-height: 0;
+  }
+
+  .cs-search {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+  }
+
+  /* Sous 981 px le champ de recherche prend la rangee entiere; les actions
+   * descendent d'une rangee au lieu de se faire ecraser contre lui. */
+  .cs-topbar .instance-meta {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}

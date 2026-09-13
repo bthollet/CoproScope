@@ -1,0 +1,63 @@
+/* Modificateurs tardifs du systeme de design.
+   Ce qui vit ici doit etre declare apres toutes les regles de base des cartes,
+   des panneaux et des barres : ce sont des modificateurs de meme specificite
+   que les regles qu'ils doivent emporter, donc seul l'ordre les fait gagner.
+   Les placer plus haut a ete mesure comme perdant en recette. */
+
+/* Barres d'onglets - etat actif de la famille.
+   Mesure avant correction a 716 px : l'actif ne se distinguait de l'inactif que par
+   un fond #eef4ff contre #ffffff, soit 1,10:1, et une bordure #8fb4ff a 2,07:1 sur
+   blanc. L'ecart ne se lisait pas sur une capture. Les deux barres, cs-comptes-tabs
+   et cs-reprise-tabs, portaient le meme defaut : il est corrige dans la famille, pas
+   sur un ecran.
+   L'apparence est pilotee par aria-current, la marque semantique, et les classes
+   historiques .active / .is-active restent acceptees le temps que les gabarits
+   passent a aria-current. */
+
+.cs-comptes-tabs a,
+.cs-reprise-tabs a {
+  border-color: #667085;
+}
+
+.cs-comptes-tabs a:hover,
+.cs-reprise-tabs a:hover {
+  border-color: var(--accent-blue);
+  background: #eef4ff;
+  color: var(--accent-blue);
+}
+
+.cs-comptes-tabs a.active,
+.cs-reprise-tabs a.is-active,
+.cs-comptes-tabs a[aria-current]:not([aria-current="false"]),
+.cs-reprise-tabs a[aria-current]:not([aria-current="false"]) {
+  border-color: var(--accent-blue);
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+
+.cs-comptes-tabs a.active span,
+.cs-reprise-tabs a.is-active span,
+.cs-comptes-tabs a[aria-current]:not([aria-current="false"]) span,
+.cs-reprise-tabs a[aria-current]:not([aria-current="false"]) span {
+  background: #ffffff;
+  color: var(--accent-blue);
+}
+
+/* Tons de reprise - reapplication tardive, sans redeclarer les valeurs.
+   cs-reprise-tone-* est un alias de la famille canonique cs-card-tone-*, declaree
+   avec cs-tone-* dans styles_part_07.css. Elle y nomme --ton-filet et --ton-fond.
+   Mais les surfaces des cartes de reprise sont peintes en blanc plus loin, dans
+   styles_part_11.css : a specificite egale, c'est la derniere regle qui gagne, et
+   le ton disparaissait. Mesure en recette : fond #ffffff au lieu du ton attendu.
+   Ce bloc rejoue donc les deux memes declarations, apres cette regle de fond, en
+   relisant les valeurs de la famille. Aucune couleur n'est redeclaree ici : les
+   quatre regles concurrentes de styles_part_12.css, dont les fonds derivaient de
+   1 a 13 unites sans motif, ont ete supprimees. */
+
+.cs-reprise-tone-danger,
+.cs-reprise-tone-warn,
+.cs-reprise-tone-ok,
+.cs-reprise-tone-info {
+  border-left-color: var(--ton-filet);
+  background: var(--ton-fond);
+}

@@ -1,0 +1,17 @@
+{#
+  Les deux onglets du Controle: comptes et gouvernance.
+
+  `RM-2026-0183`, recette de Brice du 2026-09-13: *06, c'est Controle, avec deux
+  sous-onglets*. En arrivant sur l'un des deux ecrans, on voit l'autre. Meme
+  motif que les onglets des comptes: `aria-current="page"` marque l'actif, et ni
+  `role="tablist"` ni `aria-selected` - un motif ARIA a moitie implemente promet
+  au lecteur d'ecran un comportement qui n'existe pas.
+
+  Le jeton se pose ici a la main: un `include` ne voit pas la macro
+  `token_href` du gabarit qui l'inclut.
+#}
+{% set _jeton = ('?' ~ ui_token_param) if ui_token_param else '' %}
+<nav class="cs-controle-onglets cs-comptes-tabs" aria-label="Contrôle : comptes et gouvernance">
+  <a href="/comptes{{ _jeton }}"{% if page == 'accounting' %} class="active" aria-current="page"{% endif %}>Comptes</a>
+  <a href="/controle-gouvernance{{ _jeton }}"{% if page == 'controle_gouvernance' %} class="active" aria-current="page"{% endif %}>Gouvernance</a>
+</nav>

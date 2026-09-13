@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "prefixe_identifiant_document": "DOC",
+  "prefixe_identifiant_demande": "DEM",
+  "prefixe_identifiant_ag": "AG",
+  "prefixe_identifiant_constat": "FDG",
+  "longueur_max_nom_fichier_sur": 150
+}

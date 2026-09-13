@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoproScope Request",
+  "type": "object",
+  "required": ["request_id", "date", "subject", "status", "priority"],
+  "properties": {
+    "request_id": { "type": "string" },
+    "date": { "type": "string" },
+    "subject": { "type": "string" },
+    "expected_piece": { "type": "string" },
+    "status": { "type": "string" },
+    "last_follow_up": { "type": "string" },
+    "priority": { "type": "string" },
+    "response_due_date": { "type": "string" },
+    "source_document": { "type": "string" },
+    "related_doc_ids": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}

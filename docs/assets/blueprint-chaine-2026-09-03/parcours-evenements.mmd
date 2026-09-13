@@ -1,0 +1,71 @@
+%% Parcours-evenements - du depot au verdict sur une depense
+%% Voie UX chaine depot vers controle, 2026-09-03.
+%% Convention de lecture:
+%%   [U] evenement emis par l'utilisateur
+%%   [M] evenement emis par la machine
+%%   Trait plein  = le chemin existe dans le code au 2026-09-03
+%%   Trait pointille = le chemin est exige par l'ecran et n'existe pas encore
+%% Un evenement est nomme au participe passe: il constate un fait accompli.
+
+flowchart TD
+
+  E01["[U] PIECE_DEPOSEE<br/>produit: fichier dans raw/, manifeste de depot"]
+  E02["[M] INVENTAIRE_FAIT<br/>produit: une ligne au registre documents"]
+  E03["[M] TEXTE_EXTRAIT<br/>produit: text_path"]
+  E03b["[M] TEXTE_ABSENT<br/>produit: un PV illisible compte a part,<br/>jamais une absence de resolutions"]
+  E04["[M] DOCUMENT_QUALIFIE<br/>produit: document_type (PV_AG, Convocation, Facture...)"]
+  E04b["[U] QUALIFICATION_CORRIGEE<br/>produit: document_type, origine CORRIGE_HUMAIN"]
+
+  E05["[M] RESOLUTIONS_LUES<br/>produit: n lignes CONSTATEE au coffre gouvernance"]
+  E06["[M] PROJETS_LUS<br/>produit: n lignes PROJETEE + devis cites"]
+  E07["[M] EXTRACTION_REFUTEE<br/>produit: clotures perdues, segments fusionnes,<br/>trous de sequence, taux de quantification"]
+  E08["[M] SEUILS_DATES<br/>produit: seuils en vigueur, concurrents, expires"]
+
+  E09["[M] FACTURES_EXTRAITES<br/>produit: n lignes invoice_evidence"]
+  E10["[M] RAPPROCHEMENT_PROPOSE<br/>produit: statut + motif + doute, jamais un rattachement muet"]
+
+  E11["[M] DOSSIER_CONSTITUE<br/>produit: un dossier_depense_id qui tient ensemble<br/>euro, acte, devis, annexe, avis"]
+  E12["[M] IMPUTATION_AIGUILLEE<br/>produit: budget previsionnel ou vote separe,<br/>au sens des articles 44 et 45"]
+  E13["[M] CHAINE_EVALUEE<br/>produit: 0..n ruptures nommees, chacune datee et chiffree"]
+  E14["[M] MANQUE_NOMME (T1b)<br/>produit: la liste de ce qu'il faut demander au syndic,<br/>une seule fois"]
+  E15["[M] POINT_OUVERT<br/>produit: une ligne de file, ordonnee par cout du doute"]
+
+  E16["[U] DOSSIER_OUVERT<br/>produit: rien, c'est une lecture"]
+  E17["[U] MONTANT_ANCRE<br/>produit: une trace pdftrace vers la zone exacte du PDF"]
+  E18["[U] AVIS_CS_DECLARE<br/>produit: etat PIECE_PRODUITE / AFFIRME_SANS_PIECE / ABSENT,<br/>avec auteur et date"]
+  E19["[U] RATTACHEMENT_CONFIRME"]
+  E19b["[U] RATTACHEMENT_ECARTE"]
+  E20["[U] VERDICT_POSE<br/>produit: une trace locale qui survit au redemarrage"]
+  E21["[U] DEMANDE_CONSTITUEE<br/>produit: un courrier envoyable sans retouche"]
+  E22["[U] REPONSE_RATTACHEE<br/>produit: le statut de la ligne d'origine change"]
+
+  E01 --> E02 --> E03
+  E02 --> E03b
+  E03 --> E04 --> E04b
+  E04 --> E05
+  E04 -.-> E06
+  E05 --> E07
+  E06 -.-> E07
+  E05 --> E08
+  E04 --> E09 --> E10
+
+  E05 -.-> E11
+  E10 -.-> E11
+  E08 -.-> E12
+  E11 -.-> E12 -.-> E13
+  E13 -.-> E14
+  E13 -.-> E15
+
+  E15 --> E16 --> E17
+  E16 -.-> E18
+  E16 --> E19
+  E16 --> E19b
+  E17 --> E20
+  E18 -.-> E20
+  E19 --> E20
+  E19b --> E20
+  E14 -.-> E21
+  E20 --> E21 --> E22 --> E15
+
+  classDef manquant stroke-dasharray: 5 5;
+  class E06,E11,E12,E13,E14,E18 manquant;

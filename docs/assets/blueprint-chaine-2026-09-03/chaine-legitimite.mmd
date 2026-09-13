@@ -1,0 +1,56 @@
+%% La matrice de gouvernance - transposition de la matrice quatre sources
+%% Voie UX, 2026-09-03. Revise apres lecture du corpus CC-IT-016 a CC-IT-049.
+%%
+%% Ce schema ne propose PAS une forme nouvelle. Il transpose a l'acte
+%% d'autorisation la matrice de sources deja eprouvee sur /comptes/rapprochement,
+%% en gardant sa grammaire: ordre stable, absence de source affichee au premier
+%% niveau, refus de conclure sur une source seule, statuts publics.
+%%
+%% Regle de place, imposee par CC-IT-022, CC-IT-024 et CC-IT-028:
+%%   ligne selectionnee -> action immediate -> matrice -> contexte de piece.
+%% La matrice n'est jamais la premiere chose de l'ecran, et jamais la derniere.
+
+flowchart TB
+
+  subgraph DETAIL["Detail d'une ligne - ordre impose par CC-IT-022 / 024 / 028"]
+    direction TB
+    D1["1. LIGNE SELECTIONNEE<br/>objet controle, montant public, statut<br/>(CC-IT-044: l'identite avant les preuves)"]
+    D2["2. ACTION IMMEDIATE<br/>le geste, sa raison courte, la reserve en en-tete<br/>(CC-IT-045). Porte aussi les deux VERDICTS calcules<br/>qui ne sont pas des sources: obligation declenchee,<br/>et imputation articles 44 / 45"]
+    D3["3. LA MATRICE - voir ci-dessous"]
+    D4["4. CONTEXTE DE PIECE, question syndic, trace conseil"]
+    D1 --> D2 --> D3 --> D4
+  end
+
+  subgraph MG["MATRICE DE GOUVERNANCE - 6 sources, ordre stable"]
+    direction LR
+    G1["SEUIL APPLICABLE<br/>source: la resolution de l'AG anterieure<br/>qui arrete le montant<br/>manque: 'aucun montant arrete a cette date'<br/>a confirmer: 'deux seuils actifs, 500 et 1 000'"]
+    G2["AVIS DU CONSEIL<br/>source: le compte rendu de conseil syndical<br/>disponible = PIECE_PRODUITE<br/>a confirmer = AFFIRME_SANS_PIECE<br/>manque = ABSENT"]
+    G3["RESOLUTION<br/>source: le proces-verbal<br/>numero, objet, majorite annoncee et appliquee<br/>manque: 'depense sans acte d'autorisation'"]
+    G4["ANNEXE VISEE<br/>source: l'annexe que la resolution designe<br/>manque: 'votee par renvoi a une annexe absente'"]
+    G5["DEVIS RETENU<br/>source: le devis adopte, les devis ecartes<br/>manque: 'votee sans devis'<br/>a confirmer: 'un seul devis au-dessus du seuil'"]
+    G6["EXECUTION<br/>source: la facture payee<br/>manque: 'votee, rien de paye'<br/>a confirmer: 'paye X, vote Y' (montants d'exemple; ceux d'origine sont refutes)"]
+    G1 --- G2 --- G3 --- G4 --- G5 --- G6
+  end
+
+  subgraph MC["MATRICE DES COMPTES - 4 sources, deja livree, inchangee"]
+    direction LR
+    C1["COMPTABILITE"]
+    C2["BANQUE<br/>'Banque non fournie'"]
+    C3["FACTURE<br/>'Facture seule: paiement non prouve'"]
+    C4["DECISION / DEVIS"]
+    C1 --- C2 --- C3 --- C4
+  end
+
+  D3 --> MG
+
+  H["LA CHARNIERE<br/>La cellule 'Decision / devis' de la matrice des comptes<br/>et la cellule 'Resolution' de la matrice de gouvernance<br/>designent LE MEME objet.<br/>C'est le seul endroit ou les deux ecrans se touchent.<br/>Aujourd'hui la cellule des comptes ne lit aucun champ<br/>structure: elle balaye des mots-cles. Voir trou T2."]
+
+  C4 -.meme objet.-> H
+  G3 -.meme objet.-> H
+
+  G6 -.meme objet.-> C3
+
+  R["GRAMMAIRE COMMUNE, non negociable<br/>Statuts publics (CC-IT-036, CC-IT-038):<br/>'Source disponible' / 'A confirmer' / 'Source manquante'<br/>Une absence est un fait de premier niveau (CC-IT-020)<br/>Lien seulement sur une cellule qui porte une piece (CC-IT-037)<br/>Le mot 'validation' est interdit: conclusion, avis local,<br/>trace, reserve (CC-IT-046)"]
+
+  MG -.-> R
+  MC -.-> R

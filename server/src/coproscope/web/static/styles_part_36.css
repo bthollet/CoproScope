@@ -1,0 +1,106 @@
+/* Explorateur des documents classes. `RM-2026-0183`, recette du 2026-09-13.
+   Un arbre a gauche (famille, exercice, piece), la liste choisie a droite. */
+
+.cs-explorateur-grille {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.cs-explorateur-arbre {
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid #d8e2ee;
+  border-radius: 8px;
+  padding: 8px;
+  background: #f8fbff;
+}
+
+.cs-explorateur-arbre ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cs-explorateur-arbre ul ul {
+  margin: 2px 0 4px 14px;
+  padding-left: 8px;
+  border-left: 1px solid #d8e2ee;
+}
+
+.cs-explorateur-arbre summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cs-explorateur-arbre summary:hover,
+.cs-explorateur-arbre summary:focus-visible {
+  background: #e8f0fb;
+}
+
+.cs-explorateur-nom {
+  flex: 1 1 auto;
+  font-weight: 650;
+}
+
+.cs-explorateur-n {
+  min-width: 24px;
+  border-radius: 999px;
+  padding: 1px 7px;
+  background: #dfe9f7;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.cs-explorateur-arbre .is-a-classer > details > summary .cs-explorateur-nom {
+  font-style: italic;
+}
+
+.cs-explorateur-filtre {
+  display: inline-block;
+  margin: 2px 0 4px 14px;
+  font-size: 12px;
+}
+
+.cs-explorateur-arbre li > a,
+.cs-explorateur-arbre li > span {
+  display: block;
+  padding: 3px 6px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.cs-explorateur-liste {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.cs-explorateur-liste-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cs-explorateur-liste-tete h4 {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .cs-explorateur-grille {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-explorateur-arbre {
+    max-height: none;
+  }
+}

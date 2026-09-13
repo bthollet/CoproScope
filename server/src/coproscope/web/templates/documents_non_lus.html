@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+{% set vue = lisibilite %}
+<section class="band" aria-label="Documents non lus">
+  <div>
+    <p class="eyebrow">Documents deposes</p>
+    <h2>{{ vue.resume }}</h2>
+    {% if vue.etat == 'a_decider' %}
+    <p class="hint">{{ vue.pourquoi_ca_compte }}</p>
+    {% endif %}
+  </div>
+  {% if vue.etat == 'a_decider' %}
+  <div class="kpi-grid">
+    <div><strong>{{ vue.nombre }}</strong><span>a decider</span></div>
+    <div><strong>{{ vue.pages_totales }}</strong><span>pages concernees</span></div>
+    <div><strong>{{ vue.duree_totale }}</strong><span>si vous acceptez tout</span></div>
+    <div><strong>{{ vue.deja_reconnus }}</strong><span>deja reconnus</span></div>
+  </div>
+  {% endif %}
+</section>
+
+{% if request.query_params.get('lance') %}
+<section class="band" aria-label="Reconnaissance lancee">
+  <p><strong>La reconnaissance de texte a demarre.</strong></p>
+  <p class="hint">Elle se poursuit pendant que vous continuez a travailler.
+    Rechargez cette page pour voir ou elle en est.</p>
+</section>
+{% endif %}
+
+{% if vue.en_cours %}
+<section class="band" aria-label="Reconnaissances en cours">
+  <div>
+    <p class="eyebrow">En cours</p>
+    <h3>{{ vue.en_cours | length }} document(s) en attente de reconnaissance</h3>
+    <p class="hint">Vous avez donne votre accord pour ces documents. S'ils restent
+      ici apres plusieurs minutes, c'est que la reconnaissance n'a pas abouti :
+      aucun texte n'a pu etre tire des images.</p>
+  </div>
+  <ul>
+    {% for doc in vue.en_cours %}
+    <li>{{ doc.nom }} — {{ doc.pages }} page(s)</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if not vue.documents %}
+<section class="band" aria-label="Rien a signaler">
+  <div class="cs-empty-state">
+    <p><strong>Tous les documents deposes ont pu etre lus.</strong></p>
+    <p class="hint">Rien ne vous est demande ici pour le moment.
+      {% if vue.refuses %}{{ vue.refuses }} document(s) que vous avez refuse(s)
+      ne sont pas reproposes.{% endif %}</p>
+  </div>
+</section>
+{% else %}
+
+{% for doc in vue.documents %}
+<section class="band" aria-label="Document non lu">
+  <div>
+    <h3>{{ doc.titre }}</h3>
+    <p>{{ doc.constat }}</p>
+    <p class="hint">{{ doc.remede }}</p>
+    <p class="hint">{{ doc.confidentialite }}</p>
+    <p class="hint">{{ doc.duree }}</p>
+  </div>
+  <form method="post" action="{{ token_href('/documents/non-lus/repondre') }}">
+    <input type="hidden" name="doc_id" value="{{ doc.doc_id }}">
+    <input type="hidden" name="nom" value="{{ doc.titre }}">
+    <input type="hidden" name="pages" value="{{ doc.pages }}">
+    <p><strong>{{ doc.question }}</strong></p>
+    <button type="submit" name="reponse" value="ACCEPTE">Lancer la reconnaissance</button>
+    <button type="submit" name="reponse" value="REFUSE">Ne pas traiter ce document</button>
+  </form>
+</section>
+{% endfor %}
+
+{% endif %}
+{% endblock %}

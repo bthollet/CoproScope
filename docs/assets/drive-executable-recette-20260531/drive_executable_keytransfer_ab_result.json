@@ -1,0 +1,15 @@
+﻿{
+    "status":  "OK",
+    "executable":  "CoproScope-drive-keytransfer-20260531-0106",
+    "code_create_status":  303,
+    "publish_status":  303,
+    "import_status":  303,
+    "recover_status":  303,
+    "recovered_note_ok":  true,
+    "recovered_counter_ok":  true,
+    "private_path_masked":  true,
+    "secret_visible_after_import":  false,
+    "drive_cleartext_found":  false,
+    "drive_instance_id_found":  false,
+    "drive_key_code_found":  false
+}
